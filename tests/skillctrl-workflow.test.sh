@@ -126,18 +126,21 @@ with tempfile.TemporaryDirectory(prefix='skillctrl-workflow-') as tmp:
         return git('rev-parse', 'HEAD')
 
     def run_step(document, name, check=True, extra=None, index=0):
-        script = runs(document, name)[index].replace('/tmp/gh-aw/skillctrl-cli', str(cli_dir))
-        script = script.replace('/tmp/gh-aw/skillctrl', str(artifacts))
-        script = script.replace('/tmp/skillctrl', str(tmp / 'ci'))
+        paths = {'/tmp/gh-aw/skillctrl-cli': str(cli_dir),
+                 '/tmp/gh-aw/skillctrl': str(artifacts), '/tmp/skillctrl': str(tmp / 'ci')}
+        script = re.sub('|'.join(re.escape(path) for path in paths),
+                        lambda match: paths[match[0]], runs(document, name)[index])
         return command(['bash', '-euo', 'pipefail', '-c', script], check=check, extra=extra)
 
     git('init', '-q')
     git('config', 'user.name', 'Fixture')
     git('config', 'user.email', 'fixture@example.invalid')
     git('config', 'commit.gpgsign', 'false')
+    lock_text = (source / 'home/dot_config/mise/mise.lock').read_text()
+    toolchain = tomllib.loads(lock_text)['tools']['go'][0]['version']
     config = '''[tools]
 "go:github.com/wwwyo/skillctrl" = "a931afd1294d7b07669e8659aadf0de9854c51fc"
-go = "1.27.1"
+go = "GO_FIXTURE_VERSION"
 node = "24.21.0"
 "npm:@earendil-works/pi-coding-agent" = "1.0.0"
 unrelated = "9.9.9"
@@ -147,10 +150,11 @@ minimum_release_age = "7d"
 [env]
 UNRELATED_SECRET = "fixture-only-do-not-copy"
 '''
+    config = config.replace('GO_FIXTURE_VERSION', toolchain)
     write('home/dot_config/mise/config.toml', config)
-    lock_text = (source / 'home/dot_config/mise/mise.lock').read_text()
     trusted_lock = re.search(r'(?ms)^\[\[tools\."go:github\.com/wwwyo/skillctrl"\]\]\n.*?(?=^\[\[tools\.|\Z)', lock_text)[0]
-    write('home/dot_config/mise/mise.lock', trusted_lock + '[[tools.unrelated]]\nversion = "9.9.9"\n')
+    trusted_go_lock = re.search(r'(?ms)^\[\[tools\.go\]\]\n.*?(?=^\[\[tools\.|\Z)', lock_text)[0]
+    write('home/dot_config/mise/mise.lock', trusted_lock + trusted_go_lock + '[[tools.unrelated]]\nversion = "9.9.9"\n')
     write('home/dot_pi/agent/models.json', '{"fixture": true}')
     for name in ['imported', 'handwritten']:
         write('.agents/skills/' + name + '/SKILL.md', 'original body\n')
@@ -168,11 +172,22 @@ UNRELATED_SECRET = "fixture-only-do-not-copy"
     # The trusted pin step rejects mutable refs and strips unrelated settings.
     run_step(pr_workflow, 'Read the trusted skillctrl pin')
     selected = tomllib.loads((cli_dir / 'mise.toml').read_text())
-    assert selected == {'tools': {'go:github.com/wwwyo/skillctrl': 'a931afd1294d7b07669e8659aadf0de9854c51fc', 'go': '1.27.1'},
+    assert selected == {'tools': {'go:github.com/wwwyo/skillctrl': 'a931afd1294d7b07669e8659aadf0de9854c51fc', 'go': toolchain},
                         'settings': {'pin': True, 'minimum_release_age': '7d'}}
     assert (cli_dir / 'mise.toml').read_text().count('pi-coding-agent') == 0
     assert (cli_dir / 'node.txt').read_text() == '24.21.0'
-    assert (cli_dir / 'mise.lock').read_text() == trusted_lock
+    assert (cli_dir / 'mise.lock').read_text() == trusted_lock + trusted_go_lock
+    selected_lock = tomllib.loads((cli_dir / 'mise.lock').read_text())
+    assert set(selected_lock['tools']) == {'go:github.com/wwwyo/skillctrl', 'go'}
+    assert selected_lock['tools']['go'][0]['platforms.linux-x64']['checksum'].startswith('sha256:')
+    for invalid_lock in [trusted_lock, trusted_lock + trusted_go_lock.replace('version = ' + json.dumps(toolchain), 'version = "0.0.0"')]:
+        write('home/dot_config/mise/mise.lock', invalid_lock)
+        rejected = commit()
+        assert run_step(pr_workflow, 'Read the trusted skillctrl pin', check=False,
+                        extra={'CHECKER_SOURCE': rejected}).returncode != 0
+    write('home/dot_config/mise/mise.lock', trusted_lock + trusted_go_lock + '[[tools.unrelated]]\nversion = "9.9.9"\n')
+    base = commit()
+    env.update(CHECKER_SOURCE=base, PR_BASE=base, PR_HEAD=base)
     assert run_step(pr_workflow, 'Read the trusted skillctrl pin', check=False,
                     extra={'CHECKER_SOURCE': 'HEAD'}).returncode != 0
 

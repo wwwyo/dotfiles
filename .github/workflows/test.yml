@@ -53,11 +53,15 @@ jobs:
           pi = config['tools'].get('npm:@earendil-works/pi-coding-agent', '')
           Path('/tmp/gh-aw/skillctrl-cli/pi.txt').write_text(str(pi))
           lock_text = subprocess.check_output(['git', 'show', source + ':home/dot_config/mise/mise.lock'], text=True)
-          blocks = re.findall(r'(?ms)^\[\[tools\."go:github\.com/wwwyo/skillctrl"\]\]\n.*?(?=^\[\[tools\.|\Z)', lock_text)
-          matching = [block for block in blocks if tomllib.loads(block)['tools']['go:github.com/wwwyo/skillctrl'][0]['version'] == pin]
-          if len(matching) != 1:
-              raise ValueError('trusted skillctrl lock must match the exact pin')
-          Path('/tmp/gh-aw/skillctrl-cli/mise.lock').write_text(matching[0])
+          selected_blocks = []
+          for tool, version in [('go:github.com/wwwyo/skillctrl', pin), ('go', toolchain)]:
+              name = json.dumps(tool) if ':' in tool else tool
+              blocks = re.findall(r'(?ms)^\[\[tools\.' + re.escape(name) + r'\]\]\n.*?(?=^\[\[tools\.|\Z)', lock_text)
+              matching = [block for block in blocks if tomllib.loads(block)['tools'][tool][0]['version'] == version]
+              if len(matching) != 1:
+                  raise ValueError(f'trusted {tool} lock must match the exact pin')
+              selected_blocks.append(matching[0])
+          Path('/tmp/gh-aw/skillctrl-cli/mise.lock').write_text(''.join(selected_blocks))
           PYTHON
       - uses: jdx/mise-action@c2a87611a18de5b3828c5652fe268e992400cb5c
         env:
