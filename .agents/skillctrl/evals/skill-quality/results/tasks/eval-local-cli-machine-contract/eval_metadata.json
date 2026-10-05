@@ -1,0 +1,13 @@
+{
+  "eval_id": 4,
+  "eval_name": "local-cli-machine-contract",
+  "prompt": "このローカル CLI を AI agent の自動化から使いやすくしてください。Python 標準ライブラリだけで実装し、既存の list と rename は保ってください。rename には --json で {\"id\":\"n1\",\"patch\":{\"title\":\"New\"}} を受ける経路を追加してください。それ以外の機械可読出力、問い合わせ可能な schema、変更前確認、入力の安全性も考えて完成させてください。外部 API、server、MCP、認証は不要です。使用例を CLI.md に残してください。外部API、ネット検索、package install、commit/pushを使わない。fixture外のファイルを変更しない。",
+  "assertions": [
+    "非TTYの list 出力が純粋な JSON または各行 JSON として解析でき、fixture の2件と一致する。",
+    "schema/describe 相当の実行可能な問い合わせが rename の id、patch.title と返却契約を機械可読に示す。",
+    "JSON rename の dry-run は入力を検証して変更予定を機械可読に返し、notes.json の byte hash を変えない。",
+    "同じ有効要求の通常実行は n1 の title だけを変え、n1 の body/tags と n2 全体を保存する。",
+    "未知 key、空 title、未知 id、id への ?/#/%/制御文字混入を非ゼロ終了で拒否し、状態を変更しない。",
+    "list の --fields 相当で id,title だけを返し、body/tags が stdout に現れない。"
+  ]
+}

@@ -1,0 +1,338 @@
+{
+  "metadata": {
+    "skill_name": "skill-quality",
+    "skill_path": ".agents/skillctrl/evals/skill-quality",
+    "executor_model": "pi 0.87.1 / opencode-go/space-bunny-free / high",
+    "analyzer_model": "Independent Codex blind grader; exact model ID not recorded",
+    "timestamp": "2026-10-02T08:25:00Z",
+    "evals_run": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6
+    ],
+    "runs_per_configuration": 1
+  },
+  "runs": [
+    {
+      "eval_id": 1,
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 6,
+        "failed": 0,
+        "total": 6,
+        "time_seconds": 42.711,
+        "tokens": 205860,
+        "tool_calls": 21,
+        "errors": 1
+      },
+      "expectations": [
+        {
+          "text": "初回利用の掲載コマンドを fixture root で実行すると books,800 と groceries,1500 が得られる。",
+          "passed": true,
+          "evidence": "fixture/README.md:23,33 の初回利用コマンドは python3 sumcsv.py examples/expenses.csv。runtime.json に同じ command、exit:0、stdout:\"books,800\\ngroceries,1500\\n\"、stderr 空が記録され、必要な補助手順の追加なしで掲載出力になる。"
+        },
+        {
+          "text": "利用例の期待出力が実行結果と一致し、category と amount の列および整数 amount という入力条件が説明される。",
+          "passed": true,
+          "evidence": "README.md:15-20 の入力例が fixture/examples/expenses.csv と一致し、:24-25 の出力が runtime.json と一致。:40-41 でヘッダー category / amount と整数 amount、小数/桁区切り/通貨記号の除去を説明。sumcsv.py:9-12 の DictReader/int/category昇順に整合。"
+        },
+        {
+          "text": "英語正本と日本語版があり、両者の利用コマンド、入出力例、主要制約が一致する。",
+          "passed": true,
+          "evidence": "英語正本 fixture/README.md と fixture/docs/README.ja.md が存在し outputs と byte 一致。双方:15-20 入力、:23,33 コマンド、:24-25 出力が同一。:30 Python3.11+/source checkout、:40-42 必要列・余分列無視・整数・小数等で中断・1ファイルのみ・書換なし、:7 ローカル/標準ライブラリ/インストール不要、:36 category,total 昇順出力/引数なしusage が意味で一致。"
+        },
+        {
+          "text": "言語切替、既存ロゴ、License の repo 内リンクが各ファイル位置から実在する対象に解決する。",
+          "passed": true,
+          "evidence": "英語 README の HTML img src assets/logo.svg、Markdown 言語 docs/README.ja.md/License LICENSE と、日本語版の img src ../assets/logo.svg/言語 ../README.md/License ../LICENSE を各文書位置から解決し全対象の実在を確認。Get started/すぐに試す anchor も実在見出し。logo は既存 hash、LICENSE は MIT。外部 License画像のネット検査はしていない。"
+        },
+        {
+          "text": "Excel、cloud sync、10x、npm 起動、予定の dashboard を実装済みとする記述や、実在しない CI/release badge が残らない。",
+          "passed": true,
+          "evidence": "完成日英 README にExcel対応、cloud同期、10x、npm起動、予定dashboardを実装済みとする記述はなく、CI/release バッジもない。License バッジのみで project.json license:MIT に整合。ローカルのみの価値を明示。"
+        },
+        {
+          "text": "sumcsv.py と expenses.csv は変更されず、完成 README に説明用 placeholder がない。",
+          "passed": true,
+          "evidence": "execution.json の initial_hashes と final_hashes が sumcsv.py、examples/expenses.csv とも一致し、現 fixture SHA256 も final_hashes と一致。changed_files は README.md と docs/README.ja.md のみ。完成日英 README の FILE.csv placeholder などの未置換テンプレート表現なし。"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 2,
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 6,
+        "failed": 0,
+        "total": 6,
+        "time_seconds": 110.505,
+        "tokens": 209389,
+        "tool_calls": 22,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "PRD が docs/prd/collection-share/prd.md にあり、完成状態を表す status: ready の frontmatter を持つ。",
+          "passed": true,
+          "evidence": "fixture/docs/prd/collection-share/prd.md:1-3 に YAML frontmatter status: ready があり、指定 path に本文84行の完成 PRD が存在する。outputs の対応ファイルと byte 一致し execution.json の final_hashes とも一致。"
+        },
+        {
+          "text": "Domain Model の classDiagram が Collection、Note、ShareLink の関係を表し、メモの0件以上・単一所属とリンクの単一対象を正しく示す。",
+          "passed": true,
+          "evidence": "prd.md:52-62 の classDiagram に Collection、Note、ShareLink。Collection \"1\" --> \"0..*\" Note はコレクション当たりメモ0件以上・各メモの所属1つを示し、Note --> \"1\" Collection も単一所属を示す。ShareLink --> \"1\" Collection はリンク当たり対象1つ。本文65-67行とも一致。"
+        },
+        {
+          "text": "有効リンク数を未確定として残し、所有者だけが発行・失効できるルールと既存 ADR への解決可能なリンクがある。",
+          "passed": true,
+          "evidence": "prd.md:71 は同時有効リンク数を「未確定」とし、その多重度を図から省略。68行は所有者だけが発行・失効できる。66行の ../../adr/0001-single-collection.md を PRD の親 dir 基準で解決すると fixture/docs/adr/0001-single-collection.md が存在し、Accepted な単一所属決定を保持。"
+        },
+        {
+          "text": "共有リンクの実体は AGENTS.md Glossary に英語名付きで追加され、機能固有の『匿名閲覧』はそこへ昇格しない。",
+          "passed": true,
+          "evidence": "fixture/AGENTS.md:15 に共有リンク（ShareLink）と単一コレクション対象・読み取り専用・所有者の発行/失効の定義を追加。AGENTS に匿名閲覧は無く、prd.md:45 の機能固有 Glossary に限定。"
+        },
+        {
+          "text": "AC が発行・閲覧・失効の利用結果を検証でき、Success Metrics にコアアクション、週次、自発的利用者の分母、翌週再利用の主指標がある。",
+          "passed": true,
+          "evidence": "prd.md:75-77 の AC は発行して渡した受取人のログイン不要閲覧、原本更新の反映、失効後の閲覧不能を検証する。81-84行は発行して同僚へ渡すコアアクション、週次、自発的に開いた利用者のうち発行した人数（通知・メール除外）、onboarding 翌週にも発行して戻った割合を保持。目標値は未確定で数値の創作なし。"
+        },
+        {
+          "text": "合意済み prototype が docs/prd/collection-share/prototype/ から辿れ、実装ファイルや DB schema・API の設計は追加されない。",
+          "passed": true,
+          "evidence": "fixture/docs/prd/collection-share/prototype/index.html が存在し、合意済み scratch/share-prototype/index.html と末尾改行を除き内容一致。所有者の発行/失効と受取人のログインなしで現在のメモを読む内容を保持。outputs/response.md に保存先を明記。execution.json の変更は AGENTS.md、PRD、prototype の3件だけで、DB schema/API/実装ファイルなし。PRD 本文も要件・モデル・AC・指標に留まる。PRD 本文に prototype の hyperlink は無いが、assertion の保存先から辿れる成果物という条件は満たす。"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 3,
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 6,
+        "failed": 0,
+        "total": 6,
+        "time_seconds": 70.939,
+        "tokens": 110073,
+        "tool_calls": 8,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "検証環境、週次バックアップ3件、設定ファイル不足による1件の起動失敗という事実が保存される。",
+          "passed": true,
+          "evidence": "fixture/revised.md:7 に「先週、運用担当者が検証環境で週次バックアップ3件の復元を試した」「うち1件には設定ファイルが含まれておらず、サービスを起動できなかった」。draft.md:5 の環境・件数・原因・失敗状態を保持。"
+        },
+        {
+          "text": "保存対象の指定変更は可能性として残り、変更主体を推測で埋めない。",
+          "passed": true,
+          "evidence": "revised.md:7 に「保存対象の指定が変更されていた可能性がある」「その指定を変更した主体は分かっていない」。draft.md:5 と同じ推量・主体不明で、運用担当者を変更者として推測していない。"
+        },
+        {
+          "text": "残り2件の起動成功と全機能未検証の限定がともに残る。",
+          "passed": true,
+          "evidence": "revised.md:9 に「残る2件はサービスを起動できたが、すべての機能は確かめていない」「サービスが立ち上がる範囲の確認にとどまる」。起動成功を全機能の復元成功へ拡大せず draft.md:5,9 の観測範囲を保持。"
+        },
+        {
+          "text": "保存成功ログが示す範囲と復元検査の範囲を区別し、検査外の障害まで保証しない。",
+          "passed": true,
+          "evidence": "revised.md:13 で成功ログは保存処理の終了を示し復元後サービス状態は分からないこと、:17 で検証環境のサービス起動まで/含めなかった障害を検出できないことを明示。draft.md:5,9 の範囲を区別し、誤った「同じ問題」「すべてを解決」を修正。"
+        },
+        {
+          "text": "運用担当者が保存対象を調べ、設定ファイルを含めたバックアップで再度復元を試すという次の行動が残る。",
+          "passed": true,
+          "evidence": "revised.md:19 に「次に運用担当者が行うのは、保存対象の指定を調べ、設定ファイルを含めたバックアップで再び復元を試す」と行為者・対象・操作を保持。draft.md:9 と一致。"
+        },
+        {
+          "text": "『信頼を運ぶ』『安心の外側に世界』『正面から深掘り』が完成本文に残らず、新しい測定値・製品名・実装機構を補わない。",
+          "passed": true,
+          "evidence": "完成 revised.md に「信頼を運ぶ」「安心の外側に世界」「正面から深掘り」は存在しない。数値は原文の先週/週次3件/1件/2件のみ。製品名・新しい測定値・実装機構の追加なし。draft.md の initial/final hash 一致、変更は revised.md のみ。"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 4,
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.8333333333333334,
+        "passed": 5,
+        "failed": 1,
+        "total": 6,
+        "time_seconds": 176.861,
+        "tokens": 261189,
+        "tool_calls": 14,
+        "errors": 1
+      },
+      "expectations": [
+        {
+          "text": "非TTYの list 出力が純粋な JSON または各行 JSON として解析でき、fixture の2件と一致する。",
+          "passed": true,
+          "evidence": "runtime.json case0: argv[cli.py,list] exit0、stderr空、stdoutはnote1/note2の純粋なNDJSON2行。全行をJSON解析するとid/title/body/tagsを含む元fixtureの2recordと構造一致。前後notes bytehashも不変更。"
+        },
+        {
+          "text": "schema/describe 相当の実行可能な問い合わせが rename の id、patch.title と返却契約を機械可読に示す。",
+          "passed": false,
+          "evidence": "runtime.json case1: CLI.md掲載の schema rename は exit1、stdout空、stderrにschema_documentの \"immutable string, [%A-Za-z0-9._-], 1-%d chars\" % MAX_ID_LENGTH から ValueError:unsupported format character A。実行可能な問い合わせでschemaを取得できない。schema all と --help --json も同じschema_documentを使うためsource/文書の静的schemaでは代替しない。"
+        },
+        {
+          "text": "JSON rename の dry-run は入力を検証して変更予定を機械可読に返し、notes.json の byte hash を変えない。",
+          "passed": true,
+          "evidence": "runtime case2: 有効rename JSON --dry-run はexit0、parse可能な応答ok=true,dry_run=true,written=false,changed=true,before=n1/Alpha,after=n1/New。notes.json前後SHA256は同一2ee2cc93...db5f54でfinal_stateは元2recordと一致。source resolve_rename_inputで同じpayload validationを実行してからdry-run分岐。"
+        },
+        {
+          "text": "同じ有効要求の通常実行は n1 の title だけを変え、n1 の body/tags と n2 全体を保存する。",
+          "passed": true,
+          "evidence": "runtime case3: case2と同じ有効要求を通常実行しexit0/written=true、notes hashが変化。final_stateを原文notesと比較するとn1.titleのみAlpha→Newでn1.id/body/tagsとn2全fieldは一致。勝手なrecord追加なし。"
+        },
+        {
+          "text": "未知 key、空 title、未知 id、id への ?/#/%/制御文字混入を非ゼロ終了で拒否し、状態を変更しない。",
+          "passed": true,
+          "evidence": "runtime case4-12の未知top key/未知patch key/空title/未知id/?/#/%/NUL/ESCは全て非ゼロ終了（3,3,3,4,1,1,1,3,3）。各ケースの前後bytehash同一、final_stateは元fixtureの2recordと一致。?/#/%はvalidation途中のTypeError tracebackだが現assertionの非ゼロ+非変更は満たす。正しい構造化validationerrorの品質差はfeedbackに記録。"
+        },
+        {
+          "text": "list の --fields 相当で id,title だけを返し、body/tags が stdout に現れない。",
+          "passed": true,
+          "evidence": "runtime case13: CLI.mdの list --fields id,title はexit0でstdout NDJSON2行。各recordのkeyはちょうどid,title、値はn1/Alpha,n2/Beta。stdoutにbody/tagsのkeyやLong source text等の値なし。"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 5,
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 6,
+        "failed": 0,
+        "total": 6,
+        "time_seconds": 286.197,
+        "tokens": 599604,
+        "tool_calls": 24,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "preview に default、hover、focus、active、disabled、loading、error、success の8行があり、それぞれ実際の button と状態を再現する selector/attribute がある。",
+          "passed": true,
+          "evidence": "fixture/button.preview.html はラベル付き li.pv__row を8行持ち各行に実button。default 無属性、hover/focus/active にis-hover/is-focus/is-active、disabled にnative disabled、loading にdata-state=loading+aria-busy、error/successに各data-state。button.cssの同名selectorと表示copy切替が実状態を再現しruntime全viewportでも8行/状態別表示ラベルを確認。"
+        },
+        {
+          "text": "実際の :hover、:focus-visible、:active に styling があり、preview の強制状態にも同じ styling が適用される。",
+          "passed": true,
+          "evidence": "button.css に @media(hover:hover)and(pointer:fine) 内の :hover と .is-hover が同じ --color-accent-hover、:focus-visible と .is-focus が同じ --color-focus outline+paper halo、:active と .is-active が同じ accent-hover背景/translateY(1px)。強制状態と実pseudo状態のstylingが対応する（computed style実測は提供されていない）。"
+        },
+        {
+          "text": "disabled の button は native disabled として作動せず、loading/error/success は視覚と accessibility attribute または関連メッセージで区別できる。",
+          "passed": true,
+          "evidence": "preview disabled行はnative disabled属性。loadingはspinner+「保存中…」+aria-busy=true、errorは枠+retrySVG+「再試行」、successは枠+checkSVG+「保存済み」。CSS display:noneで他copyを視覚/a11y treeから除外するのでaccessible nameも状態で変わる。runtimeの各ラベルと一致し色のみの表現ではない。"
+        },
+        {
+          "text": "component の色と font-family が既存 named tokens を使い、tokens.css の既存値は保存される。",
+          "passed": true,
+          "evidence": "componentの全実色は原文tokensの --color-accent/accent-hover/accent-ink/paper/paper-2/ink/focus/error/success、glyph/spinnerはcurrentColor、透明borderはtransparent。font-familyは既存 --font-body。tokens.cssはinitial_hashes=final_hashesで現fixtureも原文同一。button.cssに新設したtokenはspacing/geometry/motionだけ。"
+        },
+        {
+          "text": "320/375/414/768px の preview で horizontal overflow がなく、button text が一行、touch target が44px以上である。",
+          "passed": true,
+          "evidence": "browser-runtime.jsonの320/375/414/768でscrollWidth=305/360/399/753 ≤ innerWidth、全32button height=44、全表示label lines=1。各viewportのleft最小/right最大は168.0625/289、223.0625/344、262.0625/383、192/705で全buttonがviewport内。overflow-x:clipはあるがbutton rectが外へ出て隠れただけのpassではない。"
+        },
+        {
+          "text": "index.html の本文・保存 click handler が保存され、hero/nav/footer、新しい保存処理、.hallmark/log.json が追加されない。",
+          "passed": true,
+          "evidence": "input_filesのindex.htmlと新fixtureをbutton内だけ置換して比較しbutton外全文一致、scriptもbyte一致のcount増加click handler。hero/nav/footer/新保存処理/.hallmark/log.jsonなし。previewのheader/footerは開発用wrapperでproduction構成変更ではない。"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 6,
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 6,
+        "failed": 0,
+        "total": 6,
+        "time_seconds": 70.839,
+        "tokens": 214497,
+        "tool_calls": 29,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "packet-report の directory/name frontmatter が保存され、description が作成と既存 report の検査の双方を表す。",
+          "passed": true,
+          "evidence": "fixture/packet-report/SKILL.md:1-4はname:packet-report、description原文のCreate a local packet report or audit an existing one from CSV fixturesを同一保持し両用途を表す。directoryもpacket-reportのまま。"
+        },
+        {
+          "text": "SKILL.md から Create と Audit の指示へ明確な read 条件付きで到達でき、すべての相対参照が実在する。",
+          "passed": true,
+          "evidence": "SKILL.md:12-17は依頼対応分岐だけを読むと明示し、CSVから作成→references/create.md、既存report検査→references/audit.mdのMarkdownlinkを持つ。両linkをSKILL位置から解決し実在。legacy-notes.mdのcreate.md/audit.md相対Markdownlinkも各実ファイルに解決。helper/templateはskill-root resourceと明示したpathで実在し、references内のinline資源名を明確なMarkdownrelative linkと取り違えていない。"
+        },
+        {
+          "text": "共通入力規則、入力不変更、不正入力時の非ゼロ終了とreport非作成、helperを計算の正本とする規則が全文書群に保存される。",
+          "passed": true,
+          "evidence": "SKILL.md:21にUTF-8/header/packet_id非空一意/status ok|failed/bytes非負整数、不正入力非ゼロ・report非作成/非上書き・入力不変更をすべて保持。:23は不正行時に値を確定しない。:27,31は件数とbytes計算はhelperのみで手計算禁止。Create/Audit分岐もhelperstdoutを値の根拠として指定。"
+        },
+        {
+          "text": "Create の既存 report 上書き確認、template 使用、helper値一致とplaceholder除去の完了条件が保存される。",
+          "passed": true,
+          "evidence": "references/create.md:5-13はinput検証、既存report確認を得るまで一切書かない、helperstdout3値取得、既存templateの3placeholder置換、3値含有/helper一致/placeholderなし/入力未変更まで完了しない条件。SKILL.md:32でもtemplateはCreate専用・Audit置換禁止。"
+        },
+        {
+          "text": "Audit の変更禁止対象、差分の行とexpected/actual、no findings、明示修正依頼までCreateへ進まないこと、verdict時の終了が保存される。",
+          "passed": true,
+          "evidence": "references/audit.md:3はinput CSV/report/template/helperの変更禁止とverdict時終了、:6-10はhelpernumeric expectedとreportactualの比較・差の該当行とexpected/actual・no findings、:11-13は明示修正依頼までCreateへ進まずそのaudit中にreport変更しないことを保持。shared input invalid時の停止/nonzero条件との明確な矛盾なし。"
+        },
+        {
+          "text": "helper と template の動作・内容が保存され、helperはsampleで ok=2, failed=1, bytes=200 を返し、CHECKS.md が保存契約の参照先を具体的に示す。",
+          "passed": true,
+          "evidence": "execution.jsonのinitial/finalでhelper、template、samples/packets.csvのhashが一致し、現fixtureはtask.input_filesの原文とbyte同一。runtime.jsonはhelperのexit0、stdout{\"bytes\":200,\"failed\":1,\"ok\":2}を実測。CHECKS.md:9-11は実在SKILL.md/create.md/audit.mdへ構造と契約を具体対応させ、:19-23に各保存ルールを記録。自己申告だけではなく実全文書と実hash/runtimeで確認。"
+        }
+      ],
+      "notes": []
+    }
+  ],
+  "run_summary": {
+    "with_skill": {
+      "pass_rate": {
+        "mean": 0.9722,
+        "stddev": 0.068,
+        "min": 0.8333,
+        "max": 1.0
+      },
+      "time_seconds": {
+        "mean": 126.342,
+        "stddev": 91.1052,
+        "min": 42.711,
+        "max": 286.197
+      },
+      "tokens": {
+        "mean": 266768.6667,
+        "stddev": 170351.7788,
+        "min": 110073,
+        "max": 599604
+      }
+    }
+  },
+  "notes": [
+    "Current skill snapshot: db1fa8c3be8f29278ba6a9f1f35ad6f2d0e39abf; subsequent review fixes have not received a full model rerun.",
+    "35 of 36 assertions pass; the CLI schema query fails. Individual grading files retain other observed problems.",
+    "One completed run per task; standard deviation reflects different tasks, not repeated-run variance. Time/tokens cover completed executions only and do not prove speed or cost improvement.",
+    "Labels/assertions are agent-curated and awaiting user validation; file tools only, followed by parent CLI/helper/UI probes.",
+    "total_tool_calls is the published result.json tool_calls array length. errors_encountered is a postprocessed count of native tool_execution_end isError events; their booleans are published as tool_calls[].is_error, so the count is reproducible from those rows. Parent probes are excluded. Exact grader model ID was not recorded.",
+    "Original before/after evidence: https://github.com/wwwyo/dotfiles/tree/e07b6d5005387f54db01fa0cda5384d1a252a262/.agents/skillctrl/evals/skill-quality/results"
+  ]
+}

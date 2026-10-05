@@ -1,0 +1,17 @@
+# dir 単位で repo へ symlink する entries（run_after_20-link-repodirs.sh.tmpl が張る）。
+# chezmoi の per-file 管理にしない理由:
+#   - runtime が新規ファイルを書き込み、それを repo に落としたい（.agents, .claude/skills 等）
+#   - repo 内相対 symlink を内包する（.claude/skills, .codex/hooks）
+#   - executable file は symlink mode で symlink 化できない（hooks, tasks）
+.claude/hooks
+.config/git/hooks
+.config/git/bin
+.config/devin/hooks
+.config/mise/tasks
+
+{{ if ne .chezmoi.os "darwin" }}
+# macOS 専用
+Library
+.config/duti
+.config/mise/conf.d/darwin.toml
+{{ end }}

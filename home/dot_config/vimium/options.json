@@ -1,0 +1,14 @@
+{
+  "exclusionRules": [
+    {
+      "passKeys": "",
+      "pattern": "https?://mail.google.com/*"
+    },
+    {
+      "passKeys": "",
+      "pattern": "https?://github.dev/*"
+    }
+  ],
+  "keyMappings": "# Insert your preferred key mappings here.\nunmap o",
+  "settingsVersion": "2.4.2"
+}

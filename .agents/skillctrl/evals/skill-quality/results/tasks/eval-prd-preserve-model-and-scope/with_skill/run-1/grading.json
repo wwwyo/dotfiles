@@ -1,0 +1,52 @@
+{
+  "expectations": [
+    {
+      "text": "PRD が docs/prd/collection-share/prd.md にあり、完成状態を表す status: ready の frontmatter を持つ。",
+      "passed": true,
+      "evidence": "fixture/docs/prd/collection-share/prd.md:1-3 に YAML frontmatter status: ready があり、指定 path に本文84行の完成 PRD が存在する。outputs の対応ファイルと byte 一致し execution.json の final_hashes とも一致。"
+    },
+    {
+      "text": "Domain Model の classDiagram が Collection、Note、ShareLink の関係を表し、メモの0件以上・単一所属とリンクの単一対象を正しく示す。",
+      "passed": true,
+      "evidence": "prd.md:52-62 の classDiagram に Collection、Note、ShareLink。Collection \"1\" --> \"0..*\" Note はコレクション当たりメモ0件以上・各メモの所属1つを示し、Note --> \"1\" Collection も単一所属を示す。ShareLink --> \"1\" Collection はリンク当たり対象1つ。本文65-67行とも一致。"
+    },
+    {
+      "text": "有効リンク数を未確定として残し、所有者だけが発行・失効できるルールと既存 ADR への解決可能なリンクがある。",
+      "passed": true,
+      "evidence": "prd.md:71 は同時有効リンク数を「未確定」とし、その多重度を図から省略。68行は所有者だけが発行・失効できる。66行の ../../adr/0001-single-collection.md を PRD の親 dir 基準で解決すると fixture/docs/adr/0001-single-collection.md が存在し、Accepted な単一所属決定を保持。"
+    },
+    {
+      "text": "共有リンクの実体は AGENTS.md Glossary に英語名付きで追加され、機能固有の『匿名閲覧』はそこへ昇格しない。",
+      "passed": true,
+      "evidence": "fixture/AGENTS.md:15 に共有リンク（ShareLink）と単一コレクション対象・読み取り専用・所有者の発行/失効の定義を追加。AGENTS に匿名閲覧は無く、prd.md:45 の機能固有 Glossary に限定。"
+    },
+    {
+      "text": "AC が発行・閲覧・失効の利用結果を検証でき、Success Metrics にコアアクション、週次、自発的利用者の分母、翌週再利用の主指標がある。",
+      "passed": true,
+      "evidence": "prd.md:75-77 の AC は発行して渡した受取人のログイン不要閲覧、原本更新の反映、失効後の閲覧不能を検証する。81-84行は発行して同僚へ渡すコアアクション、週次、自発的に開いた利用者のうち発行した人数（通知・メール除外）、onboarding 翌週にも発行して戻った割合を保持。目標値は未確定で数値の創作なし。"
+    },
+    {
+      "text": "合意済み prototype が docs/prd/collection-share/prototype/ から辿れ、実装ファイルや DB schema・API の設計は追加されない。",
+      "passed": true,
+      "evidence": "fixture/docs/prd/collection-share/prototype/index.html が存在し、合意済み scratch/share-prototype/index.html と末尾改行を除き内容一致。所有者の発行/失効と受取人のログインなしで現在のメモを読む内容を保持。outputs/response.md に保存先を明記。execution.json の変更は AGENTS.md、PRD、prototype の3件だけで、DB schema/API/実装ファイルなし。PRD 本文も要件・モデル・AC・指標に留まる。PRD 本文に prototype の hyperlink は無いが、assertion の保存先から辿れる成果物という条件は満たす。"
+    }
+  ],
+  "summary": {
+    "passed": 6,
+    "failed": 0,
+    "total": 6,
+    "pass_rate": 1.0
+  },
+  "eval_feedback": [
+    "prototype assertion の「辿れ」は保存先からファイルを開けることと PRD 本文の相対 hyperlink のどちらを要求するか曖昧。A は保存と最終報告の path を満たすが PRD 本文の prototype hyperlink がない。本文から直接辿れる要件なら assertion に明記すると区別できる。",
+    "合意材料にない新規の振る舞いや所有関係を確定事項として加えていないことを独立 assertion にすると、モデル/スコープ維持をより直接検証できる。現行の6件は指定された関係・未確定数・実装 how を確認するが、別の業務ルールの創作までは網羅しない。"
+  ],
+  "verification_notes": [
+    "全 fixture final_hashes と outputs/fixture の対応内容を検証した。prototype は元の合意済み HTML と同一内容（末尾改行のみ相違）。",
+    "execution.json の tool_calls は read/ls/find/grep/write/edit のみ。外部レビュー・ブラウザ描画・lint・ネット検索・package install・commit/push の実行証拠はない。response.md は外部レビュー未実施と記載するため、実行済みという虚偽主張は認められない。合意済み prototype の確認は agreement.md の事前確認を述べたもので、今回の live 検査として採用していない。"
+  ],
+  "execution_metrics": {
+    "total_tool_calls": 22,
+    "errors_encountered": 0
+  }
+}

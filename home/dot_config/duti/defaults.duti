@@ -1,0 +1,115 @@
+# 拡張子・URL スキームごとのデフォルトアプリ定義（duti）
+#
+#   適用: duti ~/.config/duti/defaults.duti   （abbr: duti-apply）
+#   書式: <bundle id> <拡張子 | UTI | URL スキーム> [role]
+#   role: all | viewer | editor（URL スキームの行では指定しない）
+#
+# 下記に載っていない拡張子には「書き忘れ」ではなく「設定できないので外した」ものが含まれる。
+# 追加する前に末尾の「設定できないもの」節を読むこと。
+#
+# 現在値は `duti -x .md`、bundle id は `osascript -e 'id of app "Zed"'` で確認できる。
+# アプリが起動時にデフォルトを奪い返すことがあるため、奪われたら再適用する。
+#
+# ここで指定するアプリ（Zed / Chrome / LibreOffice）は Brewfile 管理下になく、手動導入が前提。
+# 未導入のアプリを指定しても duti は exit 0 で黙って無視するため、install が失敗せずに
+# 紐付けだけ入らない。新規マシンではアプリを入れてから duti-apply し直すこと。
+
+#
+# Zed — テキスト・コード全般
+#
+dev.zed.Zed .txt all
+dev.zed.Zed .md all
+dev.zed.Zed .markdown all
+dev.zed.Zed .log all
+dev.zed.Zed .diff all
+dev.zed.Zed .patch all
+
+# 設定・データ記述
+dev.zed.Zed .json all
+dev.zed.Zed .yaml all
+dev.zed.Zed .yml all
+dev.zed.Zed .toml all
+dev.zed.Zed .ini all
+dev.zed.Zed .xml all
+dev.zed.Zed .csv all
+
+# 言語
+dev.zed.Zed .ts all
+dev.zed.Zed .tsx all
+dev.zed.Zed .js all
+dev.zed.Zed .mjs all
+dev.zed.Zed .py all
+dev.zed.Zed .rb all
+dev.zed.Zed .java all
+dev.zed.Zed .swift all
+dev.zed.Zed .c all
+dev.zed.Zed .h all
+dev.zed.Zed .cpp all
+dev.zed.Zed .hpp all
+dev.zed.Zed .php all
+dev.zed.Zed .sql all
+dev.zed.Zed .proto all
+dev.zed.Zed .css all
+
+# シェル
+dev.zed.Zed .sh all
+dev.zed.Zed .bash all
+dev.zed.Zed .zsh all
+
+#
+# Google Chrome — Web と閲覧専用ドキュメント
+#
+com.google.Chrome http
+com.google.Chrome .pdf all
+
+#
+# LibreOffice — オフィス文書
+#
+org.libreoffice.script .doc all
+org.libreoffice.script .docx all
+org.libreoffice.script .xls all
+org.libreoffice.script .xlsx all
+org.libreoffice.script .ppt all
+org.libreoffice.script .pptx all
+org.libreoffice.script .odt all
+org.libreoffice.script .ods all
+org.libreoffice.script .odp all
+org.libreoffice.script .rtf all
+
+#
+# Preview — 画像
+# 明示的にピンする。放置すると Edge 等が .svg を奪っていく（実際に奪われていた）。
+#
+com.apple.Preview .png all
+com.apple.Preview .jpg all
+com.apple.Preview .jpeg all
+com.apple.Preview .gif all
+com.apple.Preview .heic all
+com.apple.Preview .webp all
+com.apple.Preview .bmp all
+com.apple.Preview .tiff all
+com.apple.Preview .svg all
+
+#
+# QuickTime Player — 動画
+#
+com.apple.QuickTimePlayerX .mp4 all
+com.apple.QuickTimePlayerX .mov all
+com.apple.QuickTimePlayerX .m4v all
+
+#
+# 設定できないもの（書いても効かないので載せない）
+#
+# - UTI 未登録の拡張子: .go .rs .jsx .mdx .jsonc .conf .env .lock .cjs .kt .cs .lua
+#   .dart .graphql .gql .prisma .tf .tfvars .fish .scss .sass .less .vue .svelte
+#   .astro
+#   動的 UTI（dyn.…）になり error -50 で拒否される。ただし .go .rs .jsx のように
+#   public.plain-text へ conform するものは、その handler（= Zed）に落ちて結局 Zed で開く。
+#   個別指定が要らないだけで挙動は正しいので、エラーを出す行は載せない。
+# - .html / .htm: public.html はデフォルトブラウザに紐づき、Chrome から動かせない。
+#   どのみち Web 表示は http スキーム側（Chrome）で足りる。
+# - https スキーム: error -54。System Settings のデフォルトブラウザ設定が管轄。
+#   http 側の指定と System Settings が Chrome なので実害なし。
+# - .webloc: 標準 UTI（com.apple.web-internet-location）があり duti もエラーを返さないが、
+#   Chrome がこの型を宣言していないため handler は Safari のまま変わらない。上の
+#   「UTI 未登録」とは別の理由。

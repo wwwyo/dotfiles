@@ -1,0 +1,52 @@
+{
+  "expectations": [
+    {
+      "text": "packet-report の directory/name frontmatter が保存され、description が作成と既存 report の検査の双方を表す。",
+      "passed": true,
+      "evidence": "fixture/packet-report/SKILL.md:1-4はname:packet-report、description原文のCreate a local packet report or audit an existing one from CSV fixturesを同一保持し両用途を表す。directoryもpacket-reportのまま。"
+    },
+    {
+      "text": "SKILL.md から Create と Audit の指示へ明確な read 条件付きで到達でき、すべての相対参照が実在する。",
+      "passed": true,
+      "evidence": "SKILL.md:12-17は依頼対応分岐だけを読むと明示し、CSVから作成→references/create.md、既存report検査→references/audit.mdのMarkdownlinkを持つ。両linkをSKILL位置から解決し実在。legacy-notes.mdのcreate.md/audit.md相対Markdownlinkも各実ファイルに解決。helper/templateはskill-root resourceと明示したpathで実在し、references内のinline資源名を明確なMarkdownrelative linkと取り違えていない。"
+    },
+    {
+      "text": "共通入力規則、入力不変更、不正入力時の非ゼロ終了とreport非作成、helperを計算の正本とする規則が全文書群に保存される。",
+      "passed": true,
+      "evidence": "SKILL.md:21にUTF-8/header/packet_id非空一意/status ok|failed/bytes非負整数、不正入力非ゼロ・report非作成/非上書き・入力不変更をすべて保持。:23は不正行時に値を確定しない。:27,31は件数とbytes計算はhelperのみで手計算禁止。Create/Audit分岐もhelperstdoutを値の根拠として指定。"
+    },
+    {
+      "text": "Create の既存 report 上書き確認、template 使用、helper値一致とplaceholder除去の完了条件が保存される。",
+      "passed": true,
+      "evidence": "references/create.md:5-13はinput検証、既存report確認を得るまで一切書かない、helperstdout3値取得、既存templateの3placeholder置換、3値含有/helper一致/placeholderなし/入力未変更まで完了しない条件。SKILL.md:32でもtemplateはCreate専用・Audit置換禁止。"
+    },
+    {
+      "text": "Audit の変更禁止対象、差分の行とexpected/actual、no findings、明示修正依頼までCreateへ進まないこと、verdict時の終了が保存される。",
+      "passed": true,
+      "evidence": "references/audit.md:3はinput CSV/report/template/helperの変更禁止とverdict時終了、:6-10はhelpernumeric expectedとreportactualの比較・差の該当行とexpected/actual・no findings、:11-13は明示修正依頼までCreateへ進まずそのaudit中にreport変更しないことを保持。shared input invalid時の停止/nonzero条件との明確な矛盾なし。"
+    },
+    {
+      "text": "helper と template の動作・内容が保存され、helperはsampleで ok=2, failed=1, bytes=200 を返し、CHECKS.md が保存契約の参照先を具体的に示す。",
+      "passed": true,
+      "evidence": "execution.jsonのinitial/finalでhelper、template、samples/packets.csvのhashが一致し、現fixtureはtask.input_filesの原文とbyte同一。runtime.jsonはhelperのexit0、stdout{\"bytes\":200,\"failed\":1,\"ok\":2}を実測。CHECKS.md:9-11は実在SKILL.md/create.md/audit.mdへ構造と契約を具体対応させ、:19-23に各保存ルールを記録。自己申告だけではなく実全文書と実hash/runtimeで確認。"
+    }
+  ],
+  "summary": {
+    "passed": 6,
+    "failed": 0,
+    "total": 6,
+    "pass_rate": 1.0
+  },
+  "eval_feedback": [
+    "legacy-notes.mdは元の説明を移した後も削除注記/転送内容のファイルとして残り、user promptの「使われなくなる参照を残さない」は未完了。両実行はdelete操作なしを明示する。現6assertionに不要reference削除がなく、ファイルを消せるtoolをfixture executorへ提供して独立assertionにすると完了条件を検証できる。"
+  ],
+  "verification_notes": [
+    "task.input_filesと現fixtureのhelper/template/sampleをbyte比較しinitial/final hash同一も確認。runtimeは別途実helperのsample出力を提供。",
+    "executor tool_callsはread/ls/grep/write/editのみでshell/benchmark/agent起動はなし。両response/CHECKSもhelper未実行を明示し、runtimeをexecutor自身の実行実績として扱っていない。",
+    "全文書の契約とread条件を確認。外部URL、inline skill-root resource path、各Markdownrelative link/anchorを区別して実在を検証。CHECKSの短いresource名はskill-rootの資源として文脈から解決し、cwd-relative hyperlinkとは扱わない。"
+  ],
+  "execution_metrics": {
+    "total_tool_calls": 29,
+    "errors_encountered": 0
+  }
+}

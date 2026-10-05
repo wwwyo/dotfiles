@@ -1,0 +1,22 @@
+# session-eval の orca automation desired state。
+# `.agents/scheduled-tasks/tools/sync_automations.py apply` で upsert する。
+# merge 前に apply すると ~/.agents 経由で SKILL.md が無い状態で走るので、
+# 有効化は PR merge 後の sync で行う前提。
+
+name = "session-eval"
+provider = "devin"
+enabled = true
+timezone = "Asia/Tokyo"
+
+trigger = "daily"
+time = "19:00"
+
+# 既存 workspace で回す（新 worktree/run ではない）。
+# username 非依存にするため ~ 形式。sync 側で展開して path:<abs> を渡す
+workspace_path = "~/src/github.com/wwwyo/me"
+
+# sentinel は自己評価ループ防止に必須 — 削らない。session_eval.py の
+# SENTINEL と evaluator-prompt.md にも同一 literal がある（3 箇所同時に変える）
+prompt = """
+dotfiles の ~/.agents/scheduled-tasks/session-eval/SKILL.md に従って session eval batch を実行する。sentinel: session-eval-batch:9f3a2c7e。対象 0 件・lock 取得失敗は正常終了。
+"""

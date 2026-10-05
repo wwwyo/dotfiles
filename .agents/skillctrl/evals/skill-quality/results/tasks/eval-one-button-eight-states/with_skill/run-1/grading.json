@@ -1,0 +1,52 @@
+{
+  "expectations": [
+    {
+      "text": "preview に default、hover、focus、active、disabled、loading、error、success の8行があり、それぞれ実際の button と状態を再現する selector/attribute がある。",
+      "passed": true,
+      "evidence": "fixture/button.preview.html はラベル付き li.pv__row を8行持ち各行に実button。default 無属性、hover/focus/active にis-hover/is-focus/is-active、disabled にnative disabled、loading にdata-state=loading+aria-busy、error/successに各data-state。button.cssの同名selectorと表示copy切替が実状態を再現しruntime全viewportでも8行/状態別表示ラベルを確認。"
+    },
+    {
+      "text": "実際の :hover、:focus-visible、:active に styling があり、preview の強制状態にも同じ styling が適用される。",
+      "passed": true,
+      "evidence": "button.css に @media(hover:hover)and(pointer:fine) 内の :hover と .is-hover が同じ --color-accent-hover、:focus-visible と .is-focus が同じ --color-focus outline+paper halo、:active と .is-active が同じ accent-hover背景/translateY(1px)。強制状態と実pseudo状態のstylingが対応する（computed style実測は提供されていない）。"
+    },
+    {
+      "text": "disabled の button は native disabled として作動せず、loading/error/success は視覚と accessibility attribute または関連メッセージで区別できる。",
+      "passed": true,
+      "evidence": "preview disabled行はnative disabled属性。loadingはspinner+「保存中…」+aria-busy=true、errorは枠+retrySVG+「再試行」、successは枠+checkSVG+「保存済み」。CSS display:noneで他copyを視覚/a11y treeから除外するのでaccessible nameも状態で変わる。runtimeの各ラベルと一致し色のみの表現ではない。"
+    },
+    {
+      "text": "component の色と font-family が既存 named tokens を使い、tokens.css の既存値は保存される。",
+      "passed": true,
+      "evidence": "componentの全実色は原文tokensの --color-accent/accent-hover/accent-ink/paper/paper-2/ink/focus/error/success、glyph/spinnerはcurrentColor、透明borderはtransparent。font-familyは既存 --font-body。tokens.cssはinitial_hashes=final_hashesで現fixtureも原文同一。button.cssに新設したtokenはspacing/geometry/motionだけ。"
+    },
+    {
+      "text": "320/375/414/768px の preview で horizontal overflow がなく、button text が一行、touch target が44px以上である。",
+      "passed": true,
+      "evidence": "browser-runtime.jsonの320/375/414/768でscrollWidth=305/360/399/753 ≤ innerWidth、全32button height=44、全表示label lines=1。各viewportのleft最小/right最大は168.0625/289、223.0625/344、262.0625/383、192/705で全buttonがviewport内。overflow-x:clipはあるがbutton rectが外へ出て隠れただけのpassではない。"
+    },
+    {
+      "text": "index.html の本文・保存 click handler が保存され、hero/nav/footer、新しい保存処理、.hallmark/log.json が追加されない。",
+      "passed": true,
+      "evidence": "input_filesのindex.htmlと新fixtureをbutton内だけ置換して比較しbutton外全文一致、scriptもbyte一致のcount増加click handler。hero/nav/footer/新保存処理/.hallmark/log.jsonなし。previewのheader/footerは開発用wrapperでproduction構成変更ではない。"
+    }
+  ],
+  "summary": {
+    "passed": 6,
+    "failed": 0,
+    "total": 6,
+    "pass_rate": 1.0
+  },
+  "eval_feedback": [
+    "幅固定/label変更でlayout shiftなしという説明に対し、runtimeで320/375/414のloading buttonはleftが他状態より0.9375px左（幅120.9375px vs120px）。768のpreviewは全button幅513pxに伸びる。overflow/touch/one-line assertionは満たすが、同一幅の保証を評価するなら8状態のwidth一致も確認すると有用。"
+  ],
+  "verification_notes": [
+    "全32buttonのbounds/height/visible-label-linesを実測記録から検査。clip宣言だけのno-overflow主張は採用していない。",
+    "execution.jsonはread/ls/grep/write/editのみでbrowser/shell実行なし。executorのresponseもrender未実施と明示。提供browser-runtimeによる測定とexecutor実行証拠を分けた。",
+    "index.htmlはtask原文とのbutton外全文比較とscript byte比較により保存を確認。既存button内の見た目markup変更は許可scope。"
+  ],
+  "execution_metrics": {
+    "total_tool_calls": 24,
+    "errors_encountered": 0
+  }
+}

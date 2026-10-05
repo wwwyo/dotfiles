@@ -1,0 +1,314 @@
+[
+  {
+    "id": 1,
+    "skill_name": "document",
+    "eval_name": "readme-real-first-use",
+    "prompt": "この小さな CLI の README を公開用に改善してください。主要読者は CSV を手元で集計したい利用者で、正本は英語です。説明が古いので実装とサンプルを確認し、価値が分かって最初の利用を完了できる短い README にしてください。既存ロゴを使ってください。今回は追加ヒアリング、外部レビュー起動、外部調査は省略し、fixture 内の事実だけで完成させてください。README と必要な日本語版以外の実装変更は不要です。外部API、ネット検索、package install、commit/pushを使わない。fixture外のファイルを変更しない。",
+    "input_files": [
+      {
+        "path": "README.md",
+        "content": "# Sumcsv\n\nA revolutionary CSV analytics platform. It supports CSV and Excel, automatically synchronizes data to the cloud, and is 10x faster than spreadsheets.\n\n## Setup\n\nRun npm install and npm start.\n\n## Roadmap\n\nCharts and a hosted dashboard are planned.\n"
+      },
+      {
+        "path": "project.json",
+        "content": "{\"name\":\"Sumcsv\",\"language\":\"en\",\"audience\":\"local CSV users\",\"runtime\":\"Python 3.11 or later\",\"distribution\":\"source checkout\",\"network\":false,\"dependencies\":[],\"ci\":null,\"published_package\":null,\"license\":\"MIT\"}\n"
+      },
+      {
+        "path": "sumcsv.py",
+        "content": "import csv\nimport sys\nfrom collections import defaultdict\n\nif len(sys.argv) != 2:\n    raise SystemExit('usage: python3 sumcsv.py FILE.csv')\ntotals = defaultdict(int)\nwith open(sys.argv[1], newline='', encoding='utf-8') as source:\n    for row in csv.DictReader(source):\n        totals[row['category']] += int(row['amount'])\nfor category, amount in sorted(totals.items()):\n    print(f'{category},{amount}')\n"
+      },
+      {
+        "path": "examples/expenses.csv",
+        "content": "category,amount\ngroceries,1200\nbooks,800\ngroceries,300\n"
+      },
+      {
+        "path": "assets/logo.svg",
+        "content": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"240\" height=\"64\" viewBox=\"0 0 240 64\"><rect width=\"240\" height=\"64\" fill=\"#fff\"/><text x=\"12\" y=\"43\" font-family=\"sans-serif\" font-size=\"36\" fill=\"#123456\">Sumcsv</text></svg>\n"
+      },
+      {
+        "path": "LICENSE",
+        "content": "MIT License\n\nCopyright (c) 2026 Sumcsv contributors\n\nPermission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the \"Software\"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.\n"
+      }
+    ],
+    "expected_output": "英語 README.md と自然な日本語版 docs/README.ja.md。CSV の列と整数制約、ローカル集計という価値、実行可能な初回利用、正しい相対リンクを含む。",
+    "assertions": [
+      {
+        "text": "初回利用の掲載コマンドを fixture root で実行すると books,800 と groceries,1500 が得られる。",
+        "method": "README の基本手順のコマンドを抽出して実行する。別の補助手順を grader が補わない。"
+      },
+      {
+        "text": "利用例の期待出力が実行結果と一致し、category と amount の列および整数 amount という入力条件が説明される。",
+        "method": "出力と掲載例を比較し、入力条件を意味で確認する。"
+      },
+      {
+        "text": "英語正本と日本語版があり、両者の利用コマンド、入出力例、主要制約が一致する。",
+        "method": "2ファイルを読み、実行コマンドと利用判断に関わる意味を比較する。"
+      },
+      {
+        "text": "言語切替、既存ロゴ、License の repo 内リンクが各ファイル位置から実在する対象に解決する。",
+        "method": "Markdown/HTML の相対リンクを正規化して存在確認する。"
+      },
+      {
+        "text": "Excel、cloud sync、10x、npm 起動、予定の dashboard を実装済みとする記述や、実在しない CI/release badge が残らない。",
+        "method": "問題表現の検索と文脈確認。否定や非対応として記載する場合は許す。"
+      },
+      {
+        "text": "sumcsv.py と expenses.csv は変更されず、完成 README に説明用 placeholder がない。",
+        "method": "入力 hash 比較とテンプレート由来の未置換表現の検査。"
+      }
+    ],
+    "qualitative_review": "冒頭で用途と価値を理解できるか。実例と概要が同じ主張を重複させず、最初の行動が見つかるか。"
+  },
+  {
+    "id": 2,
+    "skill_name": "prd",
+    "eval_name": "prd-preserve-model-and-scope",
+    "prompt": "コレクションの読み取り専用共有リンク機能の PRD を作ってください。合意内容と確認済み prototype を添付しました。共有場所は docs、機能名は collection-share で確定済みです。既存 PRD と重複はありません。今回は再ヒアリング、prototype の再作成、外部レビュー起動は省略し、添付の合意材料から完成 PRD と必要な用語更新まで進めてください。実装は始めないでください。外部API、ネット検索、package install、commit/pushを使わない。fixture外のファイルを変更しない。",
+    "input_files": [
+      {
+        "path": "AGENTS.md",
+        "content": "# NoteShelf\n\n## Story\n\n研究者は NoteShelf で資料のメモをまとめ、読み返すことで次の調査を進める。\n\nCore actions:\n- 資料のメモをコレクションに追加する — 日次\n- コレクションを読み返して次に調べる問いを決める — 週次\n\n## Glossary\n\n- メモ（Note）: 資料から得た内容を記録する実体。\n- コレクション（Collection）: 同じ調査目的のメモをまとめる実体。\n"
+      },
+      {
+        "path": "agreement.md",
+        "content": "# 合意済み材料\n\n課題: 研究者が同僚へコレクションを見せるため、毎回メモを別文書にコピーしている。原本を直してもコピーには反映されない。\n導出: コレクションを読み返して次の問いを決める作業を、同僚との検討にも広げる。\n解: 所有者が読み取り専用の共有リンクを発行し、受取人はログインせずリンクからそのコレクションの現在の内容を読める。所有者はリンクを失効させられる。\n除外: 共同編集、閲覧者の本人確認、通知、共有履歴の分析。\nモデル: コレクションはメモを0件以上含む。各メモは必ず1つのコレクションだけに属する。コレクションの所有者だけが共有リンクを発行・失効できる。共有リンクは必ず1つのコレクションを対象にする。同時に有効にできるリンク数は未確定。\n用語: 共有リンク（ShareLink）は今後も複数の共有機能で同じ実体を指す。『匿名閲覧』はこの機能の利用形態だけを指す。\n既存決定: メモの単一所属は ADR-0001 で確定済み。\n評価: コアアクションは研究者が共有リンクを発行して同僚へ渡すこと。期待頻度は週次。自発的に開いた利用者のうち共有リンクを発行した人数を数え、通知経由は除く。主指標は onboarding 後の翌週にも共有リンクを発行して戻った割合。目標値はまだ決めていない。\n重要な追加 NFR は今回はなし。\nprototype: scratch/share-prototype/index.html を所有者と受取人の両方の視点で確認し、この解で合意した。再配布不能素材は含まれない。\nレビュー合意: 実装方式を書かず、未確定のリンク数を確定事項にしないこと。その他の残指摘なし。\n"
+      },
+      {
+        "path": "docs/adr/0001-single-collection.md",
+        "content": "# ADR-0001: メモの所属を1つにする\n\n## Status\n\nAccepted\n\n## Context\n\n調査目的ごとにメモの管理責任を定める必要がある。\n\n## Decision\n\n各メモは必ず1つのコレクションに属する。\n\n## Considered Options\n\n- 単一所属: 管理責任が明確になる。\n- 複数所属: 既存データの所有関係と管理責任の扱いが複雑になるため採用しない。\n"
+      },
+      {
+        "path": "scratch/share-prototype/index.html",
+        "content": "<!doctype html><html lang=\"ja\"><meta charset=\"utf-8\"><title>共有 prototype</title><main><h1>調査メモ</h1><section><h2>所有者</h2><button>共有リンクを発行</button><button>リンクを失効</button></section><section><h2>受取人</h2><p>ログインなしでコレクションの現在のメモを読む。</p></section></main></html>\n"
+      }
+    ],
+    "expected_output": "docs/prd/collection-share/prd.md、必要な AGENTS.md Glossary 更新、同 topic 内の prototype 保存。PRD に why/what、モデル、未確定事項、目的単位の AC、四点の Success Metrics がある。",
+    "assertions": [
+      {
+        "text": "PRD が docs/prd/collection-share/prd.md にあり、完成状態を表す status: ready の frontmatter を持つ。",
+        "method": "存在と frontmatter を解析する。今回は再レビューを省略するユーザー指定があるため status 更新を許す。"
+      },
+      {
+        "text": "Domain Model の classDiagram が Collection、Note、ShareLink の関係を表し、メモの0件以上・単一所属とリンクの単一対象を正しく示す。",
+        "method": "classDiagram の意味を確認する。概念名の日本語化や関係方向の違いは許し、多重度の意味を評価する。"
+      },
+      {
+        "text": "有効リンク数を未確定として残し、所有者だけが発行・失効できるルールと既存 ADR への解決可能なリンクがある。",
+        "method": "PRD 本文を意味で確認し、ADR 相対リンクを解決する。推測の上限値を置いた場合は fail。"
+      },
+      {
+        "text": "共有リンクの実体は AGENTS.md Glossary に英語名付きで追加され、機能固有の『匿名閲覧』はそこへ昇格しない。",
+        "method": "AGENTS.md と PRD の Glossary を比較する。"
+      },
+      {
+        "text": "AC が発行・閲覧・失効の利用結果を検証でき、Success Metrics にコアアクション、週次、自発的利用者の分母、翌週再利用の主指標がある。",
+        "method": "操作部品だけの AC を除外して意味で確認する。根拠のない数値目標が追加されていないかも確認する。"
+      },
+      {
+        "text": "合意済み prototype が docs/prd/collection-share/prototype/ から辿れ、実装ファイルや DB schema・API の設計は追加されない。",
+        "method": "prototype の存在・内容と変更ファイル一覧を確認し、PRD の how 記述を検査する。"
+      }
+    ],
+    "qualitative_review": "Problem から Overview が導けるか。Glossary、Domain Model、AC が互いに矛盾せず、今後の実装者に境界が伝わるか。"
+  },
+  {
+    "id": 3,
+    "skill_name": "japanese-tech-writing",
+    "eval_name": "rewrite-without-changing-evidence",
+    "prompt": "この技術解説の草稿を、日本語で順に読んで理解できる文章に推敲してください。読者はバックアップの基本を知る開発者です。意味、責任主体、条件、確実性を変えず、必要なら段落と見出しを組み直してください。完成稿を revised.md に保存してください。外部API、ネット検索、package install、commit/pushを使わない。fixture外のファイルを変更しない。",
+    "input_files": [
+      {
+        "path": "draft.md",
+        "content": "# バックアップの新しい局面\n\n本章では、バックアップの本質を正面から深掘りしていく。重要なのは、検査が信頼を運ぶということです。バックアップが成功と報告されても、復元できるとは限らない。ここには、安心の外側に世界が広がっている。\n\n先週、運用担当者が検証環境で復元を試した。対象は週次バックアップ3件で、うち1件は設定ファイルが含まれていなかったためサービスを起動できなかった。ログからは、保存対象の指定が変更されていた可能性がある。ただし、変更した主体は分かっていない。残る2件はサービスを起動できたが、すべての機能を検証したわけではない。バックアップの成功ログは保存処理の終了を示すが、復元後のサービスの状態は確認しない。だから、保存の成功と復元の成功は同じ問題なのである。\n\n## だから境界が要る\n\n復元検査がすべてを解決する。しかし、検査に含めなかった障害は検出できない。この検査の対象は、検証環境でサービスを起動するところまでだった。次に運用担当者が行うのは、保存対象の指定を調べ、設定ファイルを含めたバックアップで再び復元を試すことである。要するに、バックアップの本質は、検査が信頼を運ぶということである。\n"
+      }
+    ],
+    "expected_output": "保存処理の成功とサービス復元の確認を区別し、観測範囲・原因推定・不明な主体を保存した自然な技術解説。",
+    "assertions": [
+      {
+        "text": "検証環境、週次バックアップ3件、設定ファイル不足による1件の起動失敗という事実が保存される。",
+        "method": "revised.md を意味で読み、数値と検証環境を照合する。"
+      },
+      {
+        "text": "保存対象の指定変更は可能性として残り、変更主体を推測で埋めない。",
+        "method": "原因と主体の文を確認する。断定や新しい担当者の指定は fail。"
+      },
+      {
+        "text": "残り2件の起動成功と全機能未検証の限定がともに残る。",
+        "method": "『2件は復元成功』のような無限定の拡張がないことを確認する。"
+      },
+      {
+        "text": "保存成功ログが示す範囲と復元検査の範囲を区別し、検査外の障害まで保証しない。",
+        "method": "保存処理終了、サービス起動まで、検査外を保証できないという三つの意味を確認する。"
+      },
+      {
+        "text": "運用担当者が保存対象を調べ、設定ファイルを含めたバックアップで再度復元を試すという次の行動が残る。",
+        "method": "行為者、対象、操作の対応を確認する。"
+      },
+      {
+        "text": "『信頼を運ぶ』『安心の外側に世界』『正面から深掘り』が完成本文に残らず、新しい測定値・製品名・実装機構を補わない。",
+        "method": "文字列検索と追加事実の照合。原文の問題箇所を完成稿内で説明として再掲する必要はない。"
+      }
+    ],
+    "qualitative_review": "段落先頭から論旨を追えるか。冗長さを減らしても因果、主体、限定が読者の推測に委ねられていないか。"
+  },
+  {
+    "id": 4,
+    "skill_name": "agent-friendly-cli",
+    "eval_name": "local-cli-machine-contract",
+    "prompt": "このローカル CLI を AI agent の自動化から使いやすくしてください。Python 標準ライブラリだけで実装し、既存の list と rename は保ってください。rename には --json で {\"id\":\"n1\",\"patch\":{\"title\":\"New\"}} を受ける経路を追加してください。それ以外の機械可読出力、問い合わせ可能な schema、変更前確認、入力の安全性も考えて完成させてください。外部 API、server、MCP、認証は不要です。使用例を CLI.md に残してください。外部API、ネット検索、package install、commit/pushを使わない。fixture外のファイルを変更しない。",
+    "input_files": [
+      {
+        "path": "cli.py",
+        "content": "import argparse\nimport json\nfrom pathlib import Path\n\nparser = argparse.ArgumentParser()\nparser.add_argument('command', choices=['list', 'rename'])\nparser.add_argument('--id')\nparser.add_argument('--title')\nargs = parser.parse_args()\npath = Path('notes.json')\nnotes = json.loads(path.read_text())\nif args.command == 'list':\n    for note in notes:\n        print(f\"{note['id']}: {note['title']}\")\nelse:\n    note = next(note for note in notes if note['id'] == args.id)\n    note['title'] = args.title\n    path.write_text(json.dumps(notes, ensure_ascii=False, indent=2) + '\\n')\n    print('Renamed!')\n"
+      },
+      {
+        "path": "notes.json",
+        "content": "[{\"id\":\"n1\",\"title\":\"Alpha\",\"body\":\"Long source text A\",\"tags\":[\"research\"]},{\"id\":\"n2\",\"title\":\"Beta\",\"body\":\"Long source text B\",\"tags\":[]}]\n"
+      },
+      {
+        "path": "requirements.md",
+        "content": "# Data contract\n\nNote: id は変更不可、title は空でない文字列、body と tags は rename で変えない。\nrename JSON: {\"id\":\"n1\",\"patch\":{\"title\":\"New\"}}。未定義の key は誤指定として拒否する。\nローカル data は実行ディレクトリの notes.json のみ。入力値を追加の file path として使わない。\nCLI は shell から非対話実行される。未知の note はエラーで、勝手に作成しない。\n"
+      }
+    ],
+    "expected_output": "実行可能な CLI と利用例。JSON 入力、JSON/NDJSON 出力、schema、field projection、dry-run、入力拒否を実際に提供する。",
+    "assertions": [
+      {
+        "text": "非TTYの list 出力が純粋な JSON または各行 JSON として解析でき、fixture の2件と一致する。",
+        "method": "subprocess で stdout/stderr を分離し、出力を解析して値を照合する。人間向けの前置きは fail。"
+      },
+      {
+        "text": "schema/describe 相当の実行可能な問い合わせが rename の id、patch.title と返却契約を機械可読に示す。",
+        "method": "CLI.md に記載された問い合わせを実行し、schema を解析する。文書だけの schema は fail。"
+      },
+      {
+        "text": "JSON rename の dry-run は入力を検証して変更予定を機械可読に返し、notes.json の byte hash を変えない。",
+        "method": "有効な要求を dry-run で実行し、応答と前後 hash を比較する。"
+      },
+      {
+        "text": "同じ有効要求の通常実行は n1 の title だけを変え、n1 の body/tags と n2 全体を保存する。",
+        "method": "fresh fixture で実行し、前後 JSON を構造比較する。"
+      },
+      {
+        "text": "未知 key、空 title、未知 id、id への ?/#/%/制御文字混入を非ゼロ終了で拒否し、状態を変更しない。",
+        "method": "各ケースを fresh fixture で実行して終了コード、stderr または構造化エラー、前後 hash を確認する。"
+      },
+      {
+        "text": "list の --fields 相当で id,title だけを返し、body/tags が stdout に現れない。",
+        "method": "CLI.md の field projection 手順を実行し、全返却 record の key と値を検査する。"
+      }
+    ],
+    "qualitative_review": "CLI.md から未経験の agent が introspection、dry-run、実行、失敗処理を判断できるか。必要のない server/MCP を追加していないか。"
+  },
+  {
+    "id": 5,
+    "skill_name": "hallmark",
+    "eval_name": "one-button-eight-states",
+    "prompt": "この保存 button だけ、既存デザインに合わせて見た目を改善してください。画面全体や保存処理は変更不要です。ローカルで全状態を見比べられる preview も残してください。audience/usecase/tone は研究者/保存操作/控えめなmodern-minimalで合意済みです。質問は不要です。追加質問が必要な点があれば推定を明示し、成果物作成まで続けてください。外部API、ネット検索、package install、commit/pushを使わない。fixture外のファイルを変更しない。",
+    "input_files": [
+      {
+        "path": "design.md",
+        "content": "# Locked visual system\n\nGenre: modern-minimal. Internal research notebook UI.\n既存 tokens.css が色・font の正本。新しい brand や catalog theme を選ばない。\ncopy: default/hover/focus/active/disabled は『保存』、loading は『保存中…』、error は『再試行』、success は『保存済み』。\n動きは控えめで reduced motion を尊重する。外部 fonts、画像、libraries を取得しない。\n"
+      },
+      {
+        "path": "tokens.css",
+        "content": ":root {\n  --color-paper: #ffffff;\n  --color-paper-2: #e8f1fa;\n  --color-ink: #102a43;\n  --color-accent: #145da0;\n  --color-accent-hover: #0c467b;\n  --color-accent-ink: #ffffff;\n  --color-rule: #64748b;\n  --color-focus: #111827;\n  --color-error: #a11220;\n  --color-success: #116b35;\n  --font-body: system-ui, sans-serif;\n}\n"
+      },
+      {
+        "path": "button.css",
+        "content": ".save-button { border: none; padding: 8px 16px; background: var(--color-accent); color: var(--color-accent-ink); font-family: var(--font-body); }\n.save-button:hover { opacity: .8; }\n"
+      },
+      {
+        "path": "button.html",
+        "content": "<button type=\"button\" class=\"save-button\" id=\"save\">保存</button>\n"
+      },
+      {
+        "path": "index.html",
+        "content": "<!doctype html><html lang=\"ja\"><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"><title>NoteShelf</title><link rel=\"stylesheet\" href=\"tokens.css\"><link rel=\"stylesheet\" href=\"button.css\"><main><h1>調査メモ</h1><p id=\"memo\">保存操作の確認用ページ。</p><button type=\"button\" class=\"save-button\" id=\"save\">保存</button><output id=\"count\">0</output></main><script>let count=0;document.querySelector('#save').addEventListener('click',()=>{document.querySelector('#count').value=String(++count)});</script></html>\n"
+      }
+    ],
+    "expected_output": "既存 tokens を使用する button artifact とラベル付き8状態 preview。production の画面構成、copy intent、保存処理は保存される。",
+    "assertions": [
+      {
+        "text": "preview に default、hover、focus、active、disabled、loading、error、success の8行があり、それぞれ実際の button と状態を再現する selector/attribute がある。",
+        "method": "DOM と CSS を照合する。コメントやラベルに8状態を書くだけでは pass にしない。"
+      },
+      {
+        "text": "実際の :hover、:focus-visible、:active に styling があり、preview の強制状態にも同じ styling が適用される。",
+        "method": "CSS selector を調べ、可能なら browser computed styles で通常状態との差を確認する。"
+      },
+      {
+        "text": "disabled の button は native disabled として作動せず、loading/error/success は視覚と accessibility attribute または関連メッセージで区別できる。",
+        "method": "DOM と実行結果を検査する。色だけの error/success 表示は fail。"
+      },
+      {
+        "text": "component の色と font-family が既存 named tokens を使い、tokens.css の既存値は保存される。",
+        "method": "token hash と CSS 値を検査する。none/currentColor 等の非色指定は許す。"
+      },
+      {
+        "text": "320/375/414/768px の preview で horizontal overflow がなく、button text が一行、touch target が44px以上である。",
+        "method": "利用可能なローカル browser で各 viewport の scrollWidth、text line rect、button bounds を測定する。実測ができなければ未検証として残し、自己申告から pass にしない。"
+      },
+      {
+        "text": "index.html の本文・保存 click handler が保存され、hero/nav/footer、新しい保存処理、.hallmark/log.json が追加されない。",
+        "method": "変更差分と作成ファイルを確認する。preview の必要な wrapper は許す。"
+      }
+    ],
+    "qualitative_review": "既存の研究メモ UI と自然に馴染むか。8状態が明確で落ち着いた見た目になり、不要なページ装飾が増えていないか。"
+  },
+  {
+    "id": 6,
+    "skill_name": "skillctrl",
+    "eval_name": "restructure-existing-skill-preserve-contract",
+    "prompt": "既存の packet-report skill を、通常の作成と検査だけの依頼で必要な説明を読める構造に整理してください。名前、入出力、検査時の変更禁止、終了条件は維持してください。今ある helper と template を使い、使われなくなる参照を残さないでください。構造整理だけなので評価用 agent や benchmark は今回は起動不要です。変更した skill 一式と、保存したルールを確認できる短い CHECKS.md を残してください。外部API、ネット検索、package install、commit/pushを使わない。fixture外のファイルを変更しない。",
+    "input_files": [
+      {
+        "path": "packet-report/SKILL.md",
+        "content": "---\nname: packet-report\ndescription: Create a local packet report or audit an existing one from CSV fixtures.\n---\n\n# Packet Report\n\n利用者が CSV から packet report を作る、または既存 report の値を検査する依頼で使う。ネットワークや外部 storage を使わない。\n\n## 全操作に共通\n\n入力 CSV は UTF-8 で header は packet_id,status,bytes。packet_id は空でない一意の文字列。status は ok または failed。bytes は0以上の整数。不正入力は非ゼロ終了で報告し、report を作成・上書きしない。入力ファイルを変更しない。\n\n出力形式は assets/report.md。件数と bytes 合計は scripts/summarize.py を使って計算し、手計算で置き換えない。\n\n## Create\n\n作成依頼では input CSV を検証して helper を実行し、report.md を作る。すでに report.md があるときは上書きの確認を得るまで書き込まない。report は ok 件数、failed 件数、合計 bytes を含む。helper 出力と report 値が一致し、placeholder が残らないことを確認して完了する。\n\n## Audit\n\n検査依頼では input CSV と既存 report を読み、helper の値と比較する。input CSV、report、template、helper を変更しない。差があれば report の該当行と expected/actual を、差がなければ no findings を返す。修正依頼を受けるまでは create に進まない。audit は verdict を返した時点で終了する。\n\n## Templates\n\nassets/report.md を使う。template は Create 専用で、Audit では report の置換に使わない。\n\n## More\n\n旧チェック観点は references/legacy-notes.md にある。\n"
+      },
+      {
+        "path": "packet-report/assets/report.md",
+        "content": "# Packet Report\n\n- OK packets: <ok>\n- Failed packets: <failed>\n- Total bytes: <bytes>\n"
+      },
+      {
+        "path": "packet-report/references/legacy-notes.md",
+        "content": "# Legacy notes\n\nCreate は既存 report の上書き確認が必要。\nAudit は read-only で、値の差を該当行と expected/actual で返す。\n両方とも UTF-8 と bytes 非負整数を確認する。\n"
+      },
+      {
+        "path": "packet-report/scripts/summarize.py",
+        "content": "import csv\nimport json\nimport sys\n\nseen = set()\ncounts = {'ok': 0, 'failed': 0}\ntotal = 0\nwith open(sys.argv[1], encoding='utf-8', newline='') as source:\n    reader = csv.DictReader(source)\n    if reader.fieldnames != ['packet_id', 'status', 'bytes']:\n        raise SystemExit('invalid header')\n    for row in reader:\n        ident = row['packet_id']\n        status = row['status']\n        amount = row['bytes']\n        if not ident or ident in seen or status not in counts or not amount.isdigit():\n            raise SystemExit('invalid row')\n        seen.add(ident)\n        counts[status] += 1\n        total += int(amount)\nprint(json.dumps({**counts, 'bytes': total}, sort_keys=True))\n"
+      },
+      {
+        "path": "samples/packets.csv",
+        "content": "packet_id,status,bytes\np1,ok,120\np2,failed,50\np3,ok,30\n"
+      }
+    ],
+    "expected_output": "packet-report の名前と契約を保存し、SKILL.md に read 条件付きの明確な分岐を置いた skill tree。create/audit の対象と終了条件、shared validation、helper/template の参照が辿れる。",
+    "assertions": [
+      {
+        "text": "packet-report の directory/name frontmatter が保存され、description が作成と既存 report の検査の双方を表す。",
+        "method": "frontmatter と directory を確認し、description の意味を読む。"
+      },
+      {
+        "text": "SKILL.md から Create と Audit の指示へ明確な read 条件付きで到達でき、すべての相対参照が実在する。",
+        "method": "Markdown link graph を解決し、分岐の条件を確認する。単なる『resources参照』では pass にしない。"
+      },
+      {
+        "text": "共通入力規則、入力不変更、不正入力時の非ゼロ終了とreport非作成、helperを計算の正本とする規則が全文書群に保存される。",
+        "method": "元の契約一覧と到達可能な新しい文書群を意味で比較する。"
+      },
+      {
+        "text": "Create の既存 report 上書き確認、template 使用、helper値一致とplaceholder除去の完了条件が保存される。",
+        "method": "Create 分岐とその参照先を確認する。"
+      },
+      {
+        "text": "Audit の変更禁止対象、差分の行とexpected/actual、no findings、明示修正依頼までCreateへ進まないこと、verdict時の終了が保存される。",
+        "method": "Audit 分岐と参照先を確認し、shared ruleとの矛盾も検査する。"
+      },
+      {
+        "text": "helper と template の動作・内容が保存され、helperはsampleで ok=2, failed=1, bytes=200 を返し、CHECKS.md が保存契約の参照先を具体的に示す。",
+        "method": "入力 hash 比較、helper 実行、CHECKS.md の path/heading 解決。CHECKS.md の自己申告だけでは pass にしない。"
+      }
+    ],
+    "qualitative_review": "Audit のために Create の細部まで読む必要がないか。入口だけで正しい次の読込先が分かり、移動によって安全境界や終了条件が弱まっていないか。"
+  }
+]

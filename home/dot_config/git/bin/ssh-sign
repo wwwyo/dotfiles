@@ -1,0 +1,44 @@
+#!/bin/sh
+
+# git gpg.ssh.program wrapper。
+# GUI 起動や agent tool から spawn された git は SSH_AUTH_SOCK を欠く/古い
+# socket を持つことがあり、そのまま ssh-keygen を呼ぶと passphrase を対話で
+# 要求されて署名が失敗する（agent に鍵が載っていても到達しない）。
+# launchd が持つ稼働中の socket から復帰して ssh-keygen へ exec する。
+# git は署名だけでなく verify（-Y find-principals / -Y verify）にも同じ
+# program を使うが、どちらも透過するので害はない。
+# 引数・stdin・終了 status は ssh-keygen のものをそのまま通す。
+
+# PATH の穴（ssh-keygen は居るが ssh-add/launchctl が居ない）で分岐を誤判定
+# しないよう macOS 標準の絶対パスを既定にし、test からだけ差し替えられる
+SSH_ADD=${SSH_SIGN_SSH_ADD:-/usr/bin/ssh-add}
+LAUNCHCTL=${SSH_SIGN_LAUNCHCTL:-/bin/launchctl}
+
+# agent に応答があれば 0。ssh-add -l の exit code は OpenSSH の規約で
+# 0=identity あり、1=agent 生存だが空、2=agent 到達不可。それ以外（127 等）
+# は「到達不能と判別できない」= 到達不可扱いに倒す
+agent_reachable() {
+  SSH_AUTH_SOCK=$1 "$SSH_ADD" -l >/dev/null 2>&1
+  rc=$?
+  [ "$rc" -eq 0 ] || [ "$rc" -eq 1 ]
+}
+
+recover_sock() {
+  # 既に使える agent があれば何もしない（外部の固定 agent 設定を尊重する）
+  if [ -n "${SSH_AUTH_SOCK:-}" ] && [ -S "$SSH_AUTH_SOCK" ] && agent_reachable "$SSH_AUTH_SOCK"; then
+    return 0
+  fi
+  # launchctl は macOS（launchd user domain）のみ。非 macOS ではそのまま
+  # ssh-keygen へ渡し、環境側の通常の挙動に任せる
+  [ -x "$LAUNCHCTL" ] || return 0
+  sock=$("$LAUNCHCTL" getenv SSH_AUTH_SOCK 2>/dev/null) || return 0
+  [ -n "$sock" ] && [ -S "$sock" ] || return 0
+  # launchd の値は socket として live とは限らない（agent 停止後も残る）。
+  # 接続確認できないものを export すると署名失敗が再現するので probe する
+  agent_reachable "$sock" || return 0
+  SSH_AUTH_SOCK=$sock
+  export SSH_AUTH_SOCK
+}
+
+recover_sock
+exec ssh-keygen "$@"

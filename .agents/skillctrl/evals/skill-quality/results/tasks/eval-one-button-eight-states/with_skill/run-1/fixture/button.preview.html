@@ -1,0 +1,276 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>保存ボタン · 8状態プレビュー</title>
+<link rel="stylesheet" href="tokens.css">
+<link rel="stylesheet" href="button.css">
+<style>
+/* Hallmark · pre-emit critique: P4 H5 E5 S5 R5 V4
+ * preview-only chrome for the component demo. Not production code.
+ * Component-scope: skipping macrostructure, nav, footer, enrichment. */
+
+html, body { overflow-x: clip; } /* gate 34 — clip, not hidden */
+
+body {
+  margin: 0;
+  padding: var(--space-lg) var(--space-sm) var(--space-3xl);
+  background: var(--color-paper);
+  color: var(--color-ink);
+  font-family: var(--font-body);
+  line-height: 1.7;
+  -webkit-text-size-adjust: 100%;
+}
+
+.pv { max-inline-size: 44rem; margin-inline: auto; }
+
+.pv__title {
+  margin: 0 0 var(--space-2xs);
+  font-size: clamp(1.375rem, 1.1rem + 1.2vw, 1.75rem);
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+  min-inline-size: 0;
+}
+
+.pv__lede {
+  margin: 0;
+  max-inline-size: 60ch;
+  color: var(--color-ink);
+  font-size: 0.9375rem;
+}
+
+.pv__group {
+  margin: var(--space-xl) 0 var(--space-2xs);
+  padding-block-end: var(--space-2xs);
+  border-block-end: 1px solid var(--color-rule);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+}
+
+.pv__rows { margin: 0; padding: 0; list-style: none; }
+
+.pv__row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--space-xs) var(--space-sm);
+  padding-block: var(--space-xs);
+  border-block-end: 1px solid var(--color-paper-2);
+}
+
+.pv__meta { min-inline-size: 0; display: flex; flex-direction: column; gap: 0.1rem; }
+
+.pv__name {
+  font-family: var(--font-body); /* design.md locks one body face — no second family (gate 37) */
+  font-size: 0.8125rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+}
+
+.pv__how { font-size: 0.8125rem; color: var(--color-rule); overflow-wrap: anywhere; }
+
+.pv__notes {
+  margin-block-start: var(--space-xl);
+  padding-block-start: var(--space-md);
+  border-block-start: 1px solid var(--color-rule);
+  font-size: 0.8125rem;
+  color: var(--color-ink);
+}
+
+.pv__notes dt { font-weight: 600; }
+.pv__notes dl { margin: 0; display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-2xs); }
+.pv__notes p { margin: 0; overflow-wrap: anywhere; }
+
+@media (min-width: 40rem) {
+  body { padding-inline: var(--space-lg); }
+  .pv__row { grid-template-columns: 9rem minmax(0, 1fr) auto; }
+  .pv__notes dl { grid-template-columns: 11rem minmax(0, 1fr); gap: var(--space-2xs) var(--space-sm); }
+}
+</style>
+</head>
+<body>
+<div class="pv">
+
+  <header>
+    <h1 class="pv__title">保存ボタン — 8状態</h1>
+    <p class="pv__lede">NoteShelf の <code>tokens.css</code> と <code>design.md</code> のみを参照した保存ボタンの全状態。実ページのボタンは状態ごとに class / 属性を持ち替你わるだけで、このマークアップは共通です。</p>
+  </header>
+
+  <main>
+    <h2 class="pv__group">インタラクション</h2>
+    <ul class="pv__rows">
+
+      <li class="pv__row">
+        <span class="pv__meta">
+          <span class="pv__name">default</span>
+          <span class="pv__how">data-state なし · accent 塗り / 白</span>
+        </span>
+        <button type="button" class="save-button">
+          <span class="save-button__spinner" aria-hidden="true"></span>
+          <span class="save-button__glyph save-button__glyph--retry" aria-hidden="true"><svg class="save-button__icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg></span>
+          <span class="save-button__glyph save-button__glyph--check" aria-hidden="true"><svg class="save-button__icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>
+          <span class="save-button__label">
+            <span class="save-button__copy" data-copy="idle">保存</span>
+            <span class="save-button__copy" data-copy="loading">保存中…</span>
+            <span class="save-button__copy" data-copy="error">再試行</span>
+            <span class="save-button__copy" data-copy="success">保存済み</span>
+          </span>
+        </button>
+      </li>
+
+      <li class="pv__row">
+        <span class="pv__meta">
+          <span class="pv__name">hover</span>
+          <span class="pv__how">.is-hover が :hover を強制表示</span>
+        </span>
+        <button type="button" class="save-button is-hover">
+          <span class="save-button__spinner" aria-hidden="true"></span>
+          <span class="save-button__glyph save-button__glyph--retry" aria-hidden="true"><svg class="save-button__icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg></span>
+          <span class="save-button__glyph save-button__glyph--check" aria-hidden="true"><svg class="save-button__icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>
+          <span class="save-button__label">
+            <span class="save-button__copy" data-copy="idle">保存</span>
+            <span class="save-button__copy" data-copy="loading">保存中…</span>
+            <span class="save-button__copy" data-copy="error">再試行</span>
+            <span class="save-button__copy" data-copy="success">保存済み</span>
+          </span>
+        </button>
+      </li>
+
+      <li class="pv__row">
+        <span class="pv__meta">
+          <span class="pv__name">focus</span>
+          <span class="pv__how">.is-focus が :focus-visible を強制表示 · リングは即時</span>
+        </span>
+        <button type="button" class="save-button is-focus">
+          <span class="save-button__spinner" aria-hidden="true"></span>
+          <span class="save-button__glyph save-button__glyph--retry" aria-hidden="true"><svg class="save-button__icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg></span>
+          <span class="save-button__glyph save-button__glyph--check" aria-hidden="true"><svg class="save-button__icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>
+          <span class="save-button__label">
+            <span class="save-button__copy" data-copy="idle">保存</span>
+            <span class="save-button__copy" data-copy="loading">保存中…</span>
+            <span class="save-button__copy" data-copy="error">再試行</span>
+            <span class="save-button__copy" data-copy="success">保存済み</span>
+          </span>
+        </button>
+      </li>
+
+      <li class="pv__row">
+        <span class="pv__meta">
+          <span class="pv__name">active</span>
+          <span class="pv__how">.is-active が押下を強制表示 · 1px 沈む</span>
+        </span>
+        <button type="button" class="save-button is-active">
+          <span class="save-button__spinner" aria-hidden="true"></span>
+          <span class="save-button__glyph save-button__glyph--retry" aria-hidden="true"><svg class="save-button__icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg></span>
+          <span class="save-button__glyph save-button__glyph--check" aria-hidden="true"><svg class="save-button__icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>
+          <span class="save-button__label">
+            <span class="save-button__copy" data-copy="idle">保存</span>
+            <span class="save-button__copy" data-copy="loading">保存中…</span>
+            <span class="save-button__copy" data-copy="error">再試行</span>
+            <span class="save-button__copy" data-copy="success">保存済み</span>
+          </span>
+        </button>
+      </li>
+
+      <li class="pv__row">
+        <span class="pv__meta">
+          <span class="pv__name">disabled</span>
+          <span class="pv__how">disabled 属性 · label は『保存』のまま</span>
+        </span>
+        <button type="button" class="save-button" disabled>
+          <span class="save-button__spinner" aria-hidden="true"></span>
+          <span class="save-button__glyph save-button__glyph--retry" aria-hidden="true"><svg class="save-button__icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg></span>
+          <span class="save-button__glyph save-button__glyph--check" aria-hidden="true"><svg class="save-button__icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>
+          <span class="save-button__label">
+            <span class="save-button__copy" data-copy="idle">保存</span>
+            <span class="save-button__copy" data-copy="loading">保存中…</span>
+            <span class="save-button__copy" data-copy="error">再試行</span>
+            <span class="save-button__copy" data-copy="success">保存済み</span>
+          </span>
+        </button>
+      </li>
+
+    </ul>
+
+    <h2 class="pv__group">非同期の状態（data-state）</h2>
+    <ul class="pv__rows">
+
+      <li class="pv__row">
+        <span class="pv__meta">
+          <span class="pv__name">loading</span>
+          <span class="pv__how">data-state="loading" + aria-busy · 回転は reduced motion で減速</span>
+        </span>
+        <button type="button" class="save-button" data-state="loading" aria-busy="true">
+          <span class="save-button__spinner" aria-hidden="true"></span>
+          <span class="save-button__glyph save-button__glyph--retry" aria-hidden="true"><svg class="save-button__icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg></span>
+          <span class="save-button__glyph save-button__glyph--check" aria-hidden="true"><svg class="save-button__icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>
+          <span class="save-button__label">
+            <span class="save-button__copy" data-copy="idle">保存</span>
+            <span class="save-button__copy" data-copy="loading">保存中…</span>
+            <span class="save-button__copy" data-copy="error">再試行</span>
+            <span class="save-button__copy" data-copy="success">保存済み</span>
+          </span>
+        </button>
+      </li>
+
+      <li class="pv__row">
+        <span class="pv__meta">
+          <span class="pv__name">error</span>
+          <span class="pv__how">data-state="error" · 枠 + アイコン + 文言の3経路</span>
+        </span>
+        <button type="button" class="save-button" data-state="error">
+          <span class="save-button__spinner" aria-hidden="true"></span>
+          <span class="save-button__glyph save-button__glyph--retry" aria-hidden="true"><svg class="save-button__icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg></span>
+          <span class="save-button__glyph save-button__glyph--check" aria-hidden="true"><svg class="save-button__icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>
+          <span class="save-button__label">
+            <span class="save-button__copy" data-copy="idle">保存</span>
+            <span class="save-button__copy" data-copy="loading">保存中…</span>
+            <span class="save-button__copy" data-copy="error">再試行</span>
+            <span class="save-button__copy" data-copy="success">保存済み</span>
+          </span>
+        </button>
+      </li>
+
+      <li class="pv__row">
+        <span class="pv__meta">
+          <span class="pv__name">success</span>
+          <span class="pv__how">data-state="success" · トーストは出さない（画面変化が結果）</span>
+        </span>
+        <button type="button" class="save-button" data-state="success">
+          <span class="save-button__spinner" aria-hidden="true"></span>
+          <span class="save-button__glyph save-button__glyph--retry" aria-hidden="true"><svg class="save-button__icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg></span>
+          <span class="save-button__glyph save-button__glyph--check" aria-hidden="true"><svg class="save-button__icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>
+          <span class="save-button__label">
+            <span class="save-button__copy" data-copy="idle">保存</span>
+            <span class="save-button__copy" data-copy="loading">保存中…</span>
+            <span class="save-button__copy" data-copy="error">再試行</span>
+            <span class="save-button__copy" data-copy="success">保存済み</span>
+          </span>
+        </button>
+      </li>
+
+    </ul>
+  </main>
+
+  <footer class="pv__notes">
+    <dl>
+      <dt>色の出所</dt>
+      <dd><p>色は tokens.css のみ。component 側で hex / oklch を追加していません（gate 48）。追加したのは spacing・radius・duration・easing の token だけです。</p></dd>
+      <dt>コントラスト</dt>
+      <dd><p>手計算の WCAG 2.1 比（ブラウザ測定ではありません）。白 / accent 6.8:1 · 白 / accent-hover 9.6:1 · focus #111827 / 白 15.9:1 · error #a11220 / 白 8.0:1 · success #116b35 / 白 6.6:1 · disabled は opacity 0.55 適用前 ink / paper-2 で 12.8:1（非 actives なので WCAG 1.4.3 の除外対象）。</p></dd>
+      <dt>focus ring</dt>
+      <dd><p>focus と accent の素の組合せは 2.6:1 で 3:1 未満のため、2px の paper ハロで塗りから分離しています。_ring 自体は白地に載ります。</p></dd>
+      <dt>幅の固定</dt>
+      <dd><p>min-inline-size 7.5rem は『保存』→『保存中…』→『保存済み』を切り替えてもレイアウトが崩れないための推定値です。文言がこれより長くなった場合はここを見直してください。</p></dd>
+      <dt>保存処理</dt>
+      <dd><p>この scope の外です。data-state の切り替え・aria-live による読み上げ・success の自動解除は保存処理側の責務として未実装のままです。</p></dd>
+    </dl>
+  </footer>
+
+</div>
+</body>
+</html>

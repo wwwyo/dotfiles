@@ -1,0 +1,4 @@
+[env]
+# Langfuse telemetry の repo opt-in。Devin exporter の gate（.agents/skills/
+# dev-env/references/langfuse-telemetry.md）。codex plugin の gate 変数と意図的に別名
+DEVIN_TRACE_TO_LANGFUSE = "true"

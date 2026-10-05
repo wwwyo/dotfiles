@@ -1,0 +1,83 @@
+[
+  {
+    "context": "Editor && vim_mode == insert && !menu",
+    "bindings": { "j j": "vim::NormalBefore" }
+  },
+  {
+    "context": "Editor && vim_mode == normal",
+    "bindings": {
+      "cmd-shift-h": "pane::ActivatePreviousItem",
+      "cmd-shift-l": "pane::ActivateNextItem",
+      "g i": "editor::GoToImplementation"
+    }
+  },
+  {
+    "context": "ContextEditor > Editor",
+    "bindings": {
+      "cmd-shift-g": null
+    }
+  },
+  {
+    "context": "Pane",
+    "bindings": {
+      "cmd-shift-g": null
+    }
+  },
+  {
+    "bindings": {
+      "cmd-shift-c": null
+    }
+  },
+  {
+    "context": "ProjectPanel || Editor",
+    "bindings": {
+      "cmd-shift-c": "workspace::CopyRelativePath"
+    }
+  },
+  {
+    "context": "Editor",
+    "bindings": {
+      "cmd-ctrl-l": "editor::CopyPermalinkToLine"
+    }
+  },
+  {
+    "context": "(Editor || Workspace || Terminal)",
+    "bindings": {
+      "cmd-shift-g": "git_panel::ToggleFocus"
+    }
+  },
+  {
+    "context": "!ContextEditor > (Editor && mode == full)",
+    "bindings": {
+      "cmd-k": "assistant::InlineAssist"
+    }
+  },
+  {
+    "context": "Terminal",
+    "bindings": {
+      "cmd-k": "assistant::InlineAssist",
+      "cmd-shift-d": "pane::SplitDown"
+    }
+  },
+  {
+    "context": "Terminal",
+    "bindings": {
+      "cmd-shift-h": "workspace::ActivatePaneLeft",
+      "cmd-shift-l": "workspace::ActivatePaneRight",
+      "cmd-shift-j": "workspace::ActivatePaneDown",
+      "cmd-shift-k": "workspace::ActivatePaneUp"
+    }
+  },
+  {
+    "context": "ProjectPanel",
+    "bindings": {
+      "cmd-shift-n": "project_panel::NewDirectory"
+    }
+  },
+  {
+    "context": "Workspace",
+    "bindings": {
+      "cmd-shift-e": "workspace::ToggleLeftDock"
+    }
+  }
+]

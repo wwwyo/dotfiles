@@ -1,0 +1,492 @@
+{{- $orcaHook := joinPath .chezmoi.homeDir ".orca" "agent-hooks" "devin-hook.sh" | shellQuote -}}
+{{- $orcaCommand := printf "if [ -f %s ] && [ -r %s ] && [ -x %s ]; then /bin/sh %s; else { command -p cat 2>/dev/null || cat; } >/dev/null 2>&1 || :; fi" $orcaHook $orcaHook $orcaHook $orcaHook -}}
+{{- /* CLI/TUI が書き戻す項目 (model・トグル・machine state) はローカル file の現行値を引き継ぐ。
+      allow/allowed_domains は local ∪ template の union (承認済みを消さず、repo 追加分は伝播)。
+      repo が完全に管理するのは version/read_config_from/hooks/permissions.{deny,ask}/sandbox.excluded */ -}}
+{{- $allow := `[
+  "Read(~/src/**)",
+  "Read(~/.zsh/**)",
+  "Read(~/.zprofile)",
+  "Read(~/.zshrc)",
+  "Read(~/Library/Caches/**)",
+  "Read(~/.claude/**)",
+  "Read(~/.codex/**)",
+  "Read(~/.agents/**)",
+  "Read(~/.config/**)",
+  "Read(/tmp/**)",
+  "Read(/private/tmp/claude/**)",
+  "Write(~/src/**)",
+  "Write(~/.zsh/**)",
+  "Write(~/.zprofile)",
+  "Write(/tmp/**)",
+  "Write(~/.claude/**)",
+  "Write(~/.codex/**)",
+  "Write(~/.agents/**)",
+  "Write(~/.config/**)",
+  "Write(~/.Trash/**)",
+  "Write(~/.syokan/**)",
+  "Write(~/.sf/**)",
+  "Write(~/.npm/_cacache/**)",
+  "Write(~/Library/pnpm/**)",
+  "Write(~/.cache/**)",
+  "Write(~/Library/Caches/mise/**)",
+  "Write(~/.docker/**)",
+  "Write(~/.local/share/**)",
+  "Write(~/.local/state/**)",
+  "Write(/opt/homebrew/**)",
+  "Write(~/Library/Caches/Homebrew/**)",
+  "Exec(awk)",
+  "Exec(biome)",
+  "Exec(bun)",
+  "Exec(buf)",
+  "Exec(bunx)",
+  "Exec(cat)",
+  "Exec(cd)",
+  "Exec(cmux)",
+  "Exec(codex)",
+  "Exec(cp)",
+  "Exec(curl)",
+  "Exec(dart)",
+  "Exec(date)",
+  "Exec(df)",
+  "Exec(diff)",
+  "Exec(docker)",
+  "Exec(done)",
+  "Exec(do)",
+  "Exec(du)",
+  "Exec(echo)",
+  "Exec(else)",
+  "Exec(eslint)",
+  "Exec(fi)",
+  "Exec(find)",
+  "Exec(for)",
+  "Exec(git)",
+  "Exec(go)",
+  "Exec(gofmt)",
+  "Exec(goimports)",
+  "Exec(golangci-lint)",
+  "Exec(grep)",
+  "Exec(gh)",
+  "Exec(ghq)",
+  "Exec(head)",
+  "Exec(ln)",
+  "Exec(ls)",
+  "Exec(make)",
+  "Exec(mkdir)",
+  "Exec(rmdir)",
+  "Exec(mv)",
+  "Exec(node)",
+  "Exec(npm)",
+  "Exec(npx)",
+  "Exec(open)",
+  "Exec(pkill)",
+  "Exec(pnpm)",
+  "Exec(prettier)",
+  "Exec(ps)",
+  "Exec(python)",
+  "Exec(python3)",
+  "Exec(rg)",
+  "Exec(rm)",
+  "Exec(sed)",
+  "Exec(sleep)",
+  "Exec(sort)",
+  "Exec(source .env)",
+  "Exec(staticcheck)",
+  "Exec(tail)",
+  "Exec(tar)",
+  "Exec(ts-node)",
+  "Exec(tsc)",
+  "Exec(tsx)",
+  "Exec(task)",
+  "Exec(then)",
+  "Exec(touch)",
+  "Exec(tree)",
+  "Exec(true)",
+  "Exec(uniq)",
+  "Exec(vitest)",
+  "Exec(unzip)",
+  "Exec(which)",
+  "Exec(yarn)",
+  "Exec(zip)",
+  "Exec(psql)",
+  "Exec(mysql)",
+  "Exec(mise run)",
+  "Exec(mise exec)",
+  "Exec(mise install)",
+  "Exec(mise use)",
+  "Exec(~/.agents)",
+  "Fetch(domain:api.github.com)",
+  "Fetch(domain:api.elevenlabs.io)",
+  "Fetch(domain:api.slack.com)",
+  "Fetch(domain:bun.sh)",
+  "Fetch(domain:cloud.google.com)",
+  "Fetch(domain:code.claude.com)",
+  "Fetch(domain:console.cloud.google.com)",
+  "Fetch(domain:crates.io)",
+  "Fetch(domain:developer.mozilla.org)",
+  "Fetch(domain:developers.cloudflare.com)",
+  "Fetch(domain:developers.google.com)",
+  "Fetch(domain:discuss.redash.io)",
+  "Fetch(domain:doc.rust-lang.org)",
+  "Fetch(domain:docs.anthropic.com)",
+  "Fetch(domain:docs.aws.amazon.com)",
+  "Fetch(domain:docs.cloud.google.com)",
+  "Fetch(domain:docs.cursor.com)",
+  "Fetch(domain:docs.datadoghq.com)",
+  "Fetch(domain:docs.deno.com)",
+  "Fetch(domain:docs.docker.com)",
+  "Fetch(domain:elysiajs.com)",
+  "Fetch(domain:docs.github.com)",
+  "Fetch(domain:docs.google.com)",
+  "Fetch(domain:docs.lightdash.com)",
+  "Fetch(domain:docs.python.org)",
+  "Fetch(domain:docs.rs)",
+  "Fetch(domain:docs.sentry.io)",
+  "Fetch(domain:docs.sqlfluff.com)",
+  "Fetch(domain:github.com)",
+  "Fetch(domain:ghostty.org)",
+  "Fetch(domain:go.dev)",
+  "Fetch(domain:golang.org)",
+  "Fetch(domain:sum.golang.org)",
+  "Fetch(domain:proxy.golang.org)",
+  "Fetch(domain:blog.golang.org)",
+  "Fetch(domain:googleapis.dev)",
+  "Fetch(domain:play.googleapis.com)",
+  "Fetch(domain:learn.microsoft.com)",
+  "Fetch(domain:mise.jdx.dev)",
+  "Fetch(domain:mise-versions.jdx.dev)",
+  "Fetch(domain:nextjs.org)",
+  "Fetch(domain:nodejs.org)",
+  "Fetch(domain:note.com)",
+  "Fetch(domain:orm.drizzle.team)",
+  "Fetch(domain:pkg.go.dev)",
+  "Fetch(domain:platform.openai.com)",
+  "Fetch(domain:pnpm.io)",
+  "Fetch(domain:pypi.org)",
+  "Fetch(domain:raw.githubusercontent.com)",
+  "Fetch(domain:react.dev)",
+  "Fetch(domain:redash.io)",
+  "Fetch(domain:registry.terraform.io)",
+  "Fetch(domain:rubygems.org)",
+  "Fetch(domain:stackoverflow.com)",
+  "Fetch(domain:support.google.com)",
+  "Fetch(domain:tailwindcss.com)",
+  "Fetch(domain:www.npmjs.com)",
+  "Fetch(domain:www.prisma.io)",
+  "Fetch(domain:zenn.dev)",
+  "Fetch(domain:docs.recall.ai)",
+  "Fetch(domain:api.anthropic.com)",
+  "Fetch(domain:mcp-proxy.anthropic.com)",
+  "Fetch(domain:ai-sdk.dev)",
+  "Fetch(domain:elements.ai-sdk.dev)",
+  "Fetch(domain:productionresultssa4.blob.core.windows.net)",
+  "Fetch(domain:buf.build)",
+  "Fetch(domain:www.cmux.dev)",
+  "Fetch(domain:www.anthropic.com)",
+  "Fetch(domain:www.googleapis.com)",
+  "Fetch(domain:www.figma.com)",
+  "Fetch(domain:diffs.com)",
+  "mcp__context7__*",
+  "mcp__Claude_Preview__preview_start",
+  "Exec(eval)",
+  "Fetch(domain:*)",
+  "Exec(bash)",
+  "Exec(agent-browser open)",
+  "Exec(orca tab)",
+  "Exec(env)",
+  "Exec(readlink)",
+  "Exec(./syokan-darwin-arm64)",
+  "Exec(xattr)",
+  "Exec(chmod)",
+  "Exec(orca worktree)"
+]` -}}
+{{- $domains := `[
+  "productionresultssa4.blob.core.windows.net",
+  "api.github.com",
+  "api.slack.com",
+  "bun.sh",
+  "cloud.google.com",
+  "code.claude.com",
+  "console.cloud.google.com",
+  "crates.io",
+  "developer.mozilla.org",
+  "developers.cloudflare.com",
+  "developers.google.com",
+  "discuss.redash.io",
+  "doc.rust-lang.org",
+  "docs.anthropic.com",
+  "docs.aws.amazon.com",
+  "docs.cloud.google.com",
+  "docs.cursor.com",
+  "docs.datadoghq.com",
+  "docs.deno.com",
+  "docs.docker.com",
+  "elysiajs.com",
+  "docs.github.com",
+  "docs.google.com",
+  "docs.lightdash.com",
+  "docs.python.org",
+  "docs.rs",
+  "docs.sentry.io",
+  "docs.sqlfluff.com",
+  "github.com",
+  "ghostty.org",
+  "go.dev",
+  "golang.org",
+  "sum.golang.org",
+  "proxy.golang.org",
+  "blog.golang.org",
+  "googleapis.dev",
+  "bigquery.googleapis.com",
+  "oauth2.googleapis.com",
+  "play.googleapis.com",
+  "learn.microsoft.com",
+  "mise.jdx.dev",
+  "mise-versions.jdx.dev",
+  "nextjs.org",
+  "nodejs.org",
+  "note.com",
+  "orm.drizzle.team",
+  "pkg.go.dev",
+  "platform.openai.com",
+  "pnpm.io",
+  "pypi.org",
+  "raw.githubusercontent.com",
+  "react.dev",
+  "redash.io",
+  "registry.terraform.io",
+  "rubygems.org",
+  "stackoverflow.com",
+  "support.google.com",
+  "tailwindcss.com",
+  "www.npmjs.com",
+  "www.prisma.io",
+  "zenn.dev",
+  "docs.recall.ai",
+  "api.anthropic.com",
+  "mcp-proxy.anthropic.com",
+  "ai-sdk.dev",
+  "telemetry.vercel.com",
+  "buf.build",
+  "fishtownanalytics.sinter-collect.com",
+  "registry.npmjs.org",
+  "docs.basemachina.com",
+  "auth.openai.com",
+  "chatgpt.com",
+  "ab.chatgpt.com",
+  "graph.microsoft.com",
+  "crl.ngrok-agent.com",
+  "update.ngrok-agent.com",
+  "connect.ngrok-agent.com",
+  "www.cmux.dev",
+  "www.anthropic.com",
+  "www.googleapis.com",
+  "simonwillison.net",
+  "hnrss.org",
+  "coralcap.co",
+  "openai.com",
+  "vercel.com",
+  "huggingface.co",
+  "rss.arxiv.org",
+  "thegradient.pub",
+  "clouderrorreporting.googleapis.com",
+  "serviceusage.googleapis.com",
+  "docs.googleapis.com",
+  "mcp.figma.com",
+  "diffs.com",
+  "wwwyo.dev",
+  "skills.sh",
+  "codeload.github.com",
+  "analytics.brew.sh",
+  "formulae.brew.sh",
+  "server.codeium.com",
+  "o4507463137361920.ingest.us.sentry.io"
+]` -}}
+{{- $filter := printf "{a:.agent,al:((.permissions.allow // [])+%s|unique),ad:((.sandbox.allowed_domains // [])+%s|unique),d:.devin,s:.shell,tm:.theme_mode,sp:.show_path,ig:.include_gitignored_files,wt:.skip_workspace_trust,sh:.show_hints,au:.auto_update} | with_entries(select(.value != null))" $allow $domains -}}
+{{- $local := dict -}}
+{{- $path := joinPath .chezmoi.homeDir ".config" "devin" "config.json" -}}
+{{- if lstat $path -}}
+{{- $local = output "jq" "-c" $filter $path | fromJson -}}
+{{- else -}}
+{{- $local = output "jq" "-cn" $filter | fromJson -}}
+{{- end -}}
+{
+  "version": 1,
+  "agent": {{ if hasKey $local "a" }}{{ get $local "a" | toJson }}{{ else }}{{ `{"model":"swe-2-medium","preferred_family_models":{"swe-2":"swe-2-medium","fusion":"fusion-claude-opus-5-5-medium-sidekick-swe-2-medium"}}` | fromJson | toJson }}{{ end }},
+  "read_config_from": {
+    "claude": false
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "^exec$",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.agents/hooks/deny-git-add-all.py"
+          }
+        ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": {{ $orcaCommand | toJson }},
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "SessionEnd": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.config/devin/hooks/langfuse-export.sh",
+            "timeout": 10
+          }
+        ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": {{ $orcaCommand | toJson }},
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": {{ $orcaCommand | toJson }},
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": {{ $orcaCommand | toJson }},
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.config/devin/hooks/langfuse-export.sh",
+            "timeout": 10
+          }
+        ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": {{ $orcaCommand | toJson }},
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "PostCompaction": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": {{ $orcaCommand | toJson }},
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": {{ $orcaCommand | toJson }},
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "PermissionRequest": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": {{ $orcaCommand | toJson }},
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  },
+  "permissions": {
+    "allow": {{ get $local "al" | toJson }},
+    "deny": [
+      "Read(**/.env.local)",
+      "Read(**/id_rsa)",
+      "Read(**/id_ed25519)",
+      "Write(**/.env.local)",
+      "Write(**/secrets/**)",
+      "Exec(sudo)",
+      "Exec(wget)",
+      "Exec(nc)",
+      "Exec(mongod)",
+      "Exec(bq rm)",
+      "Exec(bq load)"
+    ],
+    "ask": [
+      "Exec(terraform)"
+    ]
+  },
+  "sandbox": {
+    "allowed_domains": {{ get $local "ad" | toJson }},
+    "excluded": {
+      "allow": [
+        "Exec(agent-browser)",
+        "Exec(say)",
+        "Exec(aws)",
+        "Exec(npx)",
+        "Exec(open)",
+        "Exec(bun)",
+        "Exec(codex)",
+        "Exec(container)",
+        "Exec(devin)",
+        "Exec(docker)",
+        "Exec(gcloud)",
+        "Exec(go)",
+        "Exec(kubectl)",
+        "Exec(npm)",
+        "Exec(pnpm)",
+        "Exec(scp)",
+        "Exec(gh)",
+        "Exec(git)",
+        "Exec(terraform)",
+        "Exec(vitest)",
+        "Exec(psql)",
+        "Exec(mysql)"
+      ]
+    }
+  },
+  "devin": {{ if hasKey $local "d" }}{{ get $local "d" | toJson }}{{ else }}{"org_id":"org_N6dZEjgnb5biUvFw"}{{ end }},
+  "shell": {{ if hasKey $local "s" }}{{ get $local "s" | toJson }}{{ else }}{"setup_complete":true,"startup_messages_remaining":15}{{ end }},
+  "theme_mode": {{ if hasKey $local "tm" }}{{ get $local "tm" | toJson }}{{ else }}"light"{{ end }},
+  "show_path": {{ if hasKey $local "sp" }}{{ get $local "sp" | toJson }}{{ else }}true{{ end }},
+  "include_gitignored_files": {{ if hasKey $local "ig" }}{{ get $local "ig" | toJson }}{{ else }}true{{ end }},
+  "skip_workspace_trust": {{ if hasKey $local "wt" }}{{ get $local "wt" | toJson }}{{ else }}true{{ end }},
+  "show_hints": {{ if hasKey $local "sh" }}{{ get $local "sh" | toJson }}{{ else }}false{{ end }},
+  "auto_update": {{ if hasKey $local "au" }}{{ get $local "au" | toJson }}{{ else }}true{{ end }}
+}

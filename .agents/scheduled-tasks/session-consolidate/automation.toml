@@ -1,0 +1,27 @@
+# session-consolidate の orca automation desired state。
+# `.agents/scheduled-tasks/tools/sync_automations.py apply` で upsert する。
+# merge 前に apply すると ~/.agents 経由で SKILL.md が無い状態で走るので、
+# 有効化は PR merge 後の sync で行う前提。
+
+name = "session-consolidate"
+provider = "devin"
+enabled = true
+timezone = "Asia/Tokyo"
+
+# 3日おき 20:00 — 閾値未満の run は SKILL 側で見送るので間隔は粗め。
+# RRULE の INTERVAL は scheduler が発火判定に使わない (parse はされる)
+# ので cron で書く。詳細は tools/sync_automations.py の docstring
+trigger = "0 20 */3 * *"
+
+# 既存 workspace で回す（新 worktree/run ではない）。
+# username 非依存にするため ~ 形式。sync 側で展開して path:<abs> を渡す
+workspace_path = "~/src/github.com/wwwyo/me"
+
+# sentinel は自己ループ防止に必須 — 削らない。
+# session_consolidate.py の SENTINEL と consolidator-prompt.md にも
+# 同一 literal がある（3 箇所同時に変える）。eval sentinel の併記は
+# この batch の session が日次 eval に評価されないためのもの — 無いと
+# 記録 comment が付いて翌週の対象に戻る
+prompt = """
+dotfiles の ~/.agents/scheduled-tasks/session-consolidate/SKILL.md に従って session consolidate batch を実行する。sentinel: session-consolidate-batch:5d1e8b4a / session-eval-batch:9f3a2c7e。対象 0 件・閾値未満の見送り・lock 取得失敗は正常終了。
+"""

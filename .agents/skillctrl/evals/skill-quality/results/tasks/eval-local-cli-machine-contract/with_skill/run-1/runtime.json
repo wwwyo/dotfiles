@@ -1,0 +1,406 @@
+[
+  {
+    "argv": [
+      "cli.py",
+      "list"
+    ],
+    "exit": 0,
+    "stdout": "{\"id\": \"n1\", \"title\": \"Alpha\", \"body\": \"Long source text A\", \"tags\": [\"research\"]}\n{\"id\": \"n2\", \"title\": \"Beta\", \"body\": \"Long source text B\", \"tags\": []}\n",
+    "stderr": "",
+    "initial_state_sha256": "2ee2cc93bcd19d90a0776ecae31148d4f7c100db1c992eb3cee5958608db5f54",
+    "final_state_sha256": "2ee2cc93bcd19d90a0776ecae31148d4f7c100db1c992eb3cee5958608db5f54",
+    "final_state": [
+      {
+        "id": "n1",
+        "title": "Alpha",
+        "body": "Long source text A",
+        "tags": [
+          "research"
+        ]
+      },
+      {
+        "id": "n2",
+        "title": "Beta",
+        "body": "Long source text B",
+        "tags": []
+      }
+    ]
+  },
+  {
+    "argv": [
+      "cli.py",
+      "schema",
+      "rename"
+    ],
+    "exit": 1,
+    "stdout": "",
+    "stderr": "Traceback (most recent call last):\n  File \"<workspace>/eval-local-cli-machine-contract/with_skill/runtime-fixture/cli.py\", line 696, in <module>\n    sys.exit(main())\n             ~~~~^^\n  File \"<workspace>/eval-local-cli-machine-contract/with_skill/runtime-fixture/cli.py\", line 689, in main\n    return HANDLERS[args.subcommand](args, fmt)\n           ~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^\n  File \"<workspace>/eval-local-cli-machine-contract/with_skill/runtime-fixture/cli.py\", line 554, in cmd_schema\n    doc = schema_document()\n  File \"<workspace>/eval-local-cli-machine-contract/with_skill/runtime-fixture/cli.py\", line 465, in schema_document\n    \"id\": \"immutable string, [%A-Za-z0-9._-], 1-%d chars\" % MAX_ID_LENGTH,\n          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~\nValueError: unsupported format character 'A' (0x41) at index 20\n",
+    "initial_state_sha256": "2ee2cc93bcd19d90a0776ecae31148d4f7c100db1c992eb3cee5958608db5f54",
+    "final_state_sha256": "2ee2cc93bcd19d90a0776ecae31148d4f7c100db1c992eb3cee5958608db5f54",
+    "final_state": [
+      {
+        "id": "n1",
+        "title": "Alpha",
+        "body": "Long source text A",
+        "tags": [
+          "research"
+        ]
+      },
+      {
+        "id": "n2",
+        "title": "Beta",
+        "body": "Long source text B",
+        "tags": []
+      }
+    ]
+  },
+  {
+    "argv": [
+      "cli.py",
+      "rename",
+      "--json",
+      "{\"id\": \"n1\", \"patch\": {\"title\": \"New\"}}",
+      "--dry-run"
+    ],
+    "exit": 0,
+    "stdout": "{\"ok\": true, \"command\": \"rename\", \"dry_run\": true, \"written\": false, \"changed\": true, \"id\": \"n1\", \"before\": {\"id\": \"n1\", \"title\": \"Alpha\"}, \"after\": {\"id\": \"n1\", \"title\": \"New\"}, \"data_file\": \"<workspace>/eval-local-cli-machine-contract/with_skill/runtime-fixture/notes.json\"}\n",
+    "stderr": "",
+    "initial_state_sha256": "2ee2cc93bcd19d90a0776ecae31148d4f7c100db1c992eb3cee5958608db5f54",
+    "final_state_sha256": "2ee2cc93bcd19d90a0776ecae31148d4f7c100db1c992eb3cee5958608db5f54",
+    "final_state": [
+      {
+        "id": "n1",
+        "title": "Alpha",
+        "body": "Long source text A",
+        "tags": [
+          "research"
+        ]
+      },
+      {
+        "id": "n2",
+        "title": "Beta",
+        "body": "Long source text B",
+        "tags": []
+      }
+    ]
+  },
+  {
+    "argv": [
+      "cli.py",
+      "rename",
+      "--json",
+      "{\"id\": \"n1\", \"patch\": {\"title\": \"New\"}}"
+    ],
+    "exit": 0,
+    "stdout": "{\"ok\": true, \"command\": \"rename\", \"dry_run\": false, \"written\": true, \"changed\": true, \"id\": \"n1\", \"before\": {\"id\": \"n1\", \"title\": \"Alpha\"}, \"after\": {\"id\": \"n1\", \"title\": \"New\"}, \"data_file\": \"<workspace>/eval-local-cli-machine-contract/with_skill/runtime-fixture/notes.json\"}\n",
+    "stderr": "",
+    "initial_state_sha256": "2ee2cc93bcd19d90a0776ecae31148d4f7c100db1c992eb3cee5958608db5f54",
+    "final_state_sha256": "ceee3de3e6e4be9e5840bfe7307a31f92a34b29aac8cf2669aec8bffaed70c91",
+    "final_state": [
+      {
+        "id": "n1",
+        "title": "New",
+        "body": "Long source text A",
+        "tags": [
+          "research"
+        ]
+      },
+      {
+        "id": "n2",
+        "title": "Beta",
+        "body": "Long source text B",
+        "tags": []
+      }
+    ]
+  },
+  {
+    "argv": [
+      "cli.py",
+      "rename",
+      "--json",
+      "{\"id\": \"n1\", \"patch\": {\"title\": \"New\"}, \"unknown\": true}"
+    ],
+    "exit": 3,
+    "stdout": "",
+    "stderr": "{\"ok\": false, \"error\": {\"code\": \"unknown_field\", \"message\": \"unknown key(s) in --json payload: unknown.\", \"field\": \"unknown\", \"hint\": \"Only 'id' and 'patch' are accepted; input values are never interpreted as file paths or other side channels.\"}}\n",
+    "initial_state_sha256": "2ee2cc93bcd19d90a0776ecae31148d4f7c100db1c992eb3cee5958608db5f54",
+    "final_state_sha256": "2ee2cc93bcd19d90a0776ecae31148d4f7c100db1c992eb3cee5958608db5f54",
+    "final_state": [
+      {
+        "id": "n1",
+        "title": "Alpha",
+        "body": "Long source text A",
+        "tags": [
+          "research"
+        ]
+      },
+      {
+        "id": "n2",
+        "title": "Beta",
+        "body": "Long source text B",
+        "tags": []
+      }
+    ]
+  },
+  {
+    "argv": [
+      "cli.py",
+      "rename",
+      "--json",
+      "{\"id\": \"n1\", \"patch\": {\"title\": \"New\", \"unknown\": true}}"
+    ],
+    "exit": 3,
+    "stdout": "",
+    "stderr": "{\"ok\": false, \"error\": {\"code\": \"unknown_field\", \"message\": \"patch.unknown is not renameable.\", \"field\": \"patch.unknown\", \"hint\": \"rename may only change title.\"}}\n",
+    "initial_state_sha256": "2ee2cc93bcd19d90a0776ecae31148d4f7c100db1c992eb3cee5958608db5f54",
+    "final_state_sha256": "2ee2cc93bcd19d90a0776ecae31148d4f7c100db1c992eb3cee5958608db5f54",
+    "final_state": [
+      {
+        "id": "n1",
+        "title": "Alpha",
+        "body": "Long source text A",
+        "tags": [
+          "research"
+        ]
+      },
+      {
+        "id": "n2",
+        "title": "Beta",
+        "body": "Long source text B",
+        "tags": []
+      }
+    ]
+  },
+  {
+    "argv": [
+      "cli.py",
+      "rename",
+      "--json",
+      "{\"id\": \"n1\", \"patch\": {\"title\": \"\"}}"
+    ],
+    "exit": 3,
+    "stdout": "",
+    "stderr": "{\"ok\": false, \"error\": {\"code\": \"empty_title\", \"message\": \"title must be a non-empty string.\", \"field\": \"patch.title\"}}\n",
+    "initial_state_sha256": "2ee2cc93bcd19d90a0776ecae31148d4f7c100db1c992eb3cee5958608db5f54",
+    "final_state_sha256": "2ee2cc93bcd19d90a0776ecae31148d4f7c100db1c992eb3cee5958608db5f54",
+    "final_state": [
+      {
+        "id": "n1",
+        "title": "Alpha",
+        "body": "Long source text A",
+        "tags": [
+          "research"
+        ]
+      },
+      {
+        "id": "n2",
+        "title": "Beta",
+        "body": "Long source text B",
+        "tags": []
+      }
+    ]
+  },
+  {
+    "argv": [
+      "cli.py",
+      "rename",
+      "--json",
+      "{\"id\": \"missing\", \"patch\": {\"title\": \"New\"}}"
+    ],
+    "exit": 4,
+    "stdout": "",
+    "stderr": "{\"ok\": false, \"error\": {\"code\": \"note_not_found\", \"message\": \"no note with id 'missing'.\", \"field\": \"id\", \"hint\": \"List existing ids first; the CLI never creates notes implicitly.\"}}\n",
+    "initial_state_sha256": "2ee2cc93bcd19d90a0776ecae31148d4f7c100db1c992eb3cee5958608db5f54",
+    "final_state_sha256": "2ee2cc93bcd19d90a0776ecae31148d4f7c100db1c992eb3cee5958608db5f54",
+    "final_state": [
+      {
+        "id": "n1",
+        "title": "Alpha",
+        "body": "Long source text A",
+        "tags": [
+          "research"
+        ]
+      },
+      {
+        "id": "n2",
+        "title": "Beta",
+        "body": "Long source text B",
+        "tags": []
+      }
+    ]
+  },
+  {
+    "argv": [
+      "cli.py",
+      "rename",
+      "--json",
+      "{\"id\": \"n1?\", \"patch\": {\"title\": \"New\"}}"
+    ],
+    "exit": 1,
+    "stdout": "",
+    "stderr": "Traceback (most recent call last):\n  File \"<workspace>/eval-local-cli-machine-contract/with_skill/runtime-fixture/cli.py\", line 696, in <module>\n    sys.exit(main())\n             ~~~~^^\n  File \"<workspace>/eval-local-cli-machine-contract/with_skill/runtime-fixture/cli.py\", line 689, in main\n    return HANDLERS[args.subcommand](args, fmt)\n           ~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^\n  File \"<workspace>/eval-local-cli-machine-contract/with_skill/runtime-fixture/cli.py\", line 399, in cmd_rename\n    note_id, new_title = resolve_rename_input(args)\n                         ~~~~~~~~~~~~~~~~~~~~^^^^^^\n  File \"<workspace>/eval-local-cli-machine-contract/with_skill/runtime-fixture/cli.py\", line 388, in resolve_rename_input\n    return parse_rename_payload(read_payload_text(args.payload))\n  File \"<workspace>/eval-local-cli-machine-contract/with_skill/runtime-fixture/cli.py\", line 187, in parse_rename_payload\n    return validate_id(raw[\"id\"]), validate_title(patch[\"title\"])\n           ~~~~~~~~~~~^^^^^^^^^^^\n  File \"<workspace>/eval-local-cli-machine-contract/with_skill/runtime-fixture/cli.py\", line 120, in validate_id\n    hint=\"Use 1-%d chars from [A-Za-z0-9._-] starting with a letter or digit; \"\n         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n    \"'/', '\\\\', '?', '#', '%' and '..' are rejected.\" % MAX_ID_LENGTH,\n    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~\nTypeError: not enough arguments for format string\n",
+    "initial_state_sha256": "2ee2cc93bcd19d90a0776ecae31148d4f7c100db1c992eb3cee5958608db5f54",
+    "final_state_sha256": "2ee2cc93bcd19d90a0776ecae31148d4f7c100db1c992eb3cee5958608db5f54",
+    "final_state": [
+      {
+        "id": "n1",
+        "title": "Alpha",
+        "body": "Long source text A",
+        "tags": [
+          "research"
+        ]
+      },
+      {
+        "id": "n2",
+        "title": "Beta",
+        "body": "Long source text B",
+        "tags": []
+      }
+    ]
+  },
+  {
+    "argv": [
+      "cli.py",
+      "rename",
+      "--json",
+      "{\"id\": \"n1#\", \"patch\": {\"title\": \"New\"}}"
+    ],
+    "exit": 1,
+    "stdout": "",
+    "stderr": "Traceback (most recent call last):\n  File \"<workspace>/eval-local-cli-machine-contract/with_skill/runtime-fixture/cli.py\", line 696, in <module>\n    sys.exit(main())\n             ~~~~^^\n  File \"<workspace>/eval-local-cli-machine-contract/with_skill/runtime-fixture/cli.py\", line 689, in main\n    return HANDLERS[args.subcommand](args, fmt)\n           ~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^\n  File \"<workspace>/eval-local-cli-machine-contract/with_skill/runtime-fixture/cli.py\", line 399, in cmd_rename\n    note_id, new_title = resolve_rename_input(args)\n                         ~~~~~~~~~~~~~~~~~~~~^^^^^^\n  File \"<workspace>/eval-local-cli-machine-contract/with_skill/runtime-fixture/cli.py\", line 388, in resolve_rename_input\n    return parse_rename_payload(read_payload_text(args.payload))\n  File \"<workspace>/eval-local-cli-machine-contract/with_skill/runtime-fixture/cli.py\", line 187, in parse_rename_payload\n    return validate_id(raw[\"id\"]), validate_title(patch[\"title\"])\n           ~~~~~~~~~~~^^^^^^^^^^^\n  File \"<workspace>/eval-local-cli-machine-contract/with_skill/runtime-fixture/cli.py\", line 120, in validate_id\n    hint=\"Use 1-%d chars from [A-Za-z0-9._-] starting with a letter or digit; \"\n         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n    \"'/', '\\\\', '?', '#', '%' and '..' are rejected.\" % MAX_ID_LENGTH,\n    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~\nTypeError: not enough arguments for format string\n",
+    "initial_state_sha256": "2ee2cc93bcd19d90a0776ecae31148d4f7c100db1c992eb3cee5958608db5f54",
+    "final_state_sha256": "2ee2cc93bcd19d90a0776ecae31148d4f7c100db1c992eb3cee5958608db5f54",
+    "final_state": [
+      {
+        "id": "n1",
+        "title": "Alpha",
+        "body": "Long source text A",
+        "tags": [
+          "research"
+        ]
+      },
+      {
+        "id": "n2",
+        "title": "Beta",
+        "body": "Long source text B",
+        "tags": []
+      }
+    ]
+  },
+  {
+    "argv": [
+      "cli.py",
+      "rename",
+      "--json",
+      "{\"id\": \"n1%\", \"patch\": {\"title\": \"New\"}}"
+    ],
+    "exit": 1,
+    "stdout": "",
+    "stderr": "Traceback (most recent call last):\n  File \"<workspace>/eval-local-cli-machine-contract/with_skill/runtime-fixture/cli.py\", line 696, in <module>\n    sys.exit(main())\n             ~~~~^^\n  File \"<workspace>/eval-local-cli-machine-contract/with_skill/runtime-fixture/cli.py\", line 689, in main\n    return HANDLERS[args.subcommand](args, fmt)\n           ~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^\n  File \"<workspace>/eval-local-cli-machine-contract/with_skill/runtime-fixture/cli.py\", line 399, in cmd_rename\n    note_id, new_title = resolve_rename_input(args)\n                         ~~~~~~~~~~~~~~~~~~~~^^^^^^\n  File \"<workspace>/eval-local-cli-machine-contract/with_skill/runtime-fixture/cli.py\", line 388, in resolve_rename_input\n    return parse_rename_payload(read_payload_text(args.payload))\n  File \"<workspace>/eval-local-cli-machine-contract/with_skill/runtime-fixture/cli.py\", line 187, in parse_rename_payload\n    return validate_id(raw[\"id\"]), validate_title(patch[\"title\"])\n           ~~~~~~~~~~~^^^^^^^^^^^\n  File \"<workspace>/eval-local-cli-machine-contract/with_skill/runtime-fixture/cli.py\", line 120, in validate_id\n    hint=\"Use 1-%d chars from [A-Za-z0-9._-] starting with a letter or digit; \"\n         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n    \"'/', '\\\\', '?', '#', '%' and '..' are rejected.\" % MAX_ID_LENGTH,\n    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~\nTypeError: not enough arguments for format string\n",
+    "initial_state_sha256": "2ee2cc93bcd19d90a0776ecae31148d4f7c100db1c992eb3cee5958608db5f54",
+    "final_state_sha256": "2ee2cc93bcd19d90a0776ecae31148d4f7c100db1c992eb3cee5958608db5f54",
+    "final_state": [
+      {
+        "id": "n1",
+        "title": "Alpha",
+        "body": "Long source text A",
+        "tags": [
+          "research"
+        ]
+      },
+      {
+        "id": "n2",
+        "title": "Beta",
+        "body": "Long source text B",
+        "tags": []
+      }
+    ]
+  },
+  {
+    "argv": [
+      "cli.py",
+      "rename",
+      "--json",
+      "{\"id\": \"n1\\u0000\", \"patch\": {\"title\": \"New\"}}"
+    ],
+    "exit": 3,
+    "stdout": "",
+    "stderr": "{\"ok\": false, \"error\": {\"code\": \"control_character\", \"message\": \"id contains a control character (U+0000); control characters are not accepted.\", \"field\": \"id\", \"hint\": \"Strip ANSI escapes, NUL bytes and newlines before calling the CLI.\"}}\n",
+    "initial_state_sha256": "2ee2cc93bcd19d90a0776ecae31148d4f7c100db1c992eb3cee5958608db5f54",
+    "final_state_sha256": "2ee2cc93bcd19d90a0776ecae31148d4f7c100db1c992eb3cee5958608db5f54",
+    "final_state": [
+      {
+        "id": "n1",
+        "title": "Alpha",
+        "body": "Long source text A",
+        "tags": [
+          "research"
+        ]
+      },
+      {
+        "id": "n2",
+        "title": "Beta",
+        "body": "Long source text B",
+        "tags": []
+      }
+    ]
+  },
+  {
+    "argv": [
+      "cli.py",
+      "rename",
+      "--json",
+      "{\"id\": \"n1\\u001b\", \"patch\": {\"title\": \"New\"}}"
+    ],
+    "exit": 3,
+    "stdout": "",
+    "stderr": "{\"ok\": false, \"error\": {\"code\": \"control_character\", \"message\": \"id contains a control character (U+001B); control characters are not accepted.\", \"field\": \"id\", \"hint\": \"Strip ANSI escapes, NUL bytes and newlines before calling the CLI.\"}}\n",
+    "initial_state_sha256": "2ee2cc93bcd19d90a0776ecae31148d4f7c100db1c992eb3cee5958608db5f54",
+    "final_state_sha256": "2ee2cc93bcd19d90a0776ecae31148d4f7c100db1c992eb3cee5958608db5f54",
+    "final_state": [
+      {
+        "id": "n1",
+        "title": "Alpha",
+        "body": "Long source text A",
+        "tags": [
+          "research"
+        ]
+      },
+      {
+        "id": "n2",
+        "title": "Beta",
+        "body": "Long source text B",
+        "tags": []
+      }
+    ]
+  },
+  {
+    "argv": [
+      "cli.py",
+      "list",
+      "--fields",
+      "id,title"
+    ],
+    "exit": 0,
+    "stdout": "{\"id\": \"n1\", \"title\": \"Alpha\"}\n{\"id\": \"n2\", \"title\": \"Beta\"}\n",
+    "stderr": "",
+    "initial_state_sha256": "2ee2cc93bcd19d90a0776ecae31148d4f7c100db1c992eb3cee5958608db5f54",
+    "final_state_sha256": "2ee2cc93bcd19d90a0776ecae31148d4f7c100db1c992eb3cee5958608db5f54",
+    "final_state": [
+      {
+        "id": "n1",
+        "title": "Alpha",
+        "body": "Long source text A",
+        "tags": [
+          "research"
+        ]
+      },
+      {
+        "id": "n2",
+        "title": "Beta",
+        "body": "Long source text B",
+        "tags": []
+      }
+    ]
+  }
+]

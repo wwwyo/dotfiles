@@ -1,0 +1,49 @@
+{
+  "expectations": [
+    {
+      "text": "初回利用の掲載コマンドを fixture root で実行すると books,800 と groceries,1500 が得られる。",
+      "passed": true,
+      "evidence": "fixture/README.md:23,33 の初回利用コマンドは python3 sumcsv.py examples/expenses.csv。runtime.json に同じ command、exit:0、stdout:\"books,800\\ngroceries,1500\\n\"、stderr 空が記録され、必要な補助手順の追加なしで掲載出力になる。"
+    },
+    {
+      "text": "利用例の期待出力が実行結果と一致し、category と amount の列および整数 amount という入力条件が説明される。",
+      "passed": true,
+      "evidence": "README.md:15-20 の入力例が fixture/examples/expenses.csv と一致し、:24-25 の出力が runtime.json と一致。:40-41 でヘッダー category / amount と整数 amount、小数/桁区切り/通貨記号の除去を説明。sumcsv.py:9-12 の DictReader/int/category昇順に整合。"
+    },
+    {
+      "text": "英語正本と日本語版があり、両者の利用コマンド、入出力例、主要制約が一致する。",
+      "passed": true,
+      "evidence": "英語正本 fixture/README.md と fixture/docs/README.ja.md が存在し outputs と byte 一致。双方:15-20 入力、:23,33 コマンド、:24-25 出力が同一。:30 Python3.11+/source checkout、:40-42 必要列・余分列無視・整数・小数等で中断・1ファイルのみ・書換なし、:7 ローカル/標準ライブラリ/インストール不要、:36 category,total 昇順出力/引数なしusage が意味で一致。"
+    },
+    {
+      "text": "言語切替、既存ロゴ、License の repo 内リンクが各ファイル位置から実在する対象に解決する。",
+      "passed": true,
+      "evidence": "英語 README の HTML img src assets/logo.svg、Markdown 言語 docs/README.ja.md/License LICENSE と、日本語版の img src ../assets/logo.svg/言語 ../README.md/License ../LICENSE を各文書位置から解決し全対象の実在を確認。Get started/すぐに試す anchor も実在見出し。logo は既存 hash、LICENSE は MIT。外部 License画像のネット検査はしていない。"
+    },
+    {
+      "text": "Excel、cloud sync、10x、npm 起動、予定の dashboard を実装済みとする記述や、実在しない CI/release badge が残らない。",
+      "passed": true,
+      "evidence": "完成日英 README にExcel対応、cloud同期、10x、npm起動、予定dashboardを実装済みとする記述はなく、CI/release バッジもない。License バッジのみで project.json license:MIT に整合。ローカルのみの価値を明示。"
+    },
+    {
+      "text": "sumcsv.py と expenses.csv は変更されず、完成 README に説明用 placeholder がない。",
+      "passed": true,
+      "evidence": "execution.json の initial_hashes と final_hashes が sumcsv.py、examples/expenses.csv とも一致し、現 fixture SHA256 も final_hashes と一致。changed_files は README.md と docs/README.ja.md のみ。完成日英 README の FILE.csv placeholder などの未置換テンプレート表現なし。"
+    }
+  ],
+  "summary": {
+    "passed": 6,
+    "failed": 0,
+    "total": 6,
+    "pass_rate": 1.0
+  },
+  "eval_feedback": [],
+  "verification_notes": [
+    "runtime.json は掲載コマンドの実際の出力を供給する。一方 executor execution.json はファイル read/ls/write/edit のみで shell/browser/codex/net の呼出しなし。双方 response.md も実行未確認と明示しており、runtime による確認を executor 自身の実行実績と区別した。",
+    "Markdown/HTML の repo 内 link は各 fixture file 位置から実在確認。外部 shields.io badge を検索/通信していない。"
+  ],
+  "execution_metrics": {
+    "total_tool_calls": 21,
+    "errors_encountered": 1
+  }
+}

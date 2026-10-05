@@ -1,0 +1,22 @@
+{
+  "refs": {
+    "after": "db1fa8c3be8f29278ba6a9f1f35ad6f2d0e39abf"
+  },
+  "model": "opencode-go/space-bunny-free",
+  "thinking": "high",
+  "harness": "pi",
+  "pi_version": "0.87.1",
+  "dataset_sha256": "8e3e4d38dfb2bcbad147d6dfa384507f08bfcb9d71d795b3b5ee7e26de98a65b",
+  "case_ids": [
+    "writing-positive",
+    "merge-near-miss",
+    "creator-boundary-positive",
+    "secret-positive",
+    "secret-near-miss"
+  ],
+  "timeout_seconds": 180,
+  "jobs": 3,
+  "started_at": "2026-10-02T07:51:04.047650+00:00",
+  "method": "Raw user queries, fresh ephemeral sessions, snapshot-only skill catalogs, read-only tools. Target SKILL.md successful read is trigger evidence. Positive reads may end early; completed negative runs are scored, timeouts are excluded.",
+  "source_results_commit": "e07b6d5005387f54db01fa0cda5384d1a252a262"
+}

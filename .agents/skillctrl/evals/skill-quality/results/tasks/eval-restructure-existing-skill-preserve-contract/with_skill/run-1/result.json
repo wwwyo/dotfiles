@@ -1,0 +1,186 @@
+{
+  "eval_id": 6,
+  "eval_name": "restructure-existing-skill-preserve-contract",
+  "variant": "after",
+  "status": "completed",
+  "duration_seconds": 70.839,
+  "total_tokens": 214497,
+  "changed_files": [
+    "CHECKS.md",
+    "packet-report/SKILL.md",
+    "packet-report/references/audit.md",
+    "packet-report/references/create.md",
+    "packet-report/references/legacy-notes.md"
+  ],
+  "initial_hashes": {
+    "samples/packets.csv": "b2a8c62ec6be7ebd6551b302a2898ba4606c9133605ea138057bab8bf92bec24",
+    "packet-report/SKILL.md": "b23d4f31b06dd4fc9cc985aa080d7f3401395072fd5247606ed99d7d1f24b62f",
+    "packet-report/references/legacy-notes.md": "062f052d5d7349cd4079eb07ed1ed22bb1e44bb1cf9deac39948aa87a9d2c65c",
+    "packet-report/scripts/summarize.py": "b156c91b62155133c2392415e609b9ea80df484061239f86910b63f2cae07940",
+    "packet-report/assets/report.md": "db454a32663b9e344b44328e0ad2974463c14b7b2da2f07336d7eebe88ee92e8"
+  },
+  "final_hashes": {
+    "CHECKS.md": "277ec4812480e730c50d67f4ed021e0418abfad8b9cc3ceb7c9f2cf101dd8740",
+    "samples/packets.csv": "b2a8c62ec6be7ebd6551b302a2898ba4606c9133605ea138057bab8bf92bec24",
+    "packet-report/SKILL.md": "6b3108d5bdcf6ff0c943a8caad51202bdfd5c3536775818afd491613f0200bda",
+    "packet-report/references/audit.md": "3dbee7801740a2f8550b4db6268b500f68b49eb80ff41c03749cc10ebc18d91d",
+    "packet-report/references/create.md": "f55dfc30ea3e836d7ac08a629cde2c36be8a465ab191faf63ec68bf760cad5ab",
+    "packet-report/references/legacy-notes.md": "51942ee63af77408d07286850056f88922affdc2d127812f0215dc5737a4fecd",
+    "packet-report/scripts/summarize.py": "b156c91b62155133c2392415e609b9ea80df484061239f86910b63f2cae07940",
+    "packet-report/assets/report.md": "db454a32663b9e344b44328e0ad2974463c14b7b2da2f07336d7eebe88ee92e8"
+  },
+  "tool_calls": [
+    {
+      "tool": "ls",
+      "path": "<workspace>/eval-restructure-existing-skill-preserve-contract/with_skill/fixture",
+      "is_error": false
+    },
+    {
+      "tool": "read",
+      "path": "<workspace>/snapshots/after/.agents/skills/skill-creator/SKILL.md",
+      "is_error": false
+    },
+    {
+      "tool": "ls",
+      "path": "<workspace>/eval-restructure-existing-skill-preserve-contract/with_skill/fixture",
+      "is_error": false
+    },
+    {
+      "tool": "read",
+      "path": "<workspace>/snapshots/after/.agents/skills/skill-creator/references/writing.md",
+      "is_error": false
+    },
+    {
+      "tool": "ls",
+      "path": "<workspace>/eval-restructure-existing-skill-preserve-contract/with_skill/fixture/samples",
+      "is_error": false
+    },
+    {
+      "tool": "ls",
+      "path": "<workspace>/eval-restructure-existing-skill-preserve-contract/with_skill/fixture/packet-report",
+      "is_error": false
+    },
+    {
+      "tool": "ls",
+      "path": "<workspace>/eval-restructure-existing-skill-preserve-contract/with_skill/fixture/packet-report/scripts",
+      "is_error": false
+    },
+    {
+      "tool": "ls",
+      "path": "<workspace>/eval-restructure-existing-skill-preserve-contract/with_skill/fixture/packet-report/references",
+      "is_error": false
+    },
+    {
+      "tool": "ls",
+      "path": "<workspace>/eval-restructure-existing-skill-preserve-contract/with_skill/fixture/packet-report/assets",
+      "is_error": false
+    },
+    {
+      "tool": "read",
+      "path": "<workspace>/eval-restructure-existing-skill-preserve-contract/with_skill/fixture/packet-report/SKILL.md",
+      "is_error": false
+    },
+    {
+      "tool": "read",
+      "path": "<workspace>/eval-restructure-existing-skill-preserve-contract/with_skill/fixture/packet-report/scripts/summarize.py",
+      "is_error": false
+    },
+    {
+      "tool": "read",
+      "path": "<workspace>/eval-restructure-existing-skill-preserve-contract/with_skill/fixture/packet-report/references/legacy-notes.md",
+      "is_error": false
+    },
+    {
+      "tool": "read",
+      "path": "<workspace>/eval-restructure-existing-skill-preserve-contract/with_skill/fixture/packet-report/assets/report.md",
+      "is_error": false
+    },
+    {
+      "tool": "read",
+      "path": "<workspace>/eval-restructure-existing-skill-preserve-contract/with_skill/fixture/samples/packets.csv",
+      "is_error": false
+    },
+    {
+      "tool": "write",
+      "path": "<workspace>/eval-restructure-existing-skill-preserve-contract/with_skill/fixture/packet-report/SKILL.md",
+      "is_error": false
+    },
+    {
+      "tool": "write",
+      "path": "<workspace>/eval-restructure-existing-skill-preserve-contract/with_skill/fixture/packet-report/references/create.md",
+      "is_error": false
+    },
+    {
+      "tool": "write",
+      "path": "<workspace>/eval-restructure-existing-skill-preserve-contract/with_skill/fixture/packet-report/references/audit.md",
+      "is_error": false
+    },
+    {
+      "tool": "edit",
+      "path": "<workspace>/eval-restructure-existing-skill-preserve-contract/with_skill/fixture/packet-report/references/create.md",
+      "is_error": false
+    },
+    {
+      "tool": "edit",
+      "path": "<workspace>/eval-restructure-existing-skill-preserve-contract/with_skill/fixture/packet-report/references/audit.md",
+      "is_error": false
+    },
+    {
+      "tool": "write",
+      "path": "<workspace>/eval-restructure-existing-skill-preserve-contract/with_skill/fixture/packet-report/references/audit.md",
+      "is_error": false
+    },
+    {
+      "tool": "read",
+      "path": "<workspace>/eval-restructure-existing-skill-preserve-contract/with_skill/fixture/packet-report/references/audit.md",
+      "is_error": false
+    },
+    {
+      "tool": "read",
+      "path": "<workspace>/eval-restructure-existing-skill-preserve-contract/with_skill/fixture/packet-report/references/create.md",
+      "is_error": false
+    },
+    {
+      "tool": "edit",
+      "path": "<workspace>/eval-restructure-existing-skill-preserve-contract/with_skill/fixture/packet-report/references/audit.md",
+      "is_error": false
+    },
+    {
+      "tool": "write",
+      "path": "<workspace>/eval-restructure-existing-skill-preserve-contract/with_skill/fixture/packet-report/references/legacy-notes.md",
+      "is_error": false
+    },
+    {
+      "tool": "edit",
+      "path": "<workspace>/eval-restructure-existing-skill-preserve-contract/with_skill/fixture/packet-report/references/create.md",
+      "is_error": false
+    },
+    {
+      "tool": "read",
+      "path": "<workspace>/eval-restructure-existing-skill-preserve-contract/with_skill/fixture/packet-report/SKILL.md",
+      "is_error": false
+    },
+    {
+      "tool": "read",
+      "path": "<workspace>/eval-restructure-existing-skill-preserve-contract/with_skill/fixture/packet-report/references/audit.md",
+      "is_error": false
+    },
+    {
+      "tool": "grep",
+      "path": "<workspace>/eval-restructure-existing-skill-preserve-contract/with_skill/fixture",
+      "is_error": false
+    },
+    {
+      "tool": "write",
+      "path": "<workspace>/eval-restructure-existing-skill-preserve-contract/with_skill/fixture/CHECKS.md",
+      "is_error": false
+    }
+  ],
+  "observed_models": [
+    [
+      "opencode-go",
+      "space-bunny-free"
+    ]
+  ],
+  "transcript_sha256": "3fd85edab458ea4f23b390bb1942bd9e4793d3fca5328270ac0e95d05e08ead9"
+}

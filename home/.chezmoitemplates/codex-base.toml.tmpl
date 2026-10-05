@@ -1,0 +1,143 @@
+model = "gpt-6.1-sol"
+model_reasoning_effort = "high"
+hide_agent_reasoning = true
+suppress_unstable_features_warning = true
+approval_policy = "on-request"
+sandbox_mode = "workspace-write"
+tool_output_token_limit = 25000
+service_tier = "default"
+approvals_reviewer = "auto_review"
+web_search = "live"
+
+[sandbox_workspace_write]
+writable_roots = ["/tmp"]
+network_access = true
+exclude_tmpdir_env_var = false
+exclude_slash_tmp = false
+
+[features]
+# どちらも experimental で既定 off。有効にするため明示している
+memories = true
+prevent_idle_sleep = true
+
+[mcp_servers.context7]
+command = "context7-mcp"
+args = []
+startup_timeout_sec = 30.0
+
+[mcp_servers.fudoki]
+url = "https://api.fudoki.dev/mcp"
+
+[notice]
+hide_gpt5_1_migration_prompt = true
+hide_full_access_warning = true
+hide_rate_limit_model_nudge = true
+
+[tui]
+vim_mode_default = true
+status_line = [
+    "model-with-reasoning",
+    "context-remaining",
+    "current-dir",
+    "git-branch",
+]
+
+[plugins."github@openai-curated"]
+enabled = true
+
+[plugins."documents@openai-primary-runtime"]
+enabled = true
+
+[plugins."spreadsheets@openai-primary-runtime"]
+enabled = true
+
+[plugins."presentations@openai-primary-runtime"]
+enabled = true
+
+[plugins."google-calendar@openai-curated"]
+enabled = true
+
+[plugins."gmail@openai-curated"]
+enabled = true
+
+[plugins."computer-use@openai-bundled"]
+enabled = true
+
+[plugins."chrome@openai-bundled"]
+enabled = true
+
+[plugins."pdf@openai-primary-runtime"]
+enabled = true
+
+[plugins."template-creator@openai-primary-runtime"]
+enabled = true
+
+[plugins."visualize@openai-bundled"]
+enabled = true
+
+[plugins."browser@openai-bundled"]
+enabled = true
+
+[plugins."codex-app-tools@openai-bundled"]
+enabled = true
+
+[plugins."unified-computer-use@openai-bundled"]
+enabled = true
+
+[plugins."tracing@codex-observability-plugin"]
+enabled = true
+
+[marketplaces.codex-observability-plugin]
+source_type = "git"
+source = "https://github.com/langfuse/codex-observability-plugin.git"
+
+[desktop]
+usePointerCursors = true
+followUpQueueMode = "steer"
+composerEnterBehavior = "cmdAlways"
+reviewDelivery = "inline"
+preventSleepWhileRunning = true
+keepRemoteControlAwakeWhilePluggedIn = true
+hotkey-window-projectless-default-enabled = true
+git-show-sidebar-pr-icons = true
+worktree-keep-count = 15
+show-context-window-usage = true
+dock-icon-preference = "codex-system"
+conversationDetailMode = "STEPS_PROSE"
+enabled-reasoning-efforts = [
+    "low",
+    "medium",
+    "high",
+    "xhigh",
+    "max",
+]
+realtimeVoiceScreenContextEnabled = true
+external-agent-import-sync-enabled = false
+external-browser-link-shortcut = "primary"
+worktree-upstream-refresh-mode = "best-effort"
+ambient-suggestions-enabled = false
+localeOverride = "ja-JP"
+git-pull-request-merge-method = "squash"
+
+[desktop.open-in-target-preferences]
+global = "zed"
+
+[desktop.external-agent-import-sync-item-types]
+SESSIONS = "original"
+CONFIG = "original"
+SKILLS = false
+PLUGINS = false
+SUBAGENTS = "original"
+HOOKS = "original"
+
+[shell_environment_policy]
+inherit = "core"
+
+[shell_environment_policy.set]
+CLAUDE_BASH_MAINTAIN_PROJECT_WORKING_DIR = "1"
+CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS = "1"
+CLAUDE_CODE_MAX_SUBAGENT_SPAWN_DEPTH = "1"
+CLAUDE_CODE_TMPDIR = "/tmp/claude"
+EDITOR = "zed --wait"
+OTEL_LOG_TOOL_DETAILS = "1"
+VISUAL = "zed --wait"

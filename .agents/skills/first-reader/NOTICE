@@ -1,0 +1,39 @@
+first-reader
+Copyright Shubham Saboo and contributors
+https://github.com/Shubhamsaboo/awesome-llm-apps/tree/main/agent_skills/first-reader
+(upstream commit f12ecedf337e4732bd5ec628a1ee5b666f0d1262), licensed under the Apache License 2.0 (see LICENSE).
+
+Changes in this copy (explainer project, 2026-09):
+- scripts/feed.py: CJK-aware word counting (nwords) and 。！？ sentence ends,
+  so Japanese drafts are chunked and paced like English ones.
+- Tests live in tests/first-reader/ of the explainer repository
+  (test_first_reader.py adjusted for the new path; test_cjk.py added).
+
+Vendored into wwwyo/dotfiles .agents/skills/ from
+https://github.com/mizchi/explainer @ 9a2f8af6a2296ad9ad59f1606d8f54e7c7107f59
+(skills/first-reader), 2026-10. Tests referenced in the upstream NOTICE live in
+the explainer repository and are not vendored here.
+
+Changes in this copy (dotfiles, 2026-10):
+- SKILL.md: added a "Local rule (dotfiles)" bullet to the user contract
+  requiring the report to state plainly that readers are AI-simulated.
+- README.md: the Verify section referenced a test suite and eval files
+  that are not vendored; rewrote it to point at the pinned explainer
+  commit. Scoped the "runs offline / sends nothing" claim to the Python
+  scripts (reader subagents still call the model).
+- scripts/skim.py: word count now uses feed.nwords (CJK-aware ~2
+  chars/word), first_sentence/first_words cut Japanese text at 。！？
+  and without spaces, and the stats line labels the read-time estimate
+  as a rough figure for CJK drafts (238 WPM is an English average).
+- scripts/room.py: first_sentence_wrap also ends sentences at 。！？, and
+  skips the first-sentence emphasis when the boundary falls inside an
+  open inline tag (would split the tag across the span → crossing markup).
+- scripts/signals.py: refuses drafts containing CJK text instead of
+  returning English-metric counts that would read as valid data; SKILL.md
+  step 5 documents the skip and moves the trust ledger to the step-6 read.
+- SKILL.md "Adapting to your environment": file-mode fallback now writes
+  sessions to `<run-dir>/<reader>/` so room.py / ask.py find them, and
+  step 0's ~150-word gate uses feed.nwords' CJK convention.
+- scripts/room_template.html: dropped the Google Fonts link/preconnect;
+  the page renders with the existing local fallback stack and no longer
+  makes external requests when opened.

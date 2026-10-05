@@ -1,0 +1,414 @@
+[
+  {
+    "buttons": [
+      {
+        "height": 44,
+        "labels": [
+          {
+            "lines": 1,
+            "text": "保存"
+          }
+        ],
+        "left": 169,
+        "right": 289,
+        "text": "保存"
+      },
+      {
+        "height": 44,
+        "labels": [
+          {
+            "lines": 1,
+            "text": "保存"
+          }
+        ],
+        "left": 169,
+        "right": 289,
+        "text": "保存"
+      },
+      {
+        "height": 44,
+        "labels": [
+          {
+            "lines": 1,
+            "text": "保存"
+          }
+        ],
+        "left": 169,
+        "right": 289,
+        "text": "保存"
+      },
+      {
+        "height": 44,
+        "labels": [
+          {
+            "lines": 1,
+            "text": "保存"
+          }
+        ],
+        "left": 169,
+        "right": 289,
+        "text": "保存"
+      },
+      {
+        "height": 44,
+        "labels": [
+          {
+            "lines": 1,
+            "text": "保存"
+          }
+        ],
+        "left": 169,
+        "right": 289,
+        "text": "保存"
+      },
+      {
+        "height": 44,
+        "labels": [
+          {
+            "lines": 1,
+            "text": "保存中…"
+          }
+        ],
+        "left": 168.0625,
+        "right": 289,
+        "text": "保存中…"
+      },
+      {
+        "height": 44,
+        "labels": [
+          {
+            "lines": 1,
+            "text": "再試行"
+          }
+        ],
+        "left": 169,
+        "right": 289,
+        "text": "再試行"
+      },
+      {
+        "height": 44,
+        "labels": [
+          {
+            "lines": 1,
+            "text": "保存済み"
+          }
+        ],
+        "left": 169,
+        "right": 289,
+        "text": "保存済み"
+      }
+    ],
+    "innerWidth": 320,
+    "scrollWidth": 305,
+    "width": 320
+  },
+  {
+    "buttons": [
+      {
+        "height": 44,
+        "labels": [
+          {
+            "lines": 1,
+            "text": "保存"
+          }
+        ],
+        "left": 224,
+        "right": 344,
+        "text": "保存"
+      },
+      {
+        "height": 44,
+        "labels": [
+          {
+            "lines": 1,
+            "text": "保存"
+          }
+        ],
+        "left": 224,
+        "right": 344,
+        "text": "保存"
+      },
+      {
+        "height": 44,
+        "labels": [
+          {
+            "lines": 1,
+            "text": "保存"
+          }
+        ],
+        "left": 224,
+        "right": 344,
+        "text": "保存"
+      },
+      {
+        "height": 44,
+        "labels": [
+          {
+            "lines": 1,
+            "text": "保存"
+          }
+        ],
+        "left": 224,
+        "right": 344,
+        "text": "保存"
+      },
+      {
+        "height": 44,
+        "labels": [
+          {
+            "lines": 1,
+            "text": "保存"
+          }
+        ],
+        "left": 224,
+        "right": 344,
+        "text": "保存"
+      },
+      {
+        "height": 44,
+        "labels": [
+          {
+            "lines": 1,
+            "text": "保存中…"
+          }
+        ],
+        "left": 223.0625,
+        "right": 344,
+        "text": "保存中…"
+      },
+      {
+        "height": 44,
+        "labels": [
+          {
+            "lines": 1,
+            "text": "再試行"
+          }
+        ],
+        "left": 224,
+        "right": 344,
+        "text": "再試行"
+      },
+      {
+        "height": 44,
+        "labels": [
+          {
+            "lines": 1,
+            "text": "保存済み"
+          }
+        ],
+        "left": 224,
+        "right": 344,
+        "text": "保存済み"
+      }
+    ],
+    "innerWidth": 375,
+    "scrollWidth": 360,
+    "width": 375
+  },
+  {
+    "buttons": [
+      {
+        "height": 44,
+        "labels": [
+          {
+            "lines": 1,
+            "text": "保存"
+          }
+        ],
+        "left": 263,
+        "right": 383,
+        "text": "保存"
+      },
+      {
+        "height": 44,
+        "labels": [
+          {
+            "lines": 1,
+            "text": "保存"
+          }
+        ],
+        "left": 263,
+        "right": 383,
+        "text": "保存"
+      },
+      {
+        "height": 44,
+        "labels": [
+          {
+            "lines": 1,
+            "text": "保存"
+          }
+        ],
+        "left": 263,
+        "right": 383,
+        "text": "保存"
+      },
+      {
+        "height": 44,
+        "labels": [
+          {
+            "lines": 1,
+            "text": "保存"
+          }
+        ],
+        "left": 263,
+        "right": 383,
+        "text": "保存"
+      },
+      {
+        "height": 44,
+        "labels": [
+          {
+            "lines": 1,
+            "text": "保存"
+          }
+        ],
+        "left": 263,
+        "right": 383,
+        "text": "保存"
+      },
+      {
+        "height": 44,
+        "labels": [
+          {
+            "lines": 1,
+            "text": "保存中…"
+          }
+        ],
+        "left": 262.0625,
+        "right": 383,
+        "text": "保存中…"
+      },
+      {
+        "height": 44,
+        "labels": [
+          {
+            "lines": 1,
+            "text": "再試行"
+          }
+        ],
+        "left": 263,
+        "right": 383,
+        "text": "再試行"
+      },
+      {
+        "height": 44,
+        "labels": [
+          {
+            "lines": 1,
+            "text": "保存済み"
+          }
+        ],
+        "left": 263,
+        "right": 383,
+        "text": "保存済み"
+      }
+    ],
+    "innerWidth": 414,
+    "scrollWidth": 399,
+    "width": 414
+  },
+  {
+    "buttons": [
+      {
+        "height": 44,
+        "labels": [
+          {
+            "lines": 1,
+            "text": "保存"
+          }
+        ],
+        "left": 192,
+        "right": 705,
+        "text": "保存"
+      },
+      {
+        "height": 44,
+        "labels": [
+          {
+            "lines": 1,
+            "text": "保存"
+          }
+        ],
+        "left": 192,
+        "right": 705,
+        "text": "保存"
+      },
+      {
+        "height": 44,
+        "labels": [
+          {
+            "lines": 1,
+            "text": "保存"
+          }
+        ],
+        "left": 192,
+        "right": 705,
+        "text": "保存"
+      },
+      {
+        "height": 44,
+        "labels": [
+          {
+            "lines": 1,
+            "text": "保存"
+          }
+        ],
+        "left": 192,
+        "right": 705,
+        "text": "保存"
+      },
+      {
+        "height": 44,
+        "labels": [
+          {
+            "lines": 1,
+            "text": "保存"
+          }
+        ],
+        "left": 192,
+        "right": 705,
+        "text": "保存"
+      },
+      {
+        "height": 44,
+        "labels": [
+          {
+            "lines": 1,
+            "text": "保存中…"
+          }
+        ],
+        "left": 192,
+        "right": 705,
+        "text": "保存中…"
+      },
+      {
+        "height": 44,
+        "labels": [
+          {
+            "lines": 1,
+            "text": "再試行"
+          }
+        ],
+        "left": 192,
+        "right": 705,
+        "text": "再試行"
+      },
+      {
+        "height": 44,
+        "labels": [
+          {
+            "lines": 1,
+            "text": "保存済み"
+          }
+        ],
+        "left": 192,
+        "right": 705,
+        "text": "保存済み"
+      }
+    ],
+    "innerWidth": 768,
+    "scrollWidth": 753,
+    "width": 768
+  }
+]

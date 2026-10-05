@@ -1,0 +1,34 @@
+{
+    "workbench.colorTheme": "Devin Light",
+    "devin.acp.preferredAgent": "devin-cli",
+    "devin.acp.enabledAgents": {
+        "devin-cli": true,
+        "codex-acp": false,
+        "claude-acp": false,
+        "pi-acp": true
+    },
+    "devin.agentNotifications": true,
+    "devin.allowCascadeAccessGitignoreFiles": true,
+    "devin.acp.agentPreferences": {
+        "claude-acp": {
+            "mode": "bypassPermissions"
+        },
+        "devin-cli": {
+            "model": "swe-2-high",
+            "mode": "smart"
+        }
+    },
+    "devin.autoContinue": 0,
+    "vim.useSystemClipboard": true,
+    "vim.insertModeKeyBindings": [
+        { "before": ["j", "j"], "after": ["<Esc>"] }
+    ],
+    "vim.normalModeKeyBindingsNonRecursive": [
+        { "before": ["g", "i"], "commands": ["editor.action.goToImplementation"] }
+    ],
+    "workbench.browser.experimentalUserTools.enabled": true,
+    "workbench.browser.enableRemoteProxy": true,
+    "workbench.browser.enableChatTools": false,
+    "git.openRepositoryInParentFolders": "always",
+    "editor.minimap.enabled": false
+}

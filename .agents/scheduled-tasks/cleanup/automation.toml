@@ -1,0 +1,16 @@
+# cleanup の orca automation desired state（既存登録を manifest に転記したもの）。
+# `.agents/scheduled-tasks/tools/sync_automations.py check` で drift を検出できる。
+
+name = "cleanup"
+provider = "devin"
+enabled = true
+timezone = "Asia/Tokyo"
+
+# 3 日おき 03:00 — RRULE INTERVAL は scheduler が無視するので cron で書く
+trigger = "0 3 */3 * *"
+
+workspace_path = "~/src/github.com/wwwyo/me"
+
+prompt = """
+dotfiles の ~/.agents/scheduled-tasks/cleanup/SKILL.md に記載された手順でローカル環境を掃除する。対象は個人 repo のみ。閾値ゲートを守り、強制クリーンや閾値変更はしない。何も消さず freed 0MB で終わるのも正常。作業ディレクトリは {{workspace_path}}。
+"""

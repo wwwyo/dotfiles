@@ -1,0 +1,19 @@
+{
+  "appVersion" : "4.2.1",
+  "exportedAt" : "2026-09-22T07:12:03Z",
+  "schemaVersion" : 1,
+  "settings" : {
+    "filenameTemplate" : "Screenshot {date} at {time}",
+    "hotkeyDisabled_1" : true,
+    "hotkeyDisabled_2" : true,
+    "hotkeyOCRKeyCode" : 20,
+    "hotkeyOCRModifiers" : 768,
+    "hotkeyQuickCaptureKeyCode" : 21,
+    "hotkeyQuickCaptureModifiers" : 768,
+    "hotkeyRecordKeyCode" : 23,
+    "hotkeyRecordModifiers" : 768,
+    "lastUsedTool" : 2,
+    "ocrAction" : 0
+  },
+  "type" : "macshot-settings"
+}

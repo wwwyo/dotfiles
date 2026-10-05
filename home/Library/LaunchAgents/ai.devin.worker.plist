@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  なぜ /bin/zsh -c で包むか:
+    launchd の plist は ~ や $HOME を展開しない。ここに /Users/<name> を書くと
+    dotfiles の「ユーザー名に依存しない」規約に反し、別 Mac で壊れる。
+    ProgramArguments[0] を /bin/zsh にして中身を shell で解決させる。
+    同じ理由で WorkingDirectory / StandardOutPath も使わず、cd と >> で済ませる。
+    HOME は LaunchAgent として起動する時点で launchd が正しく設定する。
+    outpost の placeholder は手元で設定するまで正常終了し、再起動ループを避ける。
+
+  なぜ token を plist に書かないか:
+    worker token は `devin worker start` 実行時に CLI が ~/.devin/worker/outposts_auth.json
+    から読む。plist に平文で置くと git に秘密が乗るので、ここには置かない。
+
+  なぜ Devin.app 内のバイナリではなく ~/.local/bin/devin を指すか:
+    ~/.local/bin/devin は Devin.app 内バイナリへの symlink。アプリ更新で .app 内の
+    パスやバージョン付きパスが変わっても symlink 側が追従するので、こちらを固定で書く。
+
+  ACP_BACKEND を環境変数に入れてはいけない:
+    ACP_BACKEND が env にあると devin はローカル認証情報を意図的に無視し、
+    "Not logged in" で落ちる（dotfiles AGENTS.md 参照）。launchd は IDE/ACP 経由で
+    起動しないので通常混入しないが、EnvironmentVariables にコピーしないこと。
+-->
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>Label</key>
+	<string>ai.devin.worker</string>
+	<key>ProgramArguments</key>
+	<array>
+		<string>/bin/zsh</string>
+		<string>-c</string>
+		<string>outpost='&lt;outpost&gt;'; case "$outpost" in ''|'&lt;'*) exit 0 ;; esac; [ -x "$HOME/.local/bin/devin" ] &amp;&amp; [ -d "$HOME/.devin/worker" ] || exit 0; cd "$HOME/.devin/worker" &amp;&amp; export PATH="$HOME/.local/bin:$HOME/.local/share/mise/shims:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin" &amp;&amp; exec "$HOME/.local/bin/devin" worker start --outpost="$outpost" &gt;&gt; "$HOME/Library/Logs/devin-worker.log" 2&gt;&amp;1</string>
+	</array>
+	<key>EnvironmentVariables</key>
+	<dict>
+		<key>LANG</key>
+		<string>ja_JP.UTF-8</string>
+	</dict>
+	<key>RunAtLoad</key>
+	<true/>
+	<!-- SuccessfulExit=false: devin 未導入で guard が exit 0 した場合は再起動しない。
+	     ワーカーが異常終了（非0）したときだけ 30s 間隔で再起動する -->
+	<key>KeepAlive</key>
+	<dict>
+		<key>SuccessfulExit</key>
+		<false/>
+	</dict>
+	<key>ThrottleInterval</key>
+	<integer>30</integer>
+</dict>
+</plist>

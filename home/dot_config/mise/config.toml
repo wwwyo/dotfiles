@@ -1,0 +1,92 @@
+[tools]
+"github:github/gh-aw" = "0.89.21"
+"aqua:air-verse/air" = "1.67.4"
+"aqua:BurntSushi/ripgrep" = "15.2.0"
+"aqua:ajeetdsouza/zoxide" = "0.10.0"
+"aqua:go-task/task" = "3.53.1"
+"aqua:junegunn/fzf" = "0.74.4"
+"aqua:sharkdp/bat" = "0.26.1"
+"aqua:supabase/cli" = "2.118.0"
+"aqua:x-motemen/ghq" = "1.10.1"
+"aqua:tmux/tmux-builds" = "3.6a"
+"cargo:eza" = "0.23.5"
+"core:bun" = "1.4.2"
+"aqua:pnpm/pnpm" = "12.7.0"
+"aqua:sharkdp/fd" = "10.5.0"
+go = "1.27.1"
+node = "24.21.0"
+"npm:@google/gemini-cli" = "0.61.0"
+"npm:@playwright/test" = "1.63.0"
+"npm:e2e" = "0.16.0"
+"npm:@upstash/context7-mcp" = "4.1.1"
+"npm:pptxgenjs" = "4.0.1"
+"npm:prettier" = "3.9.9"
+"npm:pullfrog" = "0.1.84"
+"npm:turbo" = "2.11.4"
+"npm:vercel" = "60.1.3"
+"npm:wrangler" = "4.141.0"
+python = "3.14.7"
+rust = "1.98.1"
+"aqua:astral-sh/uv" = "0.12.19"
+"aqua:mikefarah/yq" = "4.53.6"
+deno = "2.9.7"
+"aqua:superfly/flyctl" = "0.4.108"
+"npm:chrome-devtools-mcp" = "1.10.1"
+"aqua:cli/cli" = "2.101.0"
+"asdf:mise-plugins/mise-ffmpeg" = "8.1.1"
+"npm:portless" = "0.15.6"
+"aqua:duckdb/duckdb" = "1.5.5"
+"github:ggml-org/llama.cpp" = "b9616"
+"github:wwwyo/syokan" = "0.5.0"
+"go:github.com/wwwyo/skillctrl" = "a931afd1294d7b07669e8659aadf0de9854c51fc"
+"npm:skills" = "1.7.0"
+age = "1.3.2"
+"aqua:openai/codex" = "0.159.2"
+"asdf:duhow/asdf-yt-dlp" = "2026.07.04"
+"npm:@earendil-works/pi-coding-agent" = "1.0.0"
+"npm:firecrawl-cli" = "1.24.6"
+"npm:@firecrawl/anydoc" = "0.2.4"
+"npm:agent-browser" = "0.38.1"
+"go:golang.org/x/tools/cmd/goyacc" = "0.50.0"
+"go:github.com/rubenv/sql-migrate/sql-migrate" = "1.8.1"
+"pipx:trafilatura" = "2.2.0"
+"aqua:suzuki-shunsuke/pinact" = "5.0.0"
+"aqua:FiloSottile/mkcert" = "1.4.4"
+"aqua:minio/mc" = "RELEASE.2025-08-13T08-35-41Z"
+"aqua:hashicorp/terraform" = "1.16.4"
+"aqua:neovim/neovim" = "0.12.5"
+"aqua:git-lfs/git-lfs" = "3.8.0"
+"aqua:Kitware/CMake" = "4.4.3"
+"ubi:dbt-labs/dbt-cli" = { version = "0.40.24", exe = "dbt" }
+"npm:cf" = "1.0.0-beta.6"
+"npm:@langfuse/cli" = "1.2.4"
+
+[env]
+LANG = "ja_JP.UTF-8"
+EDITOR = "zed"
+VISUAL = "zed"
+BAT_THEME = "Nord"
+DEVIN_SANDBOX = "false"
+DEVIN_PERMISSION_MODE = "smart"
+LANGFUSE_BASE_URL = "https://jp.cloud.langfuse.com"
+E2E_TELEMETRY_DISABLED = "1"
+LANGFUSE_PUBLIC_KEY = { age = "YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSBhYnJQU29FWGQrcnhKUjI1YTNCYzdydDhjN094azdIdVJMOXVHMjVITUY4CmV1Mzk3MHdBWWNOTlBJdGYrNm8wM3I0RnM3eEpQWTdTWi9GaDUxL1loS28KLT4gTlUiNkl9LWdyZWFzZSAlIDAgRXZrKytGCnVyemVSTjdpWUYySmtBbwotLS0gQjlTWURVQWRIU1F4U3hqVUhDWTFXblRjSzBONEhwTnJMWGhjYWpweW9PQQoj8M9ZWPf6IA7ES/OXfaqrnak87cgVjsWnh+iqF0EWOx7HSYvNuPG7gOGnjvvPVXmQsMgwZMni7wnO1KVYxRbpXRCxXdO4fmCk5g" }
+LANGFUSE_SECRET_KEY = { age = "YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSA5djJ0UHhKTHVqVEtkcnI3S1BCUmIxSFBJYUR1bDk4QzRUQ3d0bWpWNms4CkQvR3ZRNmZhMFlQQk9haUVjRW90aDZjS0F0SC9nVGJyMTVvK3l0aXhxMVUKLT4gblFYdS1ncmVhc2UgajNzID4wOSlCUmZ0ICZ7CnkyYnFtbTBHOFJKU2RPSXBBVUtkN1B2b3JXZjQ3ZVNHKzBFSlJTN3FDT0ZwdVNkSTFIRnQrNTBFVTkxOGhicU8KWlYycWNJZ0NGclVYd0hyV3l3awotLS0gSS9hVERYWG9YSFBDanQ0YWdEZGtLa0VPeTZFS0p3alNnQUtrSFdCWHJVdwrJA1tKrLJDf03GnnIInmjJoFCcP9GZcGe8P9QCKgB2oAMAXJm5CUOrPUCPPj0S+9a/YtzrnnQhBwaYHI2LHqoZ/faGqpCu2sN6nw" }
+OPENROUTER_API_KEY = { age = "YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSBzZm5Ca0hYd25mVW1MWW9UOTJmMjY3RzBaZEFxa204L3Zka0JpQ2JtNmxvCnVSVWRuV3VPa2dMNlhWM0VlUE56VUFVVzYrRVc4WmxNaHBBQ1lNNHhPZFkKLT4gLHwtZ3JlYXNlIEAKK2ROTGlNMlpGd2pMYXhrRDlwdG5nUVY5dnM1ZTlNT1VyNHRZYnRpcS9MY1lQWXdOUG1IcGNlZ2JWZ3doZmd3MApha01pSFBmQ3ppYzFCZjNMNGFlTVJSczE1cDdRZHdIWHRacFFId2Y0bVp6S1ArUVppUQotLS0gb1BiYlBYMm9tam5NU0RjZTRnMmdETlFhWXlIUnJPYlRlRFBEaGEyZVpETQoSLHr0IKCPbPmWbMoVTl4mjsgP2Rpqcym4JCMLSogw9RJVVrKhENN0jqQ6Rm6vGBn0OgPHsANcblSVVP42QFql9II12vQJlHAOkAzFQx3fyqXx9MSQTpHfutsNu84rSBPjipYdhmPinQg" }
+CONTEXT7_API_KEY = { age = "YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSAwQmtweElKdWJwTWJoSFlpMEFSN2E5c0gzclZIdXdhRnEyVlVyMmk0bkYwCjUwWGlXZjVvUTlWRnZiSXB2czB6SEI1MTdHd1diWmRCWWJZNzhCR1BVbDgKLT4gSDgvcjZ5PFwtZ3JlYXNlICNwICVBdSxqNnlEIH1QZCRpCjN1MXlkYlhYVEZnZ3pQeGxodEdDZXVSU3JUbmFDQ3RNd0Fka3locDAwaTcxNTYzSmFjUQotLS0gK1Fsek80akZFVVJFTE9JL3lmSFlXT0xLNnA1bEpOWkNzSkxuNnVzenIrOAoL6NVAo05xDAd1mddwoSUI7EwWJCyB3nsZZw/QnGn58J3L5CNHceV9u0DLPRudSTiuhRisHIS8yUGErLBRuddU4mciW+dLNxE/PUY" }
+OPENCODE_API_KEY = { age = "YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSB4TEFlL25aRkhnbnFLTkRZazIwUDBlY0xNNXh4SWp0dWhmamQ0bUZmZ0dVCjMzSENqZ2trT2EzME55SXVBaWNabUVTSVhxTE5BbEloMXRaTWpoWGhpc2cKLT4gMiUtZ3JlYXNlCjFSMzgxWEpQeW5MSjZoWHJXQ05UL3MxSHh3WThaSGx2bHc0YzNUUC9waEEKLS0tIDJuYS85Y2NZcjBHNEZrTUxYM0Y1QTJhYTJKQW1MUHJVY0dCcDRZMHhUQncKsmPJjFOZENjO3jpi4iw9pjbLAKS2tDM26rrIItqdt0DvFnfiNWg57l8EVC83JpsQwzvNSqsDauFwNbitTVRlVrWnlE97ZQoy6nxPBIq+rlDcK84" }
+FIRECRAWL_API_KEY = { age = "YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSBwMFVwRWlVRHpDQytaY1J1RmZCR3lTVUxSYmhDckIrVnE1MWhzaW5Rd0JNClovSXhXeXVMR3ZBbXJpTjNVVFdZcXpSdVFhaHZZdkFiVmUzVmRiOW5hWGcKLT4gfV9cVHk+bngtZ3JlYXNlIF0gOTp6cScKY1VGaGtBRWl2OTdXNk9LS29lSDRYU0xUVlU0RE9VSkw2Ynh3eXNXcEc4VnplN2ZqVUQzZVJ6TUdMUkhTbVY5YwpyS2RDZ3phQ1B1SUx5UUp6MDFGeGpObUsyQWMvVVJsMGFPRUtCL0EKLS0tICt5dU1ZMzhKL21kdmZkdUZkbXNWcmEzN1hITlZOZGlSTWFPQW1reW1WUnMK+6NqhY150nsVgQbR6S1VEb1m32mLcaH1rts0ZBmQ3OoTDjHL3Z63RxuRhmHLJa85qJTvmre4c2t6JUIwL3r7oTLmug" }
+TYPESAFE_API_KEY = { age = "YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSA2MU5CR3ptUU5DZzNPWjd2aUJxTVMxS3dQVHQ0VzlQQTllUFJpWTd5S0RnCkxkcy9VbjBlRXp4YmU4ZXRTRC9wR2J0bjlIOGgrYnpiMGdOLzQ0NmxMb1kKLT4gMko9ei1ncmVhc2UgfiAiIFUjYjs0CmgvbU82UGNoTmV3T0Fhdnc1YXROQVhIZktISWZjelEKLS0tIFBjY0RLSW5GUE9jSjAxZWMyWWNUVWhWRnNad2dZODBiWHlta09oWThuc3MKXHKBbRAf6zc3oqD7YiobkmYBtdJC/mSTiaKnpDL38FqD4AW+dZPP4e6cX6BVRR9mFUs+Gwd9nW8pXcPhCxgCrtDed1DRoCosBqT0JfcYObZOHx3Etl3Zdc2qI2EXvuEMyBMTsRHhuHqK09YbNoVxZf0Pdnx3Yn9XXrcMtP/NFmGxCzrvr8gd3Zahkuk" }
+DEVIN_API_KEY = { age = "YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSBha3AxNXpDTU9kdVYvZSt0MDNaTDJKTGN5MjBjUDVmbDhHNEYySGRqRGhnCkplTWpudElpMWRlRHAxWmJtT3ZJTVkvYVRMbTRwbVp5elNKVGRvYXB4S3MKLT4gOz5pSzR9SiQtZ3JlYXNlCjBkcStIRUlnQUo0NnlwelNtWlJ3NitJRFZNRCtuL2Yrd21Mb3lhU3lCcTZQL3dTajdob09BOW9Sa0hhMmdYajQKU2E2WU4vcFd3TFlyeWp2M0hqckdieDQKLS0tIFY2dUcrbStuVkNIRXFkSCtzVk5ySUw4UWJsYnhPc25ZYjk5Z1grQ2JyencKHc0+0FYbq8JCJrJFH6Ep9S7d8RLSzDwgRGLOcaloJrTXYfzIdzYL3E2Ix3fGWVy2C8HPouL1ho1TEJ6sSAuQ46c9NM2YeM7/HZrNTcKAEDhUGSl5IJLEvw" }
+OPENCODE_E2E_MODEL = "mimo-v2.6-flash"
+
+FISH_API_KEY = { age = "YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSBabGQ5a2hYM3BLV1lCRlp4RE56SWp6UHdlc0xYTG95bTFQV2FFZW0vNHpnCmdHRHY4Q1dUTnliY2FRMUFYSUVYczdrdWJ1aDJyTU92ZXNjdk5nM3h3UkUKLT4gZmstZ3JlYXNlIDV9IzYiRTRLIDZvWgo0bXdyYWVFRUJHRmZqVkgxczAwWng4UnhjdXdDNTlldDVZamlSNlYzWFBBUG81WCt2ZjdqNWRqd2ZtYXR3NnE0ClhYaWgyVzBMMUt5d25CQjRmZmVKVk9WNDJ3T0lYT1kzbm5ZSmE1Rkd5a2tNTUVDaDJDN1F1eGlTL0NpNEp3Ci0tLSB2VDlZK2VSNjRJV2p2NTNxZTkvaDBvdElvazAzU1MyaDJZaWZhdWs1bjh3CvUx69iuG/Nb3nrH7WqCoXp2pVAGzc9oZqg9rIfz8H6MCkDxY+lYCvH+JMUL4KMiDhezGcovRumAkEjCbsd2rbWtdm8KrgoAA6uI6SzLgl6vK63G" }
+ELEVENLABS_API_KEY = { age = "YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSBYdFNKK3Z0MjlscjZFTFpHUDd1M280elR2VnlxQnlCNTltdlpPWnAweXdrCmdFbWJublFPRk9BWkJCcjI1TlVxNW9STnc1bzJkZnJiOGd2VGhlY1ErcFEKLT4gaGZgcSxWbS1ncmVhc2UKMFhXQ1d2Q0lGL2NjOFF3aUFEandWUmgrZmRuTkVuRlFzOXFjCi0tLSBxRFBIRnU3MEtXcW1VdjFaQitOeEFsVzZienBsRWdRcVgrUEhiakpwWmNBCtkdNGWubOg986NuanxFfVqnT6DsLaNSIoNs+UQIcBrYpbzXSXAOZ3kYoNeFuNtGJ53pJdLSdN4YUBDDO7b3RBVYlnBNJ0nUmll7BIQh6gg55mQv" }
+[settings]
+idiomatic_version_file_enable_tools = []
+pin = true
+experimental = true
+minimum_release_age = "7d"
+
+[settings.age]
+strict = false

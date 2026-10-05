@@ -1,0 +1,33 @@
+# pr-auto-merge (pr-merge-lane) の orca automation desired state。
+# `.agents/scheduled-tasks/tools/sync_automations.py check` で drift を検出できる。
+# workspace_path 固定 — repo_path だと run ごとに新 worktree が立ち、tick の
+# plan/state と workspace が分断されるので me repo の既存 workspace を bind する。
+# prompt・precheck 内の path は ~/.agents symlink 経由の表現にする（username 非依存）
+
+name = "pr-auto-merge"
+workspace_path = "~/src/github.com/wwwyo/me"
+# reuse_session が devin では効かないため codex
+provider = "codex"
+enabled = true
+timezone = "Asia/Tokyo"
+
+# 30分間隔の tick。orca の rrule parser は FREQ=HOURLY/DAILY/WEEKLY と
+# INTERVAL にしか対応せず MINUTELY は書けないので cron を使う。
+# hour 欄 9-23 で夜間 (0:00-8:30 JST) は precheck 自体を走らせない —
+# gate が API を叩くので深夜の無駄打ちを避ける
+# precheck (= pr_triage.py gate) が action 無しなら session を起こさない。
+# gate は全 open PR の事実収集を行うので timeout は orca 側上限の 600s を
+# 明示する
+trigger = "*/30 9-23 * * *"
+
+# run ごとに新しい executor session が workspace に積まれるのを防ぐため、
+# 前回の live session を使い回す。session の transcript は tick ごとに
+# 伸びるが、plan は毎回 script が出すので判定への影響はない
+reuse_session = true
+
+precheck = "python3 ~/.agents/skills/pr-auto-merge/tools/pr_triage.py gate"
+precheck_timeout = 600
+
+prompt = """
+`~/.agents/skills/pr-auto-merge/SKILL.md` を読み、tick の手順どおり実行する。`python3 ~/.agents/skills/pr-auto-merge/tools/pr_triage.py plan` でこの tick の action を取得し、SKILL.md の表どおり処理する（dispatch/escalate/judge/merge/sweep は script の subcommand を呼ぶだけで、merge 可否の判断は自分ではしない）。dispatch はレビュー指摘・機械的な競合解消・依存更新の CI 失敗を対象にし、修正先は references/repair.md に従う。最後に `daily/<date>/pr-watch.md`（plan.report.md の path）へ report を書き、必ず `python3 ~/.agents/skills/pr-auto-merge/tools/pr_triage.py lock release` で終わる。
+"""

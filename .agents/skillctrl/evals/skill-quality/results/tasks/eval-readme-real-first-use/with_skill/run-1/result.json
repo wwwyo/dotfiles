@@ -1,0 +1,143 @@
+{
+  "eval_id": 1,
+  "eval_name": "readme-real-first-use",
+  "variant": "after",
+  "status": "completed",
+  "duration_seconds": 42.711,
+  "total_tokens": 205860,
+  "changed_files": [
+    "README.md",
+    "docs/README.ja.md"
+  ],
+  "initial_hashes": {
+    "LICENSE": "17006dee0c61bde79227e8fcfb7aa2e712f082f7d3732ef7da1402bdee791aea",
+    "project.json": "f5eb513f4c85d56c3b58af97fab1e2bfe1ff8f49ffc5121eafa07ec655661944",
+    "sumcsv.py": "2de0f92895f602230d33b37b254777c8aa9a27c5b241fa575bc18fbec850bc72",
+    "README.md": "f04eebb6d687a9e30aa78fe3d32e1fbb5fbfd25f9c6e980534a3b77a2ecfd965",
+    "examples/expenses.csv": "28a497ca41dc835bcbdd044cb787bd5ccaab32485954ec51fa767b574ae6207c",
+    "assets/logo.svg": "5b6d160728f0e859d6ff2e7a3b662e56c1968f79364be79070110e991b8b78ed"
+  },
+  "final_hashes": {
+    "LICENSE": "17006dee0c61bde79227e8fcfb7aa2e712f082f7d3732ef7da1402bdee791aea",
+    "project.json": "f5eb513f4c85d56c3b58af97fab1e2bfe1ff8f49ffc5121eafa07ec655661944",
+    "sumcsv.py": "2de0f92895f602230d33b37b254777c8aa9a27c5b241fa575bc18fbec850bc72",
+    "README.md": "4df4f7082a2ef6b68d48d4612eebf603236f5d4b5836a68aff788d6dfbf0c190",
+    "docs/README.ja.md": "f7ac7425b28a5aa3667f4faa73c58da67449db52196e3baa0b6326806ccc7ded",
+    "examples/expenses.csv": "28a497ca41dc835bcbdd044cb787bd5ccaab32485954ec51fa767b574ae6207c",
+    "assets/logo.svg": "5b6d160728f0e859d6ff2e7a3b662e56c1968f79364be79070110e991b8b78ed"
+  },
+  "tool_calls": [
+    {
+      "tool": "read",
+      "path": "<workspace>/snapshots/after/.agents/skills/document/SKILL.md",
+      "is_error": false
+    },
+    {
+      "tool": "ls",
+      "path": "<workspace>/eval-readme-real-first-use/with_skill/fixture",
+      "is_error": false
+    },
+    {
+      "tool": "read",
+      "path": "<workspace>/snapshots/after/.agents/skills/document/assets/readme.md",
+      "is_error": false
+    },
+    {
+      "tool": "read",
+      "path": "<workspace>/snapshots/after/.agents/skills/document/references/readme.md",
+      "is_error": false
+    },
+    {
+      "tool": "ls",
+      "path": "<workspace>/eval-readme-real-first-use/with_skill/fixture/assets",
+      "is_error": false
+    },
+    {
+      "tool": "read",
+      "path": "<workspace>/eval-readme-real-first-use/with_skill/fixture/sumcsv.py",
+      "is_error": false
+    },
+    {
+      "tool": "read",
+      "path": "<workspace>/eval-readme-real-first-use/with_skill/fixture/README.md",
+      "is_error": false
+    },
+    {
+      "tool": "read",
+      "path": "<workspace>/eval-readme-real-first-use/with_skill/fixture/project.json",
+      "is_error": false
+    },
+    {
+      "tool": "ls",
+      "path": "<workspace>/eval-readme-real-first-use/with_skill/fixture/examples",
+      "is_error": false
+    },
+    {
+      "tool": "read",
+      "path": "<workspace>/eval-readme-real-first-use/with_skill/fixture/LICENSE",
+      "is_error": false
+    },
+    {
+      "tool": "read",
+      "path": "<workspace>/eval-readme-real-first-use/with_skill/fixture/assets/logo.svg",
+      "is_error": false
+    },
+    {
+      "tool": "read",
+      "path": "<workspace>/eval-readme-real-first-use/with_skill/fixture/examples/expenses.csv",
+      "is_error": false
+    },
+    {
+      "tool": "write",
+      "path": "<workspace>/eval-readme-real-first-use/with_skill/fixture/README.md",
+      "is_error": false
+    },
+    {
+      "tool": "write",
+      "path": "<workspace>/eval-readme-real-first-use/with_skill/fixture/docs/README.ja.md",
+      "is_error": false
+    },
+    {
+      "tool": "edit",
+      "path": "<workspace>/eval-readme-real-first-use/with_skill/fixture/docs/README.ja.md",
+      "is_error": true
+    },
+    {
+      "tool": "write",
+      "path": "<workspace>/eval-readme-real-first-use/with_skill/fixture/docs/README.ja.md",
+      "is_error": false
+    },
+    {
+      "tool": "edit",
+      "path": "<workspace>/eval-readme-real-first-use/with_skill/fixture/docs/README.ja.md",
+      "is_error": false
+    },
+    {
+      "tool": "read",
+      "path": "<workspace>/eval-readme-real-first-use/with_skill/fixture/docs/README.ja.md",
+      "is_error": false
+    },
+    {
+      "tool": "edit",
+      "path": "<workspace>/eval-readme-real-first-use/with_skill/fixture/docs/README.ja.md",
+      "is_error": false
+    },
+    {
+      "tool": "read",
+      "path": "<workspace>/eval-readme-real-first-use/with_skill/fixture/docs/README.ja.md",
+      "is_error": false
+    },
+    {
+      "tool": "read",
+      "path": "<workspace>/eval-readme-real-first-use/with_skill/fixture/README.md",
+      "is_error": false
+    }
+  ],
+  "observed_models": [
+    [
+      "opencode-go",
+      "space-bunny-free"
+    ]
+  ],
+  "transcript_sha256": "27dd9a3b7d3482e7a1e4359ea109e4ed3544bfc84762f7f2d9fb16a29997b5d1"
+}

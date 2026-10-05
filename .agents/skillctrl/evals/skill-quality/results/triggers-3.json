@@ -1,0 +1,232 @@
+{
+  "summary": {
+    "after": {
+      "total": 5,
+      "scorable": 5,
+      "incomplete": 0,
+      "tp": 3,
+      "fp": 0,
+      "fn": 0,
+      "correct": 5,
+      "precision": 1.0,
+      "recall": 1.0
+    }
+  },
+  "results": [
+    {
+      "id": "creator-boundary-positive",
+      "skill": "skill-creator",
+      "variant": "after",
+      "should_trigger": true,
+      "triggered": true,
+      "status": "observed_consultation",
+      "scorable": true,
+      "passed": true,
+      "duration_seconds": 4.051,
+      "evidence": [
+        {
+          "event": "tool_execution_end",
+          "path": "<workspace>/snapshots/after/.agents/skills/skill-creator/SKILL.md",
+          "tool_call_id": "call_01a0fb99c0527137ac6e4a9c"
+        }
+      ],
+      "tool_calls": [
+        {
+          "tool": "ls",
+          "path": ".",
+          "is_error": false
+        },
+        {
+          "tool": "find",
+          "path": ".",
+          "is_error": false
+        },
+        {
+          "tool": "ls",
+          "path": "<workspace>/triggers/creator-boundary-positive",
+          "is_error": false
+        },
+        {
+          "tool": "read",
+          "path": "<workspace>/snapshots/after/.agents/skills/skill-creator/SKILL.md",
+          "is_error": false
+        }
+      ],
+      "transcript_sha256": "cd9095473ccb3b7ecdc57b1eb186f6abe9fffbd31b2fadcc990ab5258bb49953",
+      "observed_models": [
+        [
+          "opencode-go",
+          "space-bunny-free"
+        ]
+      ],
+      "agent_final_stop_reasons": []
+    },
+    {
+      "id": "merge-near-miss",
+      "skill": "pr-auto-merge",
+      "variant": "after",
+      "should_trigger": false,
+      "triggered": false,
+      "status": "completed",
+      "scorable": true,
+      "passed": true,
+      "duration_seconds": 16.427,
+      "evidence": [],
+      "tool_calls": [
+        {
+          "tool": "ls",
+          "path": ".",
+          "is_error": false
+        },
+        {
+          "tool": "read",
+          "path": "<workspace>/snapshots/after/.agents/skills/pr/SKILL.md",
+          "is_error": false
+        },
+        {
+          "tool": "ls",
+          "path": "../../",
+          "is_error": false
+        },
+        {
+          "tool": "ls",
+          "path": "..",
+          "is_error": false
+        },
+        {
+          "tool": "ls",
+          "path": "../../after",
+          "is_error": false
+        },
+        {
+          "tool": "find",
+          "path": "../../after",
+          "is_error": false
+        },
+        {
+          "tool": "ls",
+          "path": "../../../..",
+          "is_error": false
+        },
+        {
+          "tool": "find",
+          "path": "../..",
+          "is_error": false
+        }
+      ],
+      "transcript_sha256": "b11a63de966fe72f178de204e603b8209432178d8c0f83937de9fb97b5b651ba",
+      "observed_models": [
+        [
+          "opencode-go",
+          "space-bunny-free"
+        ]
+      ],
+      "agent_final_stop_reasons": [
+        [
+          "stop"
+        ]
+      ]
+    },
+    {
+      "id": "secret-near-miss",
+      "skill": "secret-env",
+      "variant": "after",
+      "should_trigger": false,
+      "triggered": false,
+      "status": "completed",
+      "scorable": true,
+      "passed": true,
+      "duration_seconds": 18.849,
+      "evidence": [],
+      "tool_calls": [],
+      "transcript_sha256": "8bcbfa8c7abfb94795ec822d89da42569065b86b672e9ccf3adbe09d8600aa13",
+      "observed_models": [
+        [
+          "opencode-go",
+          "space-bunny-free"
+        ]
+      ],
+      "agent_final_stop_reasons": [
+        [
+          "stop"
+        ]
+      ]
+    },
+    {
+      "id": "secret-positive",
+      "skill": "secret-env",
+      "variant": "after",
+      "should_trigger": true,
+      "triggered": true,
+      "status": "observed_consultation",
+      "scorable": true,
+      "passed": true,
+      "duration_seconds": 2.13,
+      "evidence": [
+        {
+          "event": "tool_execution_end",
+          "path": "<workspace>/snapshots/after/.agents/skills/secret-env/SKILL.md",
+          "tool_call_id": "call_function_44o7aq6umcq6_1"
+        }
+      ],
+      "tool_calls": [
+        {
+          "tool": "ls",
+          "path": "<workspace>/snapshots/after/.agents/skills/secret-env",
+          "is_error": false
+        },
+        {
+          "tool": "read",
+          "path": "<workspace>/snapshots/after/.agents/skills/secret-env/SKILL.md",
+          "is_error": false
+        }
+      ],
+      "transcript_sha256": "48bc470529160a3fbad20d3f7c97d772b185bcff316886fc986d263c945f1457",
+      "observed_models": [
+        [
+          "opencode-go",
+          "space-bunny-free"
+        ]
+      ],
+      "agent_final_stop_reasons": []
+    },
+    {
+      "id": "writing-positive",
+      "skill": "japanese-tech-writing",
+      "variant": "after",
+      "should_trigger": true,
+      "triggered": true,
+      "status": "observed_consultation",
+      "scorable": true,
+      "passed": true,
+      "duration_seconds": 6.206,
+      "evidence": [
+        {
+          "event": "tool_execution_end",
+          "path": "<workspace>/snapshots/after/.agents/skills/japanese-tech-writing/SKILL.md",
+          "tool_call_id": "call_function_4cm89ous705r_2"
+        }
+      ],
+      "tool_calls": [
+        {
+          "tool": "ls",
+          "path": ".",
+          "is_error": false
+        },
+        {
+          "tool": "read",
+          "path": "<workspace>/snapshots/after/.agents/skills/japanese-tech-writing/SKILL.md",
+          "is_error": false
+        }
+      ],
+      "transcript_sha256": "43419df5a80bf01add3c4d45efa72de71b5aea5430330f4a35851195e0014f02",
+      "observed_models": [
+        [
+          "opencode-go",
+          "space-bunny-free"
+        ]
+      ],
+      "agent_final_stop_reasons": []
+    }
+  ]
+}

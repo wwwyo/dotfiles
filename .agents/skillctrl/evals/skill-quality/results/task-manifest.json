@@ -1,0 +1,25 @@
+{
+  "refs": {
+    "after": "db1fa8c3be8f29278ba6a9f1f35ad6f2d0e39abf"
+  },
+  "model": "opencode-go/space-bunny-free",
+  "thinking": "high",
+  "pi_version": "0.87.1",
+  "dataset_sha256": "4f667d00946cf31cc4456ff497b8fe10a1e3fd0deaaa655f7417a0c9ade345eb",
+  "method": "Current-side results retained from the original blind comparison; same prompts, facts and file tools, with parent runtime probes. One completed attempt per task. Original full comparison is recorded at source_results_commit.",
+  "runner_sha256": {
+    "run.py": "32b29ee2b210067359c3cd8f6b1efc9019b3bca63e5b4bdee46ac404594f701c",
+    "tasks.py": "10e9eb8f698337db8c1e8b00a92100efaa675d488aa5e2fb13c74d24cdb06984",
+    "fixture-guard.ts": "cd94345882449418e70b597c2cda05c1abd8ca78a4472c92aa9678de7a0204b4",
+    "review.py": "423dc62f5f7540880c4062be3b2beb084a0cf520510dd536510bdb47be296492",
+    "run.test.py": "4abb25598ca1e8a215c1a5179fd1fc8c80508c2ae5be023f363d13c5f1b2859c",
+    "probe.py": "fb65f4d0f59c8095d2e2eadda53de9cf22c7c157d0cdd5aae0bb1fe52af5eecb",
+    "viewport.js": "9e743c856d81ec0a36228a72788a668133c85a5b549a0b03ba93d923c175a4f3",
+    "fixture-paths.mjs": "019128ad45f5829a632e52e6ac74b1b92987ddcea72b0a8eacbc4837ad19772e",
+    "fixture-paths.test.mjs": "0b8eb1c7fd84c51648745a978596ac3734a3750e58b91e81119fe0aefc33a164"
+  },
+  "completed_tool_boundary_audit": "All successful file calls from 12 completed runs stayed inside their fixture or matching snapshot; no ~, @ or file: aliases were requested.",
+  "evaluated_dataset_file": "evaluated-tasks.json",
+  "dataset_note": "Unused draft trigger annotations were removed after execution. Prompts, fixtures, assertions are unchanged; the exact evaluated dataset is preserved.",
+  "source_results_commit": "e07b6d5005387f54db01fa0cda5384d1a252a262"
+}

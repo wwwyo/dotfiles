@@ -1,0 +1,58 @@
+# macOS
+macos-titlebar-style = tabs
+macos-window-shadow = false
+
+# 画面分割したときにpathが引き継がれる
+window-inherit-working-directory = true
+# 起動時に前の作業フォルダを引き継ぐ
+window-save-state = always
+# デフォルトの作業ディレクトリ
+working-directory = ~/src/github.com
+
+# ウインドウのパディング
+window-padding-x = 10
+window-padding-y = 10
+window-padding-balance = true
+
+# shift+enterを改行扱いする（v2）
+keybind = shift+enter=text:\x1b\r
+
+theme = Vercel
+
+# FONT
+font-family = "Source Han Code JP"
+font-size = 13
+adjust-cell-width = -1
+adjust-cell-height = 0
+background-opacity = 1
+
+# 非アクティブなウインドウを薄くしない
+unfocused-split-opacity = 1
+# ペイン区切り線の色（少し濃いグレー）
+split-divider-color = #444444
+# 入力中はマウスカーソルを隠す
+mouse-hide-while-typing = true
+
+# クリップボードの読み書きを許可
+clipboard-read = allow
+clipboard-write = allow
+
+# Cmd+Shift+H/L で左右のペイン移動（vim風）
+keybind = cmd+shift+h=goto_split:left
+keybind = cmd+shift+l=goto_split:right
+
+
+# Cmd+Shift をNeovimに渡す（CSI u エンコーディング）
+keybind = cmd+shift+e=text:\x1b[101;4u
+keybind = cmd+shift+g=text:\x1b[103;4u
+keybind = cmd+shift+f=text:\x1b[102;4u
+
+# クイックターミナルの設定
+quick-terminal-position = top
+quick-terminal-screen = main
+quick-terminal-animation-duration = 0.2
+quick-terminal-autohide = true
+quick-terminal-size = 70%,100%
+
+# グローバルキーバインド
+keybind = global:super+shift+j=toggle_quick_terminal

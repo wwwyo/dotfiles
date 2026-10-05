@@ -1,0 +1,13 @@
+{
+  "eval_id": 6,
+  "eval_name": "restructure-existing-skill-preserve-contract",
+  "prompt": "既存の packet-report skill を、通常の作成と検査だけの依頼で必要な説明を読める構造に整理してください。名前、入出力、検査時の変更禁止、終了条件は維持してください。今ある helper と template を使い、使われなくなる参照を残さないでください。構造整理だけなので評価用 agent や benchmark は今回は起動不要です。変更した skill 一式と、保存したルールを確認できる短い CHECKS.md を残してください。外部API、ネット検索、package install、commit/pushを使わない。fixture外のファイルを変更しない。",
+  "assertions": [
+    "packet-report の directory/name frontmatter が保存され、description が作成と既存 report の検査の双方を表す。",
+    "SKILL.md から Create と Audit の指示へ明確な read 条件付きで到達でき、すべての相対参照が実在する。",
+    "共通入力規則、入力不変更、不正入力時の非ゼロ終了とreport非作成、helperを計算の正本とする規則が全文書群に保存される。",
+    "Create の既存 report 上書き確認、template 使用、helper値一致とplaceholder除去の完了条件が保存される。",
+    "Audit の変更禁止対象、差分の行とexpected/actual、no findings、明示修正依頼までCreateへ進まないこと、verdict時の終了が保存される。",
+    "helper と template の動作・内容が保存され、helperはsampleで ok=2, failed=1, bytes=200 を返し、CHECKS.md が保存契約の参照先を具体的に示す。"
+  ]
+}

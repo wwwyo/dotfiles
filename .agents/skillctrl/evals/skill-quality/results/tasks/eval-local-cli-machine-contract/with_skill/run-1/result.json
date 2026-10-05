@@ -1,0 +1,102 @@
+{
+  "eval_id": 4,
+  "eval_name": "local-cli-machine-contract",
+  "variant": "after",
+  "status": "completed",
+  "duration_seconds": 176.861,
+  "total_tokens": 261189,
+  "changed_files": [
+    "CLI.md",
+    "cli.py"
+  ],
+  "initial_hashes": {
+    "requirements.md": "fbd4b6dcc87a2a7501c28695ccfb6928ca18f50388d08b92d6ff3ac17d12fac2",
+    "notes.json": "2ee2cc93bcd19d90a0776ecae31148d4f7c100db1c992eb3cee5958608db5f54",
+    "cli.py": "0826878ad5dc687e08ff16f06023632919d67ac1c16d7574e399722a41c8c700"
+  },
+  "final_hashes": {
+    "requirements.md": "fbd4b6dcc87a2a7501c28695ccfb6928ca18f50388d08b92d6ff3ac17d12fac2",
+    "CLI.md": "dd403a9dee20f804e86c76873944e0b9f6c15504163433dba4aca8ffe4766f22",
+    "notes.json": "2ee2cc93bcd19d90a0776ecae31148d4f7c100db1c992eb3cee5958608db5f54",
+    "cli.py": "fc7e54cb05513c72de8e3d34dcba42fed6e098db74b699aa8c0bb09cd199f661"
+  },
+  "tool_calls": [
+    {
+      "tool": "ls",
+      "path": "<workspace>/eval-local-cli-machine-contract/with_skill/fixture",
+      "is_error": false
+    },
+    {
+      "tool": "read",
+      "path": "<workspace>/snapshots/after/.agents/skills/agent-friendly-cli/SKILL.md",
+      "is_error": false
+    },
+    {
+      "tool": "read",
+      "path": "<workspace>/eval-local-cli-machine-contract/with_skill/fixture/notes.json",
+      "is_error": false
+    },
+    {
+      "tool": "read",
+      "path": "<workspace>/eval-local-cli-machine-contract/with_skill/fixture/cli.py",
+      "is_error": false
+    },
+    {
+      "tool": "read",
+      "path": "<workspace>/eval-local-cli-machine-contract/with_skill/fixture/requirements.md",
+      "is_error": false
+    },
+    {
+      "tool": "find",
+      "path": "<workspace>/eval-local-cli-machine-contract",
+      "is_error": true
+    },
+    {
+      "tool": "write",
+      "path": "<workspace>/eval-local-cli-machine-contract/with_skill/fixture/cli.py",
+      "is_error": false
+    },
+    {
+      "tool": "edit",
+      "path": "<workspace>/eval-local-cli-machine-contract/with_skill/fixture/cli.py",
+      "is_error": false
+    },
+    {
+      "tool": "read",
+      "path": "<workspace>/eval-local-cli-machine-contract/with_skill/fixture/cli.py",
+      "is_error": false
+    },
+    {
+      "tool": "read",
+      "path": "<workspace>/eval-local-cli-machine-contract/with_skill/fixture/cli.py",
+      "is_error": false
+    },
+    {
+      "tool": "write",
+      "path": "<workspace>/eval-local-cli-machine-contract/with_skill/fixture/CLI.md",
+      "is_error": false
+    },
+    {
+      "tool": "read",
+      "path": "<workspace>/eval-local-cli-machine-contract/with_skill/fixture/cli.py",
+      "is_error": false
+    },
+    {
+      "tool": "read",
+      "path": "<workspace>/eval-local-cli-machine-contract/with_skill/fixture/cli.py",
+      "is_error": false
+    },
+    {
+      "tool": "read",
+      "path": "<workspace>/eval-local-cli-machine-contract/with_skill/fixture/cli.py",
+      "is_error": false
+    }
+  ],
+  "observed_models": [
+    [
+      "opencode-go",
+      "space-bunny-free"
+    ]
+  ],
+  "transcript_sha256": "8a9eb4075f98a5908ab92c6714cebe0bc6d212755d24ce62dfc94d988eb37c8d"
+}

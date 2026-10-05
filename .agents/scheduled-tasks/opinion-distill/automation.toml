@@ -1,0 +1,18 @@
+# opinion-distill の orca automation desired state（既存登録を manifest に転記したもの）。
+# `.agents/scheduled-tasks/tools/sync_automations.py check` で drift を検出できる。
+# skill 本体は wwwyo/me repo の .agents/skills/opinion-distill/ にある。
+# repo_path 指定 — run ごとに wwwyo/me repo の新 worktree が立つ（既存 workspace 固定ではない）
+
+name = "opinion-distill"
+repo_path = "~/src/github.com/wwwyo/me"
+provider = "devin"
+enabled = true
+timezone = "Asia/Tokyo"
+
+# 週次 土曜 12:00 — weekly preset だと day/time → rrule 変換を sync が
+# 復元できず drift 未判定になるので RRULE 直指定
+trigger = "FREQ=WEEKLY;BYDAY=SA;BYHOUR=12;BYMINUTE=0"
+
+prompt = """
+この worktree（wwwyo/me repo）で opinion-distill skill を実行する。`.agents/skills/opinion-distill/SKILL.md` の実行フローに厳密に従い、必要なら wiki/PROFILE への昇格を反映して作業ブランチで commit・push し、PR を作成する。勝手に main へ merge しない。前回実行日は wiki/log.md の opinion-distill エントリから判定する。
+"""

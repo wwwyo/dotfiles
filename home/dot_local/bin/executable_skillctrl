@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+set -euo pipefail
+skillctrl_bin="$(mise which skillctrl)"
+exec mise exec -- "$skillctrl_bin" "$@"

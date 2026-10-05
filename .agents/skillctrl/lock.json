@@ -1,0 +1,266 @@
+{
+  "acceptedHashes": {
+    "agent-browser": "4ff1e19ef7ad250d290cadf437845395bd32a18f",
+    "ce-simplify-code": "8afa8198d85d1fede57a55ede2ac1ce8d253bea0",
+    "cloudflare": "f5ff4bbefd94734f7356ba717aa7b62146d3f291",
+    "computer-use": "75e941f8fe7d317cfebcf46eaa0502a50cb27e62",
+    "e2e": "c86750d7bae9d8cc23072372226a4c13c7cec3bf",
+    "grill-with-docs": "8aa67ae654f28fb6a9098a3dd287536438fc2092",
+    "langfuse": "04b8b0f965f57060e5dfac770361c94786406297",
+    "learn": "dae89e5904c422aa1a62db44749ea959413d443d",
+    "orca-cli": "bc02fffd55ef88b063adf30fee8140d86d951954",
+    "orchestration": "a081a8cd8c678a7eb907756d13a469ae61329cec",
+    "prototype": "fe50fc26cf7cbd499ed9154a79279e2dd5379b3a",
+    "skillctrl": "3a63cb40482bb2d5daaf22c93ff772b9651f7b37",
+    "syokan": "c3575a4e9c7fc37e5e439e54daa1429a7ab96601"
+  },
+  "upstreams": {
+    "agent-browser": {
+      "installedAt": "2026-09-12T03:48:35.598Z",
+      "native": {
+        "skillPath": "skills/agent-browser/SKILL.md",
+        "source": "vercel-labs/agent-browser",
+        "sourceType": "github",
+        "sourceUrl": "https://github.com/vercel-labs/agent-browser.git"
+      },
+      "skillFolderHash": "82def67855a0d2aad7794207951820fa5422fdb0",
+      "skillPath": "skills/agent-browser/SKILL.md",
+      "source": "vercel-labs/agent-browser",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/vercel-labs/agent-browser.git",
+      "updatedAt": "2026-09-12T03:48:35.598Z"
+    },
+    "ce-simplify-code": {
+      "installedAt": "2026-09-25T06:53:52.986Z",
+      "native": {
+        "skillPath": "skills/ce-simplify-code/SKILL.md",
+        "source": "everyinc/compound-engineering-plugin",
+        "sourceType": "github",
+        "sourceUrl": "https://github.com/everyinc/compound-engineering-plugin.git"
+      },
+      "skillFolderHash": "7d5bf0211281eadbdf6754bc5eaa3d80d22857b0",
+      "skillPath": "skills/ce-simplify-code/SKILL.md",
+      "source": "everyinc/compound-engineering-plugin",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/everyinc/compound-engineering-plugin.git",
+      "updatedAt": "2026-09-25T06:53:52.986Z"
+    },
+    "cloudflare": {
+      "installedAt": "2026-10-02T04:54:12.554Z",
+      "native": {
+        "skillPath": "skills/cloudflare/SKILL.md",
+        "source": "cloudflare/skills",
+        "sourceType": "github",
+        "sourceUrl": "https://github.com/cloudflare/skills.git"
+      },
+      "skillFolderHash": "f9aa5dc020f8b8d5291611a22616efc8b1bcde77",
+      "skillPath": "skills/cloudflare/SKILL.md",
+      "source": "cloudflare/skills",
+      "sourceCommit": "41e0d19858946d18af9ee2c2feebbe2e11d829ff",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/cloudflare/skills.git",
+      "updatedAt": "2026-10-02T04:54:12.554Z"
+    },
+    "computer-use": {
+      "installedAt": "2026-09-23T03:49:56.676Z",
+      "native": {
+        "skillPath": "skills/computer-use/SKILL.md",
+        "source": "stablyai/orca",
+        "sourceType": "github",
+        "sourceUrl": "https://github.com/stablyai/orca.git"
+      },
+      "skillFolderHash": "b59f27370a41225c22127e91da0c91cd2519f217",
+      "skillPath": "skills/computer-use/SKILL.md",
+      "source": "stablyai/orca",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/stablyai/orca.git",
+      "updatedAt": "2026-09-23T03:49:56.676Z"
+    },
+    "domain-modeling": {
+      "installedAt": "2026-09-12T07:00:14.861Z",
+      "native": {
+        "pluginName": "mattpocock-skills",
+        "skillPath": "skills/engineering/domain-modeling/SKILL.md",
+        "source": "mattpocock/skills",
+        "sourceType": "github",
+        "sourceUrl": "https://github.com/mattpocock/skills.git"
+      },
+      "pluginName": "mattpocock-skills",
+      "skillFolderHash": "388c9822641805ca2dcd5038e68a1d5282437ee5",
+      "skillPath": "skills/engineering/domain-modeling/SKILL.md",
+      "source": "mattpocock/skills",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/mattpocock/skills.git",
+      "updatedAt": "2026-09-12T07:00:14.861Z"
+    },
+    "e2e": {
+      "installedAt": "2026-10-03T04:52:03.957Z",
+      "native": {
+        "skillPath": "skills/e2e/SKILL.md",
+        "source": "tester-army/e2e",
+        "sourceType": "github",
+        "sourceUrl": "https://github.com/tester-army/e2e.git"
+      },
+      "skillFolderHash": "0a419f7fab6c525626d22f9ed1f0244ddad0cc7f",
+      "skillPath": "skills/e2e/SKILL.md",
+      "source": "tester-army/e2e",
+      "sourceCommit": "f7c075666672d128f79ef2ec347fda67ea9e42ce",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/tester-army/e2e.git",
+      "updatedAt": "2026-10-03T04:52:03.957Z"
+    },
+    "gh-stack": {
+      "installedAt": "2026-09-25T06:51:15.045Z",
+      "native": {
+        "skillPath": "skills/gh-stack/SKILL.md",
+        "source": "github/gh-stack",
+        "sourceType": "github",
+        "sourceUrl": "https://github.com/github/gh-stack.git"
+      },
+      "skillFolderHash": "6bfe555e89a6b264e09d5ece7c4040226458c8e5",
+      "skillPath": "skills/gh-stack/SKILL.md",
+      "source": "github/gh-stack",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/github/gh-stack.git",
+      "updatedAt": "2026-09-25T06:51:15.045Z"
+    },
+    "grill-with-docs": {
+      "installedAt": "2026-09-12T06:59:34.897Z",
+      "native": {
+        "pluginName": "mattpocock-skills",
+        "skillPath": "skills/engineering/grill-with-docs/SKILL.md",
+        "source": "mattpocock/skills",
+        "sourceType": "github",
+        "sourceUrl": "https://github.com/mattpocock/skills.git"
+      },
+      "pluginName": "mattpocock-skills",
+      "skillFolderHash": "eedaf2562c83155115e9c649fa3ecaac2e10e81d",
+      "skillPath": "skills/engineering/grill-with-docs/SKILL.md",
+      "source": "mattpocock/skills",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/mattpocock/skills.git",
+      "updatedAt": "2026-09-12T06:59:34.897Z"
+    },
+    "grilling": {
+      "installedAt": "2026-09-12T07:00:14.871Z",
+      "native": {
+        "pluginName": "mattpocock-skills",
+        "skillPath": "skills/productivity/grilling/SKILL.md",
+        "source": "mattpocock/skills",
+        "sourceType": "github",
+        "sourceUrl": "https://github.com/mattpocock/skills.git"
+      },
+      "pluginName": "mattpocock-skills",
+      "skillFolderHash": "f0732035b8b1b60ae39454e4191caef32fa91903",
+      "skillPath": "skills/productivity/grilling/SKILL.md",
+      "source": "mattpocock/skills",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/mattpocock/skills.git",
+      "updatedAt": "2026-09-12T07:00:14.871Z"
+    },
+    "langfuse": {
+      "installedAt": "2026-09-24T07:04:52.152Z",
+      "native": {
+        "skillPath": "skills/langfuse/SKILL.md",
+        "source": "langfuse/skills",
+        "sourceType": "github",
+        "sourceUrl": "https://github.com/langfuse/skills.git"
+      },
+      "skillFolderHash": "6a0f15b04e521c15571e0bc737207060150c31ed",
+      "skillPath": "skills/langfuse/SKILL.md",
+      "source": "langfuse/skills",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/langfuse/skills.git",
+      "updatedAt": "2026-09-24T07:04:52.152Z"
+    },
+    "learn": {
+      "computedHash": "498c75cbf550562d5894a8a16a131c8fa83f945965165d81a6374090e71ac01e",
+      "installedAt": "2026-10-05T08:51:53.784Z",
+      "nativeName": "answer-me-with-html",
+      "skill": "answer-me-with-html",
+      "skillFolderHash": "b7cac7d679facb91facf513890adfd921cbad281",
+      "skillPath": "skills/answer-me-with-html/SKILL.md",
+      "source": "QingYunA/answer-me-with-html",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/QingYunA/answer-me-with-html.git",
+      "updatedAt": "2026-10-05T08:51:53.784Z"
+    },
+    "orca-cli": {
+      "installedAt": "2026-09-23T03:49:56.682Z",
+      "native": {
+        "skillPath": "skills/orca-cli/SKILL.md",
+        "source": "stablyai/orca",
+        "sourceType": "github",
+        "sourceUrl": "https://github.com/stablyai/orca.git"
+      },
+      "skillFolderHash": "572f7952ac451a30a9c2451b472a639b125ee584",
+      "skillPath": "skills/orca-cli/SKILL.md",
+      "source": "stablyai/orca",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/stablyai/orca.git",
+      "updatedAt": "2026-09-23T03:49:56.682Z"
+    },
+    "orchestration": {
+      "installedAt": "2026-09-23T03:49:56.683Z",
+      "native": {
+        "skillPath": "skills/orchestration/SKILL.md",
+        "source": "stablyai/orca",
+        "sourceType": "github",
+        "sourceUrl": "https://github.com/stablyai/orca.git"
+      },
+      "skillFolderHash": "b0cd1d58b0c317cf7c3726fef7e6b1197c405246",
+      "skillPath": "skills/orchestration/SKILL.md",
+      "source": "stablyai/orca",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/stablyai/orca.git",
+      "updatedAt": "2026-09-23T03:49:56.683Z"
+    },
+    "prototype": {
+      "installedAt": "2026-08-23T03:06:38.503Z",
+      "native": {
+        "skillPath": "skills/prototype/SKILL.md",
+        "source": "emilkowalski/skills",
+        "sourceType": "github",
+        "sourceUrl": "https://github.com/emilkowalski/skills.git"
+      },
+      "skillFolderHash": "564cf82ef5b17f5e018b439dc7fd1e392dcf6188",
+      "skillPath": "skills/prototype/SKILL.md",
+      "source": "emilkowalski/skills",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/emilkowalski/skills.git",
+      "updatedAt": "2026-08-23T03:06:38.503Z"
+    },
+    "skillctrl": {
+      "computedHash": "c84cf3d1adab40b538f53e26a140231383373aa9590dfe1909067b42f0622444",
+      "installedAt": "2026-10-03T03:30:20.413Z",
+      "native": {
+        "computedHash": "c84cf3d1adab40b538f53e26a140231383373aa9590dfe1909067b42f0622444",
+        "skillPath": ".agents/skills/skillctrl/SKILL.md",
+        "source": "wwwyo/skillctrl",
+        "sourceType": "github"
+      },
+      "skillFolderHash": "b6efabb4298b8f589d0401826f6184d3e7ef0647",
+      "skillPath": ".agents/skills/skillctrl/SKILL.md",
+      "source": "wwwyo/skillctrl",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/wwwyo/skillctrl.git",
+      "updatedAt": "2026-10-05T10:12:51.176Z"
+    },
+    "syokan": {
+      "installedAt": "2026-06-28T08:37:08.256Z",
+      "native": {
+        "skillPath": "skills/syokan/SKILL.md",
+        "source": "wwwyo/syokan",
+        "sourceType": "github",
+        "sourceUrl": "https://github.com/wwwyo/syokan.git"
+      },
+      "skillFolderHash": "804aa2c90b4080c4beb0e8176a50ad09c14cc579",
+      "skillPath": "skills/syokan/SKILL.md",
+      "source": "wwwyo/syokan",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/wwwyo/syokan.git",
+      "updatedAt": "2026-09-29T02:26:25.130Z"
+    }
+  },
+  "version": 1
+}

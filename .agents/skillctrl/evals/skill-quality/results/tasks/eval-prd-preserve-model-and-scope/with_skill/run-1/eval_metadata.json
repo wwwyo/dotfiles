@@ -1,0 +1,13 @@
+{
+  "eval_id": 2,
+  "eval_name": "prd-preserve-model-and-scope",
+  "prompt": "コレクションの読み取り専用共有リンク機能の PRD を作ってください。合意内容と確認済み prototype を添付しました。共有場所は docs、機能名は collection-share で確定済みです。既存 PRD と重複はありません。今回は再ヒアリング、prototype の再作成、外部レビュー起動は省略し、添付の合意材料から完成 PRD と必要な用語更新まで進めてください。実装は始めないでください。外部API、ネット検索、package install、commit/pushを使わない。fixture外のファイルを変更しない。",
+  "assertions": [
+    "PRD が docs/prd/collection-share/prd.md にあり、完成状態を表す status: ready の frontmatter を持つ。",
+    "Domain Model の classDiagram が Collection、Note、ShareLink の関係を表し、メモの0件以上・単一所属とリンクの単一対象を正しく示す。",
+    "有効リンク数を未確定として残し、所有者だけが発行・失効できるルールと既存 ADR への解決可能なリンクがある。",
+    "共有リンクの実体は AGENTS.md Glossary に英語名付きで追加され、機能固有の『匿名閲覧』はそこへ昇格しない。",
+    "AC が発行・閲覧・失効の利用結果を検証でき、Success Metrics にコアアクション、週次、自発的利用者の分母、翌週再利用の主指標がある。",
+    "合意済み prototype が docs/prd/collection-share/prototype/ から辿れ、実装ファイルや DB schema・API の設計は追加されない。"
+  ]
+}

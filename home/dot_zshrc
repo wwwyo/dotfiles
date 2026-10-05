@@ -1,0 +1,12 @@
+# .zsh/ structure:
+#   01-exports.zsh       - PATH, environment variables
+#   02-plugins.zsh       - Zinit, completions, zsh-abbr
+#   03-prompt.zsh        - Prompt, vcs_info
+#   04-functions.zsh     - fzf functions
+#   06-keybindings.zsh   - Keybindings
+#   07-abbreviations.zsh - zsh-abbr definitions (must load after plugins)
+
+for config in ~/.zsh/*.zsh(N); do
+    source "$config"
+done
+

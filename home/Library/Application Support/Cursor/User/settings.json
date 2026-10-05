@@ -1,0 +1,218 @@
+{
+  "editor.renderWhitespace": "all",
+  "files.autoSave": "onFocusChange",
+  "files.exclude": {
+    "**/tmp/**": true,
+    "**/node_modules/**": true,
+    "**/.git/objects/**": true
+  },
+  "files.watcherExclude": {
+    "**/.git/objects/**": true,
+    "**/.git/subtree-cache/**": true,
+    "**/node_modules/**": true,
+    "/.cache/": true,
+    "/.next/": true,
+    "**/tmp/**": true,
+    "**/dist/**": true
+  },
+  "search.exclude": {
+    "**/.git/objects/**": true,
+    "**/.git/subtree-cache/**": true,
+    "**/node_modules/**": true,
+    "/.cache/": true,
+    "/.next/": true,
+    "**/tmp/**": true,
+    "**/dist/**": true
+  },
+  "editor.experimental.asyncTokenization": true,
+  "files.trimTrailingWhitespace": true,
+  "window.title": "${activeEditorMedium}${separator}${rootName}",
+  "vim.insertModeKeyBindings": [
+    {
+      "before": ["j", "j"],
+      "after": ["<Esc>"]
+    }
+  ],
+  "vim.hlsearch": true,
+  "explorer.confirmDelete": false,
+  "explorer.compactFolders": false,
+  "workbench.editor.customLabels.patterns": {
+    "**/index.*": "${dirname} .../${dirname(1)}",
+    "**/{page,layout,template,route,actions}.{ts,tsx}": "${dirname}/${filename}.${extname} .../${dirname(1)}"
+  },
+  "workbench.editor.enablePreviewFromQuickOpen": false,
+  "workbench.editorAssociations": {
+    "*.ipynb": "jupyter-notebook",
+    "*.log": "default",
+    "*.svg": "default"
+  },
+  "workbench.tree.renderIndentGuides": "always",
+  "workbench.tree.indent": 14,
+  "terminal.integrated.fontSize": 12,
+  "terminal.integrated.inheritEnv": false,
+  "javascript.preferGoToSourceDefinition": true,
+  "javascript.updateImportsOnFileMove.enabled": "always",
+  "typescript.preferGoToSourceDefinition": true,
+  "typescript.updateImportsOnFileMove.enabled": "always",
+  // "typescript.experimental.useTsgo": true,
+  "editor.cursorStyle": "line",
+  "editor.lineNumbers": "on",
+  "editor.wordSeparators": "/\\()\"':,.;<>~!@#$%^&*|+=[]{}`?",
+  "editor.wordWrap": "off",
+  "editor.suggestSelection": "first",
+  "editor.copyWithSyntaxHighlighting": false,
+  "editor.minimap.enabled": false,
+  "editor.inlineSuggest.enabled": true,
+  "editor.suggest.snippetsPreventQuickSuggestions": false,
+  "editor.formatOnPaste": true,
+  "editor.formatOnType": true,
+  "editor.bracketPairColorization.enabled": true,
+  "editor.formatOnSave": true,
+  "editor.quickSuggestions": {
+    "strings": true
+  },
+  "editor.codeActionsOnSave": {
+    "source.fixAll": "never",
+    "source.addMissingImports": "explicit",
+    "source.removeUnusedImports": "explicit",
+    "source.fixAll.eslint": "explicit"
+  },
+  "editor.fontSize": 13,
+  "editor.detectIndentation": true,
+  "editor.accessibilitySupport": "off",
+  "security.workspace.trust.untrustedFiles": "open",
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "editor.tabSize": 2,
+  "notebook.cellToolbarLocation": {
+    "default": "right",
+    "jupyter-notebook": "left"
+  },
+  "eslint.validate": [
+    "javascript",
+    "javascriptreact",
+    "vue",
+    "typescript",
+    "typescriptreact"
+  ],
+  "eslint.workingDirectories": [
+    {
+      "mode": "auto"
+    }
+  ],
+  "eslint.options": { "overrideConfigFile": "eslint.config.mjs" },
+  "gitlens.views.worktrees.files.layout": "list",
+  "git.autofetch": true,
+  "githubPullRequests.fileListLayout": "tree",
+  "githubPullRequests.pullBranch": "never",
+  "figma.autocompleteBlocks": true,
+  "go.toolsManagement.autoUpdate": true,
+  "go.diagnostic.vulncheck": "Off",
+  "go.alternateTools": {
+    "go": "${env:HOME}/.local/share/mise/shims/go"
+  },
+  "errorLens.enabledDiagnosticLevels": ["error", "warning", "hint"],
+  "auto-close-tag.enableAutoCloseSelfClosingTag": false,
+  "html.autoClosingTags": false,
+  "javascript.autoClosingTags": false,
+  "typescript.autoClosingTags": false,
+  "tailwindCSS.includeLanguages": {
+    "html": "html",
+    "javascript": "javascript",
+    "css": "css"
+  },
+  "git.confirmSync": false,
+  "cSpell.userWords": [
+    "bunfig",
+    "bunx",
+    "indexeddb",
+    "linegraph",
+    "nextjs",
+    "noreply",
+    "nuxtjs",
+    "opentelemetry",
+    "pnpm",
+    "sonner",
+    "stylelint",
+    "supabase",
+    "yugothic"
+  ],
+  "hediet.vscode-drawio.resizeImages": null,
+  "window.zoomLevel": -1,
+  "terminal.integrated.env.osx": {},
+  "gitlens.views.commits.files.layout": "tree",
+  "gitlens.launchpad.indicator.enabled": false,
+  "terminal.external.osxExec": "Warp.app",
+  "terminal.integrated.defaultProfile.osx": "zsh",
+  "diffEditor.ignoreTrimWhitespace": true,
+  "cursor.cpp.disabledLanguages": [
+    "scminput"
+  ],
+  "prettier.requireConfig": true,
+  "editor.foldingImportsByDefault": true,
+  "cursor.cpp.enablePartialAccepts": true,
+  "security.promptForLocalFileProtocolHandling": false,
+  "search.mode": "reuseEditor",
+  "search.searchEditor.focusResultsOnSearch": false,
+  "search.searchOnType": true,
+  "search.followSymlinks": false,
+  "cursor.composer.shouldChimeAfterChatFinishes": true,
+  "gitlens.mode.active": "zen",
+  "git.openRepositoryInParentFolders": "always",
+  "[shellscript]": {
+    "editor.defaultFormatter": "foxundermoon.shell-format"
+  },
+  "[go]": {
+    "editor.defaultFormatter": "golang.go"
+  },
+  "[prisma]": {
+    "editor.defaultFormatter": "Prisma.prisma"
+  },
+  "[dockerfile]": {
+    "editor.defaultFormatter": "redhat.vscode-yaml"
+  },
+  "[dockercompose]": {
+    "editor.insertSpaces": true,
+    "editor.tabSize": 2,
+    "editor.autoIndent": "advanced",
+    "editor.defaultFormatter": "redhat.vscode-yaml"
+  },
+  "[github-actions-workflow]": {
+    "editor.defaultFormatter": "redhat.vscode-yaml"
+  },
+  "workbench.colorTheme": "Default Dark Modern",
+  "biome.suggestInstallingGlobally": false,
+  "dart.flutterSdkPaths": [
+    "${env:HOME}/.local/share/mise/installs/flutter/3.35.4-stable"
+  ],
+  "claudeCode.preferredLocation": "panel",
+  "claudeCode.environmentVariables": [
+    { "name": "CLAUDECODE", "value": "" }
+  ],
+  "prettify-ts.maxDepth": 1,
+  "extensions.ignoreRecommendations": true,
+  "update.releaseTrack": "prerelease",
+  "githubPullRequests.queries": [
+    {
+      "label": "Copilot on My Behalf",
+      "query": "repo:${owner}/${repository} is:open author:copilot involves:${user}"
+    },
+    {
+      "label": "Local Pull Request Branches",
+      "query": "default"
+    },
+    {
+      "label": "Waiting For My Review",
+      "query": "repo:${owner}/${repository} is:open review-requested:${user} draft:false -label:deploy "
+    },
+    {
+      "label": "Created By Me",
+      "query": "repo:${owner}/${repository} is:open author:${user}"
+    },
+    {
+      "label": "All Open",
+      "query": "default"
+    }
+  ],
+  "window.autoDetectColorScheme": false,
+  "extensions.autoCheckUpdates": false
+}

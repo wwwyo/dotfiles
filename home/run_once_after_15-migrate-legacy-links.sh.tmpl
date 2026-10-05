@@ -1,0 +1,36 @@
+#!/bin/sh
+
+# 旧 link.sh の whole-dir link からの移行。chezmoi は `~/.config/mise` のような
+# dir symlink を real dir + per-file symlink に置き換えるが、旧 dir の中にあった
+# untracked / gitignore なファイル（`conf.d/local.toml` 等）は新しい dir に
+# 引き継がれず repo 側に取り残される。欠けている分だけを複製して救済する。
+# 旧 path が残っていない環境（fresh clone）では何もしない。
+#
+# run_once_: apply 後（after_）に1回だけ走ればよいため。
+
+set -eu
+
+WT="{{ .chezmoi.workingTree }}"
+
+# migrate_leftovers <旧 repo 内 path> <deploy 先>
+migrate_leftovers() {
+  src="$1"
+  dst="$2"
+  [ -d "$src" ] || return 0
+  [ -d "$dst" ] || return 0
+  (cd "$src" && find . \( -type f -o -type l \) -print) | while IFS= read -r f; do
+    if [ ! -e "$dst/$f" ] && [ ! -L "$dst/$f" ]; then
+      mkdir -p "$dst/$(dirname "$f")"
+      cp -p "$src/$f" "$dst/$f"
+      echo "migrate: $dst/$f"
+    fi
+  done
+}
+
+migrate_leftovers "$WT/.zsh"                  "$HOME/.zsh"
+migrate_leftovers "$WT/.config/nvim"          "$HOME/.config/nvim"
+migrate_leftovers "$WT/.config/ghostty"       "$HOME/.config/ghostty"
+migrate_leftovers "$WT/.config/skillet"       "$HOME/.config/skillet"
+migrate_leftovers "$WT/.config/mise"          "$HOME/.config/mise"
+migrate_leftovers "$WT/.config/devin/agents"  "$HOME/.config/devin/agents"
+migrate_leftovers "$WT/.config/duti"          "$HOME/.config/duti"

@@ -1,0 +1,15 @@
+{
+  "summary": {
+    "after": {
+      "total": 82,
+      "scorable": 75,
+      "incomplete": 7,
+      "tp": 38,
+      "fp": 2,
+      "fn": 2,
+      "correct": 71,
+      "precision": 0.95,
+      "recall": 0.95
+    }
+  }
+}

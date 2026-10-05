@@ -1,0 +1,1094 @@
+[
+  {
+    "id": "prd-near-miss",
+    "skill": "prd",
+    "variant": "after",
+    "should_trigger": false,
+    "triggered": false,
+    "status": "timeout",
+    "scorable": false,
+    "passed": null,
+    "duration_seconds": 180.065,
+    "evidence": [],
+    "tool_calls": [
+      {
+        "tool": "ls",
+        "args": {
+          "path": "."
+        },
+        "is_error": false
+      },
+      {
+        "tool": "ls",
+        "args": {
+          "path": ".."
+        },
+        "is_error": false
+      },
+      {
+        "tool": "ls",
+        "args": {
+          "path": "<workspace>/triggers/prd-near-miss"
+        },
+        "is_error": false
+      },
+      {
+        "tool": "ls",
+        "args": {
+          "path": "<workspace>"
+        },
+        "is_error": false
+      },
+      {
+        "tool": "ls",
+        "args": {
+          "path": "<repo>"
+        },
+        "is_error": false
+      },
+      {
+        "tool": "find",
+        "args": {
+          "pattern": "**/PRD*.md",
+          "path": "<repo>",
+          "limit": 40
+        },
+        "is_error": false
+      },
+      {
+        "tool": "ls",
+        "args": {
+          "path": "<repo>/docs"
+        },
+        "is_error": false
+      },
+      {
+        "tool": "grep",
+        "args": {
+          "pattern": "prd|design\\.md|設計",
+          "path": "<repo>/AGENTS.md",
+          "ignoreCase": true
+        },
+        "is_error": false
+      },
+      {
+        "tool": "ls",
+        "args": {
+          "path": "<repo>/docs/prd"
+        },
+        "is_error": false
+      },
+      {
+        "tool": "ls",
+        "args": {
+          "path": "<repo>/docs/adr"
+        },
+        "is_error": false
+      },
+      {
+        "tool": "ls",
+        "args": {
+          "path": "<repo>/docs/prd/session-eval-langfuse"
+        },
+        "is_error": false
+      },
+      {
+        "tool": "ls",
+        "args": {
+          "path": "<repo>/docs/prd/pr-merge-lane"
+        },
+        "is_error": false
+      },
+      {
+        "tool": "read",
+        "args": {
+          "path": "<repo>/docs/prd/session-eval-langfuse/prd.md"
+        },
+        "is_error": false
+      },
+      {
+        "tool": "read",
+        "args": {
+          "path": "<repo>/docs/prd/pr-merge-lane/prd.md"
+        },
+        "is_error": false
+      },
+      {
+        "tool": "ls",
+        "args": {
+          "path": "<repo>/.agents/skills/pr-auto-merge"
+        },
+        "is_error": false
+      },
+      {
+        "tool": "find",
+        "args": {
+          "path": "<repo>",
+          "pattern": "**/design*.md"
+        },
+        "is_error": false
+      },
+      {
+        "tool": "ls",
+        "args": {
+          "path": "<repo>/.agents/skills/pr-auto-merge/tools"
+        },
+        "is_error": false
+      },
+      {
+        "tool": "read",
+        "args": {
+          "path": "<repo>/.agents/skills/document/references/design-doc.md"
+        },
+        "is_error": false
+      },
+      {
+        "tool": "read",
+        "args": {
+          "path": "<repo>/docs/adr/0003-eval-to-consolidate-split.md"
+        },
+        "is_error": false
+      },
+      {
+        "tool": "find",
+        "args": {
+          "path": "<repo>",
+          "pattern": "**/session_eval*"
+        },
+        "is_error": false
+      },
+      {
+        "tool": "ls",
+        "args": {
+          "path": "<repo>/.agents/skills/pr-auto-merge/references"
+        },
+        "is_error": false
+      },
+      {
+        "tool": "ls",
+        "args": {
+          "path": "<repo>/.agents/scheduled-tasks/session-eval"
+        },
+        "is_error": false
+      },
+      {
+        "tool": "read",
+        "args": {
+          "path": "<repo>/.agents/scheduled-tasks/session-eval/automation.toml"
+        },
+        "is_error": false
+      },
+      {
+        "tool": "read",
+        "args": {
+          "path": "<repo>/.agents/scheduled-tasks/session-eval/SKILL.md"
+        },
+        "is_error": false
+      },
+      {
+        "tool": "read",
+        "args": {
+          "path": "<repo>/.agents/skills/pr-auto-merge/SKILL.md"
+        },
+        "is_error": false
+      },
+      {
+        "tool": "read",
+        "args": {
+          "path": "<repo>/docs/prd/pr-merge-lane/prototype/triage-first/design.md"
+        },
+        "is_error": false
+      },
+      {
+        "tool": "ls",
+        "args": {
+          "path": "<repo>/docs/prd/pr-merge-lane/prototype"
+        },
+        "is_error": false
+      },
+      {
+        "tool": "grep",
+        "args": {
+          "pattern": "^status:|承認|approved",
+          "path": "<repo>/docs",
+          "limit": 30
+        },
+        "is_error": false
+      },
+      {
+        "tool": "read",
+        "args": {
+          "path": "<repo>/docs/prd/pr-merge-lane/prototype/comparison.md"
+        },
+        "is_error": false
+      },
+      {
+        "tool": "grep",
+        "args": {
+          "pattern": "^(def |SCHEMA|# ---|    \\\"\\\"\\\")",
+          "path": "<repo>/.agents/skills/pr-auto-merge/tools/pr_triage.py",
+          "limit": 80
+        },
+        "is_error": false
+      },
+      {
+        "tool": "read",
+        "args": {
+          "path": "<repo>/.agents/skills/document/SKILL.md"
+        },
+        "is_error": false
+      },
+      {
+        "tool": "read",
+        "args": {
+          "path": "<repo>/.agents/skills/document/assets/design-doc.md"
+        },
+        "is_error": false
+      },
+      {
+        "tool": "read",
+        "args": {
+          "path": "<repo>/.agents/skills/pr-auto-merge/tools/pr_triage.py",
+          "limit": 120
+        },
+        "is_error": false
+      },
+      {
+        "tool": "grep",
+        "args": {
+          "pattern": "add_parser|sub\\.add|def cmd_|usage",
+          "path": "<repo>/.agents/skills/pr-auto-merge/tools/pr_triage.py"
+        },
+        "is_error": false
+      },
+      {
+        "tool": "ls",
+        "args": {
+          "path": "<repo>/.agents/scheduled-tasks"
+        },
+        "is_error": false
+      },
+      {
+        "tool": "grep",
+        "args": {
+          "pattern": ".",
+          "path": "<repo>/docs/prd/pr-merge-lane/prototype/README.md",
+          "limit": 40
+        },
+        "is_error": false
+      }
+    ],
+    "transcript_sha256": "d62a8c0a7ff11f608305b229d2777fd23bc98ca5267bedad966ed23d20d09958"
+  },
+  {
+    "id": "browser-near-miss",
+    "skill": "agent-browser",
+    "variant": "after",
+    "should_trigger": false,
+    "triggered": false,
+    "status": "timeout",
+    "scorable": false,
+    "passed": null,
+    "duration_seconds": 180.254,
+    "evidence": [],
+    "tool_calls": [
+      {
+        "tool": "ls",
+        "args": {
+          "path": "."
+        },
+        "is_error": false
+      },
+      {
+        "tool": "ls",
+        "args": {
+          "path": ".."
+        },
+        "is_error": false
+      },
+      {
+        "tool": "read",
+        "args": {
+          "path": "../stderr.txt"
+        },
+        "is_error": false
+      },
+      {
+        "tool": "read",
+        "args": {
+          "path": "../transcript.jsonl"
+        },
+        "is_error": false
+      }
+    ],
+    "transcript_sha256": "33023238a3264c29d3c261a2a45b1ec93ea81e4699bc4da980299964181f2a0d"
+  },
+  {
+    "id": "prototype-near-miss",
+    "skill": "prototype",
+    "variant": "after",
+    "should_trigger": false,
+    "triggered": false,
+    "status": "model_error",
+    "scorable": false,
+    "passed": null,
+    "duration_seconds": 1.612,
+    "evidence": [],
+    "tool_calls": [],
+    "transcript_sha256": "65a8724827f11998bc3720c92e51cd313d7b5e50348b593fece69c902b455b9c"
+  },
+  {
+    "id": "ingest-boundary-negative",
+    "skill": "ingest-to-markdown",
+    "variant": "after",
+    "should_trigger": false,
+    "triggered": false,
+    "status": "timeout",
+    "scorable": false,
+    "passed": null,
+    "duration_seconds": 180.052,
+    "evidence": [],
+    "tool_calls": [
+      {
+        "tool": "ls",
+        "args": {
+          "path": "."
+        },
+        "is_error": false
+      },
+      {
+        "tool": "find",
+        "args": {
+          "pattern": "**/*",
+          "path": "."
+        },
+        "is_error": false
+      },
+      {
+        "tool": "ls",
+        "args": {
+          "path": "<workspace>/triggers/ingest-boundary-negative"
+        },
+        "is_error": false
+      },
+      {
+        "tool": "ls",
+        "args": {
+          "path": "<repo>"
+        },
+        "is_error": false
+      },
+      {
+        "tool": "find",
+        "args": {
+          "pattern": "**/*.py",
+          "path": "<repo>/scripts",
+          "limit": 30
+        },
+        "is_error": false
+      },
+      {
+        "tool": "grep",
+        "args": {
+          "pattern": "youtu",
+          "path": "<repo>",
+          "ignoreCase": true,
+          "limit": 30
+        },
+        "is_error": false
+      },
+      {
+        "tool": "ls",
+        "args": {
+          "path": "<repo>/tests"
+        },
+        "is_error": false
+      },
+      {
+        "tool": "read",
+        "args": {
+          "path": "<repo>/.agents/skills/ingest-to-markdown/scripts/ingest-youtube.sh",
+          "limit": 80
+        },
+        "is_error": false
+      },
+      {
+        "tool": "read",
+        "args": {
+          "path": "<repo>/tests/ssh-sign.test.sh",
+          "limit": 40
+        },
+        "is_error": false
+      },
+      {
+        "tool": "read",
+        "args": {
+          "path": "<repo>/tests/agents-skills-symlinks.test.sh",
+          "limit": 30
+        },
+        "is_error": false
+      },
+      {
+        "tool": "read",
+        "args": {
+          "path": "<repo>/AGENTS.md",
+          "limit": 60
+        },
+        "is_error": false
+      },
+      {
+        "tool": "ls",
+        "args": {
+          "path": "<repo>/.agents/skills/ingest-to-markdown/scripts"
+        },
+        "is_error": false
+      },
+      {
+        "tool": "read",
+        "args": {
+          "path": "<repo>/.agents/skills/ingest-to-markdown/scripts/ingest.sh",
+          "limit": 30
+        },
+        "is_error": false
+      },
+      {
+        "tool": "read",
+        "args": {
+          "path": "<repo>/.agents/skills/ingest-to-markdown/scripts/ingest.sh",
+          "offset": 31,
+          "limit": 40
+        },
+        "is_error": false
+      },
+      {
+        "tool": "read",
+        "args": {
+          "path": "<repo>/.agents/skills/ingest-to-markdown/scripts/ingest-youtube.sh",
+          "offset": 81,
+          "limit": 120
+        },
+        "is_error": false
+      }
+    ],
+    "transcript_sha256": "d07cc5c81edc3f0e59b5740e186c2da1f0cc9c72b8595a6431f04c888f8d4482"
+  },
+  {
+    "id": "grill-near-miss",
+    "skill": "grill-with-docs",
+    "variant": "after",
+    "should_trigger": false,
+    "triggered": false,
+    "status": "timeout",
+    "scorable": false,
+    "passed": null,
+    "duration_seconds": 180.043,
+    "evidence": [],
+    "tool_calls": [
+      {
+        "tool": "ls",
+        "args": {
+          "path": "."
+        },
+        "is_error": false
+      },
+      {
+        "tool": "find",
+        "args": {
+          "pattern": "**/*",
+          "path": "."
+        },
+        "is_error": false
+      },
+      {
+        "tool": "ls",
+        "args": {
+          "path": ".."
+        },
+        "is_error": false
+      },
+      {
+        "tool": "find",
+        "args": {
+          "pattern": "**/adr*",
+          "path": "<workspace>/triggers/grill-near-miss"
+        },
+        "is_error": false
+      },
+      {
+        "tool": "find",
+        "args": {
+          "pattern": "**/ADR*",
+          "path": "<repo>"
+        },
+        "is_error": false
+      },
+      {
+        "tool": "find",
+        "args": {
+          "pattern": "**/docs/adr/**",
+          "path": "<repo>"
+        },
+        "is_error": false
+      },
+      {
+        "tool": "read",
+        "args": {
+          "path": "<repo>/docs/adr/0001-session-eval-on-langfuse-traces.md"
+        },
+        "is_error": false
+      },
+      {
+        "tool": "read",
+        "args": {
+          "path": "<repo>/docs/adr/0002-sessions-md-replaced-by-langfuse-scores.md"
+        },
+        "is_error": false
+      },
+      {
+        "tool": "read",
+        "args": {
+          "path": "<repo>/docs/adr/0003-eval-to-consolidate-split.md"
+        },
+        "is_error": false
+      },
+      {
+        "tool": "grep",
+        "args": {
+          "pattern": "ASD|ADR ?\\d+",
+          "path": "<repo>"
+        },
+        "is_error": false
+      },
+      {
+        "tool": "grep",
+        "args": {
+          "pattern": "べき等|冪等|冪等性|べき等性",
+          "path": "<repo>/docs/adr"
+        },
+        "is_error": false
+      },
+      {
+        "tool": "grep",
+        "args": {
+          "pattern": "ASD",
+          "path": "<repo>",
+          "literal": true
+        },
+        "is_error": false
+      },
+      {
+        "tool": "grep",
+        "args": {
+          "path": "<repo>/docs/adr",
+          "pattern": "ADR"
+        },
+        "is_error": false
+      },
+      {
+        "tool": "grep",
+        "args": {
+          "path": "<repo>/docs/adr",
+          "pattern": "[0-9]+(つ|つ目)"
+        },
+        "is_error": false
+      },
+      {
+        "tool": "ls",
+        "args": {
+          "path": "<repo>/docs/adr"
+        },
+        "is_error": false
+      },
+      {
+        "tool": "grep",
+        "args": {
+          "path": "<repo>/docs/adr",
+          "pattern": "^\\s*[-*] |^#|Status",
+          "limit": 60
+        },
+        "is_error": false
+      },
+      {
+        "tool": "read",
+        "args": {
+          "path": "<repo>/docs/adr/0003-eval-to-consolidate-split.md",
+          "limit": 10,
+          "offset": 1
+        },
+        "is_error": false
+      },
+      {
+        "tool": "grep",
+        "args": {
+          "literal": true,
+          "path": "<repo>/docs",
+          "pattern": "ADR 000"
+        },
+        "is_error": false
+      },
+      {
+        "tool": "grep",
+        "args": {
+          "path": "<repo>/docs/adr",
+          "pattern": "[０-９Ａ-Ｚａ-ｚ]|[ ]{2,}|[、。][ ]{1,}[^ ]"
+        },
+        "is_error": false
+      },
+      {
+        "tool": "grep",
+        "args": {
+          "literal": true,
+          "path": "<repo>/docs/adr",
+          "pattern": "べき"
+        },
+        "is_error": false
+      },
+      {
+        "tool": "grep",
+        "args": {
+          "literal": true,
+          "path": "<repo>/docs/adr/0003-eval-to-consolidate-split.md",
+          "pattern": "0001 では"
+        },
+        "is_error": false
+      },
+      {
+        "tool": "grep",
+        "args": {
+          "literal": true,
+          "path": "<repo>/docs/adr/0002-sessions-md-replaced-by-langfuse-scores.md",
+          "pattern": "べき"
+        },
+        "is_error": false
+      },
+      {
+        "tool": "grep",
+        "args": {
+          "literal": true,
+          "path": "<repo>/docs/adr/0003-eval-to-consolidate-split.md",
+          "pattern": "では evaluator"
+        },
+        "is_error": false
+      },
+      {
+        "tool": "grep",
+        "args": {
+          "context": 0,
+          "literal": true,
+          "path": "<repo>/docs/adr/0003-eval-to-consolidate-split.md",
+          "pattern": "A"
+        },
+        "is_error": false
+      },
+      {
+        "tool": "grep",
+        "args": {
+          "literal": true,
+          "path": "<repo>/docs/adr/0003-eval-to-consolidate-split.md",
+          "pattern": "R 0001 では"
+        },
+        "is_error": false
+      },
+      {
+        "tool": "grep",
+        "args": {
+          "literal": true,
+          "path": "<repo>/docs/adr/0003-eval-to-consolidate-split.md",
+          "pattern": "SD 0001"
+        },
+        "is_error": false
+      },
+      {
+        "tool": "grep",
+        "args": {
+          "literal": true,
+          "path": "<repo>",
+          "pattern": "docs/adr"
+        },
+        "is_error": false
+      },
+      {
+        "tool": "grep",
+        "args": {
+          "literal": true,
+          "path": "<repo>",
+          "pattern": "0002-"
+        },
+        "is_error": false
+      },
+      {
+        "tool": "read",
+        "args": {
+          "path": "<repo>/.agents/skills/domain-modeling/references/adr-format.md"
+        },
+        "is_error": false
+      },
+      {
+        "tool": "read",
+        "args": {
+          "path": "<repo>/docs/adr/0003-eval-to-consolidate-split.md",
+          "offset": 5,
+          "limit": 2
+        },
+        "is_error": false
+      }
+    ],
+    "transcript_sha256": "5963e9a0a5ae310020cf4c9ae82083a88e7da4b4a48c39d2baad709f0b49e33f"
+  },
+  {
+    "id": "creator-boundary-positive",
+    "skill": "skill-creator",
+    "variant": "after",
+    "should_trigger": true,
+    "triggered": false,
+    "status": "invalid_tree",
+    "scorable": false,
+    "passed": null,
+    "duration_seconds": 77.38,
+    "evidence": [],
+    "tool_calls": [
+      {
+        "tool": "ls",
+        "args": {
+          "path": "."
+        },
+        "is_error": false
+      },
+      {
+        "tool": "find",
+        "args": {
+          "pattern": "**/*",
+          "path": "."
+        },
+        "is_error": false
+      },
+      {
+        "tool": "ls",
+        "args": {
+          "path": "<workspace>/triggers/creator-boundary-positive"
+        },
+        "is_error": false
+      },
+      {
+        "tool": "ls",
+        "args": {
+          "path": "<workspace>"
+        },
+        "is_error": false
+      },
+      {
+        "tool": "read",
+        "args": {
+          "path": "<workspace>/manifest.json"
+        },
+        "is_error": false
+      },
+      {
+        "tool": "read",
+        "args": {
+          "path": "<workspace>/trigger-results.json"
+        },
+        "is_error": false
+      },
+      {
+        "tool": "ls",
+        "args": {
+          "path": "<repo>/.agents/skills/skill-creator"
+        },
+        "is_error": false
+      },
+      {
+        "tool": "grep",
+        "args": {
+          "pattern": "trigger",
+          "path": "<repo>/.agents/skills/skill-creator",
+          "ignoreCase": true,
+          "limit": 40
+        },
+        "is_error": false
+      },
+      {
+        "tool": "read",
+        "args": {
+          "path": "<repo>/.agents/skills/skill-creator/SKILL.md"
+        },
+        "is_error": false
+      },
+      {
+        "tool": "ls",
+        "args": {
+          "path": "<repo>/.agents/skills/skill-creator/scripts"
+        },
+        "is_error": false
+      },
+      {
+        "tool": "read",
+        "args": {
+          "path": "<repo>/.agents/skills/skill-creator/references/description-optimization.md"
+        },
+        "is_error": false
+      },
+      {
+        "tool": "ls",
+        "args": {
+          "path": "<repo>/.agents/skills"
+        },
+        "is_error": false
+      },
+      {
+        "tool": "find",
+        "args": {
+          "path": "~/orca/workspaces/dotfiles",
+          "pattern": "**/evals/triggers*.json",
+          "limit": 30
+        },
+        "is_error": false
+      },
+      {
+        "tool": "ls",
+        "args": {
+          "path": "<repo>/.agents/skills/skill-quality-workspace"
+        },
+        "is_error": false
+      },
+      {
+        "tool": "find",
+        "args": {
+          "path": "<repo>/.agents/skills/skill-quality-workspace",
+          "pattern": "*.json",
+          "limit": 40
+        },
+        "is_error": false
+      },
+      {
+        "tool": "grep",
+        "args": {
+          "context": 6,
+          "pattern": "\"passed\": false",
+          "path": "<workspace>/trigger-results.json"
+        },
+        "is_error": false
+      },
+      {
+        "tool": "read",
+        "args": {
+          "path": "<workspace>/trigger-results.json",
+          "offset": 5070,
+          "limit": 14
+        },
+        "is_error": false
+      },
+      {
+        "tool": "read",
+        "args": {
+          "path": "<workspace>/trigger-results.json",
+          "offset": 7378,
+          "limit": 18
+        },
+        "is_error": false
+      },
+      {
+        "tool": "grep",
+        "args": {
+          "context": 3,
+          "limit": 10,
+          "path": "<workspace>/triggers/syokan-near-miss",
+          "pattern": "syokan"
+        },
+        "is_error": false
+      },
+      {
+        "tool": "find",
+        "args": {
+          "path": "<workspace>/triggers/syokan-near-miss",
+          "pattern": "*"
+        },
+        "is_error": false
+      },
+      {
+        "tool": "read",
+        "args": {
+          "limit": 10,
+          "path": "<repo>/.agents/skills/pr-auto-merge/SKILL.md"
+        },
+        "is_error": false
+      },
+      {
+        "tool": "read",
+        "args": {
+          "limit": 10,
+          "path": "<repo>/.agents/skills/syokan/SKILL.md"
+        },
+        "is_error": false
+      },
+      {
+        "tool": "grep",
+        "args": {
+          "limit": 2,
+          "path": "<workspace>/triggers/merge-near-miss/after/transcript.jsonl",
+          "pattern": "\"role\":\"user\",\"content\":\\[\\{\"type\":\"text\",\"text\":\"[^\"]+\""
+        },
+        "is_error": false
+      }
+    ],
+    "transcript_sha256": "83aec196df331e9ecf746c15035e72d617b447e60824bdef82aee7f6e668b41d"
+  },
+  {
+    "id": "structure-near-miss",
+    "skill": "skill-structure",
+    "variant": "after",
+    "should_trigger": false,
+    "triggered": false,
+    "status": "invalid_tree",
+    "scorable": false,
+    "passed": null,
+    "duration_seconds": 116.102,
+    "evidence": [],
+    "tool_calls": [
+      {
+        "tool": "ls",
+        "args": {
+          "path": "."
+        },
+        "is_error": false
+      },
+      {
+        "tool": "ls",
+        "args": {
+          "path": "<repo>/.agents/skills"
+        },
+        "is_error": false
+      },
+      {
+        "tool": "ls",
+        "args": {
+          "path": "~/.agents"
+        },
+        "is_error": false
+      },
+      {
+        "tool": "ls",
+        "args": {
+          "path": "<repo>"
+        },
+        "is_error": false
+      },
+      {
+        "tool": "ls",
+        "args": {
+          "path": "<repo>/.agents"
+        },
+        "is_error": false
+      },
+      {
+        "tool": "ls",
+        "args": {
+          "path": "~/.agents/skills"
+        },
+        "is_error": false
+      },
+      {
+        "tool": "read",
+        "args": {
+          "path": "<repo>/AGENTS.md"
+        },
+        "is_error": false
+      },
+      {
+        "tool": "ls",
+        "args": {
+          "path": "<repo>/.agents/skillctrl"
+        },
+        "is_error": false
+      },
+      {
+        "tool": "read",
+        "args": {
+          "path": "<repo>/.agents/.skill-lock.json"
+        },
+        "is_error": false
+      },
+      {
+        "tool": "ls",
+        "args": {
+          "path": "<repo>/.agents/skills/skill-quality-workspace"
+        },
+        "is_error": false
+      },
+      {
+        "tool": "ls",
+        "args": {
+          "path": "<repo>/.agents/skillctrl/intents"
+        },
+        "is_error": false
+      },
+      {
+        "tool": "find",
+        "args": {
+          "pattern": "*",
+          "path": "<repo>/.agents/skill-quality-workspace/iteration-1"
+        },
+        "is_error": true
+      },
+      {
+        "tool": "read",
+        "args": {
+          "path": "~/.agents/skills/memo/SKILL.md",
+          "limit": 15
+        },
+        "is_error": false
+      },
+      {
+        "tool": "read",
+        "args": {
+          "path": "<repo>/.agents/skills/memo/SKILL.md",
+          "limit": 15
+        },
+        "is_error": false
+      },
+      {
+        "tool": "find",
+        "args": {
+          "pattern": "*",
+          "path": "<workspace>/triggers/structure-near-miss"
+        },
+        "is_error": false
+      },
+      {
+        "tool": "grep",
+        "args": {
+          "pattern": "^description:",
+          "path": "~/.agents/skills",
+          "glob": "**/SKILL.md"
+        },
+        "is_error": false
+      },
+      {
+        "tool": "grep",
+        "args": {
+          "glob": "**/SKILL.md",
+          "path": "<repo>/.agents/skills",
+          "pattern": "^description:"
+        },
+        "is_error": false
+      },
+      {
+        "tool": "read",
+        "args": {
+          "path": "<repo>/.agents/skills/gh-stack/SKILL.md",
+          "limit": 30
+        },
+        "is_error": false
+      },
+      {
+        "tool": "read",
+        "args": {
+          "path": "<repo>/.agents/skills/codex/SKILL.md",
+          "limit": 30
+        },
+        "is_error": false
+      }
+    ],
+    "transcript_sha256": "a96802db6229cf8871ae1406ad4213677a47b9007daac58f486a513fc827f2b1"
+  }
+]

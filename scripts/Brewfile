@@ -1,0 +1,62 @@
+tap "abue-ammar/tinycast"
+tap "stablyai/orca"
+tap "wwwyo/tap", "https://github.com/wwwyo/homebrew-tap.git", trusted: true
+brew "autoconf"
+brew "bash"
+brew "bison"
+brew "xz"
+brew "libyaml"
+brew "openssl@3"
+brew "cocoapods"
+brew "container"
+brew "chezmoi"
+brew "duti"
+brew "gdbm"
+brew "git"
+brew "libffi"
+brew "webp"
+brew "mas"
+brew "mise"
+brew "nginx"
+brew "pkgconf"
+brew "poppler"
+brew "postgresql@14"
+brew "protobuf"
+brew "tree"
+brew "watchman"
+brew "wget"
+brew "zsh-autosuggestions"
+brew "zsh-completions"
+cask "anarlog"
+cask "appcleaner"
+cask "arduino-ide"
+cask "chatgpt"
+cask "devin-cli"
+cask "displaylink"
+cask "eagle"
+cask "figma"
+cask "font-source-han-code-jp"
+cask "gcloud-cli"
+cask "ghostty"
+# 別ユーザーが入れた Chrome は Homebrew の --adopt でも権限変更に失敗する。
+cask "google-chrome" unless File.exist?("/Applications/Google Chrome.app")
+cask "google-drive"
+# App Store (sandboxed) build cannot hide items on macOS 27; cask installs the
+# non-sandboxed build. Requires Accessibility permission.
+cask "hiddenbar"
+cask "jabra-direct"
+cask "keycastr"
+cask "keyboardcleantool"
+cask "libreoffice"
+cask "macshot"
+cask "nani"
+cask "ngrok"
+cask "zed"
+cask "zoom"
+cask "abue-ammar/tinycast/tinycast", trusted: true
+cask "stablyai/orca/orca", trusted: true
+mas "Amphetamine", id: 937984704
+mas "Bitwarden", id: 1352778147
+mas "Kindle", id: 302584613
+mas "LINE", id: 539883307
+mas "Slack", id: 803453959

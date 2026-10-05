@@ -1,0 +1,54 @@
+{
+  "expectations": [
+    {
+      "text": "非TTYの list 出力が純粋な JSON または各行 JSON として解析でき、fixture の2件と一致する。",
+      "passed": true,
+      "evidence": "runtime.json case0: argv[cli.py,list] exit0、stderr空、stdoutはnote1/note2の純粋なNDJSON2行。全行をJSON解析するとid/title/body/tagsを含む元fixtureの2recordと構造一致。前後notes bytehashも不変更。"
+    },
+    {
+      "text": "schema/describe 相当の実行可能な問い合わせが rename の id、patch.title と返却契約を機械可読に示す。",
+      "passed": false,
+      "evidence": "runtime.json case1: CLI.md掲載の schema rename は exit1、stdout空、stderrにschema_documentの \"immutable string, [%A-Za-z0-9._-], 1-%d chars\" % MAX_ID_LENGTH から ValueError:unsupported format character A。実行可能な問い合わせでschemaを取得できない。schema all と --help --json も同じschema_documentを使うためsource/文書の静的schemaでは代替しない。"
+    },
+    {
+      "text": "JSON rename の dry-run は入力を検証して変更予定を機械可読に返し、notes.json の byte hash を変えない。",
+      "passed": true,
+      "evidence": "runtime case2: 有効rename JSON --dry-run はexit0、parse可能な応答ok=true,dry_run=true,written=false,changed=true,before=n1/Alpha,after=n1/New。notes.json前後SHA256は同一2ee2cc93...db5f54でfinal_stateは元2recordと一致。source resolve_rename_inputで同じpayload validationを実行してからdry-run分岐。"
+    },
+    {
+      "text": "同じ有効要求の通常実行は n1 の title だけを変え、n1 の body/tags と n2 全体を保存する。",
+      "passed": true,
+      "evidence": "runtime case3: case2と同じ有効要求を通常実行しexit0/written=true、notes hashが変化。final_stateを原文notesと比較するとn1.titleのみAlpha→Newでn1.id/body/tagsとn2全fieldは一致。勝手なrecord追加なし。"
+    },
+    {
+      "text": "未知 key、空 title、未知 id、id への ?/#/%/制御文字混入を非ゼロ終了で拒否し、状態を変更しない。",
+      "passed": true,
+      "evidence": "runtime case4-12の未知top key/未知patch key/空title/未知id/?/#/%/NUL/ESCは全て非ゼロ終了（3,3,3,4,1,1,1,3,3）。各ケースの前後bytehash同一、final_stateは元fixtureの2recordと一致。?/#/%はvalidation途中のTypeError tracebackだが現assertionの非ゼロ+非変更は満たす。正しい構造化validationerrorの品質差はfeedbackに記録。"
+    },
+    {
+      "text": "list の --fields 相当で id,title だけを返し、body/tags が stdout に現れない。",
+      "passed": true,
+      "evidence": "runtime case13: CLI.mdの list --fields id,title はexit0でstdout NDJSON2行。各recordのkeyはちょうどid,title、値はn1/Alpha,n2/Beta。stdoutにbody/tagsのkeyやLong source text等の値なし。"
+    }
+  ],
+  "summary": {
+    "passed": 5,
+    "failed": 1,
+    "total": 6,
+    "pass_rate": 0.8333333333333334
+  },
+  "eval_feedback": [
+    "schemaのschema_document内のliteral %A と、invalid IDのhint内のliteral % は %-formatに必要なescapeがなく、それぞれschema呼出しでValueError、?/#/%拒否でTypeErrorを起こす。ID caseのassertionは非ゼロ+非変更だけなのでpassだが、CLI.md/responseの「全失敗が安定codeを持つstderr envelope」は実動作で成立しない。validationerror契約/tracebackなしも独立assertionにすると品質差を検出できる。",
+    "CLI.md/responseが .. を拒否すると説明する一方validate_idはregex一致のみで追加の .. 禁止がなく、n..1は文字種検証を通る。固定notes.jsonだけを開くためこの点でpath traversalを実行するわけではないが、入力許容契約の自己記述が実装と一致しない。",
+    "既存のtitle文字列を保持する仕様に対しvalidate_titleはraw.strip()を返しtitleの前後空白を変えるほか、200字上限を新設。入力安全性検討のscope内ではあるが、元requirements.mdの非空文字列以外の規則を決定事項として増やした旨はCLI.mdの「everything additive/original behaviour」より明示的に報告するほうが正確。"
+  ],
+  "verification_notes": [
+    "提供runtime.json全14caseをexit/stdout/stderr/前後SHA256/final_stateで照合し、JSON/NDJSON recordsを実解析した。rename追加実行はしない。変更fixture自体のnotes.json/requirements.mdはinitial/final hash同一で、各final_hashも現実体と一致。outputsと対応fixtureはbyte一致。",
+    "execution.jsonのtool_callsはfile read/ls/find/write/editだけで、CLI自体の実行や外部API/ネット/インストール/git操作の証拠なし。responseは未実行を明示する。提供runtimeの実測をexecutorの実行実績として誤報告しない。",
+    "候補skill、PR差分、非blind原runを読まずtask.json、blind fixture/outputs/execution/runtimeだけで評価。schemaが別名の可能性は各CLI.mdとsource parserを確認し、Aのschema/helpは同じ例外のbuilderを共有、Bのschema/describeは実装済みaliasと確認。追加read-only query実行の必要なし。"
+  ],
+  "execution_metrics": {
+    "total_tool_calls": 14,
+    "errors_encountered": 1
+  }
+}

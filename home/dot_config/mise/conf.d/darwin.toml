@@ -1,0 +1,4 @@
+[tools]
+# brew の mysql@8.0 とセットで使う mac 前提のツール。linux では install 対象外
+# （.chezmoiignore で非 darwin 時にこのファイル自体を除外する）
+"asdf:mise-plugins/mise-mysql" = "8.0.34"

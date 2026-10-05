@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "context7": {
+      "command": "{{ if eq .chezmoi.os "darwin" }}/opt/homebrew/bin/mise{{ else }}{{ lookPath "mise" | default (printf "%s/.local/bin/mise" .chezmoi.homeDir) }}{{ end }}",
+      "args": ["x", "--", "context7-mcp"],
+      "env": {}
+    }
+  }
+}

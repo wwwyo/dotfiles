@@ -1,0 +1,14 @@
+{{- /* session ごとのファイル許可は local file にだけ残す。 */ -}}
+{{- $local := dict -}}
+{{- $path := joinPath .chezmoi.homeDir ".pi" "agent" "sandbox.json" -}}
+{{- if lstat $path -}}
+{{- $local = include $path | fromJson -}}
+{{- end -}}
+{{- $base := includeTemplate "pi-sandbox-base.json" . | fromJson -}}
+{{- /* 実行中に承認した通信先・書き込み先も apply で巻き戻さない。 */ -}}
+{{- $network := get $local "network" | default dict -}}
+{{- $filesystem := get $local "filesystem" | default dict -}}
+{{- $_ := set $base.network "allowedDomains" (concat (get $network "allowedDomains" | default list) $base.network.allowedDomains | uniq) -}}
+{{- $_ = set $base.network "allowUnixSockets" (concat (get $network "allowUnixSockets" | default list) $base.network.allowUnixSockets | uniq) -}}
+{{- $_ = set $base.filesystem "allowWrite" (concat (get $filesystem "allowWrite" | default list) $base.filesystem.allowWrite | uniq) -}}
+{{- mergeOverwrite $local $base | toPrettyJson -}}

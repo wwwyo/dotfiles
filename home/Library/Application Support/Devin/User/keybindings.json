@@ -1,0 +1,61 @@
+// Zed (~/.config/zed/keymap.json) のカスタム binding を Devin (VS Code 系) に移植したもの。
+// Zed 側は base_keymap: "VSCode" なので、差分はここにあるものだけで揃う。
+[
+  // --- Editor ---
+  // Zed: pane::ActivatePreviousItem / ActivateNextItem (vim normal)
+  { "key": "cmd+shift+h", "command": "workbench.action.previousEditor", "when": "editorFocus" },
+  { "key": "cmd+shift+l", "command": "workbench.action.nextEditor", "when": "editorFocus" },
+  // Zed: cmd-shift-c は global に unbind して ProjectPanel||Editor で CopyRelativePath
+  // editorTextFocus に絞るのは、browser editor（テキストエディタではない）上で
+  // Devin デフォルトの Add Element to Chat（cmd+shift+c）を潰さないため
+  { "key": "cmd+shift+c", "command": "-workbench.action.terminal.openNativeConsole" },
+  { "key": "cmd+shift+c", "command": "copyRelativeFilePath", "when": "filesExplorerFocus || editorTextFocus" },
+  // Zed: editor::CopyPermalinkToLine → GitLens の remote file URL (行番号付き)
+  { "key": "cmd+ctrl+l", "command": "gitlens.copyRemoteFileUrlToClipboard", "when": "editorTextFocus" },
+  // Zed: git_panel::ToggleFocus (Editor||Workspace||Terminal)
+  // SCM がフォーカス済みなら閉じる、そうでなければ開いてフォーカスする toggle 相当
+  { "key": "cmd+shift+g", "command": "workbench.view.scm", "when": "activeViewlet != 'workbench.view.scm' || !sideBarFocus" },
+  { "key": "cmd+shift+g", "command": "workbench.action.toggleSidebarVisibility", "when": "activeViewlet == 'workbench.view.scm' && sideBarFocus" },
+  // Zed: assistant::InlineAssist → Devin の inline Command (デフォルトは cmd+i)
+  { "key": "cmd+k", "command": "devin.prioritized.command.open", "when": "editorTextFocus && !editorReadonly" },
+
+  // --- Terminal ---
+  { "key": "cmd+k", "command": "devin.prioritized.terminalCommand.open", "when": "terminalFocus" },
+  // Zed: pane::SplitRight / SplitDown (iTerm 式 split)
+  { "key": "cmd+d", "command": "workbench.action.terminal.split", "when": "terminalFocus" },
+  { "key": "cmd+shift+d", "command": "workbench.action.terminal.split", "when": "terminalFocus" },
+  // Zed: workspace::ActivatePane{Left,Down,Up,Right}
+  { "key": "cmd+shift+h", "command": "workbench.action.navigateLeft", "when": "terminalFocus" },
+  { "key": "cmd+shift+j", "command": "workbench.action.navigateDown", "when": "terminalFocus" },
+  { "key": "cmd+shift+k", "command": "workbench.action.navigateUp", "when": "terminalFocus" },
+  { "key": "cmd+shift+l", "command": "workbench.action.navigateRight", "when": "terminalFocus" },
+  // Zed: cmd+w でフォーカス中の terminal を閉じる。
+  // デフォルトだと sessionsViewPane.closeSession (weight 250) が優先され、
+  // パネル側の terminal では terminal.killEditor (when: terminalEditorFocus) も
+  // マッチしないため、terminal ではなく session ごと閉じてしまう。
+  // ユーザー定義はデフォルトより後に評価されるので terminalFocus 中はこちらが勝つ
+  { "key": "cmd+w", "command": "workbench.action.terminal.kill", "when": "terminalFocus" },
+
+  // --- Sidebar view toggle (Zed の dock ToggleFocus 相当) ---
+  // 対象 view がフォーカス済みなら再押下でサイドバーごと閉じる
+  { "key": "cmd+shift+e", "command": "workbench.view.explorer", "when": "activeViewlet != 'workbench.view.explorer' || !sideBarFocus" },
+  { "key": "cmd+shift+e", "command": "workbench.action.toggleSidebarVisibility", "when": "activeViewlet == 'workbench.view.explorer' && sideBarFocus" },
+  { "key": "cmd+shift+f", "command": "workbench.view.search", "when": "activeViewlet != 'workbench.view.search' || !sideBarFocus" },
+  { "key": "cmd+shift+f", "command": "workbench.action.toggleSidebarVisibility", "when": "activeViewlet == 'workbench.view.search' && sideBarFocus" },
+  { "key": "cmd+shift+x", "command": "workbench.view.extensions", "when": "activeViewlet != 'workbench.view.extensions' || !sideBarFocus" },
+  { "key": "cmd+shift+x", "command": "workbench.action.toggleSidebarVisibility", "when": "activeViewlet == 'workbench.view.extensions' && sideBarFocus" },
+
+  // --- Explorer (Zed: ProjectPanel) ---
+  { "key": "cmd+shift+n", "command": "explorer.newFolder", "when": "filesExplorerFocus" },
+
+  // --- Devin 内蔵ブラウザ ---
+  // デフォルトは cmd+alt+/ (openOrList) と cmd+shift+a (quickOpen)。
+  // cmd+shift+p を潰して割り当てているため Command Palette は cmd+shift+p では開けない
+  // (F1 or ショートカット再割り当てが必要)。openToSide で right group に開く。
+  // なお openOrList は引数を取らないため open を直接呼んでいる
+  { "key": "cmd+shift+p", "command": "workbench.action.browser.open", "args": { "openToSide": true } },
+  // Add Element to Chat（要素選択の toggle。デフォルトは cmd+shift+c）を cmd+shift+s に移す。
+  // browserFocused で絞っているので、ブラウザ外では cmd+shift+s は Save As のまま
+  { "key": "cmd+shift+c", "command": "-workbench.action.browser.addElementToChat" },
+  { "key": "cmd+shift+s", "command": "workbench.action.browser.addElementToChat", "when": "browserFocused" }
+]

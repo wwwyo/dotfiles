@@ -1,0 +1,158 @@
+{
+  "eval_id": 5,
+  "eval_name": "one-button-eight-states",
+  "variant": "after",
+  "status": "completed",
+  "duration_seconds": 286.197,
+  "total_tokens": 599604,
+  "changed_files": [
+    "button.css",
+    "button.html",
+    "button.preview.html",
+    "index.html"
+  ],
+  "initial_hashes": {
+    "index.html": "32d88e8e0383d1b2029e3842eef6580631329ca40c24ca4450f097b08df95a13",
+    "button.html": "cb0ac5a0aca4a881395602e6672cf077d08903aa0d4b1c38b9259511245b0a67",
+    "tokens.css": "f72433568f820057f47f29e22fc32db3551f7db41dc04e5b5efcf2894d8f1a5d",
+    "button.css": "3619886c730eeb3f26f775f2451ada6064ec77e5a4c9890c0a4699156f71e3d4",
+    "design.md": "5c6a334e424a8648a545ed7d592bbcaf4d408184e5b88b7f5498d9eb1cfbbd8b"
+  },
+  "final_hashes": {
+    "button.preview.html": "5d8c2882930768e6b29c3e395b5f67af3b138526f3aaad66e5ecf10ddc8daf38",
+    "index.html": "a59a8ddff198f666106d32e942be2a02f7becd1ac0eabea398431ce6a33cc906",
+    "button.html": "3ea0fd37f4399551c080300b80e34f31c406e279e0628f8675decd96c903cf52",
+    "tokens.css": "f72433568f820057f47f29e22fc32db3551f7db41dc04e5b5efcf2894d8f1a5d",
+    "button.css": "f01b0209729082994a207d65c9b020e697fec8d0d0e9d2c475152d83132640e0",
+    "design.md": "5c6a334e424a8648a545ed7d592bbcaf4d408184e5b88b7f5498d9eb1cfbbd8b"
+  },
+  "tool_calls": [
+    {
+      "tool": "ls",
+      "path": "<workspace>/eval-one-button-eight-states/with_skill/fixture",
+      "is_error": false
+    },
+    {
+      "tool": "read",
+      "path": "<workspace>/snapshots/after/.agents/skills/hallmark/SKILL.md",
+      "is_error": false
+    },
+    {
+      "tool": "read",
+      "path": "<workspace>/eval-one-button-eight-states/with_skill/fixture/index.html",
+      "is_error": false
+    },
+    {
+      "tool": "read",
+      "path": "<workspace>/eval-one-button-eight-states/with_skill/fixture/tokens.css",
+      "is_error": false
+    },
+    {
+      "tool": "read",
+      "path": "<workspace>/eval-one-button-eight-states/with_skill/fixture/design.md",
+      "is_error": false
+    },
+    {
+      "tool": "read",
+      "path": "<workspace>/eval-one-button-eight-states/with_skill/fixture/button.css",
+      "is_error": false
+    },
+    {
+      "tool": "read",
+      "path": "<workspace>/eval-one-button-eight-states/with_skill/fixture/button.html",
+      "is_error": false
+    },
+    {
+      "tool": "read",
+      "path": "<workspace>/snapshots/after/.agents/skills/hallmark/references/contract.md",
+      "is_error": false
+    },
+    {
+      "tool": "read",
+      "path": "<workspace>/snapshots/after/.agents/skills/hallmark/references/component-flow.md",
+      "is_error": false
+    },
+    {
+      "tool": "read",
+      "path": "<workspace>/snapshots/after/.agents/skills/hallmark/references/interaction-and-states.md",
+      "is_error": false
+    },
+    {
+      "tool": "ls",
+      "path": "<workspace>/snapshots/after/.agents/skills/hallmark/references",
+      "is_error": false
+    },
+    {
+      "tool": "read",
+      "path": "<workspace>/snapshots/after/.agents/skills/hallmark/references/responsive.md",
+      "is_error": false
+    },
+    {
+      "tool": "read",
+      "path": "<workspace>/snapshots/after/.agents/skills/hallmark/references/slop-test.md",
+      "is_error": false
+    },
+    {
+      "tool": "read",
+      "path": "<workspace>/snapshots/after/.agents/skills/hallmark/references/microinteractions.md",
+      "is_error": false
+    },
+    {
+      "tool": "read",
+      "path": "<workspace>/snapshots/after/.agents/skills/hallmark/references/design-flow.md",
+      "is_error": false
+    },
+    {
+      "tool": "read",
+      "path": "<workspace>/snapshots/after/.agents/skills/hallmark/references/genres/modern-minimal.md",
+      "is_error": false
+    },
+    {
+      "tool": "read",
+      "path": "<workspace>/snapshots/after/.agents/skills/hallmark/references/design-flow.md",
+      "is_error": false
+    },
+    {
+      "tool": "write",
+      "path": "<workspace>/eval-one-button-eight-states/with_skill/fixture/button.css",
+      "is_error": false
+    },
+    {
+      "tool": "write",
+      "path": "<workspace>/eval-one-button-eight-states/with_skill/fixture/button.html",
+      "is_error": false
+    },
+    {
+      "tool": "write",
+      "path": "<workspace>/eval-one-button-eight-states/with_skill/fixture/button.preview.html",
+      "is_error": false
+    },
+    {
+      "tool": "edit",
+      "path": "<workspace>/eval-one-button-eight-states/with_skill/fixture/button.preview.html",
+      "is_error": false
+    },
+    {
+      "tool": "edit",
+      "path": "<workspace>/eval-one-button-eight-states/with_skill/fixture/index.html",
+      "is_error": false
+    },
+    {
+      "tool": "read",
+      "path": "<workspace>/eval-one-button-eight-states/with_skill/fixture/index.html",
+      "is_error": false
+    },
+    {
+      "tool": "edit",
+      "path": "<workspace>/eval-one-button-eight-states/with_skill/fixture/button.preview.html",
+      "is_error": false
+    }
+  ],
+  "observed_models": [
+    [
+      "opencode-go",
+      "space-bunny-free"
+    ]
+  ],
+  "transcript_sha256": "98d2dfb9b2a6e037b76192ab561363309490dcceb036ddc515d8b7ac16b15997"
+}

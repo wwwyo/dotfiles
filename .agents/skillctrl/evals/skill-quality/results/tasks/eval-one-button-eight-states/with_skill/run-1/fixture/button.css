@@ -1,0 +1,170 @@
+/* Hallmark · pre-emit critique: P4 H5 E5 S5 R5 V4 */
+/* Hallmark · component: button · genre: modern-minimal · theme: locked (design.md · NoteShelf)
+ * states: default · hover · focus · active · disabled · loading · error · success
+ * contrast: pass (40–41) — hand-computed WCAG 2.1 ratios, listed in button.preview.html
+ * scope: the save button only. Colour + font come from tokens.css (design.md 正本).
+ *        Spacing / radius / motion tokens below are component-scoped and add no colour values.
+ */
+
+:root {
+  /* spacing — 4 pt scale (slop-test gate 24) */
+  --space-3xs: 0.25rem;
+  --space-2xs: 0.5rem;
+  --space-xs: 0.75rem;
+  --space-sm: 1rem;
+  --space-md: 1.5rem;
+  --space-lg: 2rem;
+  --space-xl: 3rem;
+  --space-2xl: 4rem;
+  --space-3xl: 6rem;
+
+  /* control geometry — 44 px touch floor, fixed inline size so 保存 / 保存中… / 保存済み don't reflow */
+  --control-size: 2.75rem;
+  --control-min-inline: 7.5rem;
+  --control-radius: 0.5rem;
+  --text-ui: 0.9375rem;
+
+  /* motion — restrained: one colour fade, one 1 px press */
+  --dur-press: 100ms;
+  --dur-fast: 160ms;
+  --dur-spin: 900ms;
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* ── default ───────────────────────────────────────────────────────────── */
+
+.save-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2xs);
+  box-sizing: border-box;
+  min-block-size: var(--control-size);
+  min-inline-size: var(--control-min-inline);
+  padding-inline: var(--space-sm);
+  padding-block: 0;
+  border: 1px solid transparent; /* reserved: every state paints colour, never thickness */
+  border-radius: var(--control-radius);
+  background: var(--color-accent);
+  color: var(--color-accent-ink);
+  font-family: var(--font-body);
+  font-size: var(--text-ui);
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: 0.01em;
+  white-space: nowrap; /* gate 49 — the label never wraps */
+  user-select: none;
+  cursor: pointer;
+  /* specific properties only (gate 10). outline / box-shadow stay untransitioned (gate 15). */
+  transition: background-color var(--dur-fast) var(--ease-out),
+              transform var(--dur-press) var(--ease-out);
+}
+
+/* ── focus ─────────────────────────────────────────────────────────────── */
+/* --color-focus on --color-accent is only 2.6:1, so a 2 px --color-paper halo
+   separates ring from fill; the ring then reads against paper (~15:1). Gate 41. */
+
+.save-button:focus { outline: none; }
+
+.save-button:focus-visible,
+.save-button.is-focus {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 2px var(--color-paper);
+}
+
+/* ── hover — one signal: fill (gate 13) ────────────────────────────────── */
+
+@media (hover: hover) and (pointer: fine) {
+  .save-button:hover { background: var(--color-accent-hover); }
+}
+
+.save-button.is-hover { background: var(--color-accent-hover); }
+
+/* ── active — pressed in, 1 px ──────────────────────────────────────────── */
+
+.save-button:active,
+.save-button.is-active {
+  background: var(--color-accent-hover);
+  transform: translateY(1px);
+}
+
+/* ── disabled — three channels: opacity + cursor + the disabled attribute ─ */
+
+.save-button:disabled,
+.save-button[aria-disabled="true"] {
+  background: var(--color-paper-2);
+  color: var(--color-ink);
+  opacity: 0.55;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* ── loading — label copy swaps, spinner joins, fill stays accent ───────── */
+
+.save-button[data-state="loading"] { cursor: progress; }
+
+.save-button__spinner {
+  display: none;
+  inline-size: 1rem;
+  block-size: 1rem;
+  flex: none;
+  border: 2px solid currentColor;
+  border-block-start-color: transparent;
+  border-radius: 50%;
+  animation: save-button-spin var(--dur-spin) linear infinite;
+}
+
+.save-button[data-state="loading"] .save-button__spinner { display: inline-block; }
+
+@keyframes save-button-spin {
+  to { transform: rotate(1turn); }
+}
+
+/* ── error / success — outlined, so accent fill stays the only heavy surface ─ */
+
+.save-button[data-state="error"] {
+  background: var(--color-paper);
+  border-color: var(--color-error);
+  color: var(--color-error);
+}
+
+.save-button[data-state="success"] {
+  background: var(--color-paper);
+  border-color: var(--color-success);
+  color: var(--color-success);
+}
+
+/* copy per state — display:none keeps the hidden variant out of the a11y tree.
+   design.md: default/hover/focus/active/disabled 『保存』 · loading 『保存中…』 ·
+   error 『再試行』 · success 『保存済み』. */
+
+.save-button__copy { display: none; }
+
+.save-button:not([data-state]) .save-button__copy[data-copy="idle"] { display: inline; }
+
+.save-button[data-state="loading"] .save-button__copy[data-copy="loading"] { display: inline; }
+.save-button[data-state="error"] .save-button__copy[data-copy="error"] { display: inline; }
+.save-button[data-state="success"] .save-button__copy[data-copy="success"] { display: inline; }
+
+/* status glyphs — inline SVG, currentColor, hidden unless their state is active */
+
+.save-button__glyph { display: none; flex: none; }
+.save-button[data-state="error"] .save-button__glyph--retry,
+.save-button[data-state="success"] .save-button__glyph--check { display: inline-flex; }
+
+.save-button__icon { inline-size: 1rem; block-size: 1rem; }
+
+/* ── touch + reduced motion ────────────────────────────────────────────── */
+
+@media (pointer: coarse) {
+  .save-button { min-block-size: 3rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .save-button { transition: background-color 120ms linear; }
+  .save-button:active,
+  .save-button.is-active { transform: none; }
+  /* the spinner is functional, not decorative: it slows, it does not stop */
+  .save-button__spinner { animation-duration: 1.8s; }
+}

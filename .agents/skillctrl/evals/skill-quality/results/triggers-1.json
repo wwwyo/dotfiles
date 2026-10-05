@@ -1,0 +1,4114 @@
+{
+  "summary": {
+    "after": {
+      "total": 82,
+      "scorable": 82,
+      "incomplete": 0,
+      "tp": 39,
+      "fp": 3,
+      "fn": 2,
+      "correct": 77,
+      "precision": 0.9285714285714286,
+      "recall": 0.9512195121951219
+    }
+  },
+  "results": [
+    {
+      "id": "browser-near-miss",
+      "skill": "agent-browser",
+      "variant": "after",
+      "should_trigger": false,
+      "triggered": false,
+      "status": "completed",
+      "scorable": true,
+      "passed": true,
+      "duration_seconds": 13.794,
+      "evidence": [],
+      "tool_calls": [
+        {
+          "tool": "ls",
+          "path": ".",
+          "is_error": false
+        },
+        {
+          "tool": "find",
+          "path": ".",
+          "is_error": false
+        },
+        {
+          "tool": "read",
+          "path": "<workspace>/snapshots/after/.agents/skills/orca-cli/SKILL.md",
+          "is_error": false
+        }
+      ],
+      "transcript_sha256": "244caad8077aa26ec4f74ba13943900159b820a9b750a366c77161ed86886a8b",
+      "observed_models": [
+        [
+          "opencode-go",
+          "space-bunny-free"
+        ]
+      ],
+      "agent_final_stop_reasons": [
+        [
+          "stop"
+        ]
+      ]
+    },
+    {
+      "id": "browser-positive",
+      "skill": "agent-browser",
+      "variant": "after",
+      "should_trigger": true,
+      "triggered": true,
+      "status": "observed_consultation",
+      "scorable": true,
+      "passed": true,
+      "duration_seconds": 4.886,
+      "evidence": [
+        {
+          "event": "tool_execution_end",
+          "path": "<workspace>/snapshots/after/.agents/skills/agent-browser/SKILL.md",
+          "tool_call_id": "call-b6869e10-e2ad-4849-a1ae-4a35bb503e79"
+        }
+      ],
+      "tool_calls": [
+        {
+          "tool": "read",
+          "path": "<workspace>/snapshots/after/.agents/skills/computer-use/SKILL.md",
+          "is_error": false
+        },
+        {
+          "tool": "read",
+          "path": "<workspace>/snapshots/after/.agents/skills/agent-browser/SKILL.md",
+          "is_error": false
+        }
+      ],
+      "transcript_sha256": "e5e66a7bb63afd0bbe752293e405e183c53954e3ae7e0db4cebc6669d023b348",
+      "observed_models": [
+        [
+          "opencode-go",
+          "space-bunny-free"
+        ]
+      ],
+      "agent_final_stop_reasons": []
+    },
+    {
+      "id": "cli-near-miss",
+      "skill": "agent-friendly-cli",
+      "variant": "after",
+      "should_trigger": false,
+      "triggered": false,
+      "status": "completed",
+      "scorable": true,
+      "passed": true,
+      "duration_seconds": 27.306,
+      "evidence": [],
+      "tool_calls": [
+        {
+          "tool": "ls",
+          "path": ".",
+          "is_error": false
+        },
+        {
+          "tool": "find",
+          "path": ".",
+          "is_error": false
+        },
+        {
+          "tool": "ls",
+          "path": "..",
+          "is_error": false
+        },
+        {
+          "tool": "ls",
+          "path": "../../..",
+          "is_error": false
+        },
+        {
+          "tool": "read",
+          "path": "../stderr.txt",
+          "is_error": false
+        },
+        {
+          "tool": "read",
+          "path": "../transcript.jsonl",
+          "is_error": false
+        },
+        {
+          "tool": "read",
+          "path": "../transcript.jsonl",
+          "is_error": false
+        },
+        {
+          "tool": "grep",
+          "path": "..",
+          "is_error": false
+        }
+      ],
+      "transcript_sha256": "2c4c404479ca38f7b7ab8328f8460ff52ef912c95a0c0491933b62544e8826db",
+      "observed_models": [
+        [
+          "opencode-go",
+          "space-bunny-free"
+        ]
+      ],
+      "agent_final_stop_reasons": [
+        [
+          "stop"
+        ]
+      ]
+    },
+    {
+      "id": "cli-positive",
+      "skill": "agent-friendly-cli",
+      "variant": "after",
+      "should_trigger": true,
+      "triggered": true,
+      "status": "observed_consultation",
+      "scorable": true,
+      "passed": true,
+      "duration_seconds": 9.798,
+      "evidence": [
+        {
+          "event": "tool_execution_end",
+          "path": "<workspace>/snapshots/after/.agents/skills/agent-friendly-cli/SKILL.md",
+          "tool_call_id": "call_01a0fb85c3bf74f6a2c69de5"
+        }
+      ],
+      "tool_calls": [
+        {
+          "tool": "ls",
+          "path": ".",
+          "is_error": false
+        },
+        {
+          "tool": "find",
+          "path": ".",
+          "is_error": false
+        },
+        {
+          "tool": "ls",
+          "path": "<workspace>",
+          "is_error": false
+        },
+        {
+          "tool": "read",
+          "path": "<workspace>/snapshots/after/.agents/skills/agent-friendly-cli/SKILL.md",
+          "is_error": false
+        }
+      ],
+      "transcript_sha256": "2a05206f4dbcc64164766a190be981a6d16f3b3bd6ad15ecf60eb0f4d5ef838f",
+      "observed_models": [
+        [
+          "opencode-go",
+          "space-bunny-free"
+        ]
+      ],
+      "agent_final_stop_reasons": []
+    },
+    {
+      "id": "cloudflare-boundary-negative",
+      "skill": "cloudflare",
+      "variant": "after",
+      "should_trigger": false,
+      "triggered": false,
+      "status": "completed",
+      "scorable": true,
+      "passed": true,
+      "duration_seconds": 47.709,
+      "evidence": [],
+      "tool_calls": [],
+      "transcript_sha256": "a7788950c7f63367d675294956553119ab49387ad81b9810556fd47ffefd5168",
+      "observed_models": [
+        [
+          "opencode-go",
+          "space-bunny-free"
+        ]
+      ],
+      "agent_final_stop_reasons": [
+        [
+          "stop"
+        ]
+      ]
+    },
+    {
+      "id": "cloudflare-boundary-positive",
+      "skill": "cloudflare",
+      "variant": "after",
+      "should_trigger": true,
+      "triggered": true,
+      "status": "observed_consultation",
+      "scorable": true,
+      "passed": true,
+      "duration_seconds": 4.788,
+      "evidence": [
+        {
+          "event": "tool_execution_end",
+          "path": "<workspace>/snapshots/after/.agents/skills/cloudflare/SKILL.md",
+          "tool_call_id": "call_078f4bdf7d43491b823c995b"
+        }
+      ],
+      "tool_calls": [
+        {
+          "tool": "ls",
+          "path": ".",
+          "is_error": false
+        },
+        {
+          "tool": "read",
+          "path": "<workspace>/snapshots/after/.agents/skills/cloudflare/SKILL.md",
+          "is_error": false
+        }
+      ],
+      "transcript_sha256": "05830748837549816185ac0150c2e111702e4c28b0786309b20895fcb4537ad8",
+      "observed_models": [
+        [
+          "opencode-go",
+          "space-bunny-free"
+        ]
+      ],
+      "agent_final_stop_reasons": []
+    },
+    {
+      "id": "cloudflare-near-miss",
+      "skill": "cloudflare",
+      "variant": "after",
+      "should_trigger": false,
+      "triggered": false,
+      "status": "completed",
+      "scorable": true,
+      "passed": true,
+      "duration_seconds": 16.7,
+      "evidence": [],
+      "tool_calls": [
+        {
+          "tool": "ls",
+          "path": ".",
+          "is_error": false
+        },
+        {
+          "tool": "ls",
+          "path": "<workspace>/triggers/cloudflare-near-miss/after/fixture",
+          "is_error": false
+        },
+        {
+          "tool": "ls",
+          "path": "<workspace>/triggers/cloudflare-near-miss",
+          "is_error": false
+        },
+        {
+          "tool": "ls",
+          "path": "<workspace>/triggers/cloudflare-near-miss/after",
+          "is_error": false
+        },
+        {
+          "tool": "ls",
+          "path": "<repo>",
+          "is_error": false
+        },
+        {
+          "tool": "grep",
+          "path": "<repo>",
+          "is_error": false
+        },
+        {
+          "tool": "grep",
+          "path": "<repo>",
+          "is_error": false
+        }
+      ],
+      "transcript_sha256": "da55ba2a18206c0f71863d72de53ba72c3952a18e7ce7270cee004df76630084",
+      "observed_models": [
+        [
+          "opencode-go",
+          "space-bunny-free"
+        ]
+      ],
+      "agent_final_stop_reasons": [
+        [
+          "stop"
+        ]
+      ]
+    },
+    {
+      "id": "cloudflare-positive",
+      "skill": "cloudflare",
+      "variant": "after",
+      "should_trigger": true,
+      "triggered": true,
+      "status": "observed_consultation",
+      "scorable": true,
+      "passed": true,
+      "duration_seconds": 2.58,
+      "evidence": [
+        {
+          "event": "tool_execution_end",
+          "path": "<workspace>/snapshots/after/.agents/skills/cloudflare/SKILL.md",
+          "tool_call_id": "call_01a0fb8700a1723ea91c1894"
+        }
+      ],
+      "tool_calls": [
+        {
+          "tool": "ls",
+          "path": "<workspace>/snapshots/after/.agents/skills/cloudflare",
+          "is_error": false
+        },
+        {
+          "tool": "read",
+          "path": "<workspace>/snapshots/after/.agents/skills/cloudflare/SKILL.md",
+          "is_error": false
+        }
+      ],
+      "transcript_sha256": "c515c8b9f59db2a03cab4b17fee03630ecc37d5c70125269a4dac301e380a399",
+      "observed_models": [
+        [
+          "opencode-go",
+          "space-bunny-free"
+        ]
+      ],
+      "agent_final_stop_reasons": []
+    },
+    {
+      "id": "codex-near-miss",
+      "skill": "codex",
+      "variant": "after",
+      "should_trigger": false,
+      "triggered": false,
+      "status": "completed",
+      "scorable": true,
+      "passed": true,
+      "duration_seconds": 6.804,
+      "evidence": [],
+      "tool_calls": [
+        {
+          "tool": "read",
+          "path": "<workspace>/snapshots/after/.agents/skills/devin/SKILL.md",
+          "is_error": false
+        }
+      ],
+      "transcript_sha256": "72b70c7e0c7e824f5262f4e18afc5dc9e8960bcffd71d2301d7d8187a808e43b",
+      "observed_models": [
+        [
+          "opencode-go",
+          "space-bunny-free"
+        ]
+      ],
+      "agent_final_stop_reasons": [
+        [
+          "stop"
+        ]
+      ]
+    },
+    {
+      "id": "codex-positive",
+      "skill": "codex",
+      "variant": "after",
+      "should_trigger": true,
+      "triggered": true,
+      "status": "observed_consultation",
+      "scorable": true,
+      "passed": true,
+      "duration_seconds": 6.417,
+      "evidence": [
+        {
+          "event": "tool_execution_end",
+          "path": "<workspace>/snapshots/after/.agents/skills/codex/SKILL.md",
+          "tool_call_id": "call_01a0fb8763bd72f98c7b0f05"
+        }
+      ],
+      "tool_calls": [
+        {
+          "tool": "ls",
+          "path": ".",
+          "is_error": false
+        },
+        {
+          "tool": "find",
+          "path": ".",
+          "is_error": false
+        },
+        {
+          "tool": "ls",
+          "path": "<workspace>/snapshots/after/.agents/skills/codex",
+          "is_error": false
+        },
+        {
+          "tool": "read",
+          "path": "<workspace>/snapshots/after/.agents/skills/codex/SKILL.md",
+          "is_error": false
+        }
+      ],
+      "transcript_sha256": "a1cb9472f21d09667ebd3cf71d8b669509b3c2e9446a872ce0b5a33e42c894fc",
+      "observed_models": [
+        [
+          "opencode-go",
+          "space-bunny-free"
+        ]
+      ],
+      "agent_final_stop_reasons": []
+    },
+    {
+      "id": "computer-near-miss",
+      "skill": "computer-use",
+      "variant": "after",
+      "should_trigger": false,
+      "triggered": false,
+      "status": "completed",
+      "scorable": true,
+      "passed": true,
+      "duration_seconds": 17.917,
+      "evidence": [],
+      "tool_calls": [
+        {
+          "tool": "ls",
+          "path": "<workspace>/triggers/computer-near-miss/after/fixture",
+          "is_error": false
+        },
+        {
+          "tool": "read",
+          "path": "<workspace>/snapshots/after/.agents/skills/orca-cli/SKILL.md",
+          "is_error": false
+        },
+        {
+          "tool": "ls",
+          "path": "<workspace>/triggers/computer-near-miss/after",
+          "is_error": false
+        },
+        {
+          "tool": "find",
+          "path": "<workspace>/triggers",
+          "is_error": false
+        }
+      ],
+      "transcript_sha256": "13784ac57276b65945ba3b0e99668aa67bbbeee3a5be5e540c5fa68ca3fb304f",
+      "observed_models": [
+        [
+          "opencode-go",
+          "space-bunny-free"
+        ]
+      ],
+      "agent_final_stop_reasons": [
+        [
+          "stop"
+        ]
+      ]
+    },
+    {
+      "id": "computer-positive",
+      "skill": "computer-use",
+      "variant": "after",
+      "should_trigger": true,
+      "triggered": true,
+      "status": "observed_consultation",
+      "scorable": true,
+      "passed": true,
+      "duration_seconds": 3.892,
+      "evidence": [
+        {
+          "event": "tool_execution_end",
+          "path": "<workspace>/snapshots/after/.agents/skills/computer-use/SKILL.md",
+          "tool_call_id": "call_01a0fb879ac777d78bed2221"
+        }
+      ],
+      "tool_calls": [
+        {
+          "tool": "read",
+          "path": "<workspace>/snapshots/after/.agents/skills/computer-use/SKILL.md",
+          "is_error": false
+        }
+      ],
+      "transcript_sha256": "235ef25ecb4773bff71a85edb81acf5b3e49a543a4723c6a93169d9089e6c2e7",
+      "observed_models": [
+        [
+          "opencode-go",
+          "space-bunny-free"
+        ]
+      ],
+      "agent_final_stop_reasons": []
+    },
+    {
+      "id": "container-near-miss",
+      "skill": "apple-container",
+      "variant": "after",
+      "should_trigger": false,
+      "triggered": false,
+      "status": "completed",
+      "scorable": true,
+      "passed": true,
+      "duration_seconds": 18.661,
+      "evidence": [],
+      "tool_calls": [
+        {
+          "tool": "ls",
+          "path": ".",
+          "is_error": false
+        },
+        {
+          "tool": "find",
+          "path": ".",
+          "is_error": false
+        },
+        {
+          "tool": "ls",
+          "path": "<workspace>/triggers/container-near-miss",
+          "is_error": false
+        },
+        {
+          "tool": "ls",
+          "path": "<workspace>/triggers/container-near-miss/after",
+          "is_error": false
+        },
+        {
+          "tool": "find",
+          "path": "~/orca/workspaces/dotfiles",
+          "is_error": false
+        },
+        {
+          "tool": "find",
+          "path": "~/orca/workspaces/dotfiles",
+          "is_error": false
+        }
+      ],
+      "transcript_sha256": "df8885005af94f3e2fee1a8d4267a7a9bf4930aa0dc8d9235de0b545b795343b",
+      "observed_models": [
+        [
+          "opencode-go",
+          "space-bunny-free"
+        ]
+      ],
+      "agent_final_stop_reasons": [
+        [
+          "stop"
+        ]
+      ]
+    },
+    {
+      "id": "container-positive",
+      "skill": "apple-container",
+      "variant": "after",
+      "should_trigger": true,
+      "triggered": true,
+      "status": "observed_consultation",
+      "scorable": true,
+      "passed": true,
+      "duration_seconds": 3.425,
+      "evidence": [
+        {
+          "event": "tool_execution_end",
+          "path": "<workspace>/snapshots/after/.agents/skills/apple-container/SKILL.md",
+          "tool_call_id": "call_01a0fb8648ed71f5bc9403e9"
+        }
+      ],
+      "tool_calls": [
+        {
+          "tool": "read",
+          "path": "<workspace>/snapshots/after/.agents/skills/apple-container/SKILL.md",
+          "is_error": false
+        }
+      ],
+      "transcript_sha256": "13713c8dd871a297979604890483f37c7c94d017bace23c05b730ebae71b41fe",
+      "observed_models": [
+        [
+          "opencode-go",
+          "space-bunny-free"
+        ]
+      ],
+      "agent_final_stop_reasons": []
+    },
+    {
+      "id": "creator-boundary-negative",
+      "skill": "skill-creator",
+      "variant": "after",
+      "should_trigger": false,
+      "triggered": false,
+      "status": "completed",
+      "scorable": true,
+      "passed": true,
+      "duration_seconds": 32.5,
+      "evidence": [],
+      "tool_calls": [
+        {
+          "tool": "ls",
+          "path": ".",
+          "is_error": false
+        },
+        {
+          "tool": "find",
+          "path": ".",
+          "is_error": false
+        },
+        {
+          "tool": "ls",
+          "path": "../..",
+          "is_error": false
+        },
+        {
+          "tool": "ls",
+          "path": "<workspace>/triggers/creator-boundary-negative",
+          "is_error": false
+        },
+        {
+          "tool": "ls",
+          "path": "<workspace>/snapshots/after",
+          "is_error": false
+        },
+        {
+          "tool": "ls",
+          "path": "<repo>",
+          "is_error": false
+        },
+        {
+          "tool": "grep",
+          "path": "<repo>",
+          "is_error": false
+        },
+        {
+          "tool": "ls",
+          "path": "<repo>/.agents/skillctrl",
+          "is_error": false
+        }
+      ],
+      "transcript_sha256": "aae38a17b25e47495c927217c9c7baf1781f738f23a7ce3a86c64639ca8f9194",
+      "observed_models": [
+        [
+          "opencode-go",
+          "space-bunny-free"
+        ]
+      ],
+      "agent_final_stop_reasons": [
+        [
+          "stop"
+        ]
+      ]
+    },
+    {
+      "id": "creator-boundary-positive",
+      "skill": "skill-creator",
+      "variant": "after",
+      "should_trigger": true,
+      "triggered": true,
+      "status": "observed_consultation",
+      "scorable": true,
+      "passed": true,
+      "duration_seconds": 3.189,
+      "observed_models": [
+        [
+          "opencode-go",
+          "space-bunny-free"
+        ]
+      ],
+      "evidence": [
+        {
+          "event": "tool_execution_end",
+          "path": "<workspace>/snapshots/after/.agents/skills/skill-creator/SKILL.md",
+          "tool_call_id": "call_function_mztshauiu90m_2"
+        }
+      ],
+      "tool_calls": [
+        {
+          "tool": "ls",
+          "path": ".",
+          "is_error": false
+        },
+        {
+          "tool": "read",
+          "path": "<workspace>/snapshots/after/.agents/skills/skill-creator/SKILL.md",
+          "is_error": false
+        }
+      ],
+      "transcript_sha256": "5a02716054cdf71f128227f428b8095f86f8cf75d760d71002c51f35393d814a",
+      "agent_final_stop_reasons": []
+    },
+    {
+      "id": "creator-near-miss",
+      "skill": "skill-creator",
+      "variant": "after",
+      "should_trigger": false,
+      "triggered": false,
+      "status": "completed",
+      "scorable": true,
+      "passed": true,
+      "duration_seconds": 70.533,
+      "evidence": [],
+      "tool_calls": [
+        {
+          "tool": "ls",
+          "path": ".",
+          "is_error": false
+        },
+        {
+          "tool": "find",
+          "path": ".",
+          "is_error": false
+        },
+        {
+          "tool": "ls",
+          "path": "..",
+          "is_error": false
+        },
+        {
+          "tool": "ls",
+          "path": "../../..",
+          "is_error": false
+        },
+        {
+          "tool": "read",
+          "path": "../stderr.txt",
+          "is_error": false
+        },
+        {
+          "tool": "read",
+          "path": "../transcript.jsonl",
+          "is_error": false
+        },
+        {
+          "tool": "ls",
+          "path": "<workspace>",
+          "is_error": false
+        },
+        {
+          "tool": "find",
+          "path": "<workspace>",
+          "is_error": false
+        },
+        {
+          "tool": "find",
+          "path": ".",
+          "is_error": false
+        },
+        {
+          "tool": "find",
+          "path": "<repo>",
+          "is_error": false
+        }
+      ],
+      "transcript_sha256": "7bc8b7dcfa2f2c4c77ee103f886fdc73e56fd2706a4b34ca543d732dec44155c",
+      "observed_models": [
+        [
+          "opencode-go",
+          "space-bunny-free"
+        ]
+      ],
+      "agent_final_stop_reasons": [
+        [
+          "stop"
+        ]
+      ]
+    },
+    {
+      "id": "creator-positive",
+      "skill": "skill-creator",
+      "variant": "after",
+      "should_trigger": true,
+      "triggered": true,
+      "status": "observed_consultation",
+      "scorable": true,
+      "passed": true,
+      "duration_seconds": 6.444,
+      "evidence": [
+        {
+          "event": "tool_execution_end",
+          "path": "<workspace>/snapshots/after/.agents/skills/skill-creator/SKILL.md",
+          "tool_call_id": "call_01a0fb8dc47e736381f1502f"
+        }
+      ],
+      "tool_calls": [
+        {
+          "tool": "ls",
+          "path": ".",
+          "is_error": false
+        },
+        {
+          "tool": "ls",
+          "path": "..",
+          "is_error": false
+        },
+        {
+          "tool": "read",
+          "path": "<workspace>/snapshots/after/.agents/skills/skill-creator/SKILL.md",
+          "is_error": false
+        }
+      ],
+      "transcript_sha256": "793cd19d1d2aba00dc61833fddaccd0961f3ff7195da375852126760ddd0a15a",
+      "observed_models": [
+        [
+          "opencode-go",
+          "space-bunny-free"
+        ]
+      ],
+      "agent_final_stop_reasons": []
+    },
+    {
+      "id": "design-near-miss",
+      "skill": "design-md",
+      "variant": "after",
+      "should_trigger": false,
+      "triggered": false,
+      "status": "completed",
+      "scorable": true,
+      "passed": true,
+      "duration_seconds": 21.736,
+      "evidence": [],
+      "tool_calls": [
+        {
+          "tool": "ls",
+          "path": ".",
+          "is_error": false
+        },
+        {
+          "tool": "find",
+          "path": null,
+          "is_error": false
+        },
+        {
+          "tool": "ls",
+          "path": "..",
+          "is_error": false
+        },
+        {
+          "tool": "find",
+          "path": "..",
+          "is_error": false
+        }
+      ],
+      "transcript_sha256": "044277e0d566ae93b2a10577160fb42d0696f8d7a9ca328147a93229512efa6b",
+      "observed_models": [
+        [
+          "opencode-go",
+          "space-bunny-free"
+        ]
+      ],
+      "agent_final_stop_reasons": [
+        [
+          "stop"
+        ]
+      ]
+    },
+    {
+      "id": "design-positive",
+      "skill": "design-md",
+      "variant": "after",
+      "should_trigger": true,
+      "triggered": true,
+      "status": "observed_consultation",
+      "scorable": true,
+      "passed": true,
+      "duration_seconds": 2.624,
+      "evidence": [
+        {
+          "event": "tool_execution_end",
+          "path": "<workspace>/snapshots/after/.agents/skills/design-md/SKILL.md",
+          "tool_call_id": "call_function_p2dqflo1oym3_1"
+        }
+      ],
+      "tool_calls": [
+        {
+          "tool": "ls",
+          "path": ".",
+          "is_error": false
+        },
+        {
+          "tool": "read",
+          "path": "<workspace>/snapshots/after/.agents/skills/design-md/SKILL.md",
+          "is_error": false
+        }
+      ],
+      "transcript_sha256": "d2c4e08bbabe7db5569a740b9954db8319078110022a7f2020224f4e695bd92a",
+      "observed_models": [
+        [
+          "opencode-go",
+          "space-bunny-free"
+        ]
+      ],
+      "agent_final_stop_reasons": []
+    },
+    {
+      "id": "document-boundary-negative",
+      "skill": "document",
+      "variant": "after",
+      "should_trigger": false,
+      "triggered": false,
+      "status": "completed",
+      "scorable": true,
+      "passed": true,
+      "duration_seconds": 68.591,
+      "evidence": [],
+      "tool_calls": [
+        {
+          "tool": "ls",
+          "path": ".",
+          "is_error": false
+        },
+        {
+          "tool": "find",
+          "path": null,
+          "is_error": false
+        },
+        {
+          "tool": "ls",
+          "path": "../..",
+          "is_error": false
+        },
+        {
+          "tool": "grep",
+          "path": null,
+          "is_error": false
+        },
+        {
+          "tool": "ls",
+          "path": "../../../../",
+          "is_error": false
+        },
+        {
+          "tool": "find",
+          "path": "../../../../",
+          "is_error": false
+        },
+        {
+          "tool": "ls",
+          "path": "../../../../../../..",
+          "is_error": false
+        },
+        {
+          "tool": "grep",
+          "path": "../../../../../../..",
+          "is_error": false
+        },
+        {
+          "tool": "find",
+          "path": "../../../../../../..",
+          "is_error": false
+        },
+        {
+          "tool": "grep",
+          "path": "../../../../../../..",
+          "is_error": false
+        },
+        {
+          "tool": "ls",
+          "path": "..",
+          "is_error": false
+        },
+        {
+          "tool": "find",
+          "path": ".",
+          "is_error": false
+        },
+        {
+          "tool": "grep",
+          "path": "../../../../../../..",
+          "is_error": false
+        },
+        {
+          "tool": "grep",
+          "path": "../../../../../../..",
+          "is_error": false
+        },
+        {
+          "tool": "read",
+          "path": "../../../../../../..//skills/wiki/tools/wiki_links.py",
+          "is_error": false
+        },
+        {
+          "tool": "find",
+          "path": "../../../../../../..//skills/wiki",
+          "is_error": false
+        },
+        {
+          "tool": "read",
+          "path": "../../../../../../..//skillctrl/evals/skill-quality/fixture-guard.ts",
+          "is_error": false
+        }
+      ],
+      "transcript_sha256": "b758fe11a542f98b9046c63779530ef0d5b1b407938c74be484dc21536310654",
+      "observed_models": [
+        [
+          "opencode-go",
+          "space-bunny-free"
+        ]
+      ],
+      "agent_final_stop_reasons": [
+        [
+          "stop"
+        ]
+      ]
+    },
+    {
+      "id": "document-boundary-positive",
+      "skill": "document",
+      "variant": "after",
+      "should_trigger": true,
+      "triggered": true,
+      "status": "observed_consultation",
+      "scorable": true,
+      "passed": true,
+      "duration_seconds": 2.763,
+      "evidence": [
+        {
+          "event": "tool_execution_end",
+          "path": "<workspace>/snapshots/after/.agents/skills/document/SKILL.md",
+          "tool_call_id": "call_function_cpphq8okfcsn_1"
+        }
+      ],
+      "tool_calls": [
+        {
+          "tool": "ls",
+          "path": ".",
+          "is_error": false
+        },
+        {
+          "tool": "read",
+          "path": "<workspace>/snapshots/after/.agents/skills/document/SKILL.md",
+          "is_error": false
+        }
+      ],
+      "transcript_sha256": "65c4be1b6ea65cfee4c19d4edcdf9ded98558d5e0cd88a3900fdd3ef4588161e",
+      "observed_models": [
+        [
+          "opencode-go",
+          "space-bunny-free"
+        ]
+      ],
+      "agent_final_stop_reasons": []
+    },
+    {
+      "id": "document-near-miss",
+      "skill": "document",
+      "variant": "after",
+      "should_trigger": false,
+      "triggered": false,
+      "status": "completed",
+      "scorable": true,
+      "passed": true,
+      "duration_seconds": 22.301,
+      "evidence": [],
+      "tool_calls": [
+        {
+          "tool": "ls",
+          "path": ".",
+          "is_error": false
+        },
+        {
+          "tool": "find",
+          "path": ".",
+          "is_error": false
+        },
+        {
+          "tool": "ls",
+          "path": "../..",
+          "is_error": false
+        },
+        {
+          "tool": "ls",
+          "path": "..",
+          "is_error": false
+        },
+        {
+          "tool": "read",
+          "path": "../stderr.txt",
+          "is_error": false
+        },
+        {
+          "tool": "read",
+          "path": "../transcript.jsonl",
+          "is_error": false
+        },
+        {
+          "tool": "ls",
+          "path": "../../before",
+          "is_error": false
+        },
+        {
+          "tool": "ls",
+          "path": "../../../",
+          "is_error": false
+        },
+        {
+          "tool": "ls",
+          "path": "../../before/fixture",
+          "is_error": false
+        },
+        {
+          "tool": "grep",
+          "path": "<workspace>/triggers/document-near-miss",
+          "is_error": false
+        },
+        {
+          "tool": "find",
+          "path": "<workspace>/triggers/document-near-miss",
+          "is_error": false
+        }
+      ],
+      "transcript_sha256": "e07c6ad1617b4fe462720e0c085879d7791bb697f4cb0fad75a955c80b719e97",
+      "observed_models": [
+        [
+          "opencode-go",
+          "space-bunny-free"
+        ]
+      ],
+      "agent_final_stop_reasons": [
+        [
+          "stop"
+        ]
+      ]
+    },
+    {
+      "id": "document-positive",
+      "skill": "document",
+      "variant": "after",
+      "should_trigger": true,
+      "triggered": true,
+      "status": "observed_consultation",
+      "scorable": true,
+      "passed": true,
+      "duration_seconds": 15.786,
+      "evidence": [
+        {
+          "event": "tool_execution_end",
+          "path": "<workspace>/snapshots/after/.agents/skills/document/SKILL.md",
+          "tool_call_id": "call_01a0fb88ee387632936a71a5"
+        }
+      ],
+      "tool_calls": [
+        {
+          "tool": "ls",
+          "path": ".",
+          "is_error": false
+        },
+        {
+          "tool": "find",
+          "path": null,
+          "is_error": false
+        },
+        {
+          "tool": "ls",
+          "path": "<repo>",
+          "is_error": false
+        },
+        {
+          "tool": "read",
+          "path": "<repo>/README.md",
+          "is_error": false
+        },
+        {
+          "tool": "ls",
+          "path": "<repo>/docs",
+          "is_error": false
+        },
+        {
+          "tool": "find",
+          "path": "<repo>",
+          "is_error": false
+        },
+        {
+          "tool": "read",
+          "path": "<workspace>/snapshots/after/.agents/skills/document/SKILL.md",
+          "is_error": false
+        }
+      ],
+      "transcript_sha256": "e661c12c63ce487acf130d13071775f0b0646cc019369bf8cff03fea507eddd2",
+      "observed_models": [
+        [
+          "opencode-go",
+          "space-bunny-free"
+        ]
+      ],
+      "agent_final_stop_reasons": []
+    },
+    {
+      "id": "env-near-miss",
+      "skill": "dev-env",
+      "variant": "after",
+      "should_trigger": false,
+      "triggered": false,
+      "status": "completed",
+      "scorable": true,
+      "passed": true,
+      "duration_seconds": 21.748,
+      "evidence": [],
+      "tool_calls": [
+        {
+          "tool": "ls",
+          "path": ".",
+          "is_error": false
+        },
+        {
+          "tool": "find",
+          "path": ".",
+          "is_error": false
+        },
+        {
+          "tool": "ls",
+          "path": "../..",
+          "is_error": false
+        },
+        {
+          "tool": "ls",
+          "path": "..",
+          "is_error": false
+        },
+        {
+          "tool": "find",
+          "path": "../../../..",
+          "is_error": false
+        },
+        {
+          "tool": "find",
+          "path": "../../../..",
+          "is_error": false
+        },
+        {
+          "tool": "read",
+          "path": "../stderr.txt",
+          "is_error": false
+        }
+      ],
+      "transcript_sha256": "ce0e2e8d4269c67604d0ba8d4d1b9402f978fa1821c4ae3457d3cb69067f7578",
+      "observed_models": [
+        [
+          "opencode-go",
+          "space-bunny-free"
+        ]
+      ],
+      "agent_final_stop_reasons": [
+        [
+          "stop"
+        ]
+      ]
+    },
+    {
+      "id": "env-positive",
+      "skill": "dev-env",
+      "variant": "after",
+      "should_trigger": true,
+      "triggered": false,
+      "status": "completed",
+      "scorable": true,
+      "passed": false,
+      "duration_seconds": 88.648,
+      "evidence": [],
+      "tool_calls": [
+        {
+          "tool": "ls",
+          "path": "<repo>",
+          "is_error": false
+        },
+        {
+          "tool": "grep",
+          "path": "<repo>",
+          "is_error": false
+        },
+        {
+          "tool": "read",
+          "path": "<repo>/AGENTS.md",
+          "is_error": false
+        },
+        {
+          "tool": "read",
+          "path": "<repo>/home/dot_codex/config.toml.tmpl",
+          "is_error": false
+        },
+        {
+          "tool": "read",
+          "path": "<repo>/home/run_after_20-link-repodirs.sh.tmpl",
+          "is_error": false
+        },
+        {
+          "tool": "read",
+          "path": "<repo>/README.md",
+          "is_error": false
+        },
+        {
+          "tool": "grep",
+          "path": "<repo>/home/.chezmoiignore",
+          "is_error": false
+        },
+        {
+          "tool": "find",
+          "path": "<repo>",
+          "is_error": false
+        },
+        {
+          "tool": "read",
+          "path": "<repo>/home/.chezmoi.toml.tmpl",
+          "is_error": false
+        },
+        {
+          "tool": "grep",
+          "path": "<repo>/.agents/skills/dev-env",
+          "is_error": false
+        },
+        {
+          "tool": "ls",
+          "path": "<repo>/.agents/skills/dev-env/references",
+          "is_error": false
+        },
+        {
+          "tool": "grep",
+          "path": "<repo>/.agents/skills/dev-env/references/orca.md",
+          "is_error": false
+        },
+        {
+          "tool": "read",
+          "path": "~/.codex/config.toml",
+          "is_error": false
+        },
+        {
+          "tool": "ls",
+          "path": "<repo>/tests",
+          "is_error": false
+        },
+        {
+          "tool": "grep",
+          "path": "<repo>/tests/chezmoi-structure.test.sh",
+          "is_error": false
+        },
+        {
+          "tool": "ls",
+          "path": "<repo>/.codex",
+          "is_error": false
+        },
+        {
+          "tool": "ls",
+          "path": "<repo>/home/dot_codex",
+          "is_error": false
+        }
+      ],
+      "transcript_sha256": "ece7de419ccb8f23284a3b2516a3ad5d25dbbdab9bf6423deafcabf49f9ec570",
+      "observed_models": [
+        [
+          "opencode-go",
+          "space-bunny-free"
+        ]
+      ],
+      "agent_final_stop_reasons": [
+        [
+          "stop"
+        ]
+      ]
+    },
+    {
+      "id": "find-boundary-negative",
+      "skill": "find-skills",
+      "variant": "after",
+      "should_trigger": false,
+      "triggered": false,
+      "status": "completed",
+      "scorable": true,
+      "passed": true,
+      "duration_seconds": 8.382,
+      "evidence": [],
+      "tool_calls": [
+        {
+          "tool": "ls",
+          "path": ".",
+          "is_error": false
+        },
+        {
+          "tool": "find",
+          "path": null,
+          "is_error": false
+        },
+        {
+          "tool": "ls",
+          "path": "<workspace>/triggers/find-boundary-negative/after",
+          "is_error": false
+        },
+        {
+          "tool": "ls",
+          "path": "..",
+          "is_error": false
+        },
+        {
+          "tool": "read",
+          "path": "../stderr.txt",
+          "is_error": false
+        }
+      ],
+      "transcript_sha256": "9d14dff2f956e71cbe2eaeb46ab71fccf36f83f6cdff09f2df85d27b67a505c7",
+      "observed_models": [
+        [
+          "opencode-go",
+          "space-bunny-free"
+        ]
+      ],
+      "agent_final_stop_reasons": [
+        [
+          "stop"
+        ]
+      ]
+    },
+    {
+      "id": "find-boundary-positive",
+      "skill": "find-skills",
+      "variant": "after",
+      "should_trigger": true,
+      "triggered": true,
+      "status": "observed_consultation",
+      "scorable": true,
+      "passed": true,
+      "duration_seconds": 4.457,
+      "evidence": [
+        {
+          "event": "tool_execution_end",
+          "path": "<workspace>/snapshots/after/.agents/skills/find-skills/SKILL.md",
+          "tool_call_id": "call_01a0fb8ff05271e5a3d90bdb"
+        }
+      ],
+      "tool_calls": [
+        {
+          "tool": "ls",
+          "path": "<workspace>/snapshots/after/.agents/skills/find-skills",
+          "is_error": false
+        },
+        {
+          "tool": "read",
+          "path": "<workspace>/snapshots/after/.agents/skills/find-skills/SKILL.md",
+          "is_error": false
+        }
+      ],
+      "transcript_sha256": "0666040d901619731b571bee686270423c945f0487b6e2b5a6ac3f0386928116",
+      "observed_models": [
+        [
+          "opencode-go",
+          "space-bunny-free"
+        ]
+      ],
+      "agent_final_stop_reasons": []
+    },
+    {
+      "id": "find-near-miss",
+      "skill": "find-skills",
+      "variant": "after",
+      "should_trigger": false,
+      "triggered": false,
+      "status": "completed",
+      "scorable": true,
+      "passed": true,
+      "duration_seconds": 29.112,
+      "evidence": [],
+      "tool_calls": [],
+      "transcript_sha256": "b09004b49bceed2575a47f754ec4cdeb3c6f1a1edc910b09a345366364041dbd",
+      "observed_models": [
+        [
+          "opencode-go",
+          "space-bunny-free"
+        ]
+      ],
+      "agent_final_stop_reasons": [
+        [
+          "stop"
+        ]
+      ]
+    },
+    {
+      "id": "find-positive",
+      "skill": "find-skills",
+      "variant": "after",
+      "should_trigger": true,
+      "triggered": true,
+      "status": "observed_consultation",
+      "scorable": true,
+      "passed": true,
+      "duration_seconds": 2.225,
+      "evidence": [
+        {
+          "event": "tool_execution_end",
+          "path": "<workspace>/snapshots/after/.agents/skills/find-skills/SKILL.md",
+          "tool_call_id": "call_function_yoai01a4b49z_1"
+        }
+      ],
+      "tool_calls": [
+        {
+          "tool": "ls",
+          "path": "<workspace>/snapshots/after/.agents/skills/find-skills",
+          "is_error": false
+        },
+        {
+          "tool": "read",
+          "path": "<workspace>/snapshots/after/.agents/skills/find-skills/SKILL.md",
+          "is_error": false
+        }
+      ],
+      "transcript_sha256": "b520a80a0b4bc4aa107e4432260cfa69f31f4db6d08fa17bcfc255f15e013ea7",
+      "observed_models": [
+        [
+          "opencode-go",
+          "space-bunny-free"
+        ]
+      ],
+      "agent_final_stop_reasons": []
+    },
+    {
+      "id": "grill-near-miss",
+      "skill": "grill-with-docs",
+      "variant": "after",
+      "should_trigger": false,
+      "triggered": false,
+      "status": "completed",
+      "scorable": true,
+      "passed": true,
+      "duration_seconds": 14.995,
+      "evidence": [],
+      "tool_calls": [
+        {
+          "tool": "ls",
+          "path": ".",
+          "is_error": false
+        },
+        {
+          "tool": "find",
+          "path": ".",
+          "is_error": false
+        },
+        {
+          "tool": "ls",
+          "path": "../..",
+          "is_error": false
+        },
+        {
+          "tool": "ls",
+          "path": "..",
+          "is_error": false
+        },
+        {
+          "tool": "ls",
+          "path": "../../../..",
+          "is_error": false
+        },
+        {
+          "tool": "ls",
+          "path": "../../..",
+          "is_error": false
+        },
+        {
+          "tool": "ls",
+          "path": "../../../../../..",
+          "is_error": false
+        },
+        {
+          "tool": "find",
+          "path": "../../../../../..",
+          "is_error": false
+        }
+      ],
+      "transcript_sha256": "68741d74d711551b88fa3d7c6b87883387d16b1bc160508bb5ff2c56514d30b6",
+      "observed_models": [
+        [
+          "opencode-go",
+          "space-bunny-free"
+        ]
+      ],
+      "agent_final_stop_reasons": [
+        [
+          "stop"
+        ]
+      ]
+    },
+    {
+      "id": "grill-positive",
+      "skill": "grill-with-docs",
+      "variant": "after",
+      "should_trigger": true,
+      "triggered": true,
+      "status": "observed_consultation",
+      "scorable": true,
+      "passed": true,
+      "duration_seconds": 4.042,
+      "evidence": [
+        {
+          "event": "tool_execution_end",
+          "path": "<workspace>/snapshots/after/.agents/skills/grill-with-docs/SKILL.md",
+          "tool_call_id": "call_01a0fb89a89176c29072846b"
+        }
+      ],
+      "tool_calls": [
+        {
+          "tool": "ls",
+          "path": "<workspace>/triggers/grill-positive/after/fixture",
+          "is_error": false
+        },
+        {
+          "tool": "read",
+          "path": "<workspace>/snapshots/after/.agents/skills/grill-with-docs/SKILL.md",
+          "is_error": false
+        }
+      ],
+      "transcript_sha256": "ef08d86e81ddc5ddc733e09e40a51fc31cea8ce5c9caad5fab4799182796b687",
+      "observed_models": [
+        [
+          "opencode-go",
+          "space-bunny-free"
+        ]
+      ],
+      "agent_final_stop_reasons": []
+    },
+    {
+      "id": "hallmark-boundary-negative",
+      "skill": "hallmark",
+      "variant": "after",
+      "should_trigger": false,
+      "triggered": false,
+      "status": "completed",
+      "scorable": true,
+      "passed": true,
+      "duration_seconds": 17.802,
+      "evidence": [],
+      "tool_calls": [
+        {
+          "tool": "ls",
+          "path": ".",
+          "is_error": false
+        },
+        {
+          "tool": "ls",
+          "path": "..",
+          "is_error": false
+        },
+        {
+          "tool": "find",
+          "path": "../../../../..",
+          "is_error": false
+        },
+        {
+          "tool": "find",
+          "path": ".",
+          "is_error": false
+        },
+        {
+          "tool": "find",
+          "path": "<repo>",
+          "is_error": false
+        }
+      ],
+      "transcript_sha256": "f12c828fafe7d5c118df994be141e0bbf8a70730dafec4428b6d8c5c8e017d4a",
+      "observed_models": [
+        [
+          "opencode-go",
+          "space-bunny-free"
+        ]
+      ],
+      "agent_final_stop_reasons": [
+        [
+          "stop"
+        ]
+      ]
+    },
+    {
+      "id": "hallmark-boundary-positive",
+      "skill": "hallmark",
+      "variant": "after",
+      "should_trigger": true,
+      "triggered": true,
+      "status": "observed_consultation",
+      "scorable": true,
+      "passed": true,
+      "duration_seconds": 7.288,
+      "evidence": [
+        {
+          "event": "tool_execution_end",
+          "path": "<workspace>/snapshots/after/.agents/skills/hallmark/SKILL.md",
+          "tool_call_id": "call_function_ojp2vs7b0af3_1"
+        }
+      ],
+      "tool_calls": [
+        {
+          "tool": "ls",
+          "path": ".",
+          "is_error": false
+        },
+        {
+          "tool": "ls",
+          "path": "..",
+          "is_error": false
+        },
+        {
+          "tool": "read",
+          "path": "../stderr.txt",
+          "is_error": false
+        },
+        {
+          "tool": "find",
+          "path": "..",
+          "is_error": false
+        },
+        {
+          "tool": "read",
+          "path": "<workspace>/snapshots/after/.agents/skills/hallmark/SKILL.md",
+          "is_error": false
+        }
+      ],
+      "transcript_sha256": "c9639894a3c6193a550bb672c327bff5c3f3ec8f21b412030e781ebc0441e45d",
+      "observed_models": [
+        [
+          "opencode-go",
+          "space-bunny-free"
+        ]
+      ],
+      "agent_final_stop_reasons": []
+    },
+    {
+      "id": "hallmark-near-miss",
+      "skill": "hallmark",
+      "variant": "after",
+      "should_trigger": false,
+      "triggered": false,
+      "status": "completed",
+      "scorable": true,
+      "passed": true,
+      "duration_seconds": 20.467,
+      "evidence": [],
+      "tool_calls": [
+        {
+          "tool": "ls",
+          "path": ".",
+          "is_error": false
+        },
+        {
+          "tool": "find",
+          "path": ".",
+          "is_error": false
+        },
+        {
+          "tool": "ls",
+          "path": "<workspace>/triggers/hallmark-near-miss",
+          "is_error": false
+        },
+        {
+          "tool": "ls",
+          "path": "<workspace>/triggers/hallmark-near-miss/after",
+          "is_error": false
+        },
+        {
+          "tool": "ls",
+          "path": "<workspace>/triggers/hallmark-near-miss/after/fixture",
+          "is_error": false
+        },
+        {
+          "tool": "read",
+          "path": "<workspace>/triggers/hallmark-near-miss/after/stderr.txt",
+          "is_error": false
+        },
+        {
+          "tool": "read",
+          "path": "<workspace>/triggers/hallmark-near-miss/after/transcript.jsonl",
+          "is_error": false
+        },
+        {
+          "tool": "ls",
+          "path": "<workspace>/triggers/hallmark-near-miss/before",
+          "is_error": false
+        },
+        {
+          "tool": "find",
+          "path": "<workspace>/triggers/hallmark-near-miss/after/fixture",
+          "is_error": false
+        }
+      ],
+      "transcript_sha256": "61ab4659056e86aa3f7b652ebf9cb177d5953aab4ce413f3a1416852bc3435e5",
+      "observed_models": [
+        [
+          "opencode-go",
+          "space-bunny-free"
+        ]
+      ],
+      "agent_final_stop_reasons": [
+        [
+          "stop"
+        ]
+      ]
+    },
+    {
+      "id": "hallmark-positive",
+      "skill": "hallmark",
+      "variant": "after",
+      "should_trigger": true,
+      "triggered": true,
+      "status": "observed_consultation",
+      "scorable": true,
+      "passed": true,
+      "duration_seconds": 6.464,
+      "evidence": [
+        {
+          "event": "tool_execution_end",
+          "path": "<workspace>/snapshots/after/.agents/skills/hallmark/SKILL.md",
+          "tool_call_id": "call_01a0fb89f36174f8a48c93a4"
+        }
+      ],
+      "tool_calls": [
+        {
+          "tool": "ls",
+          "path": ".",
+          "is_error": false
+        },
+        {
+          "tool": "find",
+          "path": ".",
+          "is_error": false
+        },
+        {
+          "tool": "read",
+          "path": "<workspace>/snapshots/after/.agents/skills/hallmark/SKILL.md",
+          "is_error": false
+        }
+      ],
+      "transcript_sha256": "c682e56c22671bdb9901374c9c290f792e4d3d7cf2a73ff0ac3e7f6f4d8af6aa",
+      "observed_models": [
+        [
+          "opencode-go",
+          "space-bunny-free"
+        ]
+      ],
+      "agent_final_stop_reasons": []
+    },
+    {
+      "id": "image-near-miss",
+      "skill": "image-generation",
+      "variant": "after",
+      "should_trigger": false,
+      "triggered": false,
+      "status": "completed",
+      "scorable": true,
+      "passed": true,
+      "duration_seconds": 64.361,
+      "evidence": [],
+      "tool_calls": [
+        {
+          "tool": "ls",
+          "path": ".",
+          "is_error": false
+        },
+        {
+          "tool": "find",
+          "path": null,
+          "is_error": false
+        },
+        {
+          "tool": "ls",
+          "path": "..",
+          "is_error": false
+        },
+        {
+          "tool": "find",
+          "path": "..",
+          "is_error": false
+        },
+        {
+          "tool": "ls",
+          "path": "../..",
+          "is_error": false
+        },
+        {
+          "tool": "find",
+          "path": "../..",
+          "is_error": false
+        },
+        {
+          "tool": "ls",
+          "path": "~/orca/workspaces/dotfiles",
+          "is_error": false
+        },
+        {
+          "tool": "find",
+          "path": "~/orca/workspaces/dotfiles",
+          "is_error": false
+        },
+        {
+          "tool": "ls",
+          "path": "<repo>",
+          "is_error": false
+        },
+        {
+          "tool": "ls",
+          "path": "<repo>/.agents/skills",
+          "is_error": false
+        },
+        {
+          "tool": "find",
+          "path": "<repo>/home",
+          "is_error": false
+        },
+        {
+          "tool": "grep",
+          "path": "<repo>",
+          "is_error": false
+        },
+        {
+          "tool": "find",
+          "path": "<repo>",
+          "is_error": false
+        },
+        {
+          "tool": "grep",
+          "path": "<repo>",
+          "is_error": false
+        }
+      ],
+      "transcript_sha256": "a114ebb9c90fa9fcd84128fbc33ef352bbc67c433e639bfdfb01b3fdeb74f34a",
+      "observed_models": [
+        [
+          "opencode-go",
+          "space-bunny-free"
+        ]
+      ],
+      "agent_final_stop_reasons": [
+        [
+          "stop"
+        ]
+      ]
+    },
+    {
+      "id": "image-positive",
+      "skill": "image-generation",
+      "variant": "after",
+      "should_trigger": true,
+      "triggered": true,
+      "status": "observed_consultation",
+      "scorable": true,
+      "passed": true,
+      "duration_seconds": 2.5,
+      "evidence": [
+        {
+          "event": "tool_execution_end",
+          "path": "<workspace>/snapshots/after/.agents/skills/image-generation/SKILL.md",
+          "tool_call_id": "call_01a0fb8a8eb676d4a008eb48"
+        }
+      ],
+      "tool_calls": [
+        {
+          "tool": "read",
+          "path": "<workspace>/snapshots/after/.agents/skills/image-generation/SKILL.md",
+          "is_error": false
+        }
+      ],
+      "transcript_sha256": "25b6c4ae262033fdd9d2f818ed5a8564d4575b5d727936d1ca69e36ffc4f1189",
+      "observed_models": [
+        [
+          "opencode-go",
+          "space-bunny-free"
+        ]
+      ],
+      "agent_final_stop_reasons": []
+    },
+    {
+      "id": "ingest-boundary-negative",
+      "skill": "ingest-to-markdown",
+      "variant": "after",
+      "should_trigger": false,
+      "triggered": false,
+      "status": "completed",
+      "scorable": true,
+      "passed": true,
+      "duration_seconds": 46.37,
+      "evidence": [],
+      "tool_calls": [
+        {
+          "tool": "ls",
+          "path": ".",
+          "is_error": false
+        },
+        {
+          "tool": "find",
+          "path": null,
+          "is_error": false
+        },
+        {
+          "tool": "ls",
+          "path": "<workspace>/triggers/ingest-boundary-negative",
+          "is_error": false
+        },
+        {
+          "tool": "ls",
+          "path": "<repo>",
+          "is_error": false
+        },
+        {
+          "tool": "ls",
+          "path": "<repo>/scripts",
+          "is_error": false
+        },
+        {
+          "tool": "grep",
+          "path": "<repo>",
+          "is_error": false
+        },
+        {
+          "tool": "read",
+          "path": "<repo>/.agents/skillctrl/evals/skill-quality/triggers.json",
+          "is_error": false
+        },
+        {
+          "tool": "grep",
+          "path": null,
+          "is_error": false
+        },
+        {
+          "tool": "ls",
+          "path": "<repo>/tests",
+          "is_error": false
+        },
+        {
+          "tool": "ls",
+          "path": "<repo>/.agents/skillctrl/evals/skill-quality",
+          "is_error": false
+        }
+      ],
+      "transcript_sha256": "208f600b071dbdbbf20d7c89187800b0873cb66bfb18a5c28d7c5eabf31d97ef",
+      "observed_models": [
+        [
+          "opencode-go",
+          "space-bunny-free"
+        ]
+      ],
+      "agent_final_stop_reasons": [
+        [
+          "stop"
+        ]
+      ]
+    },
+    {
+      "id": "ingest-boundary-positive",
+      "skill": "ingest-to-markdown",
+      "variant": "after",
+      "should_trigger": true,
+      "triggered": true,
+      "status": "observed_consultation",
+      "scorable": true,
+      "passed": true,
+      "duration_seconds": 2.282,
+      "evidence": [
+        {
+          "event": "tool_execution_end",
+          "path": "<workspace>/snapshots/after/.agents/skills/ingest-to-markdown/SKILL.md",
+          "tool_call_id": "call_01a0fb901d7677dea3d293a0"
+        }
+      ],
+      "tool_calls": [
+        {
+          "tool": "read",
+          "path": "<workspace>/snapshots/after/.agents/skills/ingest-to-markdown/SKILL.md",
+          "is_error": false
+        }
+      ],
+      "transcript_sha256": "c8d92d373f6b24d9b05424ebca3bb056bbf52c90551760b759f35f746c1cf00e",
+      "observed_models": [
+        [
+          "opencode-go",
+          "space-bunny-free"
+        ]
+      ],
+      "agent_final_stop_reasons": []
+    },
+    {
+      "id": "ingest-near-miss",
+      "skill": "ingest-to-markdown",
+      "variant": "after",
+      "should_trigger": false,
+      "triggered": false,
+      "status": "completed",
+      "scorable": true,
+      "passed": true,
+      "duration_seconds": 10.872,
+      "evidence": [],
+      "tool_calls": [
+        {
+          "tool": "ls",
+          "path": ".",
+          "is_error": false
+        },
+        {
+          "tool": "find",
+          "path": null,
+          "is_error": false
+        },
+        {
+          "tool": "ls",
+          "path": "..",
+          "is_error": false
+        },
+        {
+          "tool": "find",
+          "path": "<repo>",
+          "is_error": false
+        },
+        {
+          "tool": "ls",
+          "path": "<repo>",
+          "is_error": false
+        },
+        {
+          "tool": "find",
+          "path": "~/orca/workspaces",
+          "is_error": false
+        }
+      ],
+      "transcript_sha256": "98be76553af46b3f8181feea96fc205bc112880291d4c8c9959a48d70493bda2",
+      "observed_models": [
+        [
+          "opencode-go",
+          "space-bunny-free"
+        ]
+      ],
+      "agent_final_stop_reasons": [
+        [
+          "stop"
+        ]
+      ]
+    },
+    {
+      "id": "ingest-positive",
+      "skill": "ingest-to-markdown",
+      "variant": "after",
+      "should_trigger": true,
+      "triggered": true,
+      "status": "observed_consultation",
+      "scorable": true,
+      "passed": true,
+      "duration_seconds": 9.308,
+      "evidence": [
+        {
+          "event": "tool_execution_end",
+          "path": "<workspace>/snapshots/after/.agents/skills/ingest-to-markdown/SKILL.md",
+          "tool_call_id": "call_01a0fb8af54a7674ba24d7ce"
+        }
+      ],
+      "tool_calls": [
+        {
+          "tool": "ls",
+          "path": ".",
+          "is_error": false
+        },
+        {
+          "tool": "read",
+          "path": "<workspace>/snapshots/after/.agents/skills/ingest-to-markdown/SKILL.md",
+          "is_error": false
+        }
+      ],
+      "transcript_sha256": "cdd54d24988569983490014b7ff4564c7c25e68f89e7d2e2259e5a7e05e0ba53",
+      "observed_models": [
+        [
+          "opencode-go",
+          "space-bunny-free"
+        ]
+      ],
+      "agent_final_stop_reasons": []
+    },
+    {
+      "id": "langfuse-boundary-negative",
+      "skill": "langfuse",
+      "variant": "after",
+      "should_trigger": false,
+      "triggered": false,
+      "status": "completed",
+      "scorable": true,
+      "passed": true,
+      "duration_seconds": 20.229,
+      "evidence": [],
+      "tool_calls": [
+        {
+          "tool": "ls",
+          "path": ".",
+          "is_error": false
+        },
+        {
+          "tool": "find",
+          "path": ".",
+          "is_error": false
+        }
+      ],
+      "transcript_sha256": "10baa583224987bc7e2b800f65dc9929a6d72f0a4361d34a2bf24212a8640b17",
+      "observed_models": [
+        [
+          "opencode-go",
+          "space-bunny-free"
+        ]
+      ],
+      "agent_final_stop_reasons": [
+        [
+          "stop"
+        ]
+      ]
+    },
+    {
+      "id": "langfuse-boundary-positive",
+      "skill": "langfuse",
+      "variant": "after",
+      "should_trigger": true,
+      "triggered": true,
+      "status": "observed_consultation",
+      "scorable": true,
+      "passed": true,
+      "duration_seconds": 3.939,
+      "evidence": [
+        {
+          "event": "tool_execution_end",
+          "path": "<workspace>/snapshots/after/.agents/skills/langfuse/SKILL.md",
+          "tool_call_id": "call_01a0fb92f0b274db8be3a761"
+        }
+      ],
+      "tool_calls": [
+        {
+          "tool": "ls",
+          "path": "<workspace>/snapshots/after/.agents/skills/langfuse",
+          "is_error": false
+        },
+        {
+          "tool": "read",
+          "path": "<workspace>/snapshots/after/.agents/skills/langfuse/SKILL.md",
+          "is_error": false
+        }
+      ],
+      "transcript_sha256": "17475eabd095c2650419efc593ef70a5dff33a7856c09628a0084235459147ae",
+      "observed_models": [
+        [
+          "opencode-go",
+          "space-bunny-free"
+        ]
+      ],
+      "agent_final_stop_reasons": []
+    },
+    {
+      "id": "langfuse-near-miss",
+      "skill": "langfuse",
+      "variant": "after",
+      "should_trigger": false,
+      "triggered": false,
+      "status": "completed",
+      "scorable": true,
+      "passed": true,
+      "duration_seconds": 21.688,
+      "evidence": [],
+      "tool_calls": [
+        {
+          "tool": "ls",
+          "path": ".",
+          "is_error": false
+        },
+        {
+          "tool": "find",
+          "path": ".",
+          "is_error": false
+        },
+        {
+          "tool": "ls",
+          "path": "<workspace>/triggers/langfuse-near-miss",
+          "is_error": false
+        },
+        {
+          "tool": "find",
+          "path": "<repo>",
+          "is_error": false
+        },
+        {
+          "tool": "ls",
+          "path": "<workspace>/triggers/langfuse-near-miss/after",
+          "is_error": false
+        },
+        {
+          "tool": "find",
+          "path": "~/orca/workspaces/dotfiles",
+          "is_error": false
+        },
+        {
+          "tool": "ls",
+          "path": "~/orca/workspaces/dotfiles",
+          "is_error": false
+        },
+        {
+          "tool": "find",
+          "path": "~",
+          "is_error": false
+        },
+        {
+          "tool": "find",
+          "path": "~/orca/workspaces",
+          "is_error": false
+        }
+      ],
+      "transcript_sha256": "b25f81db2f6b626f8d36c511c7e3f3b5dcc5ae0bd06cc06a42c4b08144c1b651",
+      "observed_models": [
+        [
+          "opencode-go",
+          "space-bunny-free"
+        ]
+      ],
+      "agent_final_stop_reasons": [
+        [
+          "stop"
+        ]
+      ]
+    },
+    {
+      "id": "langfuse-positive",
+      "skill": "langfuse",
+      "variant": "after",
+      "should_trigger": true,
+      "triggered": true,
+      "status": "observed_consultation",
+      "scorable": true,
+      "passed": true,
+      "duration_seconds": 4.347,
+      "evidence": [
+        {
+          "event": "tool_execution_end",
+          "path": "<workspace>/snapshots/after/.agents/skills/langfuse/SKILL.md",
+          "tool_call_id": "call_2c81e40584bd4c079525ce86"
+        }
+      ],
+      "tool_calls": [
+        {
+          "tool": "ls",
+          "path": "<workspace>/triggers/langfuse-positive/after/fixture",
+          "is_error": false
+        },
+        {
+          "tool": "read",
+          "path": "<workspace>/snapshots/after/.agents/skills/langfuse/SKILL.md",
+          "is_error": false
+        }
+      ],
+      "transcript_sha256": "1a1b2d452547c321227cc07f398bf1e7b72346993aff1525bd18a236bf2161c4",
+      "observed_models": [
+        [
+          "opencode-go",
+          "space-bunny-free"
+        ]
+      ],
+      "agent_final_stop_reasons": []
+    },
+    {
+      "id": "learn-near-miss",
+      "skill": "learn",
+      "variant": "after",
+      "should_trigger": false,
+      "triggered": false,
+      "status": "completed",
+      "scorable": true,
+      "passed": true,
+      "duration_seconds": 33.121,
+      "evidence": [],
+      "tool_calls": [
+        {
+          "tool": "ls",
+          "path": ".",
+          "is_error": false
+        },
+        {
+          "tool": "find",
+          "path": ".",
+          "is_error": false
+        },
+        {
+          "tool": "ls",
+          "path": "<workspace>/triggers/learn-near-miss",
+          "is_error": false
+        },
+        {
+          "tool": "ls",
+          "path": "..",
+          "is_error": false
+        },
+        {
+          "tool": "read",
+          "path": "<workspace>/triggers/learn-near-miss/transcript.jsonl",
+          "is_error": true
+        },
+        {
+          "tool": "ls",
+          "path": "<repo>",
+          "is_error": false
+        },
+        {
+          "tool": "ls",
+          "path": "<repo>/scripts",
+          "is_error": false
+        },
+        {
+          "tool": "ls",
+          "path": "<repo>/tests",
+          "is_error": false
+        },
+        {
+          "tool": "find",
+          "path": "<repo>",
+          "is_error": false
+        },
+        {
+          "tool": "find",
+          "path": "<repo>/.agents/skillctrl/evals/skill-quality",
+          "is_error": false
+        },
+        {
+          "tool": "read",
+          "path": "<repo>/.agents/skillctrl/evals/skill-quality/triggers.json",
+          "is_error": false
+        },
+        {
+          "tool": "read",
+          "path": "<repo>/.agents/skillctrl/evals/skill-quality/fixture-guard.ts",
+          "is_error": false
+        },
+        {
+          "tool": "grep",
+          "path": "<repo>",
+          "is_error": false
+        },
+        {
+          "tool": "find",
+          "path": "<workspace>/triggers/learn-near-miss/after",
+          "is_error": false
+        }
+      ],
+      "transcript_sha256": "c0240676a90771e430835e9642f4e36193589adee3a668bade9296d4635b51d1",
+      "observed_models": [
+        [
+          "opencode-go",
+          "space-bunny-free"
+        ]
+      ],
+      "agent_final_stop_reasons": [
+        [
+          "stop"
+        ]
+      ]
+    },
+    {
+      "id": "learn-positive",
+      "skill": "learn",
+      "variant": "after",
+      "should_trigger": true,
+      "triggered": true,
+      "status": "observed_consultation",
+      "scorable": true,
+      "passed": true,
+      "duration_seconds": 2.684,
+      "evidence": [
+        {
+          "event": "tool_execution_end",
+          "path": "<workspace>/snapshots/after/.agents/skills/learn/SKILL.md",
+          "tool_call_id": "call_01a0fb8bde7f73d995174dba"
+        }
+      ],
+      "tool_calls": [
+        {
+          "tool": "ls",
+          "path": ".",
+          "is_error": false
+        },
+        {
+          "tool": "read",
+          "path": "<workspace>/snapshots/after/.agents/skills/learn/SKILL.md",
+          "is_error": false
+        }
+      ],
+      "transcript_sha256": "5837cf93c37546e829b44045f11c0e95985dd436747a816bc5cee251c4005f57",
+      "observed_models": [
+        [
+          "opencode-go",
+          "space-bunny-free"
+        ]
+      ],
+      "agent_final_stop_reasons": []
+    },
+    {
+      "id": "memo-near-miss",
+      "skill": "memo",
+      "variant": "after",
+      "should_trigger": false,
+      "triggered": false,
+      "status": "completed",
+      "scorable": true,
+      "passed": true,
+      "duration_seconds": 43.197,
+      "evidence": [],
+      "tool_calls": [
+        {
+          "tool": "read",
+          "path": "<workspace>/snapshots/after/.agents/skills/wiki/SKILL.md",
+          "is_error": false
+        },
+        {
+          "tool": "ls",
+          "path": ".",
+          "is_error": false
+        },
+        {
+          "tool": "ls",
+          "path": "~/src/github.com/wwwyo/me/wiki",
+          "is_error": false
+        },
+        {
+          "tool": "read",
+          "path": "~/src/github.com/wwwyo/me/wiki/AGENTS.md",
+          "is_error": false
+        },
+        {
+          "tool": "ls",
+          "path": "~/src/github.com/wwwyo/me/daily",
+          "is_error": false
+        },
+        {
+          "tool": "ls",
+          "path": "~/src/github.com/wwwyo/me/daily/2026-10-02",
+          "is_error": false
+        },
+        {
+          "tool": "read",
+          "path": "~/src/github.com/wwwyo/me/daily/2026-10-02/memo.md",
+          "is_error": false
+        },
+        {
+          "tool": "read",
+          "path": "~/src/github.com/wwwyo/me/daily/2026-10-02/learn-pi-durable-reading-source.md",
+          "is_error": false
+        },
+        {
+          "tool": "read",
+          "path": "~/src/github.com/wwwyo/me/daily/2026-10-02/input.md",
+          "is_error": false
+        },
+        {
+          "tool": "ls",
+          "path": "~/src/github.com/wwwyo/me/daily/2026-10-02/.first-reader",
+          "is_error": false
+        },
+        {
+          "tool": "read",
+          "path": "~/src/github.com/wwwyo/me/daily/2026-10-02/todo.md",
+          "is_error": false
+        },
+        {
+          "tool": "grep",
+          "path": "~/src/github.com/wwwyo/me/wiki",
+          "is_error": false
+        }
+      ],
+      "transcript_sha256": "1896573dec5fb1fdd31781521bac343edb623f28f792d866a9f3c6a8c4014a46",
+      "observed_models": [
+        [
+          "opencode-go",
+          "space-bunny-free"
+        ]
+      ],
+      "agent_final_stop_reasons": [
+        [
+          "stop"
+        ]
+      ]
+    },
+    {
+      "id": "memo-positive",
+      "skill": "memo",
+      "variant": "after",
+      "should_trigger": true,
+      "triggered": true,
+      "status": "observed_consultation",
+      "scorable": true,
+      "passed": true,
+      "duration_seconds": 4.786,
+      "evidence": [
+        {
+          "event": "tool_execution_end",
+          "path": "<workspace>/snapshots/after/.agents/skills/memo/SKILL.md",
+          "tool_call_id": "call_01a0fb8c4bd2709fb19d7bb8"
+        }
+      ],
+      "tool_calls": [
+        {
+          "tool": "ls",
+          "path": "<workspace>/triggers/memo-positive/after/fixture",
+          "is_error": false
+        },
+        {
+          "tool": "read",
+          "path": "<workspace>/snapshots/after/.agents/skills/memo/SKILL.md",
+          "is_error": false
+        }
+      ],
+      "transcript_sha256": "2e8b37b3c7255b00aef91040802c0f4e69844fb9c5a7d3969001519b920831a6",
+      "observed_models": [
+        [
+          "opencode-go",
+          "space-bunny-free"
+        ]
+      ],
+      "agent_final_stop_reasons": []
+    },
+    {
+      "id": "merge-near-miss",
+      "skill": "pr-auto-merge",
+      "variant": "after",
+      "should_trigger": false,
+      "triggered": true,
+      "status": "observed_consultation",
+      "scorable": true,
+      "passed": false,
+      "duration_seconds": 24.705,
+      "evidence": [
+        {
+          "event": "tool_execution_end",
+          "path": "<workspace>/snapshots/after/.agents/skills/pr-auto-merge/SKILL.md",
+          "tool_call_id": "call-2f2687f2-fda2-4e66-b635-b61f9bf6b139"
+        }
+      ],
+      "tool_calls": [
+        {
+          "tool": "ls",
+          "path": ".",
+          "is_error": false
+        },
+        {
+          "tool": "ls",
+          "path": "../..",
+          "is_error": false
+        },
+        {
+          "tool": "read",
+          "path": "<workspace>/snapshots/after/.agents/skills/pr/SKILL.md",
+          "is_error": false
+        },
+        {
+          "tool": "ls",
+          "path": "<repo>",
+          "is_error": false
+        },
+        {
+          "tool": "read",
+          "path": "<repo>/.git/HEAD",
+          "is_error": true
+        },
+        {
+          "tool": "read",
+          "path": "<repo>/AGENTS.md",
+          "is_error": false
+        },
+        {
+          "tool": "read",
+          "path": "<workspace>/snapshots/after/.agents/skills/pr-auto-merge/SKILL.md",
+          "is_error": false
+        }
+      ],
+      "transcript_sha256": "da14dbb67d1f0977bb3959f9fd515b70eccbfba4001c7d40405772f0bc513ae8",
+      "observed_models": [
+        [
+          "opencode-go",
+          "space-bunny-free"
+        ]
+      ],
+      "agent_final_stop_reasons": []
+    },
+    {
+      "id": "merge-positive",
+      "skill": "pr-auto-merge",
+      "variant": "after",
+      "should_trigger": true,
+      "triggered": true,
+      "status": "observed_consultation",
+      "scorable": true,
+      "passed": true,
+      "duration_seconds": 2.758,
+      "evidence": [
+        {
+          "event": "tool_execution_end",
+          "path": "<workspace>/snapshots/after/.agents/skills/pr-auto-merge/SKILL.md",
+          "tool_call_id": "call-47b2b129-7846-4a28-9ba4-1fb9f5730ebd"
+        }
+      ],
+      "tool_calls": [
+        {
+          "tool": "ls",
+          "path": "<workspace>/snapshots/after/.agents/skills/pr-auto-merge",
+          "is_error": false
+        },
+        {
+          "tool": "read",
+          "path": "<workspace>/snapshots/after/.agents/skills/pr-auto-merge/SKILL.md",
+          "is_error": false
+        }
+      ],
+      "transcript_sha256": "bf9691095e3f29803b5ccd387b6a918a1b6b8698556d9e1ba8374ddddc6f218f",
+      "observed_models": [
+        [
+          "opencode-go",
+          "space-bunny-free"
+        ]
+      ],
+      "agent_final_stop_reasons": []
+    },
+    {
+      "id": "orca-boundary-negative",
+      "skill": "orca-cli",
+      "variant": "after",
+      "should_trigger": false,
+      "triggered": false,
+      "status": "completed",
+      "scorable": true,
+      "passed": true,
+      "duration_seconds": 27.924,
+      "evidence": [],
+      "tool_calls": [
+        {
+          "tool": "ls",
+          "path": ".",
+          "is_error": false
+        },
+        {
+          "tool": "find",
+          "path": null,
+          "is_error": false
+        },
+        {
+          "tool": "ls",
+          "path": "../..",
+          "is_error": false
+        },
+        {
+          "tool": "ls",
+          "path": "..",
+          "is_error": false
+        },
+        {
+          "tool": "read",
+          "path": "../stderr.txt",
+          "is_error": false
+        },
+        {
+          "tool": "ls",
+          "path": "../../../..",
+          "is_error": false
+        },
+        {
+          "tool": "find",
+          "path": ".",
+          "is_error": false
+        },
+        {
+          "tool": "grep",
+          "path": ".",
+          "is_error": false
+        }
+      ],
+      "transcript_sha256": "f623ba7f293ed4991f280aca375e010f92475b537e39d5491d0e52e9ec4e99d7",
+      "observed_models": [
+        [
+          "opencode-go",
+          "space-bunny-free"
+        ]
+      ],
+      "agent_final_stop_reasons": [
+        [
+          "stop"
+        ]
+      ]
+    },
+    {
+      "id": "orca-boundary-positive",
+      "skill": "orca-cli",
+      "variant": "after",
+      "should_trigger": true,
+      "triggered": true,
+      "status": "observed_consultation",
+      "scorable": true,
+      "passed": true,
+      "duration_seconds": 5.375,
+      "evidence": [
+        {
+          "event": "tool_execution_end",
+          "path": "<workspace>/snapshots/after/.agents/skills/orca-cli/SKILL.md",
+          "tool_call_id": "call_01a0fb928c2277a391f589d3"
+        }
+      ],
+      "tool_calls": [
+        {
+          "tool": "read",
+          "path": "<workspace>/snapshots/after/.agents/skills/orchestration/SKILL.md",
+          "is_error": false
+        },
+        {
+          "tool": "read",
+          "path": "<workspace>/snapshots/after/.agents/skills/delegate/SKILL.md",
+          "is_error": false
+        },
+        {
+          "tool": "ls",
+          "path": "<workspace>/triggers/orca-boundary-positive/after/fixture",
+          "is_error": false
+        },
+        {
+          "tool": "read",
+          "path": "<workspace>/snapshots/after/.agents/skills/orca-cli/SKILL.md",
+          "is_error": false
+        }
+      ],
+      "transcript_sha256": "c7f27e3a1ab8f0eaaf86acc848bf878cb7cc05a21dcb7660dec30a8ec87f9d2b",
+      "observed_models": [
+        [
+          "opencode-go",
+          "space-bunny-free"
+        ]
+      ],
+      "agent_final_stop_reasons": []
+    },
+    {
+      "id": "orca-near-miss",
+      "skill": "orca-cli",
+      "variant": "after",
+      "should_trigger": false,
+      "triggered": false,
+      "status": "completed",
+      "scorable": true,
+      "passed": true,
+      "duration_seconds": 18.57,
+      "evidence": [],
+      "tool_calls": [],
+      "transcript_sha256": "e834a03467d947fa84b38b85236b6c62d1cab29d1d9885b49a149257638ec118",
+      "observed_models": [
+        [
+          "opencode-go",
+          "space-bunny-free"
+        ]
+      ],
+      "agent_final_stop_reasons": [
+        [
+          "stop"
+        ]
+      ]
+    },
+    {
+      "id": "orca-positive",
+      "skill": "orca-cli",
+      "variant": "after",
+      "should_trigger": true,
+      "triggered": true,
+      "status": "observed_consultation",
+      "scorable": true,
+      "passed": true,
+      "duration_seconds": 3.682,
+      "evidence": [
+        {
+          "event": "tool_execution_end",
+          "path": "<workspace>/snapshots/after/.agents/skills/orca-cli/SKILL.md",
+          "tool_call_id": "call_14e9e237b6014168b6adf516"
+        }
+      ],
+      "tool_calls": [
+        {
+          "tool": "ls",
+          "path": ".",
+          "is_error": false
+        },
+        {
+          "tool": "read",
+          "path": "<workspace>/snapshots/after/.agents/skills/orca-cli/SKILL.md",
+          "is_error": false
+        }
+      ],
+      "transcript_sha256": "db0bf71f519d9a5fd2e42dc349557d1b96920096e344690086e36820c0a4ce6a",
+      "observed_models": [
+        [
+          "opencode-go",
+          "space-bunny-free"
+        ]
+      ],
+      "agent_final_stop_reasons": []
+    },
+    {
+      "id": "orchestration-near-miss",
+      "skill": "orchestration",
+      "variant": "after",
+      "should_trigger": false,
+      "triggered": false,
+      "status": "completed",
+      "scorable": true,
+      "passed": true,
+      "duration_seconds": 15.607,
+      "evidence": [],
+      "tool_calls": [
+        {
+          "tool": "read",
+          "path": "<workspace>/snapshots/after/.agents/skills/orca-cli/SKILL.md",
+          "is_error": false
+        },
+        {
+          "tool": "read",
+          "path": "<workspace>/snapshots/after/.agents/skills/delegate/SKILL.md",
+          "is_error": false
+        },
+        {
+          "tool": "ls",
+          "path": ".",
+          "is_error": false
+        },
+        {
+          "tool": "ls",
+          "path": "..",
+          "is_error": false
+        }
+      ],
+      "transcript_sha256": "14584c4a37b6bc2821244de40609e7fd1c0559b010dd2717fe2bd573d87fcd0b",
+      "observed_models": [
+        [
+          "opencode-go",
+          "space-bunny-free"
+        ]
+      ],
+      "agent_final_stop_reasons": [
+        [
+          "stop"
+        ]
+      ]
+    },
+    {
+      "id": "orchestration-positive",
+      "skill": "orchestration",
+      "variant": "after",
+      "should_trigger": true,
+      "triggered": true,
+      "status": "observed_consultation",
+      "scorable": true,
+      "passed": true,
+      "duration_seconds": 3.481,
+      "evidence": [
+        {
+          "event": "tool_execution_end",
+          "path": "<workspace>/snapshots/after/.agents/skills/orchestration/SKILL.md",
+          "tool_call_id": "call_function_zevcxkklmn2t_1"
+        }
+      ],
+      "tool_calls": [
+        {
+          "tool": "ls",
+          "path": "<workspace>/triggers/orchestration-positive/after/fixture",
+          "is_error": false
+        },
+        {
+          "tool": "read",
+          "path": "<workspace>/snapshots/after/.agents/skills/orchestration/SKILL.md",
+          "is_error": false
+        }
+      ],
+      "transcript_sha256": "ad92cff1dcd86b8c9d76e5c98fc585046d5b5720ee73c26bee2592f93744640d",
+      "observed_models": [
+        [
+          "opencode-go",
+          "space-bunny-free"
+        ]
+      ],
+      "agent_final_stop_reasons": []
+    },
+    {
+      "id": "prd-near-miss",
+      "skill": "prd",
+      "variant": "after",
+      "should_trigger": false,
+      "triggered": false,
+      "status": "completed",
+      "scorable": true,
+      "passed": true,
+      "duration_seconds": 29.612,
+      "evidence": [],
+      "tool_calls": [
+        {
+          "tool": "ls",
+          "path": ".",
+          "is_error": false
+        },
+        {
+          "tool": "find",
+          "path": ".",
+          "is_error": false
+        },
+        {
+          "tool": "ls",
+          "path": "../../",
+          "is_error": false
+        },
+        {
+          "tool": "ls",
+          "path": "..",
+          "is_error": false
+        },
+        {
+          "tool": "ls",
+          "path": "../after",
+          "is_error": true
+        },
+        {
+          "tool": "ls",
+          "path": "../before",
+          "is_error": true
+        },
+        {
+          "tool": "ls",
+          "path": "../../before",
+          "is_error": false
+        },
+        {
+          "tool": "read",
+          "path": "../transcript.jsonl",
+          "is_error": false
+        },
+        {
+          "tool": "read",
+          "path": "<workspace>/snapshots/after/.agents/skills/document/SKILL.md",
+          "is_error": false
+        },
+        {
+          "tool": "read",
+          "path": "../stderr.txt",
+          "is_error": false
+        }
+      ],
+      "transcript_sha256": "357ffc09b8b0c2a799108e621ab318ee3b1d933ffa7da44f22aa1bc0e5bf0e6d",
+      "observed_models": [
+        [
+          "opencode-go",
+          "space-bunny-free"
+        ]
+      ],
+      "agent_final_stop_reasons": [
+        [
+          "stop"
+        ]
+      ]
+    },
+    {
+      "id": "prd-positive",
+      "skill": "prd",
+      "variant": "after",
+      "should_trigger": true,
+      "triggered": true,
+      "status": "observed_consultation",
+      "scorable": true,
+      "passed": true,
+      "duration_seconds": 2.942,
+      "evidence": [
+        {
+          "event": "tool_execution_end",
+          "path": "<workspace>/snapshots/after/.agents/skills/prd/SKILL.md",
+          "tool_call_id": "call_function_zjdtqwo8lajb_1"
+        }
+      ],
+      "tool_calls": [
+        {
+          "tool": "ls",
+          "path": ".",
+          "is_error": false
+        },
+        {
+          "tool": "read",
+          "path": "<workspace>/snapshots/after/.agents/skills/prd/SKILL.md",
+          "is_error": false
+        }
+      ],
+      "transcript_sha256": "1e95356665b8fa97799937ad6e9970a5987795eebc495af61b4655b748541d4f",
+      "observed_models": [
+        [
+          "opencode-go",
+          "space-bunny-free"
+        ]
+      ],
+      "agent_final_stop_reasons": []
+    },
+    {
+      "id": "prototype-near-miss",
+      "skill": "prototype",
+      "variant": "after",
+      "should_trigger": false,
+      "triggered": false,
+      "status": "completed",
+      "scorable": true,
+      "passed": true,
+      "duration_seconds": 13.652,
+      "evidence": [],
+      "tool_calls": [
+        {
+          "tool": "ls",
+          "path": ".",
+          "is_error": false
+        },
+        {
+          "tool": "ls",
+          "path": "..",
+          "is_error": false
+        },
+        {
+          "tool": "read",
+          "path": "../stderr.txt",
+          "is_error": false
+        },
+        {
+          "tool": "read",
+          "path": "../transcript.jsonl",
+          "is_error": false
+        },
+        {
+          "tool": "ls",
+          "path": "../../..",
+          "is_error": false
+        },
+        {
+          "tool": "find",
+          "path": "../../../../../../../..",
+          "is_error": false
+        }
+      ],
+      "transcript_sha256": "d5ed43325a543668dfec5c9584ddacaad120a89daa45a23c49cbdab01d8c5fc1",
+      "observed_models": [
+        [
+          "opencode-go",
+          "space-bunny-free"
+        ]
+      ],
+      "agent_final_stop_reasons": [
+        [
+          "stop"
+        ]
+      ]
+    },
+    {
+      "id": "prototype-positive",
+      "skill": "prototype",
+      "variant": "after",
+      "should_trigger": true,
+      "triggered": true,
+      "status": "observed_consultation",
+      "scorable": true,
+      "passed": true,
+      "duration_seconds": 3.718,
+      "evidence": [
+        {
+          "event": "tool_execution_end",
+          "path": "<workspace>/snapshots/after/.agents/skills/prototype/SKILL.md",
+          "tool_call_id": "call_01a0fb8d800672719d4e9399"
+        }
+      ],
+      "tool_calls": [
+        {
+          "tool": "ls",
+          "path": ".",
+          "is_error": false
+        },
+        {
+          "tool": "read",
+          "path": "<workspace>/snapshots/after/.agents/skills/prototype/SKILL.md",
+          "is_error": false
+        }
+      ],
+      "transcript_sha256": "fa3125ac33e631b2289b8fa7bc2ec0bda489ef997ec1859825dd9c3a99401e4e",
+      "observed_models": [
+        [
+          "opencode-go",
+          "space-bunny-free"
+        ]
+      ],
+      "agent_final_stop_reasons": []
+    },
+    {
+      "id": "qa-boundary-negative",
+      "skill": "agent-qa",
+      "variant": "after",
+      "should_trigger": false,
+      "triggered": false,
+      "status": "completed",
+      "scorable": true,
+      "passed": true,
+      "duration_seconds": 23.693,
+      "evidence": [],
+      "tool_calls": [
+        {
+          "tool": "ls",
+          "path": ".",
+          "is_error": false
+        },
+        {
+          "tool": "find",
+          "path": ".",
+          "is_error": false
+        },
+        {
+          "tool": "ls",
+          "path": "<workspace>/triggers/qa-boundary-negative/after",
+          "is_error": false
+        },
+        {
+          "tool": "find",
+          "path": "<repo>/.agents/skills/skill-quality-workspace",
+          "is_error": false
+        },
+        {
+          "tool": "ls",
+          "path": "<repo>",
+          "is_error": false
+        },
+        {
+          "tool": "grep",
+          "path": "<repo>",
+          "is_error": false
+        },
+        {
+          "tool": "ls",
+          "path": "<repo>/.agents",
+          "is_error": false
+        },
+        {
+          "tool": "find",
+          "path": "~/orca/workspaces/dotfiles",
+          "is_error": false
+        }
+      ],
+      "transcript_sha256": "b0fa7119570a8eac042a17e82d6e73baec67eff345fd8fd15a501ea50307d12d",
+      "observed_models": [
+        [
+          "opencode-go",
+          "space-bunny-free"
+        ]
+      ],
+      "agent_final_stop_reasons": [
+        [
+          "stop"
+        ]
+      ]
+    },
+    {
+      "id": "qa-boundary-positive",
+      "skill": "agent-qa",
+      "variant": "after",
+      "should_trigger": true,
+      "triggered": true,
+      "status": "observed_consultation",
+      "scorable": true,
+      "passed": true,
+      "duration_seconds": 2.495,
+      "evidence": [
+        {
+          "event": "tool_execution_end",
+          "path": "<workspace>/snapshots/after/.agents/skills/agent-qa/SKILL.md",
+          "tool_call_id": "call_function_1bsq5rdv4puy_1"
+        }
+      ],
+      "tool_calls": [
+        {
+          "tool": "ls",
+          "path": "<workspace>/triggers/qa-boundary-positive/after/fixture",
+          "is_error": false
+        },
+        {
+          "tool": "read",
+          "path": "<workspace>/snapshots/after/.agents/skills/agent-qa/SKILL.md",
+          "is_error": false
+        }
+      ],
+      "transcript_sha256": "392a1a69d402e2a6efd14db74b60666b2e00eda73fc0b46a22185aa5de131c98",
+      "observed_models": [
+        [
+          "opencode-go",
+          "space-bunny-free"
+        ]
+      ],
+      "agent_final_stop_reasons": []
+    },
+    {
+      "id": "qa-near-miss",
+      "skill": "agent-qa",
+      "variant": "after",
+      "should_trigger": false,
+      "triggered": false,
+      "status": "completed",
+      "scorable": true,
+      "passed": true,
+      "duration_seconds": 52.972,
+      "evidence": [],
+      "tool_calls": [
+        {
+          "tool": "ls",
+          "path": ".",
+          "is_error": false
+        },
+        {
+          "tool": "find",
+          "path": ".",
+          "is_error": false
+        },
+        {
+          "tool": "ls",
+          "path": "..",
+          "is_error": false
+        },
+        {
+          "tool": "ls",
+          "path": "../..",
+          "is_error": false
+        },
+        {
+          "tool": "read",
+          "path": "../stderr.txt",
+          "is_error": false
+        },
+        {
+          "tool": "ls",
+          "path": "..",
+          "is_error": false
+        },
+        {
+          "tool": "ls",
+          "path": "<workspace>",
+          "is_error": false
+        },
+        {
+          "tool": "grep",
+          "path": "<workspace>/snapshots/after",
+          "is_error": false
+        },
+        {
+          "tool": "ls",
+          "path": "<workspace>/triggers/qa-near-miss",
+          "is_error": false
+        },
+        {
+          "tool": "find",
+          "path": ".",
+          "is_error": false
+        },
+        {
+          "tool": "ls",
+          "path": "<workspace>/triggers/qa-near-miss/before",
+          "is_error": false
+        },
+        {
+          "tool": "read",
+          "path": "<workspace>/triggers/qa-near-miss/after/result.json",
+          "is_error": true
+        },
+        {
+          "tool": "read",
+          "path": "<workspace>/triggers/qa-near-miss/before/result.json",
+          "is_error": false
+        },
+        {
+          "tool": "find",
+          "path": "<repo>",
+          "is_error": false
+        },
+        {
+          "tool": "grep",
+          "path": "<repo>",
+          "is_error": false
+        }
+      ],
+      "transcript_sha256": "c3077da7993de47d35e103a431d202525c48d04111f06854a841f507c9eaade5",
+      "observed_models": [
+        [
+          "opencode-go",
+          "space-bunny-free"
+        ]
+      ],
+      "agent_final_stop_reasons": [
+        [
+          "stop"
+        ]
+      ]
+    },
+    {
+      "id": "qa-positive",
+      "skill": "agent-qa",
+      "variant": "after",
+      "should_trigger": true,
+      "triggered": true,
+      "status": "observed_consultation",
+      "scorable": true,
+      "passed": true,
+      "duration_seconds": 2.81,
+      "evidence": [
+        {
+          "event": "tool_execution_end",
+          "path": "<workspace>/snapshots/after/.agents/skills/agent-qa/SKILL.md",
+          "tool_call_id": "call_01a0fb8268617690a142af21"
+        }
+      ],
+      "tool_calls": [
+        {
+          "tool": "ls",
+          "path": ".",
+          "is_error": false
+        },
+        {
+          "tool": "read",
+          "path": "<workspace>/snapshots/after/.agents/skills/agent-qa/SKILL.md",
+          "is_error": false
+        }
+      ],
+      "transcript_sha256": "078a1bb91bd1f5a1a6e3f573a4f074ee2c618007ac96d6eae018f647cf97a6cd",
+      "observed_models": [
+        [
+          "opencode-go",
+          "space-bunny-free"
+        ]
+      ],
+      "agent_final_stop_reasons": []
+    },
+    {
+      "id": "reader-near-miss",
+      "skill": "first-reader",
+      "variant": "after",
+      "should_trigger": false,
+      "triggered": false,
+      "status": "completed",
+      "scorable": true,
+      "passed": true,
+      "duration_seconds": 10.452,
+      "evidence": [],
+      "tool_calls": [
+        {
+          "tool": "ls",
+          "path": ".",
+          "is_error": false
+        },
+        {
+          "tool": "find",
+          "path": ".",
+          "is_error": false
+        },
+        {
+          "tool": "ls",
+          "path": "../..",
+          "is_error": false
+        },
+        {
+          "tool": "ls",
+          "path": "..",
+          "is_error": false
+        },
+        {
+          "tool": "ls",
+          "path": "../../before/fixture",
+          "is_error": false
+        },
+        {
+          "tool": "ls",
+          "path": "../../after/fixture",
+          "is_error": false
+        },
+        {
+          "tool": "find",
+          "path": "..",
+          "is_error": false
+        }
+      ],
+      "transcript_sha256": "a1a394bbd3ea0f222d252fc81eb2496ad0e55edc45df5b7dd9d01f4a3f2164c2",
+      "observed_models": [
+        [
+          "opencode-go",
+          "space-bunny-free"
+        ]
+      ],
+      "agent_final_stop_reasons": [
+        [
+          "stop"
+        ]
+      ]
+    },
+    {
+      "id": "reader-positive",
+      "skill": "first-reader",
+      "variant": "after",
+      "should_trigger": true,
+      "triggered": true,
+      "status": "observed_consultation",
+      "scorable": true,
+      "passed": true,
+      "duration_seconds": 4.19,
+      "evidence": [
+        {
+          "event": "tool_execution_end",
+          "path": "<workspace>/snapshots/after/.agents/skills/first-reader/SKILL.md",
+          "tool_call_id": "call_01a0fb898ab17612916ab85e"
+        }
+      ],
+      "tool_calls": [
+        {
+          "tool": "ls",
+          "path": "<workspace>/triggers/reader-positive/after/fixture",
+          "is_error": false
+        },
+        {
+          "tool": "read",
+          "path": "<workspace>/snapshots/after/.agents/skills/first-reader/SKILL.md",
+          "is_error": false
+        }
+      ],
+      "transcript_sha256": "7f65731113c9386393b5dce19a8cb8c5c3ff6bac5e8493cf835d049547b8c38f",
+      "observed_models": [
+        [
+          "opencode-go",
+          "space-bunny-free"
+        ]
+      ],
+      "agent_final_stop_reasons": []
+    },
+    {
+      "id": "reporting-near-miss",
+      "skill": "reporting",
+      "variant": "after",
+      "should_trigger": false,
+      "triggered": false,
+      "status": "completed",
+      "scorable": true,
+      "passed": true,
+      "duration_seconds": 4.729,
+      "evidence": [],
+      "tool_calls": [
+        {
+          "tool": "ls",
+          "path": ".",
+          "is_error": false
+        },
+        {
+          "tool": "ls",
+          "path": "..",
+          "is_error": false
+        }
+      ],
+      "transcript_sha256": "1e0f6fb6062b069083cabbfef42eb21090c7ceed4e743ee6239cc041d0756ec0",
+      "observed_models": [
+        [
+          "opencode-go",
+          "space-bunny-free"
+        ]
+      ],
+      "agent_final_stop_reasons": [
+        [
+          "stop"
+        ]
+      ]
+    },
+    {
+      "id": "reporting-positive",
+      "skill": "reporting",
+      "variant": "after",
+      "should_trigger": true,
+      "triggered": true,
+      "status": "observed_consultation",
+      "scorable": true,
+      "passed": true,
+      "duration_seconds": 2.904,
+      "evidence": [
+        {
+          "event": "tool_execution_end",
+          "path": "<workspace>/snapshots/after/.agents/skills/reporting/SKILL.md",
+          "tool_call_id": "call_01a0fb8d9bc67384967ade27"
+        }
+      ],
+      "tool_calls": [
+        {
+          "tool": "ls",
+          "path": "<workspace>/triggers/reporting-positive/after/fixture",
+          "is_error": false
+        },
+        {
+          "tool": "read",
+          "path": "<workspace>/snapshots/after/.agents/skills/reporting/SKILL.md",
+          "is_error": false
+        }
+      ],
+      "transcript_sha256": "e90c5eda77832af1142a0b81fb3767af4938725c8304f620982bd6d3de5ac6ed",
+      "observed_models": [
+        [
+          "opencode-go",
+          "space-bunny-free"
+        ]
+      ],
+      "agent_final_stop_reasons": []
+    },
+    {
+      "id": "secret-near-miss",
+      "skill": "secret-env",
+      "variant": "after",
+      "should_trigger": false,
+      "triggered": false,
+      "status": "completed",
+      "scorable": true,
+      "passed": true,
+      "duration_seconds": 16.374,
+      "evidence": [],
+      "tool_calls": [],
+      "transcript_sha256": "8b8cb3190140bba4baba6a0130ac6dbc98167939c645413f44837c4e316fcaba",
+      "observed_models": [
+        [
+          "opencode-go",
+          "space-bunny-free"
+        ]
+      ],
+      "agent_final_stop_reasons": [
+        [
+          "stop"
+        ]
+      ]
+    },
+    {
+      "id": "secret-positive",
+      "skill": "secret-env",
+      "variant": "after",
+      "should_trigger": true,
+      "triggered": true,
+      "status": "observed_consultation",
+      "scorable": true,
+      "passed": true,
+      "duration_seconds": 3.516,
+      "evidence": [
+        {
+          "event": "tool_execution_end",
+          "path": "<workspace>/snapshots/after/.agents/skills/secret-env/SKILL.md",
+          "tool_call_id": "call_01a0fb9319eb76e3afc4b58e"
+        }
+      ],
+      "tool_calls": [
+        {
+          "tool": "ls",
+          "path": "<workspace>/snapshots/after/.agents/skills/secret-env",
+          "is_error": false
+        },
+        {
+          "tool": "read",
+          "path": "<workspace>/snapshots/after/.agents/skills/secret-env/SKILL.md",
+          "is_error": false
+        }
+      ],
+      "transcript_sha256": "b6a16f1ae51488e8dc517763bd0a6da0af5b00a12bcee943cf36db8fcb3f5a0d",
+      "observed_models": [
+        [
+          "opencode-go",
+          "space-bunny-free"
+        ]
+      ],
+      "agent_final_stop_reasons": []
+    },
+    {
+      "id": "setup-near-miss",
+      "skill": "project-setup",
+      "variant": "after",
+      "should_trigger": false,
+      "triggered": false,
+      "status": "completed",
+      "scorable": true,
+      "passed": true,
+      "duration_seconds": 9.961,
+      "evidence": [],
+      "tool_calls": [
+        {
+          "tool": "ls",
+          "path": ".",
+          "is_error": false
+        },
+        {
+          "tool": "find",
+          "path": ".",
+          "is_error": false
+        },
+        {
+          "tool": "ls",
+          "path": "../..",
+          "is_error": false
+        },
+        {
+          "tool": "ls",
+          "path": "..",
+          "is_error": false
+        }
+      ],
+      "transcript_sha256": "a1375372e1414ab5154927f8f2d2db9dc28933b898176d74d9d5694131ead1a8",
+      "observed_models": [
+        [
+          "opencode-go",
+          "space-bunny-free"
+        ]
+      ],
+      "agent_final_stop_reasons": [
+        [
+          "stop"
+        ]
+      ]
+    },
+    {
+      "id": "setup-positive",
+      "skill": "project-setup",
+      "variant": "after",
+      "should_trigger": true,
+      "triggered": true,
+      "status": "observed_consultation",
+      "scorable": true,
+      "passed": true,
+      "duration_seconds": 3.375,
+      "evidence": [
+        {
+          "event": "tool_execution_end",
+          "path": "<workspace>/snapshots/after/.agents/skills/project-setup/SKILL.md",
+          "tool_call_id": "call_mGZ2nlyAlBQd1TnhQsFRUt3b"
+        }
+      ],
+      "tool_calls": [
+        {
+          "tool": "ls",
+          "path": ".",
+          "is_error": false
+        },
+        {
+          "tool": "read",
+          "path": "<workspace>/snapshots/after/.agents/skills/project-setup/SKILL.md",
+          "is_error": false
+        }
+      ],
+      "transcript_sha256": "926dba9f7f509f880afbda96fd77084b0315f0d485cd2d89acec219b9ff2c1a8",
+      "observed_models": [
+        [
+          "opencode-go",
+          "space-bunny-free"
+        ]
+      ],
+      "agent_final_stop_reasons": []
+    },
+    {
+      "id": "structure-near-miss",
+      "skill": "skill-structure",
+      "variant": "after",
+      "should_trigger": false,
+      "triggered": true,
+      "status": "observed_consultation",
+      "scorable": true,
+      "passed": false,
+      "duration_seconds": 6.069,
+      "observed_models": [
+        [
+          "opencode-go",
+          "space-bunny-free"
+        ]
+      ],
+      "evidence": [
+        {
+          "event": "tool_execution_end",
+          "path": "<workspace>/snapshots/after/.agents/skills/skill-structure/SKILL.md",
+          "tool_call_id": "call_01a0fbb3bb7677d9990be26a"
+        }
+      ],
+      "tool_calls": [
+        {
+          "tool": "ls",
+          "path": ".",
+          "is_error": false
+        },
+        {
+          "tool": "read",
+          "path": "<workspace>/snapshots/after/.agents/skills/skill-structure/SKILL.md",
+          "is_error": false
+        }
+      ],
+      "transcript_sha256": "78e961d26a5840e884f76ba88f60fdbeaa1c7731074cd34e94df45867b89625e",
+      "agent_final_stop_reasons": []
+    },
+    {
+      "id": "structure-positive",
+      "skill": "skill-structure",
+      "variant": "after",
+      "should_trigger": true,
+      "triggered": true,
+      "status": "observed_consultation",
+      "scorable": true,
+      "passed": true,
+      "duration_seconds": 3.114,
+      "evidence": [
+        {
+          "event": "tool_execution_end",
+          "path": "<workspace>/snapshots/after/.agents/skills/skill-structure/SKILL.md",
+          "tool_call_id": "call_function_tok9z0kiq8yd_1"
+        }
+      ],
+      "tool_calls": [
+        {
+          "tool": "ls",
+          "path": "<workspace>/triggers/structure-positive/after/fixture",
+          "is_error": false
+        },
+        {
+          "tool": "read",
+          "path": "<workspace>/snapshots/after/.agents/skills/skill-structure/SKILL.md",
+          "is_error": false
+        }
+      ],
+      "transcript_sha256": "b5dcf4fa7a9c2db178b1771a4c8ca92c359b2352589bce6f56c12fa1550c0fae",
+      "observed_models": [
+        [
+          "opencode-go",
+          "space-bunny-free"
+        ]
+      ],
+      "agent_final_stop_reasons": []
+    },
+    {
+      "id": "syokan-near-miss",
+      "skill": "syokan",
+      "variant": "after",
+      "should_trigger": false,
+      "triggered": true,
+      "status": "observed_consultation",
+      "scorable": true,
+      "passed": false,
+      "duration_seconds": 20.968,
+      "evidence": [
+        {
+          "event": "tool_execution_end",
+          "path": "<workspace>/snapshots/after/.agents/skills/syokan/SKILL.md",
+          "tool_call_id": "call_9O38KNtfUeHX01zW6p9qN84C"
+        }
+      ],
+      "tool_calls": [
+        {
+          "tool": "ls",
+          "path": "<workspace>/triggers/syokan-near-miss/after/fixture",
+          "is_error": false
+        },
+        {
+          "tool": "read",
+          "path": "<workspace>/snapshots/after/.agents/skills/syokan/SKILL.md",
+          "is_error": false
+        }
+      ],
+      "transcript_sha256": "6015321ce82e2a865f7e12467e00520100546dc5d68ff94d4368c1cc9982d6dd",
+      "observed_models": [
+        [
+          "opencode-go",
+          "space-bunny-free"
+        ]
+      ],
+      "agent_final_stop_reasons": []
+    },
+    {
+      "id": "syokan-positive",
+      "skill": "syokan",
+      "variant": "after",
+      "should_trigger": true,
+      "triggered": true,
+      "status": "observed_consultation",
+      "scorable": true,
+      "passed": true,
+      "duration_seconds": 3.047,
+      "evidence": [
+        {
+          "event": "tool_execution_end",
+          "path": "<workspace>/snapshots/after/.agents/skills/syokan/SKILL.md",
+          "tool_call_id": "call_01a0fb8ee51971bda3e91e9c"
+        }
+      ],
+      "tool_calls": [
+        {
+          "tool": "ls",
+          "path": "<workspace>/triggers/syokan-positive/after/fixture",
+          "is_error": false
+        },
+        {
+          "tool": "read",
+          "path": "<workspace>/snapshots/after/.agents/skills/syokan/SKILL.md",
+          "is_error": false
+        }
+      ],
+      "transcript_sha256": "24f49b57d3637d4f8328abe9df8076eea988e1de0f75f478033e19c143066172",
+      "observed_models": [
+        [
+          "opencode-go",
+          "space-bunny-free"
+        ]
+      ],
+      "agent_final_stop_reasons": []
+    },
+    {
+      "id": "wiki-near-miss",
+      "skill": "wiki",
+      "variant": "after",
+      "should_trigger": false,
+      "triggered": false,
+      "status": "completed",
+      "scorable": true,
+      "passed": true,
+      "duration_seconds": 22.763,
+      "evidence": [],
+      "tool_calls": [
+        {
+          "tool": "ls",
+          "path": ".",
+          "is_error": false
+        },
+        {
+          "tool": "read",
+          "path": "<workspace>/snapshots/after/.agents/skills/memo/SKILL.md",
+          "is_error": false
+        },
+        {
+          "tool": "ls",
+          "path": "~/src/github.com/wwwyo/me",
+          "is_error": false
+        },
+        {
+          "tool": "ls",
+          "path": "~/src/github.com/wwwyo/me/daily",
+          "is_error": false
+        },
+        {
+          "tool": "ls",
+          "path": "~/src/github.com/wwwyo/me/daily/2026-10-02",
+          "is_error": false
+        },
+        {
+          "tool": "read",
+          "path": "~/src/github.com/wwwyo/me/daily/2026-10-02/memo.md",
+          "is_error": false
+        }
+      ],
+      "transcript_sha256": "a5ad8c81aee3824523c2ab4dd2e5c8019c6a09b8937b6a51bc9b79110092c9a7",
+      "observed_models": [
+        [
+          "opencode-go",
+          "space-bunny-free"
+        ]
+      ],
+      "agent_final_stop_reasons": [
+        [
+          "stop"
+        ]
+      ]
+    },
+    {
+      "id": "wiki-positive",
+      "skill": "wiki",
+      "variant": "after",
+      "should_trigger": true,
+      "triggered": true,
+      "status": "observed_consultation",
+      "scorable": true,
+      "passed": true,
+      "duration_seconds": 4.482,
+      "evidence": [
+        {
+          "event": "tool_execution_end",
+          "path": "<workspace>/snapshots/after/.agents/skills/wiki/SKILL.md",
+          "tool_call_id": "call_01a0fb8f655a71a99df9b3b9"
+        }
+      ],
+      "tool_calls": [
+        {
+          "tool": "ls",
+          "path": "<workspace>/triggers/wiki-positive/after/fixture",
+          "is_error": false
+        },
+        {
+          "tool": "read",
+          "path": "<workspace>/snapshots/after/.agents/skills/wiki/SKILL.md",
+          "is_error": false
+        }
+      ],
+      "transcript_sha256": "cc687cd8f34f64660f2840525ce09d17958b7913c7ae85b0b792cead8defc594",
+      "observed_models": [
+        [
+          "opencode-go",
+          "space-bunny-free"
+        ]
+      ],
+      "agent_final_stop_reasons": []
+    },
+    {
+      "id": "writing-near-miss",
+      "skill": "japanese-tech-writing",
+      "variant": "after",
+      "should_trigger": false,
+      "triggered": false,
+      "status": "completed",
+      "scorable": true,
+      "passed": true,
+      "duration_seconds": 8.732,
+      "evidence": [],
+      "tool_calls": [
+        {
+          "tool": "ls",
+          "path": ".",
+          "is_error": false
+        },
+        {
+          "tool": "ls",
+          "path": "..",
+          "is_error": false
+        }
+      ],
+      "transcript_sha256": "d9ace747cbdf8271ee28fd132a8c8b00288ae60065526cecc4020d676932562b",
+      "observed_models": [
+        [
+          "opencode-go",
+          "space-bunny-free"
+        ]
+      ],
+      "agent_final_stop_reasons": [
+        [
+          "stop"
+        ]
+      ]
+    },
+    {
+      "id": "writing-positive",
+      "skill": "japanese-tech-writing",
+      "variant": "after",
+      "should_trigger": true,
+      "triggered": false,
+      "status": "completed",
+      "scorable": true,
+      "passed": false,
+      "duration_seconds": 15.304,
+      "evidence": [],
+      "tool_calls": [
+        {
+          "tool": "ls",
+          "path": ".",
+          "is_error": false
+        },
+        {
+          "tool": "find",
+          "path": ".",
+          "is_error": false
+        },
+        {
+          "tool": "ls",
+          "path": "<workspace>/triggers/writing-positive",
+          "is_error": false
+        },
+        {
+          "tool": "ls",
+          "path": "<workspace>/triggers/writing-positive/after",
+          "is_error": false
+        },
+        {
+          "tool": "read",
+          "path": "<workspace>/triggers/writing-positive/after/stderr.txt",
+          "is_error": false
+        },
+        {
+          "tool": "read",
+          "path": "<workspace>/triggers/writing-positive/after/transcript.jsonl",
+          "is_error": false
+        },
+        {
+          "tool": "read",
+          "path": "<workspace>/triggers/writing-positive/after/transcript.jsonl",
+          "is_error": false
+        }
+      ],
+      "transcript_sha256": "283e3034d71f2ccc077ccefbb9353c149ea634ce83d6fe7d192318f4e97a3138",
+      "observed_models": [
+        [
+          "opencode-go",
+          "space-bunny-free"
+        ]
+      ],
+      "agent_final_stop_reasons": [
+        [
+          "stop"
+        ]
+      ]
+    }
+  ]
+}

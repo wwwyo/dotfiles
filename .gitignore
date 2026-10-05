@@ -1,0 +1,73 @@
+**/.git
+**/.DS_Store
+**/.local/
+*.local.*
+
+# Ignore local memo files
+**/.memo.local
+**/.cursor/rules/_*
+**/.cursor/mcp.json
+**/.windsurfrules
+**/.specstory
+**/.cursorignore
+**/.cckiro/
+# エージェント作業用の非公開メモ・計画はどの repo でも commit しない
+**/.agent/
+**/skills/_*
+# Skill evaluation run outputs (transient; evals/ themselves are kept)
+**/skills/*-workspace/
+# codex が自動生成する system skills (コミットのたびに再生成され churn するため追跡しない)
+.codex/skills/.system/
+# Claude Code が同期する bundled skills のキャッシュ (同上の理由で追跡しない)
+.claude/skills/synced/
+copilot-instructions.md
+**/.claude/settings.local.json
+**/.claude/scheduled_tasks.lock
+**/.claude/launch.json
+node_modules
+__pycache__
+
+# SSH: repo 側で管理するのは .ssh/config のみ。鍵・config.local・known_hosts 等は追跡しない
+.ssh/*
+!.ssh/config
+
+# age 秘密鍵 (mise+age の復号鍵)。暗号文の config.toml は追跡してよいが鍵は絶対に commit しない
+.config/mise/age.txt
+
+# 機械固有の mise 追加設定（conf.d は ~/.config/mise の symlink 経由で repo 内に見えるため明示的に除外）
+.config/mise/conf.d/
+
+# mise の local override (個人秘密の age 暗号文を入れる)。どの repo でも commit しない
+mise.local.toml
+
+**/.claude/.cc-writes/
+
+# Claude Code のローカル instruction/知見 index
+CLAUDE.local.md
+
+# firecrawl CLI のスクレイプキャッシュ。作業ディレクトリ直下に生成されるため、
+# 取り込みたい成果物は -o で明示的に出す。キャッシュ自体は追跡しない
+**/.firecrawl/
+
+# pi が作業ディレクトリ直下に作る state。中身は空の {} で秘密は入らない
+# （API key は mise の OPENCODE_API_KEY 由来。~/.pi/agent/auth.json には
+# `!` command 形式の credential を置く運用 — pi skill の configuration.md 参照）。
+# ⚠️ `.pi/` を丸ごと無視しない — dotfiles 自身が .pi/agent/settings.json などを管理しており、
+# この .gitignore は ~/.gitignore（global）を兼ねているので、生成物だけを名指しする
+**/.pi/agent/auth.json
+**/.pi/agent/models-store.json
+# project-scope の package install 先（machine-local）
+**/.pi/npm/
+
+# Langfuse telemetry の repo opt-in file。収集は個人設定なので project repo に
+# commit させない（dotfiles 自身は tracked で持つが gitignore は tracked file に効かない）
+**/.claude/settings.local.json
+**/.codex/langfuse.json
+**/.pi/settings.json
+
+# 模擬読者のローカル記録（global ignoreにも反映する）
+.first-reader/
+
+# Orca の worktree setup 設定。machine-local のパス（dotfiles 内 sync script）を含む
+# 個人設定なので、どの repo にも commit しない
+orca.yaml

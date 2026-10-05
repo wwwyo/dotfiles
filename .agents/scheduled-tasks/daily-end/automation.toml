@@ -1,0 +1,18 @@
+# daily-end の orca automation desired state（既存登録を manifest に転記したもの）。
+# `.agents/scheduled-tasks/tools/sync_automations.py check` で drift を検出できる。
+# skill 本体は wwwyo/me repo の .agents/skills/daily-end/ にある
+
+name = "daily-end"
+provider = "devin"
+enabled = true
+timezone = "Asia/Tokyo"
+
+trigger = "daily"
+time = "23:00"
+
+# username 非依存にするため ~ 形式。sync 側で展開して path:<abs> を渡す
+workspace_path = "~/src/github.com/wwwyo/me"
+
+prompt = """
+daily-end skill を実行する。今日の分がすでに実行済みなら skip する。作業ディレクトリは {{workspace_path}}。
+"""

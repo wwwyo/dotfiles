@@ -1,0 +1,9 @@
+# 機密・マシン固有の Host は ~/.ssh/config.local に置く（git 管理外）
+Include ~/.ssh/config.local
+
+Host github.com
+  AddKeysToAgent yes
+  IgnoreUnknown UseKeychain
+  UseKeychain yes
+  IdentitiesOnly yes
+  IdentityFile ~/.ssh/id_ed25519

@@ -1,0 +1,69 @@
+#!/usr/bin/env bash
+
+#MISE description="開発ツールのキャッシュを削除（閾値超過分のみ）"
+
+set -uo pipefail
+
+# 閾値(MB)。削除に再取得コストが伴うキャッシュは、ここを超えたときだけ消す。
+# 閾値を無視して消したいときは 0 を渡す: GO_MOD_MB=0 mise run clean-cache
+GO_MOD_MB="${GO_MOD_MB:-5000}"
+GO_BUILD_MB="${GO_BUILD_MB:-5000}"
+BUN_MB="${BUN_MB:-2000}"
+NPM_MB="${NPM_MB:-2000}"
+
+GO_MOD_DIR="$(go env GOMODCACHE 2>/dev/null || echo "$HOME/go/pkg/mod")"
+GO_BUILD_DIR="$(go env GOCACHE 2>/dev/null || echo "$HOME/Library/Caches/go-build")"
+BUN_DIR="$HOME/.bun/install/cache"
+NPM_DIR="$HOME/.npm/_cacache"
+
+failed=""
+freed_mb=0
+
+size_mb() {
+  [ -e "$1" ] || { echo 0; return; }
+  du -sk "$1" 2>/dev/null | awk '{printf "%d", $1 / 1024; exit}'
+}
+
+# 閾値未満なら skip。skip が常態になるので、サイズと閾値を必ず出して
+# 「消す必要がなかった」と「壊れて消せなかった」を出力から区別できるようにする
+gated_step() {
+  local label="$1" path="$2" limit_mb="$3"
+  shift 3
+  local size
+  size="$(size_mb "$path")"
+  if [ "$size" -lt "$limit_mb" ]; then
+    printf '==> %-24s skip  (%5dMB < %5dMB)\n' "$label" "$size" "$limit_mb"
+    return
+  fi
+  printf '==> %-24s clean (%5dMB >= %5dMB)\n' "$label" "$size" "$limit_mb"
+  if "$@"; then
+    freed_mb=$((freed_mb + size))
+  else
+    failed="$failed $label"
+  fi
+}
+
+# 未参照分のみを回収するため再取得コストが無い。閾値を置かず毎回実行する
+always_step() {
+  local label="$1"
+  shift
+  printf '==> %-24s run\n' "$label"
+  "$@" || failed="$failed $label"
+}
+
+gated_step "go modcache" "$GO_MOD_DIR" "$GO_MOD_MB" go clean -modcache
+gated_step "go buildcache" "$GO_BUILD_DIR" "$GO_BUILD_MB" go clean -cache
+gated_step "bun cache" "$BUN_DIR" "$BUN_MB" \
+  bash -c 'find "$HOME/.bun/install/cache" -mindepth 1 -delete 2>/dev/null'
+gated_step "npm cacache" "$NPM_DIR" "$NPM_MB" npm cache clean --force
+
+always_step "go testcache" go clean -testcache
+always_step "pnpm store prune" pnpm store prune
+always_step "simctl unavailable" xcrun simctl delete unavailable
+
+echo
+echo "freed: ${freed_mb}MB (閾値超過分のみ。pnpm/simctl の回収量は含まない)"
+if [ -n "$failed" ]; then
+  echo "failed:$failed"
+  exit 1
+fi

@@ -1,0 +1,13 @@
+{
+  "eval_id": 5,
+  "eval_name": "one-button-eight-states",
+  "prompt": "この保存 button だけ、既存デザインに合わせて見た目を改善してください。画面全体や保存処理は変更不要です。ローカルで全状態を見比べられる preview も残してください。audience/usecase/tone は研究者/保存操作/控えめなmodern-minimalで合意済みです。質問は不要です。追加質問が必要な点があれば推定を明示し、成果物作成まで続けてください。外部API、ネット検索、package install、commit/pushを使わない。fixture外のファイルを変更しない。",
+  "assertions": [
+    "preview に default、hover、focus、active、disabled、loading、error、success の8行があり、それぞれ実際の button と状態を再現する selector/attribute がある。",
+    "実際の :hover、:focus-visible、:active に styling があり、preview の強制状態にも同じ styling が適用される。",
+    "disabled の button は native disabled として作動せず、loading/error/success は視覚と accessibility attribute または関連メッセージで区別できる。",
+    "component の色と font-family が既存 named tokens を使い、tokens.css の既存値は保存される。",
+    "320/375/414/768px の preview で horizontal overflow がなく、button text が一行、touch target が44px以上である。",
+    "index.html の本文・保存 click handler が保存され、hero/nav/footer、新しい保存処理、.hallmark/log.json が追加されない。"
+  ]
+}

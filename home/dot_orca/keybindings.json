@@ -1,0 +1,38 @@
+{
+  "version": 1,
+  "keybindings": {},
+  "platforms": {
+    "darwin": {
+      "worktree.palette": [
+        "Mod+K"
+      ],
+      "voice.dictation": [],
+      "sidebar.right.toggle": [
+        "Mod+L"
+      ],
+      "sidebar.explorer.toggle": [
+        "Mod+Shift+E"
+      ],
+      "sidebar.search.toggle": [
+        "Mod+Shift+F"
+      ],
+      "sidebar.sourceControl.toggle": [
+        "Mod+Shift+G"
+      ],
+      "tab.newBrowser": [
+        "Mod+Shift+P"
+      ],
+      "tab.newAgent": [
+        "Mod+T"
+      ],
+      "tab.newTerminal": [],
+      "terminal.clear": [],
+      "terminal.splitDown": [
+        "Mod+J",
+        "Mod+Shift+D"
+      ]
+    },
+    "linux": {},
+    "win32": {}
+  }
+}

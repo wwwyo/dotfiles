@@ -1,0 +1,67 @@
+{{ if eq .chezmoi.os "darwin" -}}
+#!/bin/bash
+
+set -euo pipefail
+
+SCRIPT_DIR="{{ .chezmoi.workingTree }}"
+
+#
+# Homebrew
+#
+if ! command -v brew >/dev/null 2>&1; then
+  bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+fi
+# installer は子 shell でしか PATH を変えないので、実体から shellenv する
+# （Apple Silicon=/opt/homebrew, Intel=/usr/local）
+if ! command -v brew >/dev/null 2>&1; then
+  if [ -x /opt/homebrew/bin/brew ]; then
+    eval "$(/opt/homebrew/bin/brew shellenv)"
+  elif [ -x /usr/local/bin/brew ]; then
+    eval "$(/usr/local/bin/brew shellenv)"
+  fi
+fi
+command -v brew >/dev/null 2>&1 || { echo "error: brew not found" >&2; exit 1; }
+# 1個の cask 失敗（sudo 要等）で run_once が未完了扱いになると、
+# 以後の apply が毎回ここで止まり後続 script も走らなくなる。
+# brew bundle は部分失敗を warning に留めて先に進める
+brew bundle install --file="$SCRIPT_DIR/scripts/Brewfile" || echo "warn: brew bundle に失敗した項目あり（要手動）" >&2
+
+#
+# デフォルトアプリ（拡張子・URL スキーム → アプリ）
+#
+duti "$HOME/.config/duti/defaults.duti"
+
+#
+# macOS
+#
+defaults write com.apple.screencapture location "$HOME/Downloads"
+
+#
+# mise
+#
+mise install
+
+#
+# Devin Desktop の拡張機能（Devin.app は brew 管理外なので、入っているときだけ）
+#
+DEVIN_DESKTOP_BIN="/Applications/Devin.app/Contents/Resources/app/bin/devin-desktop"
+if [ -x "$DEVIN_DESKTOP_BIN" ]; then
+  while read -r ext; do
+    [ -n "$ext" ] || continue
+    "$DEVIN_DESKTOP_BIN" --install-extension "$ext" || echo "warn: $ext"
+  done < "$SCRIPT_DIR/scripts/devin-desktop-extensions.txt"
+fi
+{{ else if eq .chezmoi.os "linux" -}}
+#!/bin/sh
+
+set -eu
+
+#
+# mise（Omarchy は標準搭載。無い環境では公式 installer で入れる）
+#
+if ! command -v mise >/dev/null 2>&1; then
+  curl -fsSL https://mise.run | sh
+  export PATH="$HOME/.local/bin:$PATH"
+fi
+mise install
+{{ end -}}

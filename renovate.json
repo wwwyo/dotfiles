@@ -1,0 +1,37 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "mode": "full",
+  "extends": [
+    "config:recommended",
+    ":dependencyDashboard",
+    ":timezone(Asia/Tokyo)"
+  ],
+  "minimumReleaseAge": "7 days",
+  "schedule": ["after 9am on saturday"],
+  "prConcurrentLimit": 5,
+  "labels": ["dependencies"],
+  "ignorePaths": [
+    "**/node_modules/**",
+    "**/bower_components/**",
+    "**/vendor/**",
+    "**/examples/**",
+    "**/__tests__/**",
+    "**/test/**",
+    "**/tests/**",
+    "**/__fixtures__/**",
+    ".github/workflows/*.lock.yml"
+  ],
+  "packageRules": [
+    {
+      "matchManagers": ["mise"],
+      "groupName": "mise tools",
+      "commitMessagePrefix": "chore(mise):"
+    },
+    {
+      "description": "openai/codex の tag は rust-v0.x 形式。aqua backend の既定 extractVersion は先頭の v しか落とせず候補が 0 件になるため明示する",
+      "matchManagers": ["mise"],
+      "matchDepNames": ["aqua:openai/codex"],
+      "extractVersion": "^rust-v(?<version>.+)$"
+    }
+  ]
+}

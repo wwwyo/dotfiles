@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+
+#MISE description="60日以上放置されているgitブランチを削除"
+#MISE dir="{{cwd}}"
+
+git for-each-ref --format='%(refname:short) %(committerdate:iso8601)' refs/heads/ | \
+  awk -v cutoff="$(date -v -60d +%Y-%m-%d)" '$2 < cutoff {print $1}' | \
+  grep -v -E "(main|master|develop)" | \
+  xargs -n 1 git branch -D

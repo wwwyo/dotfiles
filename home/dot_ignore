@@ -1,0 +1,25 @@
+# global な ripgrep ignore（link.sh が ~/.ignore として symlink する）
+#
+# ripgrep は search path の親ディレクトリを遡って .ignore を読み、かつ .ignore を
+# .gitignore より優先して評価する。$HOME に置けば git repo の境界を越えて全 repo に
+# 効くので、ここに書いたネガティブパターンが各 repo の .gitignore の除外を打ち消す。
+# Claude Code の Grep tool も内部で ripgrep を使うため、同じ設定がそのまま効く。
+#
+# 目的: 「git には載せたくないが grep では引きたい」ファイルを検索対象に戻す。
+# これが無いと agent が実在するファイルを「該当なし」と誤報告する。
+#
+# .ignore の打消しは Git には効かない。`*.local.*` は repo root の .gitignore が正本で、
+# ~/.gitignore にも配られる。ここで検索対象へ戻しても Git の除外は解除されない。
+#
+# パスを含むパターンは .ignore の位置（= $HOME）を起点に anchor されるため、
+# 任意の深さで効かせるには `**/` を前置する。
+
+# 社外秘・個人秘の命名規約（<name>.local.<ext>）
+!*.local.*
+
+# 作業中の skill（global gitignore の `**/skills/_*`）
+!**/skills/_*
+
+# prd / design doc / 実装計画の置き場（global gitignore の `**/.agent/`）
+# これが無いと .agent/ で降りずに止まるので、配下の `!**/skills/_*` も届かない
+!**/.agent/

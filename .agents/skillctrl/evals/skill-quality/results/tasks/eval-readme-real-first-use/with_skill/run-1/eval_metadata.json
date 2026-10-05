@@ -1,0 +1,13 @@
+{
+  "eval_id": 1,
+  "eval_name": "readme-real-first-use",
+  "prompt": "この小さな CLI の README を公開用に改善してください。主要読者は CSV を手元で集計したい利用者で、正本は英語です。説明が古いので実装とサンプルを確認し、価値が分かって最初の利用を完了できる短い README にしてください。既存ロゴを使ってください。今回は追加ヒアリング、外部レビュー起動、外部調査は省略し、fixture 内の事実だけで完成させてください。README と必要な日本語版以外の実装変更は不要です。外部API、ネット検索、package install、commit/pushを使わない。fixture外のファイルを変更しない。",
+  "assertions": [
+    "初回利用の掲載コマンドを fixture root で実行すると books,800 と groceries,1500 が得られる。",
+    "利用例の期待出力が実行結果と一致し、category と amount の列および整数 amount という入力条件が説明される。",
+    "英語正本と日本語版があり、両者の利用コマンド、入出力例、主要制約が一致する。",
+    "言語切替、既存ロゴ、License の repo 内リンクが各ファイル位置から実在する対象に解決する。",
+    "Excel、cloud sync、10x、npm 起動、予定の dashboard を実装済みとする記述や、実在しない CI/release badge が残らない。",
+    "sumcsv.py と expenses.csv は変更されず、完成 README に説明用 placeholder がない。"
+  ]
+}

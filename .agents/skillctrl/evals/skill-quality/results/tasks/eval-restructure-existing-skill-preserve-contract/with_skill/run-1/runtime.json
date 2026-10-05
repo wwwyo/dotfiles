@@ -1,0 +1,11 @@
+[
+  {
+    "argv": [
+      "packet-report/scripts/summarize.py",
+      "samples/packets.csv"
+    ],
+    "exit": 0,
+    "stdout": "{\"bytes\": 200, \"failed\": 1, \"ok\": 2}\n",
+    "stderr": ""
+  }
+]

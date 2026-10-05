@@ -1,0 +1,10 @@
+version: 1
+globalPath: ~/src/github.com/wwwyo/dotfiles/.agents
+defaultStrategy: symlink
+targets:
+    claude:
+        enabled: true
+        globalPath: ~/.claude
+    codex:
+        enabled: true
+        globalPath: ~/.codex

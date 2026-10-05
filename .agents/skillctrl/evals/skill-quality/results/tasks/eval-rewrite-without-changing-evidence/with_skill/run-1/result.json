@@ -1,0 +1,67 @@
+{
+  "eval_id": 3,
+  "eval_name": "rewrite-without-changing-evidence",
+  "variant": "after",
+  "status": "completed",
+  "duration_seconds": 70.939,
+  "total_tokens": 110073,
+  "changed_files": [
+    "revised.md"
+  ],
+  "initial_hashes": {
+    "draft.md": "6b9aa1544a3c4ede89817f4693752d0dc7e503942ff730ccbc3424cb7faf3c5f"
+  },
+  "final_hashes": {
+    "revised.md": "b0b3cbb98f118b2d36fdb26ca3e2d14ac9475dc7846559456a5ec6b034e5c6d4",
+    "draft.md": "6b9aa1544a3c4ede89817f4693752d0dc7e503942ff730ccbc3424cb7faf3c5f"
+  },
+  "tool_calls": [
+    {
+      "tool": "ls",
+      "path": "<workspace>/eval-rewrite-without-changing-evidence/with_skill/fixture",
+      "is_error": false
+    },
+    {
+      "tool": "read",
+      "path": "<workspace>/snapshots/after/.agents/skills/japanese-tech-writing/SKILL.md",
+      "is_error": false
+    },
+    {
+      "tool": "ls",
+      "path": "<workspace>/snapshots/after/.agents/skills/japanese-tech-writing",
+      "is_error": false
+    },
+    {
+      "tool": "read",
+      "path": "<workspace>/eval-rewrite-without-changing-evidence/with_skill/fixture/draft.md",
+      "is_error": false
+    },
+    {
+      "tool": "read",
+      "path": "<workspace>/snapshots/after/.agents/skills/japanese-tech-writing/references/ai-tone-checklist.md",
+      "is_error": false
+    },
+    {
+      "tool": "write",
+      "path": "<workspace>/eval-rewrite-without-changing-evidence/with_skill/fixture/revised.md",
+      "is_error": false
+    },
+    {
+      "tool": "edit",
+      "path": "<workspace>/eval-rewrite-without-changing-evidence/with_skill/fixture/revised.md",
+      "is_error": false
+    },
+    {
+      "tool": "read",
+      "path": "<workspace>/eval-rewrite-without-changing-evidence/with_skill/fixture/revised.md",
+      "is_error": false
+    }
+  ],
+  "observed_models": [
+    [
+      "opencode-go",
+      "space-bunny-free"
+    ]
+  ],
+  "transcript_sha256": "f700e8e4d67babcf6437a14ed1225001d30497746b5e23d1a70f7a3558f41bfc"
+}

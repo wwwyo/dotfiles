@@ -1,0 +1,146 @@
+{
+  "eval_id": 2,
+  "eval_name": "prd-preserve-model-and-scope",
+  "variant": "after",
+  "status": "completed",
+  "duration_seconds": 110.505,
+  "total_tokens": 209389,
+  "changed_files": [
+    "AGENTS.md",
+    "docs/prd/collection-share/prd.md",
+    "docs/prd/collection-share/prototype/index.html"
+  ],
+  "initial_hashes": {
+    "AGENTS.md": "deef4b16b171e258e2b81c196bc889ea1a4eccfe439da89442c0fdb161eb3ac8",
+    "agreement.md": "46ab8f8f026d1f4814630729cbf9c8fcc08da74a2832e6135fd19ae9c5be15fa",
+    "scratch/share-prototype/index.html": "30db5ae01ed8d912a6b8ede400a6391d8ccb8ed72328bb69f9c02e0f5214ba92",
+    "docs/adr/0001-single-collection.md": "3da8a18082b3b46c012f9dc5da1910949adbe27fa8e46dd1d968da8bd48dd23a"
+  },
+  "final_hashes": {
+    "AGENTS.md": "40e24b696b431b7406706c5f74e53bbc2c88151285fe22b0c14e559315ae471b",
+    "agreement.md": "46ab8f8f026d1f4814630729cbf9c8fcc08da74a2832e6135fd19ae9c5be15fa",
+    "scratch/share-prototype/index.html": "30db5ae01ed8d912a6b8ede400a6391d8ccb8ed72328bb69f9c02e0f5214ba92",
+    "docs/adr/0001-single-collection.md": "3da8a18082b3b46c012f9dc5da1910949adbe27fa8e46dd1d968da8bd48dd23a",
+    "docs/prd/collection-share/prd.md": "114c1dd177557860607578e00a69df329b677677d92360f66c27a41798732a3c",
+    "docs/prd/collection-share/prototype/index.html": "f24ca2a69d9b1dee750e8c55324de2be37e64bf10eb114f210b9e980aa842904"
+  },
+  "tool_calls": [
+    {
+      "tool": "ls",
+      "path": "<workspace>/eval-prd-preserve-model-and-scope/with_skill/fixture",
+      "is_error": false
+    },
+    {
+      "tool": "read",
+      "path": "<workspace>/snapshots/after/.agents/skills/prd/SKILL.md",
+      "is_error": false
+    },
+    {
+      "tool": "ls",
+      "path": "<workspace>/eval-prd-preserve-model-and-scope/with_skill/fixture/scratch",
+      "is_error": false
+    },
+    {
+      "tool": "ls",
+      "path": "<workspace>/eval-prd-preserve-model-and-scope/with_skill/fixture/docs",
+      "is_error": false
+    },
+    {
+      "tool": "read",
+      "path": "<workspace>/eval-prd-preserve-model-and-scope/with_skill/fixture/agreement.md",
+      "is_error": false
+    },
+    {
+      "tool": "read",
+      "path": "<workspace>/eval-prd-preserve-model-and-scope/with_skill/fixture/AGENTS.md",
+      "is_error": false
+    },
+    {
+      "tool": "ls",
+      "path": "<workspace>/eval-prd-preserve-model-and-scope/with_skill/fixture/docs/adr",
+      "is_error": false
+    },
+    {
+      "tool": "find",
+      "path": "<workspace>/eval-prd-preserve-model-and-scope/with_skill/fixture/scratch",
+      "is_error": false
+    },
+    {
+      "tool": "read",
+      "path": "<workspace>/eval-prd-preserve-model-and-scope/with_skill/fixture/scratch/share-prototype/index.html",
+      "is_error": false
+    },
+    {
+      "tool": "read",
+      "path": "<workspace>/eval-prd-preserve-model-and-scope/with_skill/fixture/docs/adr/0001-single-collection.md",
+      "is_error": false
+    },
+    {
+      "tool": "read",
+      "path": "<workspace>/snapshots/after/.agents/skills/prd/references/story-format.md",
+      "is_error": false
+    },
+    {
+      "tool": "read",
+      "path": "<workspace>/snapshots/after/.agents/skills/domain-modeling/references/glossary-format.md",
+      "is_error": false
+    },
+    {
+      "tool": "read",
+      "path": "<workspace>/snapshots/after/.agents/skills/prd/templates/prd.md",
+      "is_error": false
+    },
+    {
+      "tool": "read",
+      "path": "<workspace>/snapshots/after/.agents/skills/prd/references/prd-format.md",
+      "is_error": false
+    },
+    {
+      "tool": "write",
+      "path": "<workspace>/eval-prd-preserve-model-and-scope/with_skill/fixture/docs/prd/collection-share/prd.md",
+      "is_error": false
+    },
+    {
+      "tool": "write",
+      "path": "<workspace>/eval-prd-preserve-model-and-scope/with_skill/fixture/docs/prd/collection-share/prd.md",
+      "is_error": false
+    },
+    {
+      "tool": "edit",
+      "path": "<workspace>/eval-prd-preserve-model-and-scope/with_skill/fixture/docs/prd/collection-share/prd.md",
+      "is_error": false
+    },
+    {
+      "tool": "write",
+      "path": "<workspace>/eval-prd-preserve-model-and-scope/with_skill/fixture/docs/prd/collection-share/prototype/index.html",
+      "is_error": false
+    },
+    {
+      "tool": "edit",
+      "path": "<workspace>/eval-prd-preserve-model-and-scope/with_skill/fixture/AGENTS.md",
+      "is_error": false
+    },
+    {
+      "tool": "read",
+      "path": "<workspace>/eval-prd-preserve-model-and-scope/with_skill/fixture/docs/prd/collection-share/prd.md",
+      "is_error": false
+    },
+    {
+      "tool": "edit",
+      "path": "<workspace>/eval-prd-preserve-model-and-scope/with_skill/fixture/docs/prd/collection-share/prd.md",
+      "is_error": false
+    },
+    {
+      "tool": "read",
+      "path": "<workspace>/eval-prd-preserve-model-and-scope/with_skill/fixture/AGENTS.md",
+      "is_error": false
+    }
+  ],
+  "observed_models": [
+    [
+      "opencode-go",
+      "space-bunny-free"
+    ]
+  ],
+  "transcript_sha256": "e3e66e1ae64921650649ff0c528fd3f31b02fdc0ba9d240ad9d5398f9b86f01d"
+}

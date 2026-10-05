@@ -1,0 +1,73 @@
+return {
+  "folke/snacks.nvim",
+  opts = {
+    picker = {
+      sources = {
+        explorer = {
+          hidden = true,
+          ignored = true,
+          exclude = {
+            "node_modules",
+            ".git",
+            "dist",
+            "build",
+            "__pycache__",
+            ".cache",
+            ".venv",
+            "vendor",
+            ".npm",
+            ".pnpm",
+            "coverage",
+          },
+        },
+        files = {
+          hidden = true,
+          ignored = false,
+          cmd = "rg",
+          args = {
+            "--glob", ".agent/**",
+            "--glob", ".agents/**",
+            "--glob", ".env",
+            "--glob", ".env.*",
+          },
+          exclude = {
+            "node_modules",
+            ".git",
+            "dist",
+            "build",
+            "__pycache__",
+            ".cache",
+            ".venv",
+            "vendor",
+            ".npm",
+            ".pnpm",
+            "coverage",
+          },
+        },
+        grep = {
+          hidden = true,
+          ignored = false,
+          glob = {
+            ".agent/**",
+            ".agents/**",
+            ".env",
+            ".env.*",
+          },
+          exclude = {
+            "node_modules",
+            ".git",
+            "dist",
+            "build",
+            "__pycache__",
+            ".cache",
+            ".venv",
+            "vendor",
+            ".npm",
+            ".pnpm",
+            "coverage",
+          },
+        },
+      },
+    },
+  },
+}

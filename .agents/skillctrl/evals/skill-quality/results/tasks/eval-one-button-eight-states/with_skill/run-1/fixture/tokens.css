@@ -1,0 +1,13 @@
+:root {
+  --color-paper: #ffffff;
+  --color-paper-2: #e8f1fa;
+  --color-ink: #102a43;
+  --color-accent: #145da0;
+  --color-accent-hover: #0c467b;
+  --color-accent-ink: #ffffff;
+  --color-rule: #64748b;
+  --color-focus: #111827;
+  --color-error: #a11220;
+  --color-success: #116b35;
+  --font-body: system-ui, sans-serif;
+}
