@@ -20,7 +20,7 @@ SE=~/.agents/scheduled-tasks/session-eval/tools/session_eval.py
 ```
 
 1. `python3 "$SE" lock acquire` — `acquired: false` なら別 run が稼働中。そのまま報告して終了する（強制解除しない。stale lock は TTL=4h で自然回復する）
-2. `python3 "$SE" targets` — `targets[]`（session_id / reason / repo_root / sources 入り）を得る。0 件なら lock release して「対象なし」で終了
+2. `python3 "$SE" targets --lookback-hours 48` — `targets[]`（session_id / reason / repo_root / sources 入り）を得る。0 件なら lock release して「対象なし」で終了。`--lookback-hours 48` は必須 — 現在の trace 量では tool 既定の 7d 窓が API の MAX_PAGES=60（≈6 万 obs）を超えて `targets` 自体が fail する（2026-10 観測）。長期停止後の追いつきだけ、手動で窓を広げてよい
 3. targets ごとに evaluator subagent を spawn する
    - prompt は `references/evaluator-prompt.md` を読み、`{SESSION_ID}` を置換したものをそのまま渡す。追加指示・書き換えはしない（sentinel 行が欠けると自己評価ループになる）
    - devin では `subagent_general` profile で background 並列 spawn してよい。10 件超のときは 5 件ずつの wave に分ける
