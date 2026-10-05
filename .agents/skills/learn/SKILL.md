@@ -3,8 +3,8 @@ name: learn
 license: MIT
 argument-hint: "[config [key value] | clean | update]"
 description: >-
-  概念・コード・仕組みを、拡張Markdownから生成する音声付き図解動画とパネル型のHTMLで説明し、ユーザーの理解を確認する。
-  通常は動画を入口にし、短い定義や単純な手順では省略する。「教えて」「仕組みを理解したい」「図で説明して」
+  概念・コード・仕組みを、拡張Markdownから生成するパネル型のHTMLで説明し、ユーザーの理解を確認する。
+  動画は明示的に依頼されたときだけ生成する。「教えて」「仕組みを理解したい」「図で説明して」
   「解説動画を作って」「理解できたか確認して」や /learn で使う。実装・修正だけを求める依頼には使わない。
 ---
 
@@ -20,11 +20,34 @@ Reply to the user, and write the draft, in the user's language.
 
 対象読者が既知の隣接概念がある場合は、その概念との比較・対応を冒頭に置き、既知との差分から説明する。
 
-出力形式の指定があれば従う。指定がなければ音声付き図解動画を既定にし、ナレーション付き原稿を第6節の `am video` で生成する。
-短い定義や単純な手順など、文章の一読で十分伝わる場合は動画を省略する。明示的なHTML指定では `am render`、文章指定では文章を使う。
-動画は学習の入口に置く。図解シートも作る場合は、動画プレイヤーのリンクを先に提示し、文章・図・操作教材を続ける。
-状態遷移、処理の移動、分岐を図の段階表示や動きで説明する。色やフェードだけで動きを付けた動画で済ませない。
+出力形式の指定があれば従う。教材を作る場合、指定がなければ第2節の `am render` でHTML図解シートを生成する。
+短い定義や単純な手順など、文章の一読で十分伝わる場合は文章を使う。
+動画・movie・解説動画などを明示的に依頼された場合だけ、第6節の `am video` を使う。通常の「教えて」「図で説明して」や `/learn` は動画生成の依頼として扱わない。
+動画を作る場合は学習の入口に置く。図解シートも作る場合は、動画プレイヤーのリンクを先に提示し、文章・図・操作教材を続ける。
+動画では状態遷移、処理の移動、分岐を図の段階表示や動きで説明する。色やフェードだけで動きを付けた動画で済ませない。
 教材制作のCLIはLLMを呼ばない。制作に使うagentのモデルと、音声生成モデルを区別する。別agentに委譲するときのモデル選択は環境の `delegate` skill に従う。
+
+## 共有成果物の制作
+
+[reporting](../reporting/SKILL.md) などが成果物を作るときも、このskillの語彙・文章規範（第5節）、図解部品（第3・4節）、HTML描画（第2節）、成果物の検証（第7節）を使う。HTML・CSS・SVGや部品一覧を呼び出し側に複製しない。材料・読者・本文の構成は呼び出し側で決める。
+
+共有用レポートは `am render` を使う。共有依頼だけでは動画や第8節の本人の理解確認を開始しない。学習も依頼された場合は理解確認を行い、動画も依頼された場合は第6節を使う。
+
+CLIのパスはこの `learn/SKILL.md` と同じdirの `scripts/am.mjs` を解決する。呼び出し元skillの `CLAUDE_SKILL_DIR` を流用しない。
+
+画像を含む単体HTMLでは、描画前のMarkdown画像リンクをdata URIにする。`am render` はローカル画像を自動で埋め込まない。たとえば次のコマンドの出力を原稿の画像位置に入れる（PNGの場合）:
+
+```bash
+mise exec -- python3 - shots/after.png <<'PY'
+import base64
+import pathlib
+import sys
+data = base64.b64encode(pathlib.Path(sys.argv[1]).read_bytes()).decode("ascii")
+print(f"![反映後](data:image/png;base64,{data})")
+PY
+```
+
+WebPなら `image/webp`、JPEGなら `image/jpeg` を使う。キャプションは画像の上にMarkdownで書く。画像の拡縮はCLIに任せ、生成後のHTMLを加工しない。保存した原稿とHTML内の `#am-source` に埋め込み済み画像が残るため、`am patch` でも単体ファイルを保てる。
 
 ## 0. When the user wants to change settings
 
@@ -40,11 +63,11 @@ When the user asks in natural language ("stop opening the browser", "turn off al
 
 When the arguments start with `clean`, or the user asks to clean up pages / the cache: first run `am clean --dry-run` and tell the user how many items and how much space will be deleted. Run `am clean` only after the user agrees (add `--all` to delete all pages and videos, `--days N` to change how many days to keep).
 
-skill の取得・更新は環境の `skillctrl` skill に従う。原本更新時も動画の既定と理解確認を保つ。
+skill の取得・更新は環境の `skillctrl` skill に従う。原本更新時もHTMLの既定・動画の明示依頼時のみの生成・理解確認を保つ。
 
 ## 1. 判断：要不要制作教材
 
-下記のいずれかなら図解教材を作る。形式未指定では動画、HTML指定では図解シートを選ぶ：
+形式の明示指定があれば優先する。形式未指定では、下記のいずれかならHTML図解シートを作る。動画は明示依頼時だけ選ぶ：
 - There are ≥3 interrelated concepts, and the reader needs to see how they relate.
 - There is a flow, protocol, call chain or state transition (especially with branches or several actors).
 - There is a comparison across ≥3 dimensions, a trade-off between options, or a "can / cannot" list.
@@ -54,7 +77,7 @@ Otherwise answer in plain text. When unsure: the more the question "needs a pict
 
 ### Always-on mode
 
-既存の `[answer-me-with-html always-on]` ルールがある場合、その日常返答への適用は図解シートを使う。明示的な学習依頼・`/learn` の動画既定とは区別する：
+既存の `[answer-me-with-html always-on]` ルールがある場合、その日常返答への適用は図解シートを使う。このルールも動画生成の依頼として扱わない：
 
 - Whenever this turn gives a conclusion, summary, plan, comparison, review or explanation, attach a page.
 - Do not skip it because "the answer is short". If there is a conclusion, produce a page.
@@ -63,7 +86,7 @@ Otherwise answer in plain text. When unsure: the more the question "needs a pict
 - In the terminal, give the text conclusion first as usual, and put the page path on the last line.
 - Produce no page for small talk, one or two sentences with no conclusion, pure command output, or when the user asks for plain text.
 
-## 2. HTML 図解シートの生成（HTML指定時）
+## 2. HTML 図解シートの生成
 
 The CLI is bundled in this skill's directory: `scripts/am.mjs`, a single file with no dependencies to install; it needs only Node.js 20+. Below, `am` always means:
 
@@ -154,6 +177,8 @@ Selection rules:
 
 ## 5. STE controlled writing (the text in the draft)
 
+語彙は読者が知る具体的な言葉を選び、専門用語は初出で意味を添える。同じ概念には同じ名前を使う。日本語の原稿は [japanese-tech-writing](../japanese-tech-writing/SKILL.md) に従う。以下のSTE検査はその補助であり、日本語の論理・語彙・不確実性の点検を代替しない。
+
 `am render` checks automatically and only warns by default (`style: 80`); with `style: strict` a draft that fails produces no page; `style: off` turns the check off.
 
 - One sentence says one thing.
@@ -167,7 +192,7 @@ Selection rules:
 
 ## 6. Explainer videos (am video, 3Blue1Brown style)
 
-形式未指定の通常の解説では、この動画生成を使う。ユーザーが動画を求めた場合も使う。
+ユーザーが動画を明示的に依頼した場合だけ、この動画生成を使う。形式未指定の通常の解説は第2節のHTML図解シートを使う。
 音声はFish Audioを `--voice fish` で明示する。モデルは `s2.1-pro-free`、話者は旧learnと同じ「さとる（ナレーション）」の `297a6fd278df47c3b9da9bfdf55ac89a` を使う。
 認証はmise + ageで管理した `FISH_API_KEY` を `mise exec` から渡す。話者変更は `FISH_VOICE_ID`。秘密情報は原稿・設定ファイル・ログに平文で置かず、privateな情報を含む台本をFish Audioへ送らない。
 モデル名はCLIが固定ヘッダーで指定する。キー不足やAPI失敗時は停止し、有料モデル・システムTTS・別providerへ自動で切り替えない。
@@ -210,13 +235,15 @@ AM_EOF
 - Full syntax: `am help video`. In the terminal, reply with one sentence plus the player page path (and the MP4 path).
 
 
-## 7. 検証と理解の確認
+## 7. 成果物の検証
 
 完成した教材を実際に確認する。HTMLは表示と利用する操作を、動画は映像・音声・同期を確認する。
 音声を試聴し、専門用語・数字・間を点検する。ブラウザ確認は環境の `orca-cli` skill に従い、同梱CLIの自動ブラウザ起動は `--no-open` で抑える。
 実行や試聴ができなかった部分は未検証と伝える。文体検査の警告ゼロを、説明の真偽やユーザーの理解の証明にしない。
 
 初見の読み手への伝わり方を検証するときは [first-reader](../first-reader/SKILL.md) を使い、HTMLと分けたMarkdown原稿を渡す。結果は「AI模擬reader」と明記し、本人の理解確認とは区別する。
+
+## 8. 本人の理解確認（学習依頼時）
 
 教材を渡した後、核心を理解したか、ユーザーの回答や操作で確かめる。
 言い換え、別の具体例への適用、結果の予測、図やHTMLの操作、クイズ、対話から有効な方法を選ぶ。

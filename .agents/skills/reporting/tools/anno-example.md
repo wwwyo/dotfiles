@@ -21,7 +21,7 @@
 
 ## Orca browser での実行
 
-`SKILL=<skill_dir>` とする（SKILL.md 参照。dotfiles では `~/.agents/skills/reporting` が正本）。`tools/anno.js` は全体が 1 つの
+`SKILL` はこのreferenceの親にあるreportingのdirとする。`tools/anno.js` は全体が 1 つの
 アロー関数式なので、spec.js は `(<anno.js の中身>)(<specs 配列>)` の形にする。specs は JSON として
 書けるので `specs.json` に保存し、次の一行で組み立てる:
 
@@ -50,7 +50,7 @@ after でだけ新規追加された要素を狙う spec は、before の撮影�
 
 ## 箇条書きと画像を番号で対応させる
 
-`opts.number: true` を渡すと、spec の並び順に ①②… を label の先頭に自動で振る。report.html の箇条書きも同じ順で書けば、画像の番号とテキストが 1:1 で対応する。
+`opts.number: true` を渡すと、spec の並び順に ①②… を label の先頭に自動で振る。拡張Markdown原稿の箇条書きも同じ順で書けば、画像の番号とテキストが 1:1 で対応する。
 
 specs.json:
 ```json

@@ -4402,7 +4402,9 @@ var JA_FONT_CSS = [
 function pageCss() {
   return `${themeCss()}
 
-${BASE_CSS}`;
+${BASE_CSS}
+
+.am-md img { display: block; max-width: 100%; height: auto; }`;
 }
 
 // src/lint/wordlist.en.js
