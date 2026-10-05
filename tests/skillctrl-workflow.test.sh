@@ -136,9 +136,11 @@ with tempfile.TemporaryDirectory(prefix='skillctrl-workflow-') as tmp:
     git('config', 'user.name', 'Fixture')
     git('config', 'user.email', 'fixture@example.invalid')
     git('config', 'commit.gpgsign', 'false')
+    lock_text = (source / 'home/dot_config/mise/mise.lock').read_text()
+    toolchain = tomllib.loads(lock_text)['tools']['go'][0]['version']
     config = '''[tools]
 "go:github.com/wwwyo/skillctrl" = "a931afd1294d7b07669e8659aadf0de9854c51fc"
-go = "1.27.1"
+go = "GO_FIXTURE_VERSION"
 node = "24.21.0"
 "npm:@earendil-works/pi-coding-agent" = "1.0.0"
 unrelated = "9.9.9"
@@ -148,8 +150,8 @@ minimum_release_age = "7d"
 [env]
 UNRELATED_SECRET = "fixture-only-do-not-copy"
 '''
+    config = config.replace('GO_FIXTURE_VERSION', toolchain)
     write('home/dot_config/mise/config.toml', config)
-    lock_text = (source / 'home/dot_config/mise/mise.lock').read_text()
     trusted_lock = re.search(r'(?ms)^\[\[tools\."go:github\.com/wwwyo/skillctrl"\]\]\n.*?(?=^\[\[tools\.|\Z)', lock_text)[0]
     trusted_go_lock = re.search(r'(?ms)^\[\[tools\.go\]\]\n.*?(?=^\[\[tools\.|\Z)', lock_text)[0]
     write('home/dot_config/mise/mise.lock', trusted_lock + trusted_go_lock + '[[tools.unrelated]]\nversion = "9.9.9"\n')
@@ -170,7 +172,7 @@ UNRELATED_SECRET = "fixture-only-do-not-copy"
     # The trusted pin step rejects mutable refs and strips unrelated settings.
     run_step(pr_workflow, 'Read the trusted skillctrl pin')
     selected = tomllib.loads((cli_dir / 'mise.toml').read_text())
-    assert selected == {'tools': {'go:github.com/wwwyo/skillctrl': 'a931afd1294d7b07669e8659aadf0de9854c51fc', 'go': '1.27.1'},
+    assert selected == {'tools': {'go:github.com/wwwyo/skillctrl': 'a931afd1294d7b07669e8659aadf0de9854c51fc', 'go': toolchain},
                         'settings': {'pin': True, 'minimum_release_age': '7d'}}
     assert (cli_dir / 'mise.toml').read_text().count('pi-coding-agent') == 0
     assert (cli_dir / 'node.txt').read_text() == '24.21.0'
@@ -178,7 +180,7 @@ UNRELATED_SECRET = "fixture-only-do-not-copy"
     selected_lock = tomllib.loads((cli_dir / 'mise.lock').read_text())
     assert set(selected_lock['tools']) == {'go:github.com/wwwyo/skillctrl', 'go'}
     assert selected_lock['tools']['go'][0]['platforms.linux-x64']['checksum'].startswith('sha256:')
-    for invalid_lock in [trusted_lock, trusted_lock + trusted_go_lock.replace('version = "1.27.1"', 'version = "1.27.0"')]:
+    for invalid_lock in [trusted_lock, trusted_lock + trusted_go_lock.replace('version = ' + json.dumps(toolchain), 'version = "0.0.0"')]:
         write('home/dot_config/mise/mise.lock', invalid_lock)
         rejected = commit()
         assert run_step(pr_workflow, 'Read the trusted skillctrl pin', check=False,
