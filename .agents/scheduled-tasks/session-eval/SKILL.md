@@ -20,12 +20,19 @@ SE=~/.agents/scheduled-tasks/session-eval/tools/session_eval.py
 ```
 
 1. `python3 "$SE" lock acquire` — `acquired: false` なら別 run が稼働中。そのまま報告して終了する（強制解除しない。stale lock は TTL=4h で自然回復する）
-2. `python3 "$SE" targets` — `targets[]`（session_id / reason / repo_root / sources 入り）を得る。0 件なら lock release して「対象なし」で終了
+2. 窓の起点を決めて `targets` を呼び、`targets[]`（session_id / reason / repo_root / sources 入り）を得る。0 件なら step 4 の `next_since` 更新と lock release をして「対象なし」で終了
+   - `~/.local/state/session-eval/next_since` があれば `python3 "$SE" targets --since "$(cat ~/.local/state/session-eval/next_since)"`（`--since` は `--lookback-hours` より優先）。前回 run の完走時に step 4 が書く
+   - 無ければ `python3 "$SE" targets --lookback-hours 48`。固定窓は初回・marker 消失時のフォールバック専用 — tool 既定の 7d は現在の trace 量だと API の MAX_PAGES=60（≈6 万 obs）を超えて `targets` 自体が fail する（2026-10 観測: 7d で上限到達、48h で完走・35 targets）
+   - 固定窓に頼らない理由: `_cmd_targets` は窓内の observation からしか session を発見せず eval 側に score backfill も無いので、48h 固定では run が 2 回連続で止まるとその間の session が `evaluated_until` 無しのまま窓外に出て二度と現れず、consolidate にも拾われず無音で失われる。tool 既定の 168h は「定時 batch が数日止まっても拾い切れる下限」という設計で、`--since` を前回 run 起点にすると止まった分だけ窓が自動で伸びるためその意図を保てる
+   - marker 起点でも長期停止後は obs 量で MAX_PAGES に当たりうる。その場合は fail-loud に止まる（無音喪失ではない）ので、手動で `--since` を区切って追いつき、終わったら `next_since` をその時刻に更新する
 3. targets ごとに evaluator subagent を spawn する
    - prompt は `references/evaluator-prompt.md` を読み、`{SESSION_ID}` を置換したものをそのまま渡す。追加指示・書き換えはしない（sentinel 行が欠けると自己評価ループになる）
    - devin では `subagent_general` profile で background 並列 spawn してよい。10 件超のときは 5 件ずつの wave に分ける
-4. 全 subagent の完了を待ち、`python3 "$SE" lock release`
-5. 報告 — evaluated / self-skip / unsafe-sid / error の件数（`unsafe-sid` は targets 出力の `skipped.unsafe_sid`＝session 単位の件数、`skipped.unsafe_sids` が落ちた sid 一覧。shell 非対応の文字種の session_id を弾いたもので、0 以外なら恒久的に評価対象外になるので sid を明記する）。失敗があれば session_id と理由 1 行
+4. 全 subagent の完了を待ち、`next_since` を更新してから `python3 "$SE" lock release`:
+   `python3 -c 'from datetime import datetime, timedelta, timezone; print((datetime.now(timezone.utc) - timedelta(hours=24)).strftime("%Y-%m-%dT%H:%M:%SZ"))' > ~/.local/state/session-eval/next_since`
+   - `next_since` = 次回 run が `--since` に渡す値。24h 引くのは、turn の startTime が user message 時刻へ backdate されるので、前回 run の fetch 後に完了した長い turn が窓から漏れないようマージンを取るため
+   - 途中で止まった run は書かない — 次回が同じ起点から再スキャンして未評価分を拾う。session 単位の error があっても完走したら更新する（error は step 5 で報告済み＝検知可能。retry したい場合は手動で `--since` を戻す）。書き忘れは窓が広がる側にしか効かないので安全方向
+5. 報告 — 窓の起点（targets 出力の `window.from`）と evaluated / self-skip / unsafe-sid / error の件数（`unsafe-sid` は targets 出力の `skipped.unsafe_sid`＝session 単位の件数、`skipped.unsafe_sids` が落ちた sid 一覧。shell 非対応の文字種の session_id を弾いたもので、0 以外なら恒久的に評価対象外になるので sid を明記する）。失敗があれば session_id と理由 1 行
 
 ## ルール
 
