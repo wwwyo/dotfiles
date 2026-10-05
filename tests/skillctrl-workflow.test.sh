@@ -126,9 +126,10 @@ with tempfile.TemporaryDirectory(prefix='skillctrl-workflow-') as tmp:
         return git('rev-parse', 'HEAD')
 
     def run_step(document, name, check=True, extra=None, index=0):
-        script = runs(document, name)[index].replace('/tmp/gh-aw/skillctrl-cli', str(cli_dir))
-        script = script.replace('/tmp/gh-aw/skillctrl', str(artifacts))
-        script = script.replace('/tmp/skillctrl', str(tmp / 'ci'))
+        paths = {'/tmp/gh-aw/skillctrl-cli': str(cli_dir),
+                 '/tmp/gh-aw/skillctrl': str(artifacts), '/tmp/skillctrl': str(tmp / 'ci')}
+        script = re.sub('|'.join(re.escape(path) for path in paths),
+                        lambda match: paths[match[0]], runs(document, name)[index])
         return command(['bash', '-euo', 'pipefail', '-c', script], check=check, extra=extra)
 
     git('init', '-q')
