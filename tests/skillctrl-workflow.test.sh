@@ -150,7 +150,8 @@ UNRELATED_SECRET = "fixture-only-do-not-copy"
     write('home/dot_config/mise/config.toml', config)
     lock_text = (source / 'home/dot_config/mise/mise.lock').read_text()
     trusted_lock = re.search(r'(?ms)^\[\[tools\."go:github\.com/wwwyo/skillctrl"\]\]\n.*?(?=^\[\[tools\.|\Z)', lock_text)[0]
-    write('home/dot_config/mise/mise.lock', trusted_lock + '[[tools.unrelated]]\nversion = "9.9.9"\n')
+    trusted_go_lock = re.search(r'(?ms)^\[\[tools\.go\]\]\n.*?(?=^\[\[tools\.|\Z)', lock_text)[0]
+    write('home/dot_config/mise/mise.lock', trusted_lock + trusted_go_lock + '[[tools.unrelated]]\nversion = "9.9.9"\n')
     write('home/dot_pi/agent/models.json', '{"fixture": true}')
     for name in ['imported', 'handwritten']:
         write('.agents/skills/' + name + '/SKILL.md', 'original body\n')
@@ -172,7 +173,18 @@ UNRELATED_SECRET = "fixture-only-do-not-copy"
                         'settings': {'pin': True, 'minimum_release_age': '7d'}}
     assert (cli_dir / 'mise.toml').read_text().count('pi-coding-agent') == 0
     assert (cli_dir / 'node.txt').read_text() == '24.21.0'
-    assert (cli_dir / 'mise.lock').read_text() == trusted_lock
+    assert (cli_dir / 'mise.lock').read_text() == trusted_lock + trusted_go_lock
+    selected_lock = tomllib.loads((cli_dir / 'mise.lock').read_text())
+    assert set(selected_lock['tools']) == {'go:github.com/wwwyo/skillctrl', 'go'}
+    assert selected_lock['tools']['go'][0]['platforms.linux-x64']['checksum'].startswith('sha256:')
+    for invalid_lock in [trusted_lock, trusted_lock + trusted_go_lock.replace('version = "1.27.1"', 'version = "1.27.0"')]:
+        write('home/dot_config/mise/mise.lock', invalid_lock)
+        rejected = commit()
+        assert run_step(pr_workflow, 'Read the trusted skillctrl pin', check=False,
+                        extra={'CHECKER_SOURCE': rejected}).returncode != 0
+    write('home/dot_config/mise/mise.lock', trusted_lock + trusted_go_lock + '[[tools.unrelated]]\nversion = "9.9.9"\n')
+    base = commit()
+    env.update(CHECKER_SOURCE=base, PR_BASE=base, PR_HEAD=base)
     assert run_step(pr_workflow, 'Read the trusted skillctrl pin', check=False,
                     extra={'CHECKER_SOURCE': 'HEAD'}).returncode != 0
 
