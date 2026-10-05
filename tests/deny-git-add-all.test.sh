@@ -30,7 +30,8 @@ deny = [
     'git add -- .',
     'cd sub && git add -A',
     'git status; git add .',
-    'git -C add -A',  # dir 名が add の病理ケース
+    'git -C add -A',      # dir 名が add の病理ケース
+    'git -C add add -A',  # -C の値と subcommand が両方 add
 ]
 allow = [
     'git add ./foo.ts',
