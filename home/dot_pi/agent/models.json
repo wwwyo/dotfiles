@@ -33,18 +33,6 @@
             "supportsAdditionalTools": true
           },
           "thinkingLevelMap": { "off": "none", "minimal": null, "low": "low", "medium": "medium", "high": "high", "xhigh": "xhigh", "max": "max" }
-        },
-        {
-          "id": "space-bunny-free",
-          "name": "Space Bunny Free",
-          "api": "openai-completions",
-          "reasoning": true,
-          "input": ["text", "image"],
-          "contextWindow": 1048576,
-          "maxTokens": 524288,
-          "cost": { "input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0 },
-          "compat": { "supportsStore": false, "supportsDeveloperRole": false },
-          "thinkingLevelMap": { "off": null, "minimal": null, "low": "low", "medium": "medium", "high": "high", "xhigh": "xhigh", "max": "max" }
         }
       ]
     }

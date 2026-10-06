@@ -285,7 +285,7 @@ UNRELATED_SECRET = "fixture-only-do-not-copy"
     handoff = artifacts / 'handoff'
     env['PATH'] = str(tools) + os.pathsep + env['PATH']
     command([node, str(script), str(reviewer)], extra={
-        'GH_AW_PROMPT': str(prompt), 'SKILL_MODEL': 'opencode-go/space-bunny-free',
+        'GH_AW_PROMPT': str(prompt), 'SKILL_MODEL': 'opencode-go/mimo-v2.6-flash',
         'OPENCODE_API_KEY': 'fixture-credential-never-publish', 'HANDOFF': str(handoff)})
     assert handoff.read_text().strip() == 'apply_skill_repairs --head ' + head
     patch = (artifacts / 'repair.patch').read_text()
