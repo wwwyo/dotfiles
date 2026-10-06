@@ -6,8 +6,8 @@ script は材料取得・結果登録・merge 条件の再検証を行うが、`
 確認しても判断できない場合は、未確認事項を理由に `ng` を登録する。
 
 merge 候補のうち script の自動 ok 対象（bot の依存更新のみで、全更新が
-minor/patch・devDependencies と実 manifest 差分から確定できるもの）と常に
-hold の path を除く PR を判定する。PR 本文の `Blast Radius` と
+minor/patch または devDependencies（major 含む）と実 manifest 差分から
+確定できるもの）と常に hold の path を除く PR を判定する。PR 本文の `Blast Radius` と
 `QA` を差分・CI・必要な利用箇所と照合し、リスク判定の根拠が確かかを確認する。
 verdict は head SHA と判定時の本文・base・check 結果に紐付けて記録する。
 

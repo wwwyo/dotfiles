@@ -1145,8 +1145,15 @@ assert not r["eligible"] and "unclassifiable" in r["reasons"][0]
 r = pt.dep_auto_ok("wwwyo/me",
                    dep_facts(files=[".github/workflows/ci.yml"]))
 assert not r["eligible"]
+# package.json と対応しない lockfile（他 ecosystem・別 dir・lockfile のみ）は
+# 未マッピングとして自動 ok にしない
+r = pt.dep_auto_ok("wwwyo/me", dep_facts(files=["package.json", "go.sum"]))
+assert not r["eligible"] and "unmapped lockfile" in r["reasons"][0]
+r = pt.dep_auto_ok("wwwyo/me",
+                   dep_facts(files=["package.json", "sub/bun.lock"]))
+assert not r["eligible"] and "unmapped lockfile" in r["reasons"][0]
 r = pt.dep_auto_ok("wwwyo/me", dep_facts(files=["bun.lock"]))
-assert not r["eligible"] and "no dependency updates" in r["reasons"][0]
+assert not r["eligible"] and "unmapped lockfile" in r["reasons"][0]
 with mock.patch.object(pt, "file_at_ref",
                        side_effect=pt.ApiError("gone")):
     r = pt.dep_auto_ok("wwwyo/me", dep_facts(files=files_pkg))

@@ -741,6 +741,12 @@ def classify_pr(files, meta, diff, renamed_from=()):
 DEP_SECTIONS = ("dependencies", "devDependencies",
                 "peerDependencies", "optionalDependencies")
 DEV_DEP_SECTIONS = ("devDependencies",)
+# package.json の写像として扱える npm 系 lockfile。これ以外の lockfile
+# （go.sum・Cargo.lock・Gemfile.lock 等）は対応 manifest が判定不能なので
+# 自動 ok では skip せず「未マッピング」として judge に回す
+NPM_LOCKFILE_BASENAMES = {"package-lock.json", "npm-shrinkwrap.json",
+                          "bun.lock", "bun.lockb", "yarn.lock",
+                          "pnpm-lock.yaml", "pnpm-lock.yml"}
 DEP_SPEC_RE = re.compile(
     r"^([~^]?)v?(\d+)\.(\d+)\.(\d+)((?:[-+][0-9A-Za-z.\-]+)?)$")
 
@@ -829,20 +835,37 @@ def dep_auto_ok(repo, facts):
         # 組めないので判定不能
         out["reasons"].append("dependency file renamed")
         return out
-    updates = []
-    for path in facts.get("files") or []:
+    files = facts.get("files") or []
+    pkg_dirs = {path.rsplit("/", 1)[0] if "/" in path else ""
+                for path in files
+                if _basename(path.lower()) == "package.json"}
+    # file 集合の静的チェックを先に済ませる — package.json 取得の API call
+    # を挟んでから後続 file で弾くと結果が file 順に依存する
+    manifests = []
+    for path in files:
+        fname = _basename(path.lower())
         if is_lockfile(path):
-            continue  # lockfile は内容判定の対象外（manifest の写像）
-        if _basename(path.lower()) != "package.json":
+            # npm 系 lockfile は同じ dir の package.json の写像として skip
+            # する。それ以外（go.sum 等・package.json の無い dir・
+            # lockfile のみの PR）は対応 manifest が無いので未マッピング
+            pdir = path.rsplit("/", 1)[0] if "/" in path else ""
+            if fname in NPM_LOCKFILE_BASENAMES and pdir in pkg_dirs:
+                continue
+            out["reasons"].append(f"unmapped lockfile: {path}")
+            return out
+        if fname != "package.json":
             out["reasons"].append(f"unclassifiable manifest: {path}")
             return out
+        manifests.append(path)
+    updates = []
+    for path in manifests:
         try:
-            base = file_at_ref(repo, path, v.get("baseRefOid"))
-            head = file_at_ref(repo, path, v.get("headRefOid"))
+            base_text = file_at_ref(repo, path, v.get("baseRefOid"))
+            head_text = file_at_ref(repo, path, v.get("headRefOid"))
         except ApiError as e:
             out["reasons"].append(f"manifest unreadable: {path} ({e})")
             return out
-        ups = package_json_updates(base, head)
+        ups = package_json_updates(base_text, head_text)
         if ups is None:
             out["reasons"].append(
                 f"non-dependency or unparsable change: {path}")
