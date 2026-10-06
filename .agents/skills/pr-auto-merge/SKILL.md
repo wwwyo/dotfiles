@@ -69,6 +69,10 @@ PR 本文の `Blast Radius` と `QA` を差分・検証結果と照合し、判�
 根拠が不足して判断できなければ hold にする。詳細は [judge](references/judge.md)。
 テストファイルの追加の有無ではなく、実施した QA で判断する。
 
+`wiki/` は一律 hold にせず、通常の docs と同じ自動 merge 候補として扱う。
+QA・Blast Radius の judge 判定と CI・レビューの hard gate を満たす必要がある。
+`AGENTS.md` 等、wiki 以外の理由で常に hold となる path の規則は適用する。
+
 ## merge の発行経路（規約）
 
 この routine の merge の発行経路は `pr_triage.py merge` のみ。script は
