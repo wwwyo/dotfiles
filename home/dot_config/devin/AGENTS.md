@@ -6,7 +6,6 @@
 - PoC の dev 環境のプロダクトから AI を呼ぶときは opencode を使う（key は mise の `OPENCODE_API_KEY`）。基本は安さ重視の open model を選び、扱うデータの責任範囲でモデルを分ける
 - package install は supply chain リスクを避けるため、最新版を exact ピン留め（範囲指定 `^`/`~` は使わない）し、cooldown 7day を指定する。これは依存を「どう入れるか」の規則であって「入れない」ではない。定番ライブラリが解く問題を自前実装しない
 - 汎用skillは `~/src/github.com/wwwyo/dotfiles/.agents/skills` で管理する。codex・pi・devin は `.agents/skills` を直接読み、Claude Code だけ `.claude/skills` から symlink で参照する
-- skill や AGENTS.md に記述を足す・変えるときは常に「もっとシンプルにできるか」を考える。長いと読み落とされる — 新しい行を足す前に既存の行へ統合・削れないかを見る
 - 対話的入力が要る作業でも、できる限り自分で回してから、人間の入力・承認が本当に必要な箇所だけを最小単位で handoff する。手順を丸ごとユーザーに渡さない。ユーザーにブラウザで開いてほしい URL は自分で `open` までやる
 
 - 動画（demo・product launch・motion graphic）は `~/src/github.com/wwwyo/hyperframes`（HyperFrames の fork）を cwd にして `/hyperframes` skill から入る
