@@ -64,7 +64,8 @@ Langfuse の OTLP endpoint は traces しか受けないため hook/plugin 経�
     `--local` は machine 限定・更新は `devin plugins update`）
 - **Devin exporter** は `wwwyo/devin-observability-plugin` repo の
   `plugins/devin-observability/hooks/` に置く（旧 `home/dot_config/devin/hooks/` から
-  plugin 化して移設）。vendored `langfuse_hook.py` を emit library として同 dir から
+  plugin 化して移設。以下この項の script 名はその dir の file）。vendored
+  `langfuse_hook.py` を emit library として同 dir から
   import する（`emit_turn` に `source`/`label` param を足す divergence あり）。SDK は PEP723
   inline metadata で `langfuse==4.15.4`・`requests==2.34.2` pin、`uv run --script` が resolve する
   （upstream plugin と同じ方式）。トリガは `Stop`（turn 完了ごとの増分送信）
@@ -73,8 +74,9 @@ Langfuse の OTLP endpoint は traces しか受けないため hook/plugin 経�
   `langfuse-export.sh` が nohup detach するので hook 配列を待たせない。
   wrapper は `mise env` を `DEVIN_PROJECT_DIR` で評価してから gate 判定し
   （GUI 起動では mise env が乗らないため。`MISE_AGE_KEY` も keychain から補う）、
-  opt-in でなければ uv/network を触らず終了する。stderr は
-  `~/.local/state/langfuse-export/hook.log`（1MB で rotate）に残す。
+  opt-in でなければ uv/network を触らず終了する。stderr は machine 側 state dir
+  `~/.local/state/langfuse-export/` の `hook.log`（1MB で rotate。repo 内 file ではなく
+  plugin 化後も path は同じ）に残す。
   増分は `state.json` v2 の source user message ID ごとの payload fingerprint
   で管理する。turn 番号や timestamp は context 再作成で変わるため identity に
   使わない。trace/root は session + user message ID、generation/tool はさらに
