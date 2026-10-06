@@ -36,6 +36,7 @@
 - design.md（product-design 型・任意）— repo root に置く。[templates/product-design.md](../templates/product-design.md) の「値の層」を参照
 - SKILL.md = ルーター — runtime workflow。本体は Routing table（`| やること | 読む reference |`）。知見を SKILL.md に溜めず参照先を指すだけにする。単独 reference にするまでも無い小トピックだけ短い inline section で持ってよい。frontmatter の `description` に「この repo で <トピック> を触るとき参照する」系の発火語を書き自動発火させる
 - references/<topic>.md = 正本 — やること (mode) 単位で1ファイルに切り、そのファイルだけ読ませる。1 エントリ 1 行の bullet、事実・命令形。観測可能な決定として書く（「分かりやすく」等の形容詞ではなく「破壊的操作は Verb+Noun」のように検証可能に）。事実だけでなく rationale（なぜ。コードに残らないので特に重要）を残す。パス・コマンド付き、短命な PR/チケット番号は書かない（`#123` 裸書き禁止、必要なら `[owner/repo#123](url)`）
+- 長い skill は読み落とされる — 追記・変更のたびに「もっとシンプルにできるか」を問う。新しい行を足す前に既存の行へ統合できないか、削れる記述が無いかを見る。SKILL.md や reference が伸びてきたら追記ではなく再整理を優先する
 - skill 自身の AGENTS.md — この skill の load order・validation・governance を持つ（SKILL.md=runtime と分離）。`CLAUDE.md` は `@AGENTS.md` 1行だけで、読む index が違う agent に転送する。→「governance」
 - tools/（任意）— 決定論で確実に判定でき、false positive が出ず、具体的 fix があるものだけ lint 化。判断が要る / 新しい標準の制定は reference + 人間へ。tool は reference の従属物で、矛盾したら reference 優先
 - coverage gap — まだ標準の無い領域は「未確立」として明示しておく。推測で埋めない
