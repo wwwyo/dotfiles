@@ -71,6 +71,11 @@ Langfuse の OTLP endpoint は traces しか受けないため hook/plugin 経�
   （upstream plugin と同じ方式）。トリガは `Stop`（turn 完了ごとの増分送信）
   + `SessionEnd`（最終 flush）— SessionEnd が発火しない・session を閉じない
   ケースでも pi/codex plugin と同様にほぼリアルタイムで trace が見える。
+  `DEVIN_LANGFUSE_TIMING=session` にすると Stop は skip され SessionEnd の
+  一括送信だけになる（session が正常終了しないと送られない trade-off）。
+  この環境では global mise `[env]` に `DEVIN_LANGFUSE_TIMING="session"` を
+  置き、まとめて送る方を既定にしている。repo ごとに戻したい場合は
+  repo-local env で `turn` を上書きする。
   `langfuse-export.sh` が nohup detach するので hook 配列を待たせない。
   wrapper は `mise env` を `DEVIN_PROJECT_DIR` で評価してから gate 判定し
   （GUI 起動では mise env が乗らないため。`MISE_AGE_KEY` も keychain から補う）、
