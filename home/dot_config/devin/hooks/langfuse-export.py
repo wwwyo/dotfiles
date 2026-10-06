@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # /// script
 # requires-python = ">=3.10"
-# dependencies = ["langfuse==4.15.4"]
+# dependencies = ["langfuse==4.15.4", "requests==2.34.2"]
 # ///
 """langfuse-export — Devin の session transcript を Langfuse trace として送る。
 
@@ -89,13 +89,15 @@ def _text_part(text: Any) -> Optional[Dict[str, Any]]:
     return {"type": "text", "text": text} if isinstance(text, str) and text else None
 
 
-def _tool_result_row(tool_use_id: Any, content: Any, ts: Optional[str]) -> Dict[str, Any]:
+def _tool_result_row(tool_use_id: Any, content: Any, ts: Optional[str],
+                     is_error: bool = False) -> Dict[str, Any]:
     return {
         "type": "user",
         "message": {
             "role": "user",
             "content": [
-                {"type": "tool_result", "tool_use_id": tool_use_id, "content": content}
+                {"type": "tool_result", "tool_use_id": tool_use_id, "content": content,
+                 **({"is_error": True} if is_error else {})}
             ],
         },
         "timestamp": ts,
@@ -230,6 +232,7 @@ def devin_messages(session_id: str, *, earliest: bool = False, legacy: bool = Fa
             out.append(_tool_result_row(
                 m.get("tool_call_id"), m.get("content"),
                 timing.get("finished_at") or ts,
+                is_error=m.get("is_error") is True or md.get("is_error") is True,
             ))
     return out, cwd
 
@@ -318,7 +321,8 @@ def emit_turns(lf: Any, msgs: List[Dict[str, Any]], session_id: str,
         try:
             lh.emit_turn(lf, session_id, turn_num, turn, source_path,
                          source=source, label=label, extra_metadata=extra,
-                         deterministic_ids=True)
+                         deterministic_ids=True,
+                         detail=os.environ.get("DEVIN_LANGFUSE_DETAIL", "turn"))
         except Exception as e:
             # Partial deliveries are retried under the same IDs on the next hook.
             lh.info(f"emit_turn failed: {type(e).__name__}")
@@ -370,7 +374,8 @@ def emit_legacy_turns(lf: Any, msgs: List[Dict[str, Any]], session_id: str,
         emitted += 1
         try:
             lh.emit_turn(lf, session_id, i + 1, turn, source_path, source="devin",
-                         label="Devin", extra_metadata=extra)
+                         label="Devin", extra_metadata=extra,
+                         detail=os.environ.get("DEVIN_LANGFUSE_DETAIL", "turn"))
         except Exception as error:
             lh.info(f"legacy emit failed: {type(error).__name__}")
     if turns:
@@ -393,8 +398,10 @@ def create_client(public_key: str, secret_key: str, host: str) -> Tuple[Any, Any
     from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
 
     class CheckedSession(Session):
-        def post(self, *args, **kwargs):
-            response = super().post(*args, **kwargs)
+        rejected = False
+
+        def request(self, *args, **kwargs):
+            response = super().request(*args, **kwargs)
             # The stock OTel exporter reports success for any HTTP 2xx, including
             # OTLP partial rejection. Such batches must not advance our checkpoint.
             if response.ok and response.content:
@@ -410,6 +417,7 @@ def create_client(public_key: str, secret_key: str, host: str) -> Tuple[Any, Any
                     rejected = ExportTraceServiceResponse.FromString(
                         response.content).partial_success.rejected_spans
                 if rejected:
+                    self.rejected = True
                     raise RuntimeError("OTLP partial rejection")
             return response
 
@@ -424,7 +432,7 @@ def create_client(public_key: str, secret_key: str, host: str) -> Tuple[Any, Any
             except Exception:
                 self.failed = True
                 raise
-            if result != SpanExportResult.SUCCESS:
+            if result != SpanExportResult.SUCCESS or checked_session.rejected:
                 self.failed = True
             return result
 
@@ -433,8 +441,9 @@ def create_client(public_key: str, secret_key: str, host: str) -> Tuple[Any, Any
 
     auth = base64.b64encode(f"{public_key}:{secret_key}".encode()).decode()
     path = os.environ.get("LANGFUSE_OTEL_TRACES_EXPORT_PATH", "api/public/otel/v1/traces")
+    checked_session = CheckedSession()
     delivery = CheckedExporter(OTLPSpanExporter(
-        endpoint=f"{host.rstrip('/')}/{path}", timeout=None, session=CheckedSession(),
+        endpoint=f"{host.rstrip('/')}/{path}", timeout=None, session=checked_session,
         headers={"Authorization": "Basic " + auth,
                  "x-langfuse-sdk-name": "python",
                  "x-langfuse-sdk-version": version("langfuse"),

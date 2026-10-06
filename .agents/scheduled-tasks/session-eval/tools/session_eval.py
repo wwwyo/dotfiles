@@ -78,7 +78,7 @@ ROOT_FILTER = json.dumps([{"type": "boolean", "column": "isRootObservation",
 # repo 復元が黙って潰れないよう expand 指定しておく。expandMetadata は
 # upstream では key 名を見ず非空なら全 key 展開のフラグとしてしか効かない
 # — 空にすると repo 識別系の key がまとめて truncate されるので消さない
-EXPAND_METADATA = "cwd,transcript_path,git_branch"
+EXPAND_METADATA = "cwd,transcript_path,git_branch,telemetry_summary"
 
 
 def emit(obj):
@@ -572,6 +572,19 @@ def cmd_transcript(a):
         fail(str(e))
 
 
+def telemetry_summary(metadata):
+    """Compact exporters preserve evaluator signals without individual child spans."""
+    value = (metadata or {}).get("telemetry_summary")
+    if isinstance(value, str):
+        try:
+            value = json.loads(value)
+        except (ValueError, TypeError):
+            return None
+    if not isinstance(value, dict) or value.get("version") != 1:
+        return None
+    return value
+
+
 def _cmd_transcript(a):
     sid = a.session_id
     # watermark は「この評価が覆った観測の上限」= 観測済み obs の max
@@ -608,9 +621,48 @@ def _cmd_transcript(a):
     counts, tool_names = Counter(), Counter()
     hints = {"hints": {}, "sources": set()}
     errors = []
+    compact = {}
+    for o in all_obs:
+        if not o.get("id"):
+            continue
+        summary = telemetry_summary(o.get("metadata"))
+        if summary is not None:
+            compact[o["id"]] = summary
+    by_id = {o["id"]: o for o in all_obs if o.get("id")}
+
+    def compact_child(o):
+        # A revised tail can already have old full-mode children in Langfuse.
+        # Its authoritative summary supersedes those children, not subagent turns.
+        parent = o.get("parentObservationId")
+        seen = set()
+        while parent and parent not in seen:
+            if parent in compact:
+                return True
+            seen.add(parent)
+            parent = by_id.get(parent, {}).get("parentObservationId")
+        return False
+
     for o in all_obs:
         t = o.get("type", "?")
+        if t in ("GENERATION", "TOOL") and compact_child(o):
+            continue
         counts[t] += 1
+        summary = compact.get(o.get("id"))
+        if summary is not None:
+            for field, kind in (("generation_count", "GENERATION"), ("tool_call_count", "TOOL")):
+                n = summary.get(field)
+                if isinstance(n, int) and not isinstance(n, bool) and n >= 0:
+                    counts[kind] += n
+            names = summary.get("tool_names")
+            if isinstance(names, dict):
+                tool_names.update({name: n for name, n in names.items()
+                                   if isinstance(name, str) and isinstance(n, int)
+                                   and not isinstance(n, bool) and n >= 0})
+            for error in summary.get("errors", []) if isinstance(summary.get("errors"), list) else []:
+                if isinstance(error, dict):
+                    errors.append({"startTime": error.get("start_time") or o.get("startTime"),
+                                   "name": str(error.get("name") or "tool"),
+                                   "statusMessage": str(error.get("status_message") or "")[:300]})
         if t == "TOOL":
             tool_names[o.get("name") or "?"] += 1
         _merge_hints(hints, o.get("metadata") or {})

@@ -9,7 +9,7 @@ Langfuse の OTLP endpoint は traces しか受けないため hook/plugin 経�
 | agent | 仕組み | repo opt-in |
 | --- | --- | --- |
 | Claude Code | 公式 plugin `langfuse-observability@langfuse-observability` | repo の `.claude/settings.local.json` で `enabledPlugins` を `true`（user settings で default off。local > user の precedence で反転） |
-| Codex | 公式 plugin `tracing@codex-observability-plugin`（`home/dot_codex/config.toml.tmpl`） | repo の `.codex/langfuse.json` に `{"enabled": true}`（`process.cwd()` 解決。git root ではないので subdir 起動では拾わない — root から起動する） |
+| Codex | wwwyo fork の plugin `tracing@codex-observability-plugin`（`home/.chezmoitemplates/codex-base.toml.tmpl`） | repo の `.codex/langfuse.json` に `{"enabled": true}`（`process.cwd()` 解決。git root ではないので subdir 起動では拾わない — root から起動する） |
 | pi | 公式 extension `@langfuse/pi-observability-plugin` | repo の `.pi/settings.json` に `packages` 宣言（install 先 `.pi/npm/` は gitignore） |
 | Devin | Stop（turn ごと）+ SessionEnd（最終 flush）→ `home/dot_config/devin/hooks/langfuse-export.py` が sessions.db を正規化して送信 | repo-local `mise.local.toml` の `[env]` に `DEVIN_TRACE_TO_LANGFUSE="true"`（mise 公式の local override。tracked にしたい repo は `mise.toml` でも可） |
 
@@ -56,13 +56,13 @@ Langfuse の OTLP endpoint は traces しか受けないため hook/plugin 経�
     `enabledPlugins` に `true` を書き込むので `claude plugin disable
     langfuse-observability@langfuse-observability --scope user` で commit 済みの
     `false` に戻す
-  - Codex: `codex plugin marketplace add langfuse/codex-observability-plugin` +
+  - Codex: `codex plugin marketplace add wwwyo/codex-observability-plugin` +
     `codex plugin add tracing@codex-observability-plugin`（初回に Stop hook の
     trust 承認あり）
 - **Devin exporter** は vendored `langfuse_hook.py`（同じ `home/dot_config/devin/hooks/`）を
   emit library として import する（Claude 本体は plugin に移したが emit 共用で残す。
   `emit_turn` に `source`/`label` param を足す divergence あり）。SDK は PEP723
-  inline metadata で `langfuse==4.15.4` pin、`uv run --script` が resolve する
+  inline metadata で `langfuse==4.15.4`・`requests==2.34.2` pin、`uv run --script` が resolve する
   （upstream plugin と同じ方式）。トリガは `Stop`（turn 完了ごとの増分送信）
   + `SessionEnd`（最終 flush）— SessionEnd が発火しない・session を閉じない
   ケースでも pi/codex plugin と同様にほぼリアルタイムで trace が見える。
@@ -106,5 +106,25 @@ Langfuse の OTLP endpoint は traces しか受けないため hook/plugin 経�
   `.claude/settings.local.json`・`.codex/langfuse.json`・`.pi/settings.json`
   （repo root、chezmoi 管理外。後2つはこの repo では tracked）・
   repo-local `mise.toml`（この repo では tracked。他 repo では `mise.local.toml`）を使う
+- **Codex / Devin は turn 単位の compact 記録が既定**。Codex は
+  `home/dot_codex/langfuse.json` の `detail=turn` を global default として読む
+  （`enabled` は置かず repo opt-in を維持）。Devin は exporter の既定値。
+  詳細記録へ戻すには Codex の repo `.codex/langfuse.json` で `detail=full`、
+  Devin の repo-local env で `DEVIN_LANGFUSE_DETAIL=full` を指定する。
+  turn の input/output はユーザー入力と最終応答。metadata の
+  `telemetry_summary`（JSON、version=1）に generation/tool 件数・tool 名・
+  bounded なエラー概要と時刻・model 別 token 使用量を保持し、session-eval が読む。
+  tool 入出力全文と途中のモデル応答は送らず、個別 generation の cost/latency
+  表示は full mode が必要。subagent の turn は残す。
+  mode 切替だけでは過去 turn を replay しない。変更された tail に以前の詳細
+  observation が残る場合、評価側は集約値を優先して二重計上を防ぐ。
+- **Codex fork の配布**: marketplace は npm の公式 package ではなく Git 内の
+  `plugins/tracing` を読む。生成 bundle を source と同じ commit に含め、
+  plugin version も上げる。fork URL に変えるだけで npm source を残すと
+  公式 package が引き続き動く。新しい hook の trust は `/hooks` で確認する。
+- **Devin の送信成功確認**: HTTP transport の `Session.request` で JSON / protobuf
+  partial rejection を検知する。`post` だけの override では現在の OTel transport
+  を捕捉できない。検知した rejection は exporter 内部で再試行されても checkpoint
+  の確定を止め、次の hook で同じ ID に再送する。
 - **trace の確認は v2 API**: `GET /api/public/v2/observations?fields=core,basic,model,usage,metadata`
   （legacy `/api/public/traces` は 410。fields 指定しないと model/usage が返らない）

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # /// script
 # requires-python = ">=3.10"
-# dependencies = ["langfuse==4.15.4"]
+# dependencies = ["langfuse==4.15.4", "requests==2.34.2"]
 # ///
 """Prepare legacy ID mappings using GETs only; persist IDs/hashes, never payloads.
 
