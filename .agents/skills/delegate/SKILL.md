@@ -12,13 +12,13 @@ description: "別 agent への委譲・相談・レビューで harness・model�
 | 役割 | public | personal | work |
 |---|---|---|---|
 | Operator | 1. codex:gpt-6.1-sol:high, 2. devin:swe-2:max | 同じ | 同じ |
-| worker | 1. devin:swe-2:medium, 2. pi:opencode-go/space-bunny-free:high, 3. pi:opencode-go/muse-spark-1.3-contributor:high | 1. devin:swe-2:medium, 2. pi:opencode-go/space-bunny-free:high, 3. pi:opencode-go/deepseek-v4.1-flash:high | 1. codex:gpt-6-luna:high |
-| review | 1. codex:gpt-6.1-sol:high, 2. pi:opencode-go/muse-spark-1.3-contributor:high | 1. codex:gpt-6.1-sol:high, 2. pi:opencode-go/space-bunny-free:high | 同左 |
+| worker | 1. devin:swe-2:medium, 2. pi:opencode-go/mimo-v2.6-flash:high, 3. pi:opencode-go/muse-spark-1.3-contributor:high | 1. devin:swe-2:medium, 2. pi:opencode-go/mimo-v2.6-flash:high, 3. pi:opencode-go/deepseek-v4.1-flash:high | 1. codex:gpt-6-luna:high |
+| review | 1. codex:gpt-6.1-sol:high, 2. pi:opencode-go/muse-spark-1.3-contributor:high | 1. codex:gpt-6.1-sol:high, 2. pi:opencode-go/mimo-v2.6-flash:high | 同左 |
 
 - personal / work: 個人の責任範囲で扱うデータ / 仕事として組織・案件の利用条件に従うデータ。
 - 候補の順序: 先頭優先。使えない場合に次の候補へ fallback する。
 - 記法: `harness:model:effort`。選んだ値を起動時に指定する。
-- 例外: automation は固定せず task の要件に合わせて選ぶ（実値は各 `automation.toml` の `provider`）。Pullfrog は public なら `opencode-go/muse-spark-1.3-contributor:high`、private なら `opencode-go/space-bunny-free:high`。プロダクトの LLM モデル（opencode 等）も対象外
+- 例外: automation は固定せず task の要件に合わせて選ぶ（実値は各 `automation.toml` の `provider`）。Pullfrog は public なら `opencode-go/muse-spark-1.3-contributor:high`、private なら `opencode-go/mimo-v2.6-flash:high`。プロダクトの LLM モデル（opencode 等）も対象外
 
 ## 起動時の権限モード
 

@@ -24,7 +24,7 @@ network:
   allowed: [defaults, opencode.ai]
 tools:
   cli-proxy: true
-model: opencode-go/space-bunny-free
+model: opencode-go/mimo-v2.6-flash
 runtimes:
   node:
     version: ${{ needs.select.outputs.node }}
