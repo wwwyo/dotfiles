@@ -11,7 +11,7 @@
     "orca-cli": "bc02fffd55ef88b063adf30fee8140d86d951954",
     "orchestration": "a081a8cd8c678a7eb907756d13a469ae61329cec",
     "prototype": "fe50fc26cf7cbd499ed9154a79279e2dd5379b3a",
-    "skillctrl": "3a63cb40482bb2d5daaf22c93ff772b9651f7b37",
+    "skillctrl": "e1dc204176462417a6c0e6b7886cc4f79d0a512a",
     "syokan": "c3575a4e9c7fc37e5e439e54daa1429a7ab96601"
   },
   "upstreams": {
@@ -231,20 +231,20 @@
       "updatedAt": "2026-08-23T03:06:38.503Z"
     },
     "skillctrl": {
-      "computedHash": "c84cf3d1adab40b538f53e26a140231383373aa9590dfe1909067b42f0622444",
+      "computedHash": "1b3d41690a5758fde76c869b03f79732a3e53e5c131339b8a4b112ad33ae3c72",
       "installedAt": "2026-10-03T03:30:20.413Z",
       "native": {
-        "computedHash": "c84cf3d1adab40b538f53e26a140231383373aa9590dfe1909067b42f0622444",
+        "computedHash": "1b3d41690a5758fde76c869b03f79732a3e53e5c131339b8a4b112ad33ae3c72",
         "skillPath": ".agents/skills/skillctrl/SKILL.md",
         "source": "wwwyo/skillctrl",
         "sourceType": "github"
       },
-      "skillFolderHash": "b6efabb4298b8f589d0401826f6184d3e7ef0647",
+      "skillFolderHash": "7fd0a7f2ed2eb94be2545710f603ec2df698f50c",
       "skillPath": ".agents/skills/skillctrl/SKILL.md",
       "source": "wwwyo/skillctrl",
       "sourceType": "github",
       "sourceUrl": "https://github.com/wwwyo/skillctrl.git",
-      "updatedAt": "2026-10-05T10:12:51.176Z"
+      "updatedAt": "2026-10-06T03:15:47.337Z"
     },
     "syokan": {
       "installedAt": "2026-06-28T08:37:08.256Z",

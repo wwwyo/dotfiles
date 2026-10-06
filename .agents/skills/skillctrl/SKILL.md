@@ -189,5 +189,7 @@ for direct Git imports; `SKILLCTRL_ADAPTER` sets a default.
 Keep the project lock at root `skills-lock.json`.
 Backend discovery, release selection, embedded metadata, and file modes can
 differ; switching adapters can require another intent review. Missing tools are
-errors. Install acquisition dependencies through mise; keep the `skills` CLI
-pinned there so the PATH reuse path applies.
+errors. Follow CLI diagnostics for missing acquisition dependencies, using the
+existing tool manager and the user's or repository's version policy. In this
+repository, install acquisition dependencies through mise and keep the `skills`
+CLI pinned there so the PATH reuse path applies.

@@ -82,7 +82,7 @@
       "sourceUrl": "https://github.com/emilkowalski/skills.git"
     },
     "skillctrl": {
-      "computedHash": "c84cf3d1adab40b538f53e26a140231383373aa9590dfe1909067b42f0622444",
+      "computedHash": "1b3d41690a5758fde76c869b03f79732a3e53e5c131339b8a4b112ad33ae3c72",
       "skillPath": ".agents/skills/skillctrl/SKILL.md",
       "source": "wwwyo/skillctrl",
       "sourceType": "github"

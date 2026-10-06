@@ -139,7 +139,7 @@ with tempfile.TemporaryDirectory(prefix='skillctrl-workflow-') as tmp:
     lock_text = (source / 'home/dot_config/mise/mise.lock').read_text()
     toolchain = tomllib.loads(lock_text)['tools']['go'][0]['version']
     config = '''[tools]
-"go:github.com/wwwyo/skillctrl" = "a931afd1294d7b07669e8659aadf0de9854c51fc"
+"go:github.com/wwwyo/skillctrl" = "17c4f0b9d0892cfa4ae81ef4e4c9ea7284b4fcd6"
 go = "GO_FIXTURE_VERSION"
 node = "24.21.0"
 "npm:@earendil-works/pi-coding-agent" = "1.0.0"
@@ -172,7 +172,7 @@ UNRELATED_SECRET = "fixture-only-do-not-copy"
     # The trusted pin step rejects mutable refs and strips unrelated settings.
     run_step(pr_workflow, 'Read the trusted skillctrl pin')
     selected = tomllib.loads((cli_dir / 'mise.toml').read_text())
-    assert selected == {'tools': {'go:github.com/wwwyo/skillctrl': 'a931afd1294d7b07669e8659aadf0de9854c51fc', 'go': toolchain},
+    assert selected == {'tools': {'go:github.com/wwwyo/skillctrl': '17c4f0b9d0892cfa4ae81ef4e4c9ea7284b4fcd6', 'go': toolchain},
                         'settings': {'pin': True, 'minimum_release_age': '7d'}}
     assert (cli_dir / 'mise.toml').read_text().count('pi-coding-agent') == 0
     assert (cli_dir / 'node.txt').read_text() == '24.21.0'
@@ -180,6 +180,16 @@ UNRELATED_SECRET = "fixture-only-do-not-copy"
     selected_lock = tomllib.loads((cli_dir / 'mise.lock').read_text())
     assert set(selected_lock['tools']) == {'go:github.com/wwwyo/skillctrl', 'go'}
     assert selected_lock['tools']['go'][0]['platforms.linux-x64']['checksum'].startswith('sha256:')
+    mismatched_skillctrl_lock = trusted_lock.replace(
+        'version = ' + json.dumps(selected['tools']['go:github.com/wwwyo/skillctrl']),
+        'version = "' + '0' * 40 + '"')
+    assert mismatched_skillctrl_lock != trusted_lock
+    write('home/dot_config/mise/mise.lock', mismatched_skillctrl_lock + trusted_go_lock)
+    rejected = commit()
+    mismatch = run_step(pr_workflow, 'Read the trusted skillctrl pin', check=False,
+                        extra={'CHECKER_SOURCE': rejected})
+    assert mismatch.returncode != 0
+    assert 'trusted go:github.com/wwwyo/skillctrl lock must match the exact pin' in mismatch.stderr
     for invalid_lock in [trusted_lock, trusted_lock + trusted_go_lock.replace('version = ' + json.dumps(toolchain), 'version = "0.0.0"')]:
         write('home/dot_config/mise/mise.lock', invalid_lock)
         rejected = commit()
