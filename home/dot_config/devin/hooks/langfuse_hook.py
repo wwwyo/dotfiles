@@ -580,10 +580,11 @@ def tool_error(result: Optional[Dict[str, Any]]) -> Optional[str]:
     failed = result.get("is_error") is True
     if isinstance(structured, dict):
         code = structured.get("exit_code", structured.get("exitCode"))
-        failed = failed or structured.get("is_error") is True or bool(structured.get("error"))
+        failed = failed or structured.get("is_error") is True or structured.get("isError") is True
         failed = failed or (isinstance(code, int) and not isinstance(code, bool) and code != 0)
-    exit_codes = re.findall(r"(?m)^\s*(?:Exit code:\s*|Process exited with code\s+)(-?\d+)\b", text)
-    failed = failed or any(int(code) != 0 for code in exit_codes)
+    exit_code = re.match(r"^(?:(?:Chunk ID:|Wall time:)[^\n]*\n)*\s*"
+                         r"(?:Exit code:\s*|Process exited with code\s+)(-?\d+)\b", text)
+    failed = failed or (exit_code is not None and int(exit_code[1]) != 0)
     return text[:300] if failed else None
 
 
