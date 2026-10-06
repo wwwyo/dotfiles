@@ -4,7 +4,7 @@ Orca 操作の正本は `orca-cli` skill — `ORCA skills get orca-cli` が vers
 
 ## keybindings.json
 
-- dotfiles 側の source: `home/dot_orca/keybindings.json` → `~/.orca/keybindings.json`
+- dotfiles 側の source: `home/private_dot_orca/keybindings.json` → `~/.orca/keybindings.json`（`private_` prefix で `~/.orca` の mode を 0700 に宣言。credential 類が入る state dir なので 0755 にしない）
 - entry は**置き換え型**。key ごとの配列が binding 集合全体になる — 既存のデフォルト binding を残したいときは配列に併記する。書かないと消える。`[]` は unbind
 - file watcher は無い。反映は Orca 再起動か Settings → Shortcuts の reload — 実行中の terminal session を殺したくないときは再起動せず reload を案内する
 - bindable な command ID の正本は `/Applications/Orca.app` 内の command registry（`terminal.splitDown`・`terminal.splitRight`・`worktree.palette` 等をここから掘る）
