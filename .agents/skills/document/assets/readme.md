@@ -18,7 +18,7 @@
 
 <AI に導入を任せる製品なら、docs/start.md の URL と対象 repo への導入意図を含む prompt を置く>
 
-<それ以外は、最初の利用に必要な短い手順を置く>
+<AI に導入を任せない場合は、必要な前提・最短の手順・成功の確認を QuickStart にまとめ、Manual を省く>
 
 ### Manual
 
