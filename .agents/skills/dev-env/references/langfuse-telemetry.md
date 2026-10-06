@@ -11,7 +11,7 @@ Langfuse の OTLP endpoint は traces しか受けないため hook/plugin 経�
 | Claude Code | 公式 plugin `langfuse-observability@langfuse-observability` | repo の `.claude/settings.local.json` で `enabledPlugins` を `true`（user settings で default off。local > user の precedence で反転） |
 | Codex | wwwyo fork の plugin `tracing@codex-observability-plugin`（`home/.chezmoitemplates/codex-base.toml.tmpl`） | repo の `.codex/langfuse.json` に `{"enabled": true}`（`process.cwd()` 解決。git root ではないので subdir 起動では拾わない — root から起動する） |
 | pi | 公式 extension `@langfuse/pi-observability-plugin` | repo の `.pi/settings.json` に `packages` 宣言（install 先 `.pi/npm/` は gitignore） |
-| Devin | plugin `devin-observability`（`wwwyo/devin-observability-plugin`）の Stop（turn ごと）+ SessionEnd（最終 flush）hook が sessions.db を正規化して送信 | repo-local `mise.local.toml` の `[env]` に `DEVIN_TRACE_TO_LANGFUSE="true"`（mise 公式の local override。tracked にしたい repo は `mise.toml` でも可） |
+| Devin | plugin `devin-langfuse`（`wwwyo/devin-langfuse-plugin`）の Stop（turn ごと）+ SessionEnd（最終 flush）hook が sessions.db を正規化して送信 | repo-local `mise.local.toml` の `[env]` に `DEVIN_TRACE_TO_LANGFUSE="true"`（mise 公式の local override。tracked にしたい repo は `mise.toml` でも可） |
 
 - **opt-in file は global gitignore 済み**（`**/.claude/settings.local.json`・
   `**/.codex/langfuse.json`・`**/.pi/settings.json`・`**/mise.local.toml` —
@@ -60,10 +60,10 @@ Langfuse の OTLP endpoint は traces しか受けないため hook/plugin 経�
     `codex plugin add tracing@codex-observability-plugin`（初回に Stop hook の
     trust 承認あり）
   - Devin: `devin plugins install
-    wwwyo/devin-observability-plugin#plugins/devin-observability`（user level。
+    wwwyo/devin-langfuse-plugin#plugins/devin-langfuse`（user level。
     `--local` は machine 限定・更新は `devin plugins update`）
-- **Devin exporter** は `wwwyo/devin-observability-plugin` repo の
-  `plugins/devin-observability/hooks/` に置く（旧 `home/dot_config/devin/hooks/` から
+- **Devin exporter** は `wwwyo/devin-langfuse-plugin` repo の
+  `plugins/devin-langfuse/hooks/` に置く（旧 `home/dot_config/devin/hooks/` から
   plugin 化して移設。以下この項の script 名はその dir の file）。vendored
   `langfuse_hook.py` を emit library として同 dir から
   import する（`emit_turn` に `source`/`label` param を足す divergence あり）。SDK は PEP723

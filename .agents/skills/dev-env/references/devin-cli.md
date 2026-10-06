@@ -31,8 +31,8 @@ CLI 本体の install/upgrade は brew cask（`scripts/Brewfile` の `cask "devi
 ## CLI 挙動の非自明な点
 
 - **Devin の SessionEnd は transcript を payload で渡さない**（`session_id`・`reason` のみ）。
-  Langfuse への送信は `devin-observability` plugin（`wwwyo/devin-observability-plugin` repo）の
-  `plugins/devin-observability/hooks/langfuse-export.py` が `~/.local/share/devin/cli/sessions.db` から
+  Langfuse への送信は `devin-langfuse` plugin（`wwwyo/devin-langfuse-plugin` repo）の
+  `plugins/devin-langfuse/hooks/langfuse-export.py` が `~/.local/share/devin/cli/sessions.db` から
   `row_id` 順全件を `message_id` で dedup して組み立てる（parent 辿りは chain 再作成で欠ける）。
   schema は undocumented なので失敗時は静かに exit 0
 - **`ACP_BACKEND` が env にあると devin はローカル認証情報を意図的に無視する**。
