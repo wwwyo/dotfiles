@@ -745,7 +745,8 @@ prev = {"sha": "sha1", "verdict": "repair", "reason": "x",
 saved = {}
 with mock.patch.object(pt, "load_state",
                        return_value={"judge": {"wwwyo/me#7": prev}}),         mock.patch.object(pt, "save_state",
-                          side_effect=lambda s: saved.update(s)),         mock.patch.object(pt, "emit"):
+                          side_effect=lambda s: saved.update(s)),         mock.patch.object(pt, "pr_facts",
+                          side_effect=pt.ApiError("no gh in test")),         mock.patch.object(pt, "emit"):
     pt._cmd_judge_result(SimpleNamespace(repo="wwwyo/me", number=7,
                                          sha="sha1", verdict="ok",
                                          context_hash=pt.pr_context_hash(view()),
@@ -901,6 +902,7 @@ assert e['actions'][0]['whitelist_hint'] == 'bot_dep_repair'
 assert not pt.hard_gate(f, judge=j)[0]
 with mock.patch.object(pt, 'load_state', return_value=repair_state), \
         mock.patch.object(pt, 'save_state'), mock.patch.object(pt, 'append_event'), \
+        mock.patch.object(pt, 'pr_facts', side_effect=pt.ApiError('no gh in test')), \
         mock.patch.object(pt, 'emit'):
     pt.cmd_judge_result(SimpleNamespace(repo='wwwyo/me', number=7, sha='sha2',
                                        context_hash=pt.pr_context_hash(repaired_view), verdict='ok', reason='migration verified'))
@@ -1045,6 +1047,298 @@ for files in [['config.toml'], ['config/app.toml'], mise_files + ['config/app.to
     assert not pt.hard_gate(dict(f, files=files), judge=j)[0]
 human = view(statusCheckRollup=[check('ci')])
 assert not pt.hard_gate(dict(f, view=human), judge=j)[0]
+
+# ============================ dep auto-ok（minor/patch・devDep） ============================
+# spec 分類はタイトルの自己申告ではなく実 spec の差だけを見る
+assert pt.dep_bump_kind("^1.2.3", "^1.2.4") == "patch"
+assert pt.dep_bump_kind("^1.2.3", "^1.3.0") == "minor"
+assert pt.dep_bump_kind("^1.2.3", "^2.0.0") == "major"
+assert pt.dep_bump_kind("v1.0.0", "v2.0.0") == "major"
+assert pt.dep_bump_kind("2.0.0", "1.9.0") == "unknown"      # downgrade
+assert pt.dep_bump_kind("^1.2.3", "^1.2.3") == "unknown"    # 同 version
+assert pt.dep_bump_kind("^1.2.3", "~1.2.4") == "unknown"    # prefix 変更
+assert pt.dep_bump_kind("1.2.3", "1.2.4-beta.1") == "unknown"
+assert pt.dep_bump_kind("*", "^1.0.0") == "unknown"
+assert pt.dep_bump_kind("latest", "5.0.0") == "unknown"
+assert pt.dep_bump_kind("workspace:*", "workspace:^1.0.0") == "unknown"
+assert pt.dep_bump_kind(">=1.0.0", ">=2.0.0") == "unknown"
+# 0.x 台の minor 更新は breaking がありうるので major に格上げ
+assert pt.dep_bump_kind("^0.2.3", "^0.3.0") == "major"
+assert pt.dep_bump_kind("^0.2.3", "^0.2.4") == "patch"
+# ^0.0.x は =0.0.x 同値なので patch 更新も互換境界を跨ぐ
+assert pt.dep_bump_kind("^0.0.3", "^0.0.4") == "major"
+assert pt.dep_bump_kind("0.2.3", "1.0.0") == "major"
+
+def pkg(deps=None, dev=None, **kw):
+    d = {"name": "x", "version": "1.0.0"}
+    if deps is not None:
+        d["dependencies"] = deps
+    if dev is not None:
+        d["devDependencies"] = dev
+    d.update(kw)
+    return json.dumps(d)
+
+# minor runtime + devDep major の実差分から種別を出す
+base_pkg = pkg(deps={"react": "^18.2.0"}, dev={"prettier": "^3.0.0"})
+head_pkg = pkg(deps={"react": "^18.3.0"}, dev={"prettier": "^4.0.0"})
+ups = pt.package_json_updates(base_pkg, head_pkg)
+assert {(u["name"], u["section"]): u["kind"] for u in ups} == \
+    {("react", "dependencies"): "minor",
+     ("prettier", "devDependencies"): "major"}
+# 依存 section 以外の top-level 変更・依存の追加/削除・parse 失敗は判定不能
+assert pt.package_json_updates(base_pkg, head_pkg) is not None
+assert pt.package_json_updates(
+    base_pkg, pkg(deps={"react": "^18.3.0"}, dev={"prettier": "^4.0.0"},
+                  scripts={"build": "x"})) is None
+assert pt.package_json_updates(
+    pkg(deps={"a": "^1.0.0"}), pkg(deps={"a": "^1.0.0", "b": "^2.0.0"})) is None
+assert pt.package_json_updates(
+    pkg(deps={"a": "^1.0.0", "b": "^1.0.0"}), pkg(deps={"a": "^1.0.0"})) is None
+assert pt.package_json_updates("not json", base_pkg) is None
+
+# dep_auto_ok: base/head の manifest 内容を ref 指定で取る
+dep_view = view(author={"login": "dependabot[bot]", "is_bot": True},
+                baseRefOid="base1", headRefOid="sha1",
+                statusCheckRollup=[check("ci")])
+def dep_facts(**kw):
+    kw.setdefault("view", dep_view)
+    return facts(**kw)
+
+def refs(base_map, head_map):
+    def fetch(repo, path, ref):
+        return (base_map if ref == "base1" else head_map)[path]
+    return fetch
+
+def auto_ok(f, base_map, head_map):
+    with mock.patch.object(pt, "file_at_ref",
+                           side_effect=refs(base_map, head_map)):
+        return pt.dep_auto_ok("wwwyo/me", f)
+
+minor_b = {"package.json": pkg(deps={"react": "^18.2.0"})}
+minor_h = {"package.json": pkg(deps={"react": "^18.3.0"})}
+patch_b = {"package.json": pkg(deps={"react": "^18.2.0"})}
+patch_h = {"package.json": pkg(deps={"react": "^18.2.1"})}
+devmaj_b = {"package.json": pkg(dev={"@types/node": "^22.0.0"})}
+devmaj_h = {"package.json": pkg(dev={"@types/node": "^24.0.0"})}
+maj_b = {"package.json": pkg(deps={"react": "^18.2.0"})}
+maj_h = {"package.json": pkg(deps={"react": "^19.0.0"})}
+group_b = {"package.json": pkg(deps={"react": "^18.2.0", "axios": "^1.6.0"})}
+group_h = {"package.json": pkg(deps={"react": "^19.0.0", "axios": "^1.7.0"})}
+unk_b = {"package.json": pkg(deps={"x": "*"}, dev={"y": "^1.0.0"})}
+unk_h = {"package.json": pkg(deps={"x": "^2.0.0"}, dev={"y": "^1.1.0"})}
+
+files_pkg = ["package.json", "bun.lock"]
+# minor / patch / devDep major → 自動 ok 対象
+for b, h in [(minor_b, minor_h), (patch_b, patch_h), (devmaj_b, devmaj_h)]:
+    r = auto_ok(dep_facts(files=files_pkg), b, h)
+    assert r["eligible"], r
+    assert r["updates"] and not r["reasons"]
+# runtime major → judge 経路
+r = auto_ok(dep_facts(files=files_pkg), maj_b, maj_h)
+assert not r["eligible"] and any("runtime major" in x for x in r["reasons"])
+# runtime の 0.x minor 更新も breaking がありうるので judge 経路
+zeromin_b = {"package.json": pkg(deps={"lib": "^0.2.3"})}
+zeromin_h = {"package.json": pkg(deps={"lib": "^0.3.0"})}
+r = auto_ok(dep_facts(files=files_pkg), zeromin_b, zeromin_h)
+assert not r["eligible"] and any("major" in x for x in r["reasons"])
+# runtime の 0.0.x patch 更新も同様に judge 経路
+r = auto_ok(dep_facts(files=files_pkg),
+            {"package.json": pkg(deps={"lib": "^0.0.3"})},
+            {"package.json": pkg(deps={"lib": "^0.0.4"})})
+assert not r["eligible"] and any("major" in x for x in r["reasons"])
+# devDep の 0.x minor は自動 ok（devDep は major でも対象）
+r = auto_ok(dep_facts(files=files_pkg),
+            {"package.json": pkg(dev={"lib": "^0.2.3"})},
+            {"package.json": pkg(dev={"lib": "^0.3.0"})})
+assert r["eligible"], r
+# peerDependencies の更新は consumer の依存解決に影響するので judge 経路
+peer_b = {"package.json": pkg(peerDependencies={"react": "^18.2.0"})}
+peer_h = {"package.json": pkg(peerDependencies={"react": "^18.3.0"})}
+r = auto_ok(dep_facts(files=files_pkg), peer_b, peer_h)
+assert not r["eligible"] and any("peerDependencies" in x for x in r["reasons"])
+# grouped: runtime major が1件でも混ざれば全体が judge 経路
+r = auto_ok(dep_facts(files=files_pkg), group_b, group_h)
+assert not r["eligible"] and any("react" in x for x in r["reasons"])
+# 確定できない spec → judge 経路
+r = auto_ok(dep_facts(files=files_pkg), unk_b, unk_h)
+assert not r["eligible"] and any("unresolved version spec" in x for x in r["reasons"])
+# rename・依存以外の manifest・workflow・lockfile のみ・読めない manifest は自動 ok にしない
+r = pt.dep_auto_ok("wwwyo/me",
+                   dep_facts(files=files_pkg, renamed_from=["old.json"]))
+assert not r["eligible"] and "renamed" in r["reasons"][0]
+r = pt.dep_auto_ok("wwwyo/me", dep_facts(files=["go.mod", "go.sum"]))
+assert not r["eligible"] and "unclassifiable" in r["reasons"][0]
+r = pt.dep_auto_ok("wwwyo/me",
+                   dep_facts(files=[".github/workflows/ci.yml"]))
+assert not r["eligible"]
+# package.json と対応しない lockfile（他 ecosystem・別 dir・lockfile のみ）は
+# 未マッピングとして自動 ok にしない
+r = pt.dep_auto_ok("wwwyo/me", dep_facts(files=["package.json", "go.sum"]))
+assert not r["eligible"] and "unmapped lockfile" in r["reasons"][0]
+r = pt.dep_auto_ok("wwwyo/me",
+                   dep_facts(files=["package.json", "sub/bun.lock"]))
+assert not r["eligible"] and "unmapped lockfile" in r["reasons"][0]
+r = pt.dep_auto_ok("wwwyo/me", dep_facts(files=["bun.lock"]))
+assert not r["eligible"] and "unmapped lockfile" in r["reasons"][0]
+with mock.patch.object(pt, "file_at_ref",
+                       side_effect=pt.ApiError("gone")):
+    r = pt.dep_auto_ok("wwwyo/me", dep_facts(files=files_pkg))
+assert not r["eligible"] and "unreadable" in r["reasons"][0]
+
+# 現行 head に紐付く ng/repair verdict は自動 ok を上書きしない（fail-closed）
+j_ng = {"sha": "sha1", "verdict": "ng",
+        "policy_version": pt.JUDGE_POLICY_VERSION,
+        "context_hash": pt.pr_context_hash(dep_view)}
+assert pt.dep_auto_ok_eligible({"eligible": True}, j_ng, "sha1", dep_view) is False
+assert pt.dep_auto_ok_eligible(
+    {"eligible": True}, dict(j_ng, verdict="repair"), "sha1", dep_view) is False
+# 文脈（head・本文・CI 等）が変われば旧 ng は外れて自動 ok に戻る
+assert pt.dep_auto_ok_eligible(
+    {"eligible": True}, j_ng, "sha2", dep_view) is True
+assert pt.dep_auto_ok_eligible(
+    {"eligible": True},
+    dict(j_ng, verdict="ok"), "sha1", dep_view) is True
+assert pt.dep_auto_ok_eligible({"eligible": False}, {}, "sha1", dep_view) is False
+assert pt.dep_auto_ok_eligible(None, {}, "sha1", dep_view) is False
+
+# gate: 自動 ok 対象は judge action を出さず merge action が出る
+with mock.patch.object(pt, "file_at_ref", side_effect=refs(minor_b, minor_h)):
+    e = pt.compute_pr_decision({"repo": "wwwyo/me", "number": 7},
+                               dep_facts(files=files_pkg, required=["ci"]),
+                               [], {}, {})
+    assert e["actions"][0]["type"] == "merge" and e["dep_auto_ok"]
+    assert e["actions"][0]["dep_auto_ok"] and e["actions"][0]["dep_updates"]
+    # merge 直前の hard gate も同じ基準を live で引き直す
+    f = dep_facts(files=files_pkg, required=["ci"])
+    ok, reasons = pt.hard_gate(f, via="lane")
+    assert ok, reasons
+    assert f["dep_auto_ok"]["eligible"]
+# devDep major も同じく judge 無しで merge 候補
+with mock.patch.object(pt, "file_at_ref", side_effect=refs(devmaj_b, devmaj_h)):
+    e = pt.compute_pr_decision({"repo": "wwwyo/me", "number": 7},
+                               dep_facts(files=files_pkg, required=["ci"]),
+                               [], {}, {})
+    assert e["actions"][0]["type"] == "merge"
+# runtime major → judge action（理由に更新が出る）、ok 登録で merge 候補
+with mock.patch.object(pt, "file_at_ref", side_effect=refs(maj_b, maj_h)):
+    e = pt.compute_pr_decision({"repo": "wwwyo/me", "number": 7},
+                               dep_facts(files=files_pkg, required=["ci"]),
+                               [], {}, {})
+    assert e["actions"][0]["type"] == "judge" and \
+        any("runtime major" in x for x in e["actions"][0]["reasons"])
+    j_ok = {"sha": "sha1", "verdict": "ok",
+            "policy_version": pt.JUDGE_POLICY_VERSION,
+            "context_hash": pt.pr_context_hash(dep_view)}
+    st = {"judge": {"wwwyo/me#7": j_ok}}
+    e = pt.compute_pr_decision({"repo": "wwwyo/me", "number": 7},
+                               dep_facts(files=files_pkg, required=["ci"]),
+                               [], {}, st)
+    assert e["actions"][0]["type"] == "merge" and not e["actions"][0]["dep_auto_ok"]
+    f = dep_facts(files=files_pkg, required=["ci"])
+    assert pt.hard_gate(f, judge=j_ok, via="lane")[0]
+# grouped で runtime major が混ざる → judge
+with mock.patch.object(pt, "file_at_ref", side_effect=refs(group_b, group_h)):
+    e = pt.compute_pr_decision({"repo": "wwwyo/me", "number": 7},
+                               dep_facts(files=files_pkg, required=["ci"]),
+                               [], {}, {})
+    assert e["actions"][0]["type"] == "judge"
+# 未知 version は自動 ok しない
+with mock.patch.object(pt, "file_at_ref", side_effect=refs(unk_b, unk_h)):
+    e = pt.compute_pr_decision({"repo": "wwwyo/me", "number": 7},
+                               dep_facts(files=files_pkg, required=["ci"]),
+                               [], {}, {})
+    assert e["actions"][0]["type"] == "judge"
+# head が major 化して動いた PR は、gate 時の自動 ok を持ち越さず merge で弾く
+moved_view = dict(dep_view, headRefOid="sha2")
+f = dep_facts(view=moved_view, files=files_pkg, required=["ci"])
+with mock.patch.object(pt, "file_at_ref",
+                       side_effect=refs(maj_b, maj_h)):
+    # head=sha2 だが期待 sha は sha1 → まず head moved で弾く
+    ok, reasons = pt.hard_gate(f, via="lane", expect_sha="sha1")
+    assert not ok and any("head moved" in r for r in reasons)
+    # 同じ head で再評価しても runtime major は自動 ok にならない
+    ok, reasons = pt.hard_gate(f, via="lane")
+    assert not ok and any("judge ok or dependency auto-ok" in r for r in reasons)
+# 自動 ok でも残る hard gate（required CI・unaddressed・always-hold）は緩めない
+with mock.patch.object(pt, "file_at_ref", side_effect=refs(minor_b, minor_h)):
+    f = dep_facts(files=files_pkg, required=["ci"],
+                  view=dict(dep_view, statusCheckRollup=[
+                      check("ci", conc="FAILURE")]))
+    ok, reasons = pt.hard_gate(f, via="lane")
+    assert not ok and any("failing" in r for r in reasons)
+    f = dep_facts(files=files_pkg, required=["ci"], threads=[thread()])
+    assert not pt.hard_gate(f, via="lane")[0]
+    f = dep_facts(files=["package.json", ".env"], required=["ci"])
+    with mock.patch.object(pt, "file_at_ref", boom):
+        ok, reasons = pt.hard_gate(f, via="lane")
+    assert not ok and any("lane=hold" in r for r in reasons)
+    e = pt.compute_pr_decision(
+        {"repo": "wwwyo/me", "number": 7},
+        dep_facts(files=files_pkg, required=["ci"], threads=[thread()]),
+        [w], terms, {})
+    assert e["actions"][0]["type"] == "dispatch"
+# 判定後に状態が変わった verdict（context 不一致）は auto ok でも使われず、
+# judge verdict のみの PR は gate が再判定を要求する
+with mock.patch.object(pt, "file_at_ref", side_effect=refs(maj_b, maj_h)):
+    changed = dict(dep_view, body="updated body")
+    stale_j = {"sha": "sha1", "verdict": "ok",
+               "policy_version": pt.JUDGE_POLICY_VERSION,
+               "context_hash": pt.pr_context_hash(dep_view)}
+    f = dep_facts(view=changed, files=files_pkg, required=["ci"])
+    e = pt.compute_pr_decision({"repo": "wwwyo/me", "number": 7}, f, [], {},
+                               {"judge": {"wwwyo/me#7": stale_j}})
+    assert e["actions"][0]["type"] == "judge"
+    assert not pt.hard_gate(f, judge=stale_j, via="lane")[0]
+
+# judge-result: ok 登録後に live hard gate が通れば merge_ready で同じ実行内の
+# merge を案内する。ng/repair・gate 不通・判定後の状態変化は merge_ready=false
+ok_view = dict(dep_view, statusCheckRollup=[check("ci"),
+                                            check("pullfrog-approval")])
+ok_facts = facts(view=ok_view, files=["src/a.py"], required=["ci"])
+saved = {}
+with mock.patch.object(pt, "load_state", return_value={}), \
+        mock.patch.object(pt, "save_state",
+                          side_effect=lambda s: saved.update(s)), \
+        mock.patch.object(pt, "append_event"), \
+        mock.patch.object(pt, "pr_facts", return_value=ok_facts), \
+        mock.patch.object(pt, "emit") as emit:
+    pt.cmd_judge_result(SimpleNamespace(
+        repo="wwwyo/me", number=7, sha="sha1",
+        context_hash=pt.pr_context_hash(ok_view),
+        verdict="ok", reason="ok"))
+out = emit.call_args.args[0]
+assert out["merge_ready"] is True and "blocked" not in out
+for verdict, facts_now in [
+        ("ng", ok_facts),
+        ("ok", facts(view=dict(ok_view, statusCheckRollup=[
+            check("ci", conc="FAILURE"), check("pullfrog-approval")]),
+            files=["src/a.py"], required=["ci"])),
+        ("ok", facts(view=dict(ok_view, headRefOid="sha9"),
+                     files=["src/a.py"], required=["ci"]))]:
+    with mock.patch.object(pt, "load_state", return_value={}), \
+            mock.patch.object(pt, "save_state"), \
+            mock.patch.object(pt, "append_event"), \
+            mock.patch.object(pt, "pr_facts", return_value=facts_now), \
+            mock.patch.object(pt, "emit") as emit:
+        pt.cmd_judge_result(SimpleNamespace(
+            repo="wwwyo/me", number=7, sha="sha1",
+            context_hash=pt.pr_context_hash(ok_view),
+            verdict=verdict, reason="r"))
+    out = emit.call_args.args[0]
+    assert out["ok"] and out["merge_ready"] is False, (verdict, out)
+# merge_ready の判定に失敗しても verdict 登録自体は成功する（fail-closed）
+with mock.patch.object(pt, "load_state", return_value={}), \
+        mock.patch.object(pt, "save_state"), \
+        mock.patch.object(pt, "append_event"), \
+        mock.patch.object(pt, "pr_facts",
+                          side_effect=pt.ApiError("gh down")), \
+        mock.patch.object(pt, "emit") as emit:
+    pt.cmd_judge_result(SimpleNamespace(
+        repo="wwwyo/me", number=7, sha="sha1",
+        context_hash=pt.pr_context_hash(dep_view),
+        verdict="ok", reason="r"))
+out = emit.call_args.args[0]
+assert out["ok"] and out["merge_ready"] is False and out["blocked"]
 
 # 補足ログは長文・改行を保持し、実績や判定 state を変更しない。
 import subprocess

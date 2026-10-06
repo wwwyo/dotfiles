@@ -26,8 +26,17 @@ Orca automation `pr-auto-merge`（30分間隔・`workspace_path` = `wwwyo/me` �
 「script の判断に従う」は、script の条件を agent が独自に緩めたり、plan にない action を
 追加したりしないという意味。**plan の `judge` は agent に内容判断を求める action であり、
 `judge-input` の取得だけでは完了しない**。確認しても判断できない場合は、未確認事項を理由に
-`ng` を登録する。現行の script は、常に hold の path を除く全 merge 候補に judge を要求する。
-Dependabot の minor / patch 更新も対象で、major でないという理由だけで自動的に `ok` にはならない。
+`ng` を登録する。
+
+bot の依存更新のみの PR は、script が base/head の実 manifest 差分から全件の
+更新種別を判定し、**全更新が minor/patch または devDependencies（major 含む）なら
+LLM judge を介さず自動 ok** とする。runtime dependency の major、種別を確定
+できない更新（range・タグ・downgrade・依存の追加削除・package.json 以外の
+manifest、workflow 変更、rename を含むもの）、0.x 台の minor・0.0.x 台の patch 更新
+（breaking の可能性があるため major 扱い）、peerDependencies の更新
+（consumer の依存解決に影響）、依存以外の差分を含む PR は
+従来どおり judge が判定する。判定の材料は PR タイトルの自己申告ではなく
+manifest の実差分。
 
 ## tick の手順（executor session）
 
@@ -46,7 +55,7 @@ Dependabot の minor / patch 更新も対象で、major でないという理由
    |--------|---------|
    | `dispatch` | `pr_triage.py dispatch --repo <r> --number <n>` を呼ぶ。send / revive / spawn の解決・上限・dedup・delivery 検証は script がやる。結果が `needs_escalate: true` なら続けて `escalate` を呼ぶ。`defer`/`none` なら何もしない |
    | `escalate` | `pr_triage.py escalate --repo <r> --number <n>`（上限到達の旨を PR にコメントして打ち切り） |
-   | `judge` | `judge-input` で diff・PR 本文・CI を取得し、**executor 自身が references/judge.md の基準で判定して** `judge-result --sha <sha> --context-hash <context_hash> --verdict ok\|ng\|repair --reason <理由>` に登録する。材料取得だけで終えない。判断不能なら理由付きで ng。ok でも merge action は追加せず、次 tick の script に返す。repair は次 tick の dispatch に渡す |
+   | `judge` | `judge-input` で diff・PR 本文・CI を取得し、**executor 自身が references/judge.md の基準で判定して** `judge-result --sha <sha> --context-hash <context_hash> --verdict ok\|ng\|repair --reason <理由>` に登録する。材料取得だけで終えない。判断不能なら理由付きで ng。**ok の登録結果が `merge_ready: true` なら、次 tick を待たず同じ実行内で続けて `merge` を呼ぶ**（`merge` が発行直前に hard gate を全件再検証する）。`merge_ready: false`（`blocked` の理由付き）なら merge せず、理由を report に残す。repair は次 tick の dispatch に渡す |
    | `merge` | `pr_triage.py merge --repo <r> --number <n>`。`blocked` が返ったら直前再検証で弾かれたので何もしない（状況が変わったサイン） |
    | `hold` | 何もしない。理由は report に載せる |
 
@@ -84,7 +93,8 @@ QA・Blast Radius の judge 判定と CI・レビューの hard gate を満た�
 
 この routine の merge の発行経路は `pr_triage.py merge` のみ。script は
 発行直前に hard gate（`state`・`mergeable`・unaddressed・required check・
-pullfrog-approval・path 分類・judge verdict@head/判定材料・intent 永続化）を
+pullfrog-approval・path 分類・judge verdict@head/判定材料 または script の
+依存自動 ok・intent 永続化）を
 全件引き直すので、`gh pr merge` 直叩きはこの再検証を迂回することになる。
 
 `gh pr merge` の直接使用は禁止ではないが規約外として扱う — 緊急時だけ、
@@ -131,7 +141,10 @@ merge N 件 / hold K 件 / error E 件
 
 ## Hold
 （merge されなかった open PR を 時刻（JST）|repo|PR|理由 の表で。always-hold path・
-judge ng・CI 待ち・dispatch 済みで author 対応待ちなど。judge verdict は
+judge ng・CI 待ち・dispatch 済みで author 対応待ちなど。judge ok 登録済みだが
+残りの機械的条件（approval・CI・mergeable 等）を待っている PR は
+「judge ok 登録済み・<条件>待ち」と書き、「script判定待ち」のような曖昧な
+説明にしない。judge verdict は
 head SHA ごとに記録されるため同じ PR は1行に集約し、当日の試行回数と
 最新 verdict を理由に書く — jsonl は日ごとのファイルなので、
 日をまたいだ履歴は `daily/<date>/` を遡る。judge ng が同じ head に
@@ -189,7 +202,8 @@ mise の `.config/mise/config.toml` と chezmoi の `home/dot_config/mise/config
 は tool pin の manifest として judge に回す。`.github/workflows/` も
 github-actions ecosystem の依存置き場として judge に回し（`*.lock.yml` は
 生成物で常に hold）、bot の manifest・lock・workflow のみなら、
-current head の judge ok 後は pullfrog-approval を免除する。
+script の依存自動 ok または current head の judge ok の後は
+pullfrog-approval を免除する。
 
 ## references
 
@@ -203,7 +217,8 @@ current head の judge ok 後は pullfrog-approval を免除する。
 
 - `gh` はネットワーク/認証が要るので sandbox 外で実行する
 - `pullfrog-approval` が absent・fail でも直ちに異常としない。bot の
-  manifest・lock・workflow だけの PR は judge ok で免除済み（上記の規定）。
+  manifest・lock・workflow だけの PR は script の依存自動 ok または
+  judge ok で免除済み（上記の規定）。
   それ以外で review が届かない head は人手介入が要る
 - script の失敗（API エラー）は fail-closed: その tick では merge も
   worktree 削除もしない。再試行は次の tick に任せる

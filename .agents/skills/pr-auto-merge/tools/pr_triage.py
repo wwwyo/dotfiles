@@ -26,8 +26,13 @@ executor session から呼ばれる。全 subcommand は JSON を stdout に出�
 
 判定の所在: path 3分類・unaddressed 判定・dispatch routing・hard gate・
 上限・worktree 削除条件は全部このファイルにあり、executor session は
-script の決定を実行するだけ（merge 候補の QA・Blast Radius の意味判定が LLM judge に
-渡る — judge の判定も head SHA・context_hash・policy_version に紐付けて記録され、merge 発行権は持たない）。
+script の決定を実行するだけ。merge 候補の QA・Blast Radius の意味判定は LLM judge に
+渡る（judge の判定は head SHA・context_hash・policy_version に紐付けて記録され、
+merge 発行権は持たない）が、bot の依存更新のみの PR で全更新が
+minor/patch・devDependencies（major 含む）と base/head の実 manifest 差分から
+確定できるものは script が自動 ok とし、judge を介さず merge 候補にする。
+runtime dependency の major（0.x 台の minor を含む）・peerDependencies の
+更新・確定不能な更新・依存以外の差分を含む PR は従来どおり judge 経路。
 
 lock は mkdir lock。PRD には flock とあるが、fcntl.flock の fd は process
 寿命に紐づくため、precheck(gate) → executor session と process を跨ぐ
@@ -82,7 +87,7 @@ SWEEP_TRANSIENT_REASONS = ("worktree gone", "terminal/agent live")
 THREADS_PAGE = 50           # reviewThreads の page size
 MAX_PAGES = 20              # ページング暴走の止血帯
 PR_ENUM_LIMIT = 100         # search の page size。total > limit*pages は fail-closed
-JUDGE_POLICY_VERSION = 8   # wiki を通常の merge 候補に含める
+JUDGE_POLICY_VERSION = 9   # bot 依存更新の minor/patch/devDep は script 自動 ok
 DISPATCH_MSG_MAX = 3500     # terminal send へ送る指摘一覧の上限 chars
 SEND_WAIT_S = 30            # --wait-submit の観測秒
 TUI_IDLE_TIMEOUT_MS = 300_000
@@ -728,6 +733,185 @@ def classify_pr(files, meta, diff, renamed_from=()):
             "bot_dep_only": False}
 
 
+# ---------- bot 依存更新の script 自動 ok ----------
+
+# 自動 ok の判定対象は package.json の依存 section だけ。それ以外の manifest
+# （go.mod・mise.toml 等）と workflow には dev/runtime の区分や更新種別を
+# 確定できる基準が無いので judge に残す
+DEP_SECTIONS = ("dependencies", "devDependencies",
+                "peerDependencies", "optionalDependencies")
+DEV_DEP_SECTIONS = ("devDependencies",)
+# peerDependencies の変更は利用者側の依存解決に影響するため、minor/patch
+# でも自動 ok にはせず judge 経路に回す。optionalDependencies は optional
+# なので dependencies と同じ扱い（minor/patch のみ自動 ok）
+NO_AUTO_OK_SECTIONS = ("peerDependencies",)
+# package.json の写像として扱える npm 系 lockfile。これ以外の lockfile
+# （go.sum・Cargo.lock・Gemfile.lock 等）は対応 manifest が判定不能なので
+# 自動 ok では skip せず「未マッピング」として judge に回す
+NPM_LOCKFILE_BASENAMES = {"package-lock.json", "npm-shrinkwrap.json",
+                          "bun.lock", "bun.lockb", "yarn.lock",
+                          "pnpm-lock.yaml", "pnpm-lock.yml"}
+DEP_SPEC_RE = re.compile(
+    r"^([~^]?)v?(\d+)\.(\d+)\.(\d+)((?:[-+][0-9A-Za-z.\-]+)?)$")
+
+
+def file_at_ref(repo, path, ref):
+    """repo の ref 時点の file 内容を raw で取る。無ければ ApiError。"""
+    return gh(["api", "-H", "Accept: application/vnd.github.raw",
+               f"repos/{repo}/contents/{path}",
+               "-f", f"ref={ref}"], timeout=60).stdout
+
+
+def _parse_dep_spec(spec):
+    """`^1.2.3`・`1.2.3` 形式の単純 semver spec を (prefix, (a,b,c), suffix)
+    に分解する。range・protocol・タグなど確定できない形は None。"""
+    if not isinstance(spec, str):
+        return None
+    m = DEP_SPEC_RE.match(spec.strip())
+    if not m:
+        return None
+    return (m.group(1),
+            (int(m.group(2)), int(m.group(3)), int(m.group(4))),
+            m.group(5))
+
+
+def dep_bump_kind(old, new):
+    """依存 spec の更新を major/minor/patch に分類する。prefix（^/~）の
+    変更・suffix 変更・downgrade・range/protocol/タグ等の確定できない
+    形は "unknown" — タイトルの自己申告ではなく実 spec の差だけを見る。
+    0.x 台の minor・0.0.x 台の patch 更新は semver/caret 上
+    breaking change を含みうるので
+    "major" に格上げする（runtime 依存は judge 経路に回る）。"""
+    o, n = _parse_dep_spec(old), _parse_dep_spec(new)
+    if o is None or n is None or o[0] != n[0] or o[2] != n[2]:
+        return "unknown"
+    if n[1] <= o[1]:
+        return "unknown"  # 同 version の記法差・downgrade は確定不能
+    if n[1][0] != o[1][0]:
+        return "major"
+    if n[1][1] != o[1][1]:
+        return "major" if o[1][0] == 0 else "minor"
+    if o[1][0] == 0 and o[1][1] == 0:
+        # ^0.0.x は npm semver 上 =0.0.x と同値で、patch 更新も互換境界を
+        # 跨ぐため major 扱い
+        return "major"
+    return "patch"
+
+
+def package_json_updates(base_text, head_text):
+    """base/head の package.json の実差分から依存更新を全件出す。
+
+    戻り値: [{"name","section","from","to","kind"}, ...] または None。
+    None = 判定不能（parse 失敗・依存 section 以外の top-level key の
+    変更・依存の追加/削除・section が dict でない）。依存以外の差分を
+    含む PR を自動 ok にしないため、dep section 以外の変更も None にする。"""
+    try:
+        base, head = json.loads(base_text), json.loads(head_text)
+    except (json.JSONDecodeError, TypeError):
+        return None
+    if not isinstance(base, dict) or not isinstance(head, dict):
+        return None
+    changed = [k for k in set(base) | set(head)
+               if base.get(k) != head.get(k)]
+    if any(k not in DEP_SECTIONS for k in changed):
+        return None
+    updates = []
+    for sec in DEP_SECTIONS:
+        b, h = base.get(sec) or {}, head.get(sec) or {}
+        if not isinstance(b, dict) or not isinstance(h, dict) or \
+                set(b) != set(h):
+            return None
+        for name in sorted(b):
+            if b[name] == h[name]:
+                continue
+            updates.append({"name": name, "section": sec,
+                            "from": b[name], "to": h[name],
+                            "kind": dep_bump_kind(b[name], h[name])})
+    return updates
+
+
+def dep_auto_ok(repo, facts):
+    """bot 依存更新のみの PR が script 側の自動 ok 対象かを、base/head の
+    実 manifest 差分から判定する。LLM judge を介さず ok とみなせるのは
+    全更新が minor/patch または devDependencies（major 含む）と確定できた
+    場合だけ — runtime major（0.x 台の minor・0.0.x 台の patch を含む）・peerDependencies
+    の更新・確定不能・依存以外の差分を含むものは
+    eligible=False で従来の judge 経路に残す。grouped PR は manifest の
+    直接更新を全件見る（1件でも対象外なら全体が対象外）。
+
+    戻り値: {"eligible": bool, "updates": [...], "reasons": [...]}"""
+    out = {"eligible": False, "updates": [], "reasons": []}
+    v = facts["view"]
+    if facts.get("renamed_from"):
+        # rename 元と head 側 path の対応が取れないと base の正しい参照を
+        # 組めないので判定不能
+        out["reasons"].append("dependency file renamed")
+        return out
+    files = facts.get("files") or []
+    pkg_dirs = {path.rsplit("/", 1)[0] if "/" in path else ""
+                for path in files
+                if _basename(path.lower()) == "package.json"}
+    # file 集合の静的チェックを先に済ませる — package.json 取得の API call
+    # を挟んでから後続 file で弾くと結果が file 順に依存する
+    manifests = []
+    for path in files:
+        fname = _basename(path.lower())
+        if is_lockfile(path):
+            # npm 系 lockfile は同じ dir の package.json の写像として skip
+            # する。それ以外（go.sum 等・package.json の無い dir・
+            # lockfile のみの PR）は対応 manifest が無いので未マッピング
+            pdir = path.rsplit("/", 1)[0] if "/" in path else ""
+            if fname in NPM_LOCKFILE_BASENAMES and pdir in pkg_dirs:
+                continue
+            out["reasons"].append(f"unmapped lockfile: {path}")
+            return out
+        if fname != "package.json":
+            out["reasons"].append(f"unclassifiable manifest: {path}")
+            return out
+        manifests.append(path)
+    updates = []
+    for path in manifests:
+        try:
+            base_text = file_at_ref(repo, path, v.get("baseRefOid"))
+            head_text = file_at_ref(repo, path, v.get("headRefOid"))
+        except ApiError as e:
+            out["reasons"].append(f"manifest unreadable: {path} ({e})")
+            return out
+        ups = package_json_updates(base_text, head_text)
+        if ups is None:
+            out["reasons"].append(
+                f"non-dependency or unparsable change: {path}")
+            return out
+        updates += [dict(u, file=path) for u in ups]
+    if not updates:
+        # lockfile のみ等、更新種別を確定できる manifest が無い
+        out["reasons"].append("no dependency updates found")
+        return out
+    out["updates"] = updates
+    for u in updates:
+        spec = f"{u['name']} {u['from']} -> {u['to']}"
+        if u["kind"] == "unknown":
+            out["reasons"].append(f"unresolved version spec: {spec}")
+        elif u["section"] in NO_AUTO_OK_SECTIONS:
+            out["reasons"].append(f"peerDependencies update: {spec}")
+        elif u["kind"] == "major" and u["section"] not in DEV_DEP_SECTIONS:
+            out["reasons"].append(f"runtime major update: {spec}")
+    out["eligible"] = not out["reasons"]
+    return out
+
+
+def dep_auto_ok_eligible(dep_auto, judge, head, pr):
+    """script 自動 ok が実際に ok 相当になるか。現在 head・判定材料に
+    紐付いた ng/repair の judge verdict があるときは自動 ok で上書き
+    しない（fail-closed — 文脈が変われば verdict は外れて自動 ok に戻る）。"""
+    if not (dep_auto and dep_auto["eligible"]):
+        return False
+    j = judge or {}
+    if current_judge(j, head, pr) and j.get("verdict") in ("ng", "repair"):
+        return False
+    return True
+
+
 # ---------- unaddressed review ----------
 
 def author_last_activity(pr):
@@ -964,12 +1148,21 @@ def hard_gate(facts, judge=None, via="lane", expect_sha=None):
             r += ["lane=hold: " + x for x in cls["reasons"]]
         j = judge or {}
         jok = j.get("verdict") == "ok" and current_judge(j, head, pr)
-        if not jok:
-            r.append("no QA/Blast Radius judge ok bound to current head and evidence")
+        # script 自動 ok は gate と同じ基準を merge 直前の live facts から
+        # 引き直す — gate 時の判定を持ち越さない
+        dep_auto = dep_auto_ok(facts.get("repo") or "", facts) \
+            if cls.get("bot_dep_only") else None
+        facts["dep_auto_ok"] = dep_auto  # merge の event 記録が再利用する
+        auto_ok = dep_auto_ok_eligible(dep_auto, j, head, pr)
+        if not (jok or auto_ok):
+            r.append("no QA/Blast Radius judge ok or dependency auto-ok "
+                     "bound to current head and evidence")
         # bot 依存更新・確認済み追従の whitelist 経路は pullfrog-approval を要求しない
         # （pullfrog は非 collaborator の bot PR を review しないため check が
-        # 付かない）。それ以外の lane merge は全て approval 必須。
-        need_app = not ((cls["bot_dep_only"] or cls.get("dependency_repair")) and jok)
+        # 付かない）。script 自動 ok と有効な judge ok の両方で免除が効く。
+        # それ以外の lane merge は全て approval 必須。
+        need_app = not ((cls["bot_dep_only"] or
+                         cls.get("dependency_repair")) and (jok or auto_ok))
         ok_app, app_state = pullfrog_approval(roll)
         if need_app and not ok_app:
             r.append(f"pullfrog-approval not success"
@@ -1428,33 +1621,48 @@ def compute_pr_decision(pr, facts, worktrees, terms_cache, state):
         return entry
 
     jok = j.get("verdict") == "ok" and current_judge(j, head, v)
-    if current_judge(j, head, v):
-        if not jok:
+    # bot 依存更新のみの PR: 実 manifest 差分から全更新が minor/patch・
+    # devDependencies（major 含む）と確定できるものは LLM judge を介さず
+    # script が自動 ok とする。確定できない更新・runtime major
+    # （0.x minor・0.0.x patch 含む）・peerDependencies の更新は judge へ。
+    dep_auto = dep_auto_ok(repo, facts) if cls["bot_dep_only"] else None
+    auto_ok = dep_auto_ok_eligible(dep_auto, j, head, v)
+    if dep_auto is not None:
+        entry["dep_auto_ok"] = dep_auto["eligible"]
+    if not (jok or auto_ok):
+        if current_judge(j, head, v):
             entry["actions"].append({"type": "hold",
                                      "reason": "judge " + j.get("verdict", "ng") + ": "
                                                f"{j.get('reason')}"})
             return entry
-    else:
+        reasons = cls["reasons"]
+        if dep_auto is not None:
+            reasons = dep_auto["reasons"] + reasons
         entry["actions"].append({"type": "judge", "head": head,
                                  "whitelist_hint":
                                  "bot_dep_repair" if repaired else
                                  "bot_dep" if cls["bot_dep_only"]
                                  else "risk_review",
-                                 "reasons": cls["reasons"] +
+                                 "reasons": reasons +
                                  ["QA and Blast Radius assessment required"]})
         return entry
 
-    # lane / judge-ok 共通: pullfrog-approval（bot_dep + judge-ok 経路のみ免除）
+    # lane / ok 共通: pullfrog-approval（bot_dep または確認済み追従で
+    # judge ok・script 自動 ok の経路のみ免除）
     ok_app, app_state = pullfrog_approval(roll)
-    if not ((cls["bot_dep_only"] or cls.get("dependency_repair")) and jok) and not ok_app:
+    if not ((cls["bot_dep_only"] or cls.get("dependency_repair"))
+            and (jok or auto_ok)) and not ok_app:
         entry["actions"].append({"type": "hold", "reason":
             f"pullfrog-approval not success ({app_state or 'absent'})"})
         return entry
-    entry["actions"].append({"type": "merge", "via": "lane", "head": head,
-                             "bot_dep_only": cls["bot_dep_only"],
-                             "dependency_repair": bool(cls.get("dependency_repair")),
-                             "nonrequired_failing":
-                             chk["nonrequired_failing"]})
+    action = {"type": "merge", "via": "lane", "head": head,
+              "bot_dep_only": cls["bot_dep_only"],
+              "dependency_repair": bool(cls.get("dependency_repair")),
+              "dep_auto_ok": auto_ok,
+              "nonrequired_failing": chk["nonrequired_failing"]}
+    if auto_ok:
+        action["dep_updates"] = dep_auto["updates"]
+    entry["actions"].append(action)
     return entry
 
 
@@ -1886,7 +2094,24 @@ def _cmd_judge_result(a):
     append_event("judge", repo=a.repo, pr=a.number, sha=a.sha, context_hash=a.context_hash,
                  verdict=a.verdict, reason=a.reason or "",
                  policy_version=JUDGE_POLICY_VERSION, dependency_repair=repairing)
-    emit({"ok": True})
+    out = {"ok": True, "verdict": a.verdict, "merge_ready": False}
+    if a.verdict == "ok":
+        # ok 登録後に残りの hard gate が現在 head で全て通るなら、次 tick を
+        # 待たず同じ executor 実行内で merge を呼んでよい。merge 自体が
+        # 発行直前に全条件を再検証するので、ここでの False は「今はまだ
+        # 通らない」を示すだけで安全性には関与しない。判定後に PR 状態が
+        # 変わっていれば context/head の不一致で False になる。
+        rec = st["judge"][pr_key(a.repo, a.number)]
+        try:
+            facts = pr_facts(a.repo, a.number, {})
+            ready, blocked = hard_gate(facts, judge=rec, via="lane",
+                                       expect_sha=a.sha)
+        except ApiError as e:
+            ready, blocked = False, [str(e)]
+        out["merge_ready"] = ready
+        if not ready:
+            out["blocked"] = blocked
+    emit(out)
 
 
 # ---------- merge ----------
@@ -1954,9 +2179,13 @@ def _cmd_merge(a):
     save_state(st)
     # cls は hard_gate の分類を再利用する
     cls = facts.get("cls") or {}
+    dep_auto = facts.get("dep_auto_ok") or {}
     append_event("merge", repo=a.repo, pr=a.number, sha=head, via=a.via,
                  bot_dep_only=cls.get("bot_dep_only"),
                  dependency_repair=bool(cls.get("dependency_repair")),
+                 dep_auto_ok=dep_auto.get("eligible") or None,
+                 dep_updates=[u["name"] for u in dep_auto.get("updates", [])]
+                 or None,
                  nonrequired_failing=chk["nonrequired_failing"])
     emit({"ok": True, "merged": True, "sha": head})
 
@@ -2234,7 +2463,9 @@ SCHEMA = {
     "judge-input": {"args": "--repo R --number N",
                     "out": "{sha, body, base, base_sha, context_hash, files, renamed_from, checks, ignored_files, diff, policy_version, truncated:false}"},
     "judge-result": {"args": "--repo R --number N --sha S "
-                     "--context-hash H --verdict ok|ng|repair [--reason T]"},
+                     "--context-hash H --verdict ok|ng|repair [--reason T]",
+                     "out": "{verdict, merge_ready, blocked?} — ok で "
+                            "merge_ready=true なら同じ実行内で merge を呼べる"},
     "merge": {"args": "--repo R --number N [--via lane] [--sha S]",
               "out": "{merged, blocked?}"},
     "sweep": {"args": "[--dry-run] [--only worktreeId]",

@@ -5,7 +5,10 @@ script は材料取得・結果登録・merge 条件の再検証を行うが、`
 内容判断は行わない。材料取得後に以下の基準で verdict を選び、`judge-result` まで実行する。
 確認しても判断できない場合は、未確認事項を理由に `ng` を登録する。
 
-常に hold の path を除く全 merge 候補を判定する。PR 本文の `Blast Radius` と
+merge 候補のうち script の自動 ok 対象（bot の依存更新のみで、全更新が
+minor/patch または devDependencies（major 含む）と実 manifest 差分から
+確定できるもの。0.x 台の minor・0.0.x 台の patch と peerDependencies の更新は対象外）と
+常に hold の path を除く PR を判定する。PR 本文の `Blast Radius` と
 `QA` を差分・CI・必要な利用箇所と照合し、リスク判定の根拠が確かかを確認する。
 verdict は head SHA と判定時の本文・base・check 結果に紐付けて記録する。
 
@@ -23,9 +26,12 @@ python3 ~/.agents/skills/pr-auto-merge/tools/pr_triage.py judge-result \
 - verdict は **head SHA と判定材料に紐付く**。本文・base・check 結果が変わっても無効で、次 tick の
   gate が再度 `judge` action を出す
 - **ok を出しても merge は自分では発行しない** — judge は lane への推薦で
-  あって発行権は持たない。verdict が ok でも、merge は次以降の tick で
-  script が残りの hard gate（CI・pullfrog-approval 等）を全部通してから
-  発行する
+  あって発行権は持たない。`judge-result` の応答が `merge_ready: true` なら
+  残りの hard gate が現在 head で通っているサインなので、**次 tick を
+  待たず同じ実行内で `pr_triage.py merge` を呼んでよい**。`merge` が発行
+  直前に hard gate を全件再検証するため、判定後に状態が変わっていれば
+  blocked で弾かれる。`merge_ready: false` なら merge せず、`blocked` の
+  理由を report に残す
 - ng でも PR は close しない（hold が続くだけ。判断材料を report に書く）。
   依存更新への対応が具体的に必要なら `repair` を記録し、次 tick の script dispatch に渡す。
 - **file 分類を先に適用し、diff サイズを条件にしない**。`judge-input` は
@@ -58,6 +64,15 @@ plan の action にある `whitelist_hint` で判定の軸が決まる。
 以下の個別基準でも、上記の QA・Blast Radius の基準を満たしたときにだけ `ok` とする。
 
 ### `bot_dep`（bot の依存 manifest・lockfile・GitHub Actions workflow 更新のみ）
+
+この hint が来るのは、実 manifest 差分から全更新が minor/patch・
+devDependencies（major 含む）と確定できなかった PR だけ — 確定できるものは
+script が judge を介さず自動 ok 済みで plan に judge action を出さない。
+つまりここに来る PR は **runtime dependency の major（0.x 台の minor・
+0.0.x 台の patch を含む）、peerDependencies の更新、種別を確定できない
+spec（range・タグ・downgrade・依存の追加削除・package.json 以外の manifest）、
+workflow 変更、rename を含むもの**のいずれかで、action の `reasons` に
+その理由が出ている。
 
 file 一覧が依存 manifest / lockfile / `.github/workflows/`（github-actions
 ecosystem の依存置き場）に閉じることを確認し、lockfile を除いた manifest・
