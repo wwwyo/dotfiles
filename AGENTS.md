@@ -39,6 +39,8 @@ wwwyo/me 等、別 repo で立ったセッションからこの repo に変更�
 
 ## 開発フロー
 
+動画（demo・product launch・motion graphic）は `~/src/github.com/wwwyo/hyperframes`（HyperFrames の fork）を cwd にして `/hyperframes` skill から入る。
+
 要件をまとめる [prd](.agents/skills/prd/SKILL.md) → 実装・self review・検証を行う [implement](.agents/skills/implement/SKILL.md) → 公開・レビュー・CIを扱う [pr](.agents/skills/pr/SKILL.md) → 定期merge laneの [pr-auto-merge](.agents/skills/pr-auto-merge/SKILL.md) の順で進める。期待動作が明確な実装タスクはimplementから始められる。テストの選択とunit testを最小限にする方針はimplementを参照する。
 
 ## Skills 管理
