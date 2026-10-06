@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # /// script
 # requires-python = ">=3.10"
-# dependencies = ["langfuse==4.15.4"]
+# dependencies = ["langfuse==4.15.4", "requests==2.34.2"]
 # ///
 """Prepare legacy ID mappings using GETs only; persist IDs/hashes, never payloads.
 
@@ -47,14 +47,14 @@ def milliseconds(value):
 def cloud_signature(row):
     md = row.get("metadata") or {}
     kind = row.get("type", "").upper()
-    keys = {"SPAN": ("source", "assistant_message_count"),
+    keys = {"SPAN": ("source", "assistant_message_count", "telemetry_summary"),
             "GENERATION": ("assistant_index", "tool_count"),
             "TOOL": ("tool_id", "tool_name")}.get(kind, ())
     return digest({"type": kind, "start": milliseconds(row.get("startTime")),
                    "end": milliseconds(row.get("endTime")),
                    "input": decode(row.get("input")), "output": decode(row.get("output")),
                    "model": row.get("model") if kind == "GENERATION" else None,
-                   "metadata": {k: md.get(k) for k in keys}})
+                   "metadata": {k: decode(md.get(k)) for k in keys}})
 
 
 def span_row(span):
@@ -93,10 +93,18 @@ class Projector:
                                base_url="http://127.0.0.1:1", tracer_provider=self.provider,
                                span_exporter=Capture(), sample_rate=1)
 
-    def expected(self, turns, sid, source_path):
+    def expected(self, turns, sid, source_path, cloud=None):
         seeds = {}
         self.rows.clear()
         for number, turn in enumerate(turns, 1):
+            # Legacy sessions can contain full history followed by compact turns.
+            # Select compact only when its complete summary matches the source;
+            # payload, time and topology are still verified by match().
+            summary = lh.turn_summary(turn)
+            compact = any(row.get("parentObservationId") is None
+                          and decode((row.get("metadata") or {}).get("turn_number")) == number
+                          and decode((row.get("metadata") or {}).get("telemetry_summary")) == summary
+                          for row in (cloud or []))
             uid = lh.get_message_id(turn.user_msg)
             values = [lh.observation_seed("devin", sid, "turn", uid)]
             for assistant in turn.assistant_msgs:
@@ -108,7 +116,8 @@ class Projector:
                 span_id = hashlib.sha256(("span:" + seed).encode()).hexdigest()[:16]
                 seeds[span_id] = hashlib.sha256(seed.encode()).hexdigest()
             lh.emit_turn(self.client, sid, number, turn, source_path, source="devin",
-                         label="Devin", deterministic_ids=True)
+                         label="Devin", deterministic_ids=True,
+                         detail="turn" if compact else "full")
         self.client.flush()
         if not self.provider.force_flush():
             raise RuntimeError("offline projection flush failed")
@@ -178,7 +187,8 @@ def fetch(session, host, sid):
     for _ in range(100):
         params = {"filter": json.dumps([{"type": "string", "column": "sessionId",
                                          "operator": "=", "value": sid}]),
-                  "limit": 1000, "fields": "basic,time,metadata,io,model"}
+                  "limit": 1000, "fields": "basic,time,metadata,io,model",
+                  "expandMetadata": "telemetry_summary"}
         if cursor:
             params["cursor"] = cursor
         response = session.get(host + "/api/public/v2/observations", params=params, timeout=30)
@@ -234,8 +244,8 @@ def main():
                     continue
                 messages, cwd = source
                 turns = lh.build_turns(messages)
-                expected = projector.expected(turns, sid, cwd)
                 cloud = fetch(session, host, sid)
+                expected = projector.expected(turns, sid, cwd, cloud=cloud)
                 result, reason = match(expected, cloud, sid)
                 # No raw IO is retained in the resulting manifest.
                 del cloud

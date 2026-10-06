@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # /// script
 # requires-python = ">=3.10"
-# dependencies = ["langfuse==4.15.4"]
+# dependencies = ["langfuse==4.15.4", "requests==2.34.2"]
 # ///
 """Exporter regressions against the real pinned SDK and a local OTLP collector.
 
@@ -173,7 +173,7 @@ class ExporterTest(unittest.TestCase):
         self.env.update(HOME=str(self.home), DEVIN_TRACE_TO_LANGFUSE="true",
                         LANGFUSE_PUBLIC_KEY="pk-lf-fixture", LANGFUSE_SECRET_KEY="sk-lf-fixture",
                         LANGFUSE_BASE_URL=f"http://127.0.0.1:{self.collector.server_port}",
-                        LANGFUSE_FLUSH_AT="1", LANGFUSE_FLUSH_INTERVAL="3600",
+                        DEVIN_LANGFUSE_DETAIL="full", LANGFUSE_FLUSH_AT="1", LANGFUSE_FLUSH_INTERVAL="3600",
                         LANGFUSE_MEDIA_UPLOAD_ENABLED="false", PYTHONDONTWRITEBYTECODE="1")
         self.state_file = self.home / ".local/state/langfuse-export/state.json"
 
@@ -224,6 +224,49 @@ class ExporterTest(unittest.TestCase):
                 self.assertIn((tid, span.parent_span_id), self.collector.spans)
             attrs = attributes(span)
             self.assertEqual(attrs.get("session.id"), SID)
+
+    def test_default_turn_mode_preserves_error_usage_and_resumed_identity(self):
+        self.env.pop("DEVIN_LANGFUSE_DETAIL")
+        first = message("assistant", "assistant-1", "thinking", tools=[call()])
+        first["metadata"]["metrics"] = {"input_tokens": 100, "output_tokens": 20}
+        self.add(message("user", "user-1", "first request"), first,
+                 message("tool", "result-1", "Exit code: 1\ncommand failed", tool_id="tool-1"),
+                 message("assistant", "assistant-2", "first answer"))
+        self.run_export()
+        self.assertEqual(len(self.collector.spans), 1)
+        root = self.root("first request")
+        summary = json.loads(attributes(root)["langfuse.observation.metadata.telemetry_summary"])
+        self.assertEqual(summary["generation_count"], 2)
+        self.assertEqual(summary["tool_names"], {"Tool: exec": 1})
+        self.assertEqual(summary["tool_call_count"], 1)
+        self.assertEqual(summary["errors"][0]["name"], "Tool: exec")
+        self.assertIn("command failed", summary["errors"][0]["status_message"])
+        self.assertEqual(summary["usage_by_model"]["fixture-model"], {"input": 100, "output": 20})
+        attempts = len(self.collector.attempts)
+        self.run_export()
+        self.assertEqual(len(self.collector.attempts), attempts)
+        self.add(message("assistant", "assistant-3", "resumed", tools=[call("tool-2")]),
+                 message("tool", "result-2", "Exit code: 0\ndone", tool_id="tool-2"),
+                 message("assistant", "assistant-4", "latest answer"))
+        self.run_export()
+        self.assertEqual(len(self.collector.spans), 1)
+        updated = self.root("first request")
+        self.assertEqual(root.span_id, updated.span_id)
+        summary = json.loads(attributes(updated)["langfuse.observation.metadata.telemetry_summary"])
+        self.assertEqual(summary["tool_call_count"], 2)
+        self.assertEqual(len(summary["errors"]), 1)
+        self.assertIn("latest answer", attributes(updated)["langfuse.observation.output"])
+
+    def test_turn_mode_explicit_tool_error_is_retained(self):
+        self.env["DEVIN_LANGFUSE_DETAIL"] = "turn"
+        error = message("tool", "result-1", "permission denied", tool_id="tool-1")
+        error["is_error"] = True
+        self.add(message("user", "user-1", "first request"),
+                 message("assistant", "assistant-1", "thinking", tools=[call()]), error,
+                 message("assistant", "assistant-2", "first answer"))
+        self.run_export()
+        summary = json.loads(attributes(self.root("first request"))["langfuse.observation.metadata.telemetry_summary"])
+        self.assertEqual(summary["errors"][0]["status_message"], "permission denied")
 
     def test_custom_exporter_sends_realtime_ingestion_header(self):
         self.fixture()
@@ -540,10 +583,31 @@ class ExporterTest(unittest.TestCase):
         self.run_export()
         self.assertEqual(set(self.collector.spans), old)
         self.assertEqual(len(self.collector.attempts), attempts)
+
         self.assertEqual(self.state()["devin::" + SID]["version"], 2)
         self.assertEqual(len(self.state()["devin::" + SID]["identities"]), 4)
         self.run_export()
         self.assertEqual(len(self.collector.attempts), attempts)
+
+    def test_legacy_full_history_with_compact_append_can_be_reconciled(self):
+        self.fixture()
+        self.legacy_state(signature="")
+        self.run_export()
+        self.env["DEVIN_LANGFUSE_DETAIL"] = "turn"
+        self.add(message("user", "user-2", "new request"),
+                 message("assistant", "assistant-3", "new answer"))
+        self.run_export()
+        self.assertEqual(len(self.collector.spans), 5)
+        self.exporter.devin_messages.__globals__["DEVIN_DB"] = self.db
+        messages, cwd = self.exporter.devin_messages(SID, earliest=True)
+        turns = self.exporter.lh.build_turns(messages)
+        cloud = self.cloud_fixture()
+        expected = self.projector.expected(turns, SID, cwd, cloud=cloud)
+        self.assertEqual(len(expected), 5)
+        self.assertEqual(self.reconciler.match(expected, cloud, SID)[1], "verified")
+        compact = next(row for row in cloud if row["metadata"].get("telemetry_summary"))
+        compact["metadata"]["telemetry_summary"] = json.dumps({"version": 1})
+        self.assertEqual(self.reconciler.match(expected, cloud, SID)[1], "missing_cloud_match")
 
     def test_missing_cloud_node_rejects_migration(self):
         expected, cloud, _, _ = self.prepare_verified()

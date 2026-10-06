@@ -185,3 +185,6 @@ print("ok")
 EOF
 
 echo "OK: session_eval lock/slug/io"
+
+# Compact observations must retain evaluator signals through the public API path.
+python3 "$repo_dir/.agents/scheduled-tasks/session-eval/tools/test_turn_summary.py"

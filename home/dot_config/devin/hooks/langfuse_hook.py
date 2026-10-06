@@ -9,6 +9,7 @@ Vendored from https://langfuse.com/integrations/developer-tools/claude-code
 """
 
 import json
+import re
 import logging
 import os
 import sys
@@ -475,7 +476,8 @@ def build_turns(messages: List[Dict[str, Any]]) -> List[Turn]:
             for tr in iter_tool_results(get_content(msg)):
                 tid = tr.get("tool_use_id")
                 if tid:
-                    tool_results_by_id[str(tid)] = {"content": tr.get("content"), "timestamp": row_ts}
+                    tool_results_by_id[str(tid)] = {"content": tr.get("content"), "timestamp": row_ts,
+                                                           **({"is_error": True} if tr.get("is_error") is True else {})}
             continue
 
         if role == "user":
@@ -563,10 +565,58 @@ def _start_backdated(langfuse: Langfuse, *, name: str, as_type: str,
     )
 
 
+def tool_error(result: Optional[Dict[str, Any]]) -> Optional[str]:
+    """Recognize explicit tool failures and standard command exit-code headers."""
+    if not result:
+        return None
+    content = result.get("content")
+    text = content if isinstance(content, str) else json.dumps(content, ensure_ascii=False)
+    structured = content
+    if isinstance(content, str):
+        try:
+            structured = json.loads(content)
+        except (ValueError, TypeError):
+            pass
+    failed = result.get("is_error") is True
+    if isinstance(structured, dict):
+        code = structured.get("exit_code", structured.get("exitCode"))
+        failed = failed or structured.get("is_error") is True or structured.get("isError") is True
+        failed = failed or (isinstance(code, int) and not isinstance(code, bool) and code != 0)
+    exit_code = re.match(r"^(?:(?:Chunk ID:|Wall time:)[^\n]*\n)*\s*"
+                         r"(?:Exit code:\s*|Process exited with code\s+)(-?\d+)\b", text)
+    failed = failed or (exit_code is not None and int(exit_code[1]) != 0)
+    return text[:300] if failed else None
+
+
+def turn_summary(turn: Turn) -> Dict[str, Any]:
+    names: Dict[str, int] = {}
+    errors = []
+    usage_by_model: Dict[str, Dict[str, int]] = {}
+    for am in turn.assistant_msgs:
+        model = get_model(am)
+        totals = usage_by_model.setdefault(model, {})
+        for key, value in (get_usage(am) or {}).items():
+            totals[key] = totals.get(key, 0) + value
+        for tu in iter_tool_uses(get_content(am)):
+            name = "Tool: " + (tu.get("name") or "unknown")
+            names[name] = names.get(name, 0) + 1
+            result = turn.tool_results_by_id.get(str(tu.get("id") or ""))
+            error = tool_error(result)
+            if error is not None:
+                ts = parse_ts(am)
+                errors.append({"name": name, "status_message": error,
+                               "start_time": ts.isoformat() if ts else ""})
+    return {"version": 1, "generation_count": len(turn.assistant_msgs),
+            "tool_call_count": sum(names.values()), "tool_names": names,
+            "errors": errors, "usage_by_model": usage_by_model}
+
+
 def emit_turn(langfuse: Langfuse, session_id: str, turn_num: int, turn: Turn, transcript_path: Path,
               source: str = "claude-code", label: str = "Claude Code",
               extra_metadata: Optional[Dict[str, Any]] = None,
-              deterministic_ids: bool = False) -> None:
+              deterministic_ids: bool = False, detail: str = "full") -> None:
+    if detail not in ("turn", "full"):
+        raise ValueError("detail must be turn or full")
     user_text_raw = extract_text(get_content(turn.user_msg))
     user_text, user_text_meta = truncate_text(user_text_raw)
 
@@ -602,6 +652,8 @@ def emit_turn(langfuse: Langfuse, session_id: str, turn_num: int, turn: Turn, tr
                 # 勝たせる（deny-set の列挙漏れで transcript_path 等を
                 # 上書きさせない）
                 **(extra_metadata or {}),
+                **({"telemetry_summary": json.dumps(turn_summary(turn), ensure_ascii=False)}
+                   if detail == "turn" else {}),
                 "source": source,
                 "session_id": session_id,
                 "turn_number": turn_num,
@@ -618,7 +670,7 @@ def emit_turn(langfuse: Langfuse, session_id: str, turn_num: int, turn: Turn, tr
         prev_ts = user_ts
         prev_tool_results: List[Dict[str, Any]] = []  # populated after each batch, surfaced as next gen's input
 
-        for idx, am in enumerate(turn.assistant_msgs):
+        for idx, am in enumerate(turn.assistant_msgs if detail == "full" else []):
             am_ts = parse_ts(am)
             am_text_raw = extract_text(get_content(am))
             am_text, am_text_meta = truncate_text(am_text_raw)
@@ -706,10 +758,13 @@ def emit_turn(langfuse: Langfuse, session_id: str, turn_num: int, turn: Turn, tr
                 if tr_ts is not None:
                     batch_result_ts.append(tr_ts)
 
+                error = tool_error(tr_entry)
                 tool_span = _start_backdated(
                     langfuse,
                     name=f"Tool: {tname}",
                     as_type="tool",
+                    level="ERROR" if error is not None else "DEFAULT",
+                    status_message=error,
                     identity_seed=(observation_seed(source, session_id, "tool",
                                                     [get_message_id(turn.user_msg), get_message_id(am), tid])
                                    if deterministic_ids else None),
