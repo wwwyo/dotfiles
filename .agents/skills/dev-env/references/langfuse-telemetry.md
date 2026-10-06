@@ -118,6 +118,8 @@ Langfuse の OTLP endpoint は traces しか受けないため hook/plugin 経�
   表示は full mode が必要。subagent の turn は残す。
   mode 切替だけでは過去 turn を replay しない。変更された tail に以前の詳細
   observation が残る場合、評価側は集約値を優先して二重計上を防ぐ。
+  旧 Devin checkpoint の移行用 projector は、cloud に保存された summary が
+  source と完全一致する turn だけ compact として照合し、full 履歴との混在を扱う。
 - **Codex fork の配布**: marketplace は npm の公式 package ではなく Git 内の
   `plugins/tracing` を読む。生成 bundle を source と同じ commit に含め、
   plugin version も上げる。fork URL に変えるだけで npm source を残すと

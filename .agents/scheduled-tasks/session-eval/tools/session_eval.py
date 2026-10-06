@@ -582,6 +582,11 @@ def telemetry_summary(metadata):
             return None
     if not isinstance(value, dict) or value.get("version") != 1:
         return None
+    if any(not isinstance(value.get(key), int) or isinstance(value.get(key), bool)
+           or value[key] < 0 for key in ("generation_count", "tool_call_count")):
+        return None
+    if not isinstance(value.get("tool_names"), dict) or not isinstance(value.get("errors"), list):
+        return None
     return value
 
 
@@ -638,6 +643,8 @@ def _cmd_transcript(a):
         while parent and parent not in seen:
             if parent in compact:
                 return True
+            if by_id.get(parent, {}).get("type") == "AGENT":
+                return False
             seen.add(parent)
             parent = by_id.get(parent, {}).get("parentObservationId")
         return False

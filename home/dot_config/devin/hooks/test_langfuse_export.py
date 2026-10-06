@@ -583,10 +583,31 @@ class ExporterTest(unittest.TestCase):
         self.run_export()
         self.assertEqual(set(self.collector.spans), old)
         self.assertEqual(len(self.collector.attempts), attempts)
+
         self.assertEqual(self.state()["devin::" + SID]["version"], 2)
         self.assertEqual(len(self.state()["devin::" + SID]["identities"]), 4)
         self.run_export()
         self.assertEqual(len(self.collector.attempts), attempts)
+
+    def test_legacy_full_history_with_compact_append_can_be_reconciled(self):
+        self.fixture()
+        self.legacy_state(signature="")
+        self.run_export()
+        self.env["DEVIN_LANGFUSE_DETAIL"] = "turn"
+        self.add(message("user", "user-2", "new request"),
+                 message("assistant", "assistant-3", "new answer"))
+        self.run_export()
+        self.assertEqual(len(self.collector.spans), 5)
+        self.exporter.devin_messages.__globals__["DEVIN_DB"] = self.db
+        messages, cwd = self.exporter.devin_messages(SID, earliest=True)
+        turns = self.exporter.lh.build_turns(messages)
+        cloud = self.cloud_fixture()
+        expected = self.projector.expected(turns, SID, cwd, cloud=cloud)
+        self.assertEqual(len(expected), 5)
+        self.assertEqual(self.reconciler.match(expected, cloud, SID)[1], "verified")
+        compact = next(row for row in cloud if row["metadata"].get("telemetry_summary"))
+        compact["metadata"]["telemetry_summary"] = json.dumps({"version": 1})
+        self.assertEqual(self.reconciler.match(expected, cloud, SID)[1], "missing_cloud_match")
 
     def test_missing_cloud_node_rejects_migration(self):
         expected, cloud, _, _ = self.prepare_verified()

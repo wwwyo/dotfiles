@@ -106,6 +106,17 @@ class TranscriptTest(unittest.TestCase):
         self.assertEqual(result['error_count'], 1)
         self.assertIn('tool failed', result['transcript'])
 
+    def test_incomplete_summary_and_full_subagent_keep_error_evidence(self):
+        root = observation('root', summary=json.dumps(summary()), root=True)
+        sub = observation('subagent', parent='root', summary={'version': 1})
+        gen = observation('generation', kind='GENERATION', parent='subagent')
+        tool = observation('tool', kind='TOOL', parent='generation')
+        tool.update(level='ERROR', statusMessage='subagent failed')
+        result = self.run_transcript([root, sub, gen, tool])
+        self.assertEqual(result['tool_calls'], 2)
+        self.assertEqual(result['error_count'], 2)
+        self.assertIn('subagent failed', result['transcript'])
+
 
 if __name__ == '__main__':
     unittest.main()
