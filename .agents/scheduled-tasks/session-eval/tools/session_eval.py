@@ -110,7 +110,7 @@ def ensure_env():
     if all(os.environ.get(k) for k in need):
         return
     # automation 経由の起動では shell 活性化を経ず mise env が乗らないことがある。
-    # そのときは langfuse-export.sh と同じ経路で自分で解決する。
+    # そのときは devin-observability plugin の langfuse-export.sh と同じ経路で自分で解決する。
     if sys.platform == "darwin" and not os.environ.get("MISE_AGE_KEY"):
         try:
             r = subprocess.run(
