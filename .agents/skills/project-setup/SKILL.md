@@ -7,6 +7,17 @@ argument-hint: <project-name>
 
 新しいプロジェクトを初期化し、開発に必要な基盤ファイルを生成する。AI エージェントは Claude Code・Codex・pi・Devin を使う前提で構成する。
 
+## 外部 OSS を fork する場合
+
+外部 OSS の fork では、upstream へ contribute する差分に個人用の setup が混ざらないよう、**main を upstream の対応ブランチと同じ commit に保つ**。setup 用の commit は作らず、開発・contribution は main から別ブランチを切って行う。
+
+この場合は、以下の通常ワークフローより本節を優先し、**setup は Git の差分に出ないローカル設定だけ**に限定する。
+
+- upstream の構成・開発手順をそのまま使い、既存の tracked file を変更しない。`AGENTS.md`・`CLAUDE.md`・README・`mise.toml`・`.gitignore`・workflow の生成や上書き、依存関係・lockfile の変更は行わない。
+- 個人用の設定が必要なら、既存の ignore 対象のローカル設定、`.git/info/exclude`、repo 外の設定を使う。tracked file の変更を `assume-unchanged` / `skip-worktree` で隠す方法は使わない。
+- tracked file の追加・変更や commit が必要なステップはスキップし、理由を完了報告に記す。fork に新規 repo 向けの初期化・設定を一律に適用しない。
+- 完了時に main と upstream の対応ブランチの commit が一致し、setup による tracked file の差分や未追跡ファイルが `git status --short` に出ていないことを確認する。作業開始前からあるユーザーの変更は保持する。
+
 ## ワークフロー
 
 開始時に、以下の全ステップを含む todo list を作る。agent にタスク管理ツールがあればそれを使い、なければチェックリストで示す。進行に合わせて更新し、条件付きのステップは適用の有無が決まった時点で反映する。完了時に未完了項目がないか確認する。
