@@ -1062,6 +1062,10 @@ assert pt.dep_bump_kind("*", "^1.0.0") == "unknown"
 assert pt.dep_bump_kind("latest", "5.0.0") == "unknown"
 assert pt.dep_bump_kind("workspace:*", "workspace:^1.0.0") == "unknown"
 assert pt.dep_bump_kind(">=1.0.0", ">=2.0.0") == "unknown"
+# 0.x 台の minor 更新は breaking がありうるので major に格上げ
+assert pt.dep_bump_kind("^0.2.3", "^0.3.0") == "major"
+assert pt.dep_bump_kind("^0.2.3", "^0.2.4") == "patch"
+assert pt.dep_bump_kind("0.2.3", "1.0.0") == "major"
 
 def pkg(deps=None, dev=None, **kw):
     d = {"name": "x", "version": "1.0.0"}
@@ -1130,6 +1134,21 @@ for b, h in [(minor_b, minor_h), (patch_b, patch_h), (devmaj_b, devmaj_h)]:
 # runtime major → judge 経路
 r = auto_ok(dep_facts(files=files_pkg), maj_b, maj_h)
 assert not r["eligible"] and any("runtime major" in x for x in r["reasons"])
+# runtime の 0.x minor 更新も breaking がありうるので judge 経路
+zeromin_b = {"package.json": pkg(deps={"lib": "^0.2.3"})}
+zeromin_h = {"package.json": pkg(deps={"lib": "^0.3.0"})}
+r = auto_ok(dep_facts(files=files_pkg), zeromin_b, zeromin_h)
+assert not r["eligible"] and any("major" in x for x in r["reasons"])
+# devDep の 0.x minor は自動 ok（devDep は major でも対象）
+r = auto_ok(dep_facts(files=files_pkg),
+            {"package.json": pkg(dev={"lib": "^0.2.3"})},
+            {"package.json": pkg(dev={"lib": "^0.3.0"})})
+assert r["eligible"], r
+# peerDependencies の更新は consumer の依存解決に影響するので judge 経路
+peer_b = {"package.json": pkg(peerDependencies={"react": "^18.2.0"})}
+peer_h = {"package.json": pkg(peerDependencies={"react": "^18.3.0"})}
+r = auto_ok(dep_facts(files=files_pkg), peer_b, peer_h)
+assert not r["eligible"] and any("peerDependencies" in x for x in r["reasons"])
 # grouped: runtime major が1件でも混ざれば全体が judge 経路
 r = auto_ok(dep_facts(files=files_pkg), group_b, group_h)
 assert not r["eligible"] and any("react" in x for x in r["reasons"])

@@ -31,8 +31,8 @@ script の決定を実行するだけ。merge 候補の QA・Blast Radius の意
 merge 発行権は持たない）が、bot の依存更新のみの PR で全更新が
 minor/patch・devDependencies（major 含む）と base/head の実 manifest 差分から
 確定できるものは script が自動 ok とし、judge を介さず merge 候補にする。
-runtime dependency の major・確定不能な更新・依存以外の差分を含む PR は
-従来どおり judge 経路。
+runtime dependency の major（0.x 台の minor を含む）・peerDependencies の
+更新・確定不能な更新・依存以外の差分を含む PR は従来どおり judge 経路。
 
 lock は mkdir lock。PRD には flock とあるが、fcntl.flock の fd は process
 寿命に紐づくため、precheck(gate) → executor session と process を跨ぐ
@@ -741,6 +741,10 @@ def classify_pr(files, meta, diff, renamed_from=()):
 DEP_SECTIONS = ("dependencies", "devDependencies",
                 "peerDependencies", "optionalDependencies")
 DEV_DEP_SECTIONS = ("devDependencies",)
+# peerDependencies の変更は利用者側の依存解決に影響するため、minor/patch
+# でも自動 ok にはせず judge 経路に回す。optionalDependencies は optional
+# なので dependencies と同じ扱い（minor/patch のみ自動 ok）
+NO_AUTO_OK_SECTIONS = ("peerDependencies",)
 # package.json の写像として扱える npm 系 lockfile。これ以外の lockfile
 # （go.sum・Cargo.lock・Gemfile.lock 等）は対応 manifest が判定不能なので
 # 自動 ok では skip せず「未マッピング」として judge に回す
@@ -774,7 +778,9 @@ def _parse_dep_spec(spec):
 def dep_bump_kind(old, new):
     """依存 spec の更新を major/minor/patch に分類する。prefix（^/~）の
     変更・suffix 変更・downgrade・range/protocol/タグ等の確定できない
-    形は "unknown" — タイトルの自己申告ではなく実 spec の差だけを見る。"""
+    形は "unknown" — タイトルの自己申告ではなく実 spec の差だけを見る。
+    0.x 台の minor 更新は semver 上 breaking change を含みうるので
+    "major" に格上げする（runtime 依存は judge 経路に回る）。"""
     o, n = _parse_dep_spec(old), _parse_dep_spec(new)
     if o is None or n is None or o[0] != n[0] or o[2] != n[2]:
         return "unknown"
@@ -783,7 +789,7 @@ def dep_bump_kind(old, new):
     if n[1][0] != o[1][0]:
         return "major"
     if n[1][1] != o[1][1]:
-        return "minor"
+        return "major" if o[1][0] == 0 else "minor"
     return "patch"
 
 
@@ -823,7 +829,8 @@ def dep_auto_ok(repo, facts):
     """bot 依存更新のみの PR が script 側の自動 ok 対象かを、base/head の
     実 manifest 差分から判定する。LLM judge を介さず ok とみなせるのは
     全更新が minor/patch または devDependencies（major 含む）と確定できた
-    場合だけ — runtime major・確定不能・依存以外の差分を含むものは
+    場合だけ — runtime major（0.x 台の minor を含む）・peerDependencies
+    の更新・確定不能・依存以外の差分を含むものは
     eligible=False で従来の judge 経路に残す。grouped PR は manifest の
     直接更新を全件見る（1件でも対象外なら全体が対象外）。
 
@@ -880,6 +887,8 @@ def dep_auto_ok(repo, facts):
         spec = f"{u['name']} {u['from']} -> {u['to']}"
         if u["kind"] == "unknown":
             out["reasons"].append(f"unresolved version spec: {spec}")
+        elif u["section"] in NO_AUTO_OK_SECTIONS:
+            out["reasons"].append(f"peerDependencies update: {spec}")
         elif u["kind"] == "major" and u["section"] not in DEV_DEP_SECTIONS:
             out["reasons"].append(f"runtime major update: {spec}")
     out["eligible"] = not out["reasons"]
@@ -1609,7 +1618,8 @@ def compute_pr_decision(pr, facts, worktrees, terms_cache, state):
     jok = j.get("verdict") == "ok" and current_judge(j, head, v)
     # bot 依存更新のみの PR: 実 manifest 差分から全更新が minor/patch・
     # devDependencies（major 含む）と確定できるものは LLM judge を介さず
-    # script が自動 ok とする。確定できない更新・runtime major は judge へ。
+    # script が自動 ok とする。確定できない更新・runtime major
+    # （0.x minor 含む）・peerDependencies の更新は judge へ。
     dep_auto = dep_auto_ok(repo, facts) if cls["bot_dep_only"] else None
     auto_ok = dep_auto_ok_eligible(dep_auto, j, head, v)
     if dep_auto is not None:
