@@ -16,9 +16,11 @@ exclude_tmpdir_env_var = false
 exclude_slash_tmp = false
 
 [features]
-# どちらも experimental で既定 off。有効にするため明示している
-memories = true
+# experimental feature は既定 off。使いたいものだけ true で明示している
+memories = false
 prevent_idle_sleep = true
+local_thread_store_compression = true
+chronicle = false
 
 [mcp_servers.context7]
 command = "context7-mcp"
@@ -81,6 +83,9 @@ enabled = true
 [plugins."codex-app-tools@openai-bundled"]
 enabled = true
 
+[plugins."code-review@openai-bundled"]
+enabled = true
+
 [plugins."unified-computer-use@openai-bundled"]
 enabled = true
 
@@ -94,7 +99,7 @@ source = "https://github.com/wwwyo/codex-observability-plugin.git"
 [desktop]
 usePointerCursors = true
 followUpQueueMode = "steer"
-composerEnterBehavior = "cmdAlways"
+composerEnterBehavior = "enter"
 reviewDelivery = "inline"
 preventSleepWhileRunning = true
 keepRemoteControlAwakeWhilePluggedIn = true
@@ -118,6 +123,11 @@ worktree-upstream-refresh-mode = "best-effort"
 ambient-suggestions-enabled = false
 localeOverride = "ja-JP"
 git-pull-request-merge-method = "squash"
+agent-usage-reset-enabled = true
+avatar-overlay-pet-visible = false
+browser-annotation-screenshots-mode = "necessary"
+default-workspace-full-view = true
+mac-menu-bar-enabled = false
 
 [desktop.open-in-target-preferences]
 global = "zed"
