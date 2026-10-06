@@ -73,7 +73,6 @@ c = pt.classify_path
 # 常に hold
 assert c(".github/CODEOWNERS") == "hold"        # workflows 以外の .github
 assert c("AGENTS.md") == "hold" and c("docs/x/CLAUDE.md") == "hold"
-assert c("wiki/page.md") == "hold"
 assert c(".agents/skills/x/SKILL.md") == "hold"
 assert c(".claude/skills/x") == "hold"          # symlink entry も agent 面
 assert c(".env") == "hold" and c(".env.local") == "hold" and c("a/.envrc") == "hold"
@@ -99,6 +98,8 @@ assert c("assets/logo.svg") == "judge"          # 分類不能 → judge
 # それ以外
 assert c("src/foo.ts") == "other" and c("pkg/bar.go") == "other"
 assert c("tests/test_foo.sh") == "other" and c("docs/guide.md") == "other"
+assert c("wiki/page.md") == "other"
+assert c("wiki/AGENTS.md") == "hold"
 assert c("home/dot_zshrc") == "other" and c("home/Brewfile") == "other"
 assert c("src/util.test.ts") == "other"
 assert c("config/app.yaml") == "other"          # .github 外の yaml
@@ -177,6 +178,12 @@ assert r["lane"] == "lane"
 # docs/config のみは production code 扱いしない → lane
 r = pt.classify_pr(["docs/x.md", "config/y.yaml"], meta_w, "")
 assert r["lane"] == "lane"
+# wiki の通常ページ・index・log と rename も docs と同じ lane 候補
+r = pt.classify_pr(["wiki/tech/page.md", "wiki/index.md", "wiki/log.md"],
+                   meta_w, "", renamed_from=["wiki/tech/old.md"])
+assert r["lane"] == "lane"
+r = pt.classify_pr(["wiki/tech/page.md", "wiki/AGENTS.md"], meta_w, "")
+assert r["lane"] == "hold"
 
 # judge path → judge
 r = pt.classify_pr(["package.json", "src/a.py", "tests/test_a.py"],
@@ -544,6 +551,27 @@ f = facts(view=v, required=["ci"])
 e = pt.compute_pr_decision({"repo": "wwwyo/me", "number": 7},
                            f, [], {}, {})
 assert e["actions"][0]["type"] == "judge" and e["lane"] == "lane"
+
+# wiki は一律 hold を外しても、current judge・approval・required CI を通る
+f = facts(view=v, files=["wiki/tech/page.md", "wiki/index.md", "wiki/log.md"],
+          required=["ci"])
+e = pt.compute_pr_decision({"repo": "wwwyo/me", "number": 7}, f, [], {}, {})
+assert e["actions"][0]["type"] == "judge" and not pt.hard_gate(f)[0]
+j = {"sha": "sha1", "verdict": "ok", "policy_version": pt.JUDGE_POLICY_VERSION,
+     "context_hash": pt.pr_context_hash(v)}
+e = pt.compute_pr_decision({"repo": "wwwyo/me", "number": 7}, f, [], {},
+                           {"judge": {"wwwyo/me#7": j}})
+assert e["actions"][0]["type"] == "merge" and pt.hard_gate(f, judge=j)[0]
+for checks in [[check("ci")],
+               [check("ci", conc="FAILURE"), check("pullfrog-approval")]]:
+    changed_view = view(statusCheckRollup=checks)
+    changed = facts(view=changed_view, files=f["files"], required=["ci"])
+    changed_judge = dict(j, context_hash=pt.pr_context_hash(changed_view))
+    e = pt.compute_pr_decision({"repo": "wwwyo/me", "number": 7},
+                               changed, [], {},
+                               {"judge": {"wwwyo/me#7": changed_judge}})
+    assert e["actions"][0]["type"] == "hold"
+    assert not pt.hard_gate(changed, judge=changed_judge)[0]
 
 # 公開 CLI で保存した判定を plan と merge gate が使う。GitHub への書き込みは行わない。
 import subprocess

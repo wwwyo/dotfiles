@@ -82,7 +82,7 @@ SWEEP_TRANSIENT_REASONS = ("worktree gone", "terminal/agent live")
 THREADS_PAGE = 50           # reviewThreads の page size
 MAX_PAGES = 20              # ページング暴走の止血帯
 PR_ENUM_LIMIT = 100         # search の page size。total > limit*pages は fail-closed
-JUDGE_POLICY_VERSION = 7   # 全 merge 候補の QA・Blast Radius を再判定する
+JUDGE_POLICY_VERSION = 8   # wiki を通常の merge 候補に含める
 DISPATCH_MSG_MAX = 3500     # terminal send へ送る指摘一覧の上限 chars
 SEND_WAIT_S = 30            # --wait-submit の観測秒
 TUI_IDLE_TIMEOUT_MS = 300_000
@@ -402,7 +402,7 @@ def pr_diff(repo, number):
 # .github/workflows/ はこの集合の例外 — dependabot の github-actions
 # ecosystem が更新する依存の置き場で、judge 側に回す（is_actions_workflow
 # と classify_path のコメント参照）。
-HOLD_SEGMENTS = {".github", "wiki", ".agents", ".claude", ".codex", ".pi",
+HOLD_SEGMENTS = {".github", ".agents", ".claude", ".codex", ".pi",
                  ".cursor", "terraform", ".changeset"}
 HOLD_API_SEGMENTS = {"api", "routes", "graphql"}
 HOLD_SEGMENT_PREFIXES = ("license", "licence", "notice", "copying",
