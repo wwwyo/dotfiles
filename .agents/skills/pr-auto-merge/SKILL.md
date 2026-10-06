@@ -11,16 +11,23 @@ Orca automation `pr-auto-merge`（30分間隔・`workspace_path` = `wwwyo/me` �
 
 役割分担:
 
-- **`tools/pr_triage.py`（script）** — 全 open PR の事実収集と全判定
+- **`tools/pr_triage.py`（script）** — 全 open PR の事実収集と、機械的に判定できる条件を担当する
   （path 3分類・unaddressed 判定・競合/依存 CI・移行修正検出・dispatch routing・hard gate・送信上限・
-  worktree 削除条件）。automation の precheck として `gate` を実行し、
-  action が無い tick では session を起こさない
-- **executor session（これを読んでいる agent）** — script が出した plan の
-  action を順に実行するだけ。merge 可否・dispatch 要否の判断を自分で
-  やり直さない
-- **LLM judge** — executor session が references/judge.md に従って行う
-  全 merge 候補の QA・Blast Radius の意味判定。verdict は head SHA と判定時の本文・base・check 結果に紐付けて記録し、
-  merge の発行権は持たない（発行は script の hard gate）
+  worktree 削除条件）。`gate` が次の action を plan に出し、merge の発行直前にも条件を再検証する。
+  action が無い tick では executor session を起こさない
+- **executor session（これを読んでいる agent）** — plan の action を順に実行する。
+  script の機械的な判定や dispatch 要否を覆さず、`merge` action は `pr_triage.py merge` で実行する。
+  **`judge` action では、この agent 自身が LLM judge として内容を判定し、結果を登録する**
+- **LLM judge（executor の役割）** — script が内容判断を委ねた PR について、
+  [references/judge.md](references/judge.md) に従って QA・Blast Radius を評価し、
+  `ok` / `ng` / `repair` を選ぶ。verdict は head SHA と判定時の本文・base・check 結果に紐付ける。
+  merge の発行権は持たない
+
+「script の判断に従う」は、script の条件を agent が独自に緩めたり、plan にない action を
+追加したりしないという意味。**plan の `judge` は agent に内容判断を求める action であり、
+`judge-input` の取得だけでは完了しない**。確認しても判断できない場合は、未確認事項を理由に
+`ng` を登録する。現行の script は、常に hold の path を除く全 merge 候補に judge を要求する。
+Dependabot の minor / patch 更新も対象で、major でないという理由だけで自動的に `ok` にはならない。
 
 ## tick の手順（executor session）
 
@@ -39,7 +46,7 @@ Orca automation `pr-auto-merge`（30分間隔・`workspace_path` = `wwwyo/me` �
    |--------|---------|
    | `dispatch` | `pr_triage.py dispatch --repo <r> --number <n>` を呼ぶ。send / revive / spawn の解決・上限・dedup・delivery 検証は script がやる。結果が `needs_escalate: true` なら続けて `escalate` を呼ぶ。`defer`/`none` なら何もしない |
    | `escalate` | `pr_triage.py escalate --repo <r> --number <n>`（上限到達の旨を PR にコメントして打ち切り） |
-   | `judge` | `judge-input` で diff・PR 本文・CI を取り、**references/judge.md の基準で判定** → `judge-result --sha <sha> --context-hash <context_hash> --verdict ok\|ng\|repair`。ok でも自分では merge しない。repair は次 tick の dispatch に渡す |
+   | `judge` | `judge-input` で diff・PR 本文・CI を取得し、**executor 自身が references/judge.md の基準で判定して** `judge-result --sha <sha> --context-hash <context_hash> --verdict ok\|ng\|repair --reason <理由>` に登録する。材料取得だけで終えない。判断不能なら理由付きで ng。ok でも merge action は追加せず、次 tick の script に返す。repair は次 tick の dispatch に渡す |
    | `merge` | `pr_triage.py merge --repo <r> --number <n>`。`blocked` が返ったら直前再検証で弾かれたので何もしない（状況が変わったサイン） |
    | `hold` | 何もしない。理由は report に載せる |
 
@@ -61,7 +68,7 @@ Orca automation `pr-auto-merge`（30分間隔・`workspace_path` = `wwwyo/me` �
 途中で script がエラーを返したら、その action を自分で代替実装せず
 report に記録して次へ進む。
 
-## merge 判断
+## judge の内容判断（executor が担当）
 
 PR 本文の `Blast Radius` と `QA` を差分・検証結果と照合し、判定の根拠が確かかを確認する。
 影響の深刻さ・検証状況・復旧可能性から、高なら hold、中なら影響に対応する検証が

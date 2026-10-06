@@ -1,5 +1,10 @@
 # LLM judge — QA と Blast Radius による merge 判定
 
+plan に `judge` action があるときは、executor session 自身がこの役割を担当する。
+script は材料取得・結果登録・merge 条件の再検証を行うが、`ok` / `ng` / `repair` の
+内容判断は行わない。材料取得後に以下の基準で verdict を選び、`judge-result` まで実行する。
+確認しても判断できない場合は、未確認事項を理由に `ng` を登録する。
+
 常に hold の path を除く全 merge 候補を判定する。PR 本文の `Blast Radius` と
 `QA` を差分・CI・必要な利用箇所と照合し、リスク判定の根拠が確かかを確認する。
 verdict は head SHA と判定時の本文・base・check 結果に紐付けて記録する。
