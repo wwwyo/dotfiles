@@ -5,7 +5,7 @@ user-invocable: true
 ---
 # PR
 
-PRを`gh`で作成するスキル。[implement](../implement/SKILL.md) で実装したagent自身がdraftとして作成し、previewなどでのQA・self reviewとCI・レビューの確認後にreadyにする。assigneeは自分、タイトルはプロジェクト規約に従い、bodyは構造化テンプレートで統一する。
+PRを`gh`で作成するスキル。[implement](../implement/SKILL.md) で実装したagent自身がdraftとして作成し、previewなどでのQA・self reviewとCI・レビューの確認後にreadyにする。assigneeは自分、タイトルはプロジェクト規約に従い、bodyの形式は対象repoのPRテンプレートを優先する。
 
 このready条件はPR作成agentが判定する。定期merge laneの判定は[pr-auto-merge](../pr-auto-merge/SKILL.md)の独立した規約に従う。
 
@@ -19,7 +19,9 @@ Conventional Commits形式でタイトルを生成する: `<type>(<scope>): <des
 
 ### 2. Body作成
 
-以下のテンプレートに沿ってbodyを構成する。見出しレベルは厳守すること。
+まず対象repoのPRテンプレート（例: `.github/PULL_REQUEST_TEMPLATE.md`、repo rootや`docs/`の`pull_request_template.md`、`PULL_REQUEST_TEMPLATE/`配下）を確認する。テンプレートがあれば、その見出し・順序・記入項目を優先する。複数ある場合はrepoの規約と変更内容に合うものを使う。
+
+repoにPRテンプレートがない場合は、以下のテンプレートに沿ってbodyを構成し、見出しレベルを守る。
 
 ```markdown
 ## Blast Radius
@@ -56,6 +58,8 @@ Conventional Commits形式でタイトルを生成する: `<type>(<scope>): <des
 
 #### セクション別の書き方
 
+以下はこのskillの既定テンプレートを使う場合の書き方。repoのPRテンプレートを使う場合は、その形式に合わせて関連する内容を対応する項目に記載する。
+
 - Blast Radius: 本文の最初に置く。影響の深刻さ・検証状況・復旧可能性から高／中／低を判断し、根拠を簡潔に書く。
 - What: 構造を新規追加・再編する PR では、各レイヤー / モジュールの責務と依存が一目でわかる図を 1 つ載せる（dir ツリー or `handler→service→module→repository` のような依存図 — 構造を最も素直に表せる方）。図の起点に path を明記し（repo root から、monorepo なら module root からの相対 path）、注釈は図から読めない why（責務分担・共有関係・暫定で後に置換 など）だけに留める。網羅的な責務一覧表は作らない。
 - Background: why を 2 階層で。①Epic / 機能全体の why（解決したい課題と方向性。例: 「〜という課題がある → 〜の仕組みで解決する」）、②本 PR の位置づけ（Epic の中で本 PR が何を担うか 1 文。例: 「本 PR ではそのうち〜を実装する」）。アプローチの詳細（それは What）や scope の除外話（含めない範囲・後続 PR に委ねる事項・暫定実装の理由）は入れない。詳細は DD / issue に委ね `Related: ...` 行で補う。
@@ -90,7 +94,7 @@ draft PR作成後、対象repoのe2eで関連するE2E/APIテストをsubagent�
 
 QA担当は関連実装を読まず、要件と実際のUI/APIの振る舞いから検証する。実装担当は並行してimplementのself reviewを進める。仕様にない点や疑問は両者のコミュニケーションで解消し、必要に応じて製品・テストを修正する。self reviewと修正が終わったコードで再テストする。テストの優先度・unit testの扱いは [implementのテスト方針](../implement/SKILL.md#テスト方針) に従う。
 
-文書など実操作の対象がない変更は、QA未実施と理由を記録する。QAの結果は本文の `## QA` にまとめる。
+文書など実操作の対象がない変更は、QA未実施と理由を記録する。QAの結果はrepoのPRテンプレートの検証項目（既定テンプレートでは `## QA`）にまとめる。検証項目がなければ、repoの形式に合わせて追記する。
 
 ### 5. CI・レビューコメント監視
 
@@ -98,7 +102,7 @@ PR作成後、CI の完了とレビューコメントの到着を監視する。
 
 **監視は「完了で自分を起こせる」機構で回す。** 素の background 実行は終了を通知しない環境があり、終了に気づけず監視が死ぬ。subagent に載せる等、終了時に呼び出し側へ通知が来る経路で実行する。subagent 内部では、監視 script を background で起動してその出力を **blocking read**（出力 or 終了 or timeout まで返らない read）で受け取る繰り返しにする — sleep やポーリング間隔を LLM 側で自前管理すると受動的に凍りうる。
 
-新しいコメント・CI fail・コンフリクトを見つけたら対応してループ継続、終了条件を満たしたら監視を終えてユーザーにPRの状態を報告する。製品やテストの修正はimplementの流れで自身が行う。修正・追加commit・rebaseでheadが変わった場合はQA対象の判断を見直す。QA対象ならstep 4で新しいheadを再検証し、PR bodyの `## QA` を更新する。過去headの成功はreadyの根拠にしない。
+新しいコメント・CI fail・コンフリクトを見つけたら対応してループ継続、終了条件を満たしたら監視を終えてユーザーにPRの状態を報告する。製品やテストの修正はimplementの流れで自身が行う。修正・追加commit・rebaseでheadが変わった場合はQA対象の判断を見直す。QA対象ならstep 4で新しいheadを再検証し、PR bodyの検証項目を更新する。過去headの成功はreadyの根拠にしない。
 
 CI・レビューが既に完了し、以下の終了条件を全て満たしている場合は、この step を即座に評価して終えてよい。
 
