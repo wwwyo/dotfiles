@@ -11,7 +11,7 @@ Langfuse の OTLP endpoint は traces しか受けないため hook/plugin 経�
 | Claude Code | 公式 plugin `langfuse-observability@langfuse-observability` | repo の `.claude/settings.local.json` で `enabledPlugins` を `true`（user settings で default off。local > user の precedence で反転） |
 | Codex | wwwyo fork の plugin `tracing@codex-observability-plugin`（`home/.chezmoitemplates/codex-base.toml.tmpl`） | repo の `.codex/langfuse.json` に `{"enabled": true}`（`process.cwd()` 解決。git root ではないので subdir 起動では拾わない — root から起動する） |
 | pi | 公式 extension `@langfuse/pi-observability-plugin` | repo の `.pi/settings.json` に `packages` 宣言（install 先 `.pi/npm/` は gitignore） |
-| Devin | Stop（turn ごと）+ SessionEnd（最終 flush）→ `home/dot_config/devin/hooks/langfuse-export.py` が sessions.db を正規化して送信 | repo-local `mise.local.toml` の `[env]` に `DEVIN_TRACE_TO_LANGFUSE="true"`（mise 公式の local override。tracked にしたい repo は `mise.toml` でも可） |
+| Devin | plugin `devin-langfuse`（`wwwyo/devin-langfuse-plugin`）の Stop（turn ごと）+ SessionEnd（最終 flush）hook が sessions.db を正規化して送信 | repo-local `mise.local.toml` の `[env]` に `DEVIN_TRACE_TO_LANGFUSE="true"`（mise 公式の local override。tracked にしたい repo は `mise.toml` でも可） |
 
 - **opt-in file は global gitignore 済み**（`**/.claude/settings.local.json`・
   `**/.codex/langfuse.json`・`**/.pi/settings.json`・`**/mise.local.toml` —
@@ -59,18 +59,29 @@ Langfuse の OTLP endpoint は traces しか受けないため hook/plugin 経�
   - Codex: `codex plugin marketplace add wwwyo/codex-observability-plugin` +
     `codex plugin add tracing@codex-observability-plugin`（初回に Stop hook の
     trust 承認あり）
-- **Devin exporter** は vendored `langfuse_hook.py`（同じ `home/dot_config/devin/hooks/`）を
-  emit library として import する（Claude 本体は plugin に移したが emit 共用で残す。
-  `emit_turn` に `source`/`label` param を足す divergence あり）。SDK は PEP723
+  - Devin: `devin plugins install
+    wwwyo/devin-langfuse-plugin#plugins/devin-langfuse`（user level。
+    `--local` は machine 限定・更新は `devin plugins update`）
+- **Devin exporter** は `wwwyo/devin-langfuse-plugin` repo の
+  `plugins/devin-langfuse/hooks/` に置く（旧 `home/dot_config/devin/hooks/` から
+  plugin 化して移設。以下この項の script 名はその dir の file）。vendored
+  `langfuse_hook.py` を emit library として同 dir から
+  import する（`emit_turn` に `source`/`label` param を足す divergence あり）。SDK は PEP723
   inline metadata で `langfuse==4.15.4`・`requests==2.34.2` pin、`uv run --script` が resolve する
   （upstream plugin と同じ方式）。トリガは `Stop`（turn 完了ごとの増分送信）
   + `SessionEnd`（最終 flush）— SessionEnd が発火しない・session を閉じない
   ケースでも pi/codex plugin と同様にほぼリアルタイムで trace が見える。
+  `DEVIN_LANGFUSE_TIMING=session` にすると Stop は skip され SessionEnd の
+  一括送信だけになる（session が正常終了しないと送られない trade-off）。
+  この環境では global mise `[env]` に `DEVIN_LANGFUSE_TIMING="session"` を
+  置き、まとめて送る方を既定にしている。repo ごとに戻したい場合は
+  repo-local env で `turn` を上書きする。
   `langfuse-export.sh` が nohup detach するので hook 配列を待たせない。
   wrapper は `mise env` を `DEVIN_PROJECT_DIR` で評価してから gate 判定し
   （GUI 起動では mise env が乗らないため。`MISE_AGE_KEY` も keychain から補う）、
-  opt-in でなければ uv/network を触らず終了する。stderr は
-  `~/.local/state/langfuse-export/hook.log`（1MB で rotate）に残す。
+  opt-in でなければ uv/network を触らず終了する。stderr は machine 側 state dir
+  `~/.local/state/langfuse-export/` の `hook.log`（1MB で rotate。repo 内 file ではなく
+  plugin 化後も path は同じ）に残す。
   増分は `state.json` v2 の source user message ID ごとの payload fingerprint
   で管理する。turn 番号や timestamp は context 再作成で変わるため identity に
   使わない。trace/root は session + user message ID、generation/tool はさらに

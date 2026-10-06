@@ -2,7 +2,7 @@
 
 CLI 本体の install/upgrade は brew cask（`scripts/Brewfile` の `cask "devin-cli"`、version pin 無しで `brew upgrade` 追従）。この repo が管理するのは設定だけ。
 
-`home/dot_config/devin/` の `private_config.json.tmpl`（permissions・sandbox・hooks）、`mcp_config.json.tmpl`、`AGENTS.md`、`hooks/` を `~/.config/devin/` へ配置している（file は chezmoi symlink、`.tmpl` は実ファイル、`hooks/` は dir link）。`AGENTS.md` は `.codex/AGENTS.md` と同内容だが**実体を分けている**（規約が分かれたとき片方だけ直せるように）。
+`home/dot_config/devin/` の `private_config.json.tmpl`（permissions・sandbox・hooks）、`mcp_config.json.tmpl`、`AGENTS.md` を `~/.config/devin/` へ配置している（file は chezmoi symlink、`.tmpl` は実ファイル）。`AGENTS.md` は `.codex/AGENTS.md` と同内容だが**実体を分けている**（規約が分かれたとき片方だけ直せるように）。
 
 - **rule の読み込み**: `AGENTS.md` と `CLAUDE.md` を独立に読み、両方あれば両方注入される
   （`read @AGENTS.md` のような参照記法は展開されない）。global rule は
@@ -31,7 +31,8 @@ CLI 本体の install/upgrade は brew cask（`scripts/Brewfile` の `cask "devi
 ## CLI 挙動の非自明な点
 
 - **Devin の SessionEnd は transcript を payload で渡さない**（`session_id`・`reason` のみ）。
-  `home/dot_config/devin/hooks/langfuse-export.py` が `~/.local/share/devin/cli/sessions.db` から
+  Langfuse への送信は `devin-langfuse` plugin（`wwwyo/devin-langfuse-plugin` repo）の
+  `plugins/devin-langfuse/hooks/langfuse-export.py` が `~/.local/share/devin/cli/sessions.db` から
   `row_id` 順全件を `message_id` で dedup して組み立てる（parent 辿りは chain 再作成で欠ける）。
   schema は undocumented なので失敗時は静かに exit 0
 - **`ACP_BACKEND` が env にあると devin はローカル認証情報を意図的に無視する**。

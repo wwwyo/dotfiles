@@ -6,7 +6,6 @@
 .claude/hooks
 .config/git/hooks
 .config/git/bin
-.config/devin/hooks
 .config/mise/tasks
 
 {{ if ne .chezmoi.os "darwin" }}

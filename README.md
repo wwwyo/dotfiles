@@ -78,7 +78,7 @@ scripts/ docs/ tests/            # repo 内部ファイル（deploy されない
 - `.claude/{skills,agents}` / `home/dot_claude/hooks` — 同上 + repo 内相対 symlink（`skills/*` → `../../.agents/`）+ executable script
 - `.agents/scheduled-tasks` → `~/.claude/scheduled-tasks` — Orca automation の手順書置き場。repo 内の `.claude/scheduled-tasks` は旧パスの互換 symlink
 - `.codex/{rules,scripts,hooks,automations,skills}` / `.pi/agent/extensions` — 同上
-- `home/dot_config/{git/hooks,devin/hooks,mise/tasks}` — executable を含むため per-file symlink 不可
+- `home/dot_config/{git/hooks,mise/tasks}` — executable を含むため per-file symlink 不可
 
 ## 新しいファイルを追加する方法
 
