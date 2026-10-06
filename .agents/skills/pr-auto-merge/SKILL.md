@@ -32,7 +32,7 @@ bot の依存更新のみの PR は、script が base/head の実 manifest 差�
 更新種別を判定し、**全更新が minor/patch または devDependencies（major 含む）なら
 LLM judge を介さず自動 ok** とする。runtime dependency の major、種別を確定
 できない更新（range・タグ・downgrade・依存の追加削除・package.json 以外の
-manifest、workflow 変更、rename を含むもの）、0.x 台の minor 更新
+manifest、workflow 変更、rename を含むもの）、0.x 台の minor・0.0.x 台の patch 更新
 （breaking の可能性があるため major 扱い）、peerDependencies の更新
 （consumer の依存解決に影響）、依存以外の差分を含む PR は
 従来どおり judge が判定する。判定の材料は PR タイトルの自己申告ではなく

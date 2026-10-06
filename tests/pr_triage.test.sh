@@ -1065,6 +1065,8 @@ assert pt.dep_bump_kind(">=1.0.0", ">=2.0.0") == "unknown"
 # 0.x 台の minor 更新は breaking がありうるので major に格上げ
 assert pt.dep_bump_kind("^0.2.3", "^0.3.0") == "major"
 assert pt.dep_bump_kind("^0.2.3", "^0.2.4") == "patch"
+# ^0.0.x は =0.0.x 同値なので patch 更新も互換境界を跨ぐ
+assert pt.dep_bump_kind("^0.0.3", "^0.0.4") == "major"
 assert pt.dep_bump_kind("0.2.3", "1.0.0") == "major"
 
 def pkg(deps=None, dev=None, **kw):
@@ -1138,6 +1140,11 @@ assert not r["eligible"] and any("runtime major" in x for x in r["reasons"])
 zeromin_b = {"package.json": pkg(deps={"lib": "^0.2.3"})}
 zeromin_h = {"package.json": pkg(deps={"lib": "^0.3.0"})}
 r = auto_ok(dep_facts(files=files_pkg), zeromin_b, zeromin_h)
+assert not r["eligible"] and any("major" in x for x in r["reasons"])
+# runtime の 0.0.x patch 更新も同様に judge 経路
+r = auto_ok(dep_facts(files=files_pkg),
+            {"package.json": pkg(deps={"lib": "^0.0.3"})},
+            {"package.json": pkg(deps={"lib": "^0.0.4"})})
 assert not r["eligible"] and any("major" in x for x in r["reasons"])
 # devDep の 0.x minor は自動 ok（devDep は major でも対象）
 r = auto_ok(dep_facts(files=files_pkg),

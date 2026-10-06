@@ -779,7 +779,8 @@ def dep_bump_kind(old, new):
     """依存 spec の更新を major/minor/patch に分類する。prefix（^/~）の
     変更・suffix 変更・downgrade・range/protocol/タグ等の確定できない
     形は "unknown" — タイトルの自己申告ではなく実 spec の差だけを見る。
-    0.x 台の minor 更新は semver 上 breaking change を含みうるので
+    0.x 台の minor・0.0.x 台の patch 更新は semver/caret 上
+    breaking change を含みうるので
     "major" に格上げする（runtime 依存は judge 経路に回る）。"""
     o, n = _parse_dep_spec(old), _parse_dep_spec(new)
     if o is None or n is None or o[0] != n[0] or o[2] != n[2]:
@@ -790,6 +791,10 @@ def dep_bump_kind(old, new):
         return "major"
     if n[1][1] != o[1][1]:
         return "major" if o[1][0] == 0 else "minor"
+    if o[1][0] == 0 and o[1][1] == 0:
+        # ^0.0.x は npm semver 上 =0.0.x と同値で、patch 更新も互換境界を
+        # 跨ぐため major 扱い
+        return "major"
     return "patch"
 
 
@@ -829,7 +834,7 @@ def dep_auto_ok(repo, facts):
     """bot 依存更新のみの PR が script 側の自動 ok 対象かを、base/head の
     実 manifest 差分から判定する。LLM judge を介さず ok とみなせるのは
     全更新が minor/patch または devDependencies（major 含む）と確定できた
-    場合だけ — runtime major（0.x 台の minor を含む）・peerDependencies
+    場合だけ — runtime major（0.x 台の minor・0.0.x 台の patch を含む）・peerDependencies
     の更新・確定不能・依存以外の差分を含むものは
     eligible=False で従来の judge 経路に残す。grouped PR は manifest の
     直接更新を全件見る（1件でも対象外なら全体が対象外）。
@@ -1619,7 +1624,7 @@ def compute_pr_decision(pr, facts, worktrees, terms_cache, state):
     # bot 依存更新のみの PR: 実 manifest 差分から全更新が minor/patch・
     # devDependencies（major 含む）と確定できるものは LLM judge を介さず
     # script が自動 ok とする。確定できない更新・runtime major
-    # （0.x minor 含む）・peerDependencies の更新は judge へ。
+    # （0.x minor・0.0.x patch 含む）・peerDependencies の更新は judge へ。
     dep_auto = dep_auto_ok(repo, facts) if cls["bot_dep_only"] else None
     auto_ok = dep_auto_ok_eligible(dep_auto, j, head, v)
     if dep_auto is not None:
