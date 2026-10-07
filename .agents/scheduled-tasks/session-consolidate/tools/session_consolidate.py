@@ -73,7 +73,7 @@ ensure_env = se.ensure_env
 SENTINEL = "session-consolidate-batch:5d1e8b4a"
 # se の sentinel 判定関数は module global の SENTINEL を読む。
 # STATE_DIR/LOCK_DIR と同じく差し替えれば eval 側の _sentinel_hit /
-# has_sentinel をそのまま再利用できる (この process で eval sentinel を
+# skip_marker_kind をそのまま再利用できる (この process で eval sentinel を
 # 引く必要はない — eval session は記録 comment を持たず対象外なので)
 se.SENTINEL = SENTINEL
 SCORE_EVALUATED = "evaluated_until"   # session-eval が書く watermark/完了 marker
@@ -85,22 +85,29 @@ LEARNING_HEADING = "学習候補"
 RECORD_MARKER = "<!-- session-eval"
 
 
-def has_own_sentinel(sid):
-    """session の root observation の user input に consolidate sentinel が
-    あればこの batch 自身の session。失敗時は None (=不明) を返し、
-    呼び出し側が self とは別 counter に数える — True に倒すと API 障害で
+def root_skip_kind(sid):
+    """session の root observation の user input を見て skip 判定を返す:
+    "self" = consolidate sentinel がある (=この batch 自身の session)、
+    "synthetic" = [Synthetic 系 fixture marker がある合成 session
+    (過去 run で evaluated_until が残っていても再対象にしない)、
+    None = skip 無し、"unknown" = API 失敗で判定不能。
+    判定不能は self とは別 counter に数える — True に倒すと API 障害で
     全件が self skip になり、障害が「対象 0 件の静かな週」と見分け付か
-    ない。eval の has_sentinel は transcript 側で再判定するので
+    ない。eval の skip_marker_kind は transcript 側で再判定するので
     fail-open でよかったが、こちらに二段目のチェックは無い。"""
     try:
         for o in paged("/api/public/v2/observations",
                        {"sessionId": sid, "fields": "basic,io",
                         "filter": se.ROOT_FILTER}):
-            if o.get("sessionId") == sid and se._sentinel_hit(o):
-                return True
+            if o.get("sessionId") != sid:
+                continue
+            if se._sentinel_hit(o):
+                return "self"
+            if se._synthetic_hit(o):
+                return "synthetic"
     except Exception:
-        return None
-    return False
+        return "unknown"
+    return None
 
 
 # ---------- 記録 comment ----------
@@ -284,13 +291,15 @@ def _cmd_targets(a):
     # stat/subprocess があるので並列にする
     def _resolve(item):
         sid, ev = item
-        own = has_own_sentinel(sid)
-        if own is None:
+        if sid.startswith(se.SYNTHETIC_SESSION_PREFIX):
+            return {"synthetic": True}
+        kind = root_skip_kind(sid)
+        if kind == "unknown":
             # 判定不能は self とは別に数える — 全件 self になると API 障害が
             # 「対象 0 件の静かな週」と見分け付かない
             return {"sentinel_error": True}
-        if own:
-            return {"self": True}
+        if kind:
+            return {kind: True}
         rec = pick_record_comment(fetch_comments(sid))
         if rec is None:
             # 記録 comment 自体が無い — evaluator が comment だけ書けず
@@ -310,7 +319,7 @@ def _cmd_targets(a):
                 "workdir": wd, "repo_root": rr}
 
     groups = {}
-    n_self = n_no_record = n_no_learning = n_sentinel_err = 0
+    n_self = n_synthetic = n_no_record = n_no_learning = n_sentinel_err = 0
     with ThreadPoolExecutor(max_workers=SESSION_WORKERS) as ex:
         for r in ex.map(_resolve, candidates):
             if r.get("sentinel_error"):
@@ -318,6 +327,9 @@ def _cmd_targets(a):
                 continue
             if r.get("self"):
                 n_self += 1
+                continue
+            if r.get("synthetic"):
+                n_synthetic += 1
                 continue
             if r.get("no_record"):
                 n_no_record += 1
@@ -340,6 +352,7 @@ def _cmd_targets(a):
                       "no_record": n_no_record,
                       "no_learning": n_no_learning,
                       "self": n_self,
+                      "synthetic": n_synthetic,
                       "sentinel_error": n_sentinel_err,
                       "backfill_incomplete": backfill_incomplete,
                       "unsafe_sid": len(unsafe_sids),
