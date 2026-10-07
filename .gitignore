@@ -49,6 +49,10 @@ CLAUDE.local.md
 # 取り込みたい成果物は -o で明示的に出す。キャッシュ自体は追跡しない
 **/.firecrawl/
 
+# cf CLI が作業ディレクトリ直下に作るアカウント cache（account ID・名前を含む）
+# 再生成されるので追跡しない
+**/.cloudflare/
+
 # pi が作業ディレクトリ直下に作る state。中身は空の {} で秘密は入らない
 # （API key は mise の OPENCODE_API_KEY 由来。~/.pi/agent/auth.json には
 # `!` command 形式の credential を置く運用 — pi skill の configuration.md 参照）。
