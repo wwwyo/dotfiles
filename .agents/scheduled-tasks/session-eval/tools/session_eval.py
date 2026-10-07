@@ -69,7 +69,7 @@ MAX_COMMENT_CHARS = 4800         # comments API の content 上限は 5000。超
 SENTINEL_WORKERS = 8             # sentinel/workdir 判定の並列度 (API + stat 連打)
 RECOVER_STALL_S = 5              # mkdir→owner 書き込みの自己停止検知 (sec)。超えたら世代を疑い abort
 RECOVER_MARKER_TTL_S = 60        # 回収 marker が残ったまま回収可能になるまでの秒数
-MAX_PAGES = 60                   # ページング暴走の止血帯
+MAX_PAGES = 20                   # ページング暴走の止血帯
 SESSION_ID_RE = re.compile(r"^[A-Za-z0-9._~:+-]{1,200}$")
 
 ROOT_FILTER = json.dumps([{"type": "boolean", "column": "isRootObservation",

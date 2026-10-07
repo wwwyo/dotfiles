@@ -23,7 +23,7 @@ SC=~/.agents/scheduled-tasks/session-consolidate/tools/session_consolidate.py
 
 1. `python3 "$SC" lock acquire` — `acquired: false` なら別 run が稼働中。そのまま報告して終了（強制解除しない。stale lock は TTL=4h で自然回復）
 2. `python3 "$SC" targets` — `groups[]`（repo_root ごとの sessions 束。各 session に `session_id`/`evaluated_until`/`learning`/`last_activity`）を得る。0 件でも `skipped` を確認し、`sentinel_error` が 0 以外（特に全件）なら「対象なし」ではなく API 異常、`backfill_incomplete` が true なら score 補完走査の失敗として、それぞれ報告してから lock release して終了
-   - **閾値ゲート**: 全 group の session 総数が 5 件未満なら今回は見送る — score は書かず lock release して「pending N 件（閾値未満）」で終了する。溜まるまで pending に留める（数日おきの run で再対象になる）。学びの即時性は元来失われている設計なので、少数のために consolidator を起こす方が損。ただし pending の可視性には上限がある — session は直近 obs または `evaluated_until` score の ingest が `targets` の lookback（既定 90d）内にある間だけ `groups` に現れる。閾値に達しないままそれを超えた学びは静かに落ちるので、滞留が続くなら閾値を下げる判断材料にする
+   - **閾値ゲート**: 全 group の session 総数が 5 件未満なら今回は見送る — score は書かず lock release して「pending N 件（閾値未満）」で終了する。溜まるまで pending に留める（翌日の run で再対象になる）。学びの即時性は元来失われている設計なので、少数のために consolidator を起こす方が損。ただし pending の可視性には上限がある — session は直近 obs または `evaluated_until` score の ingest が `targets` の lookback（既定 36h）内にある間だけ `groups` に現れる。閾値に達しないままそれを超えた学びは静かに落ちるので、滞留が続くなら閾値を下げる判断材料にする
 3. `groups` ごとに consolidator worker を Orca orchestration で起動する。この batch の親は coordinator — worker は Orca 管理の worktree 内で動き、完了と結果行は `worker_done` で集める
    - まず Run を1つ作る: `orca orchestration run-create --objective "session-consolidate <YYYY-MM-DD>" --json`
    - group ごとに repo id を解決する: `orca repo list --json` で `path` と `repo_root` を突合する。`repo_root` が `null` の group は `wwwyo/me`（`~/src/github.com/wwwyo/me`）を `{REPO_ROOT}` にして扱う — workdir/repo 解決できなかった session の fallback（PRD の決定済み事項）。宛先不明の置き場として扱い、記録から本来の宛先 repo が特定できる学びはそちらへ書いてよい（owner チェックは同じく適用）。repo が Orca に未登録なら `orca repo add --path <repo_root> --json` で登録してから使う
@@ -66,7 +66,7 @@ SC=~/.agents/scheduled-tasks/session-consolidate/tools/session_consolidate.py
 
 ## automation 登録
 
-orca automation `session-consolidate`（3日おき 20:00、provider devin、workspace = wwwyo/me の既存 workspace）から起動される想定。実行間隔は溜まった分を処理するだけなので自由 — pending が閾値（5 件）未満なら run 自体を見送るため、実際の処理頻度は溜まり具合で決まる。手動実行も可。
+orca automation `session-consolidate`（毎日 20:00、provider devin、workspace = wwwyo/me の既存 workspace）から起動される想定。36h の探索窓より短い間隔で実行する。pending が閾値（5 件）未満なら run 自体を見送るため、実際の処理頻度は溜まり具合で決まる。手動実行も可。
 
 登録の SSOT は `automation.toml`（この dir）。upsert は共通 tool:
 
