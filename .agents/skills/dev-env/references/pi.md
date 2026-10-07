@@ -4,11 +4,11 @@
 
 ## 構成
 
-設定は dotfiles の `home/dot_pi/agent/` から chezmoi で配置する。通常の設定は file 単位 symlink、sandbox はローカルの個別許可を保持する実ファイル。
+設定は dotfiles の `home/dot_pi/agent/` から chezmoi で配置する。通常の設定は file 単位 symlink、settings.json・sandbox.json は local 側の状態を残す実ファイル（template 合成）。
 
 | パス | 中身 |
 | --- | --- |
-| `.pi/agent/settings.json` | skills パス・既定 provider / model / thinking level・`enabledModels` |
+| `.pi/agent/settings.json` | `home/.chezmoitemplates/pi-settings-base.json`（skills パス・`enabledModels`・`extensions`・`packages` の正本）を `private_settings.json.tmpl` が `~` 側の file と合成する。TUI が書き戻す `defaultProvider`/`defaultModel`/`defaultThinkingLevel`/`theme`/`lastChangelogVersion` は local の値を残す — それ以外を TUI や `pi install` から変えても apply で base 値に巻き戻るので、恒久的な変更は base を編集する |
 | `.pi/agent/models.json` | openrouter の `data_collection: "deny"` compat + pi catalog 未掲載モデルの先行定義（現 `opencode-go` の `gpt-6-luna`。built-in に merge されるだけで provider 定義は壊れない） |
 | `home/.chezmoitemplates/pi-sandbox-base.json` | sandbox の共通設定（後述「Orca socket」）。個別の読み取り許可は `~/.pi/agent/sandbox.json` だけで管理 |
 | `.pi/agent/extensions/` | TypeScript extension 置き場（現在は空） |
@@ -30,7 +30,7 @@ skill は `settings.json` の `"skills": ["~/.claude/skills"]` 一本で読ま�
 
 - `auth.json`（machine 固有、link 対象外）の credential は env の `OPENCODE_API_KEY` より優先される。平文ではなく `"key": "!..."` の command credential を置く（pi は `!` 始まりの値を shell 実行して stdout を key にする）。中身は `MISE_AGE_KEY` で `mise x -- printenv OPENCODE_API_KEY` を返す一行 — 解決値が mise の SSOT と同じなので rotate しても env と不整合にならず、env に key が無い非対話 spawn（Orca daemon・`env -i`・pi-acp）でも動く。`/login` で生 key が書き戻されたら同じコマンド形式に戻す
 
-- `~/.pi/agent` の管理ファイルは `home/dot_pi/agent/` 配下の chezmoi file 単位 symlink（`auth.json`・`sessions`・`models-store.json` 等は machine 固有の実ファイル）。新しい設定ファイルは `home/dot_pi/agent/` に足して `chezmoi apply` しないと live に効かない
+- `~/.pi/agent` の管理ファイルは `home/dot_pi/agent/` 配下の chezmoi file 単位 symlink（`auth.json`・`sessions`・`models-store.json` 等は machine 固有の実ファイル）。settings.json は symlink だと pi の TUI 書き戻しが repo 正本を汚して PR diff に乗るため、合成する実ファイルにしている（上の表）。新しい設定ファイルは `home/dot_pi/agent/` に足して `chezmoi apply` しないと live に効かない
 
 - `settings.json` の `extensions` にある `-builtin:mcp` は、pi v1 の built-in `mcp` extension が package の `pi-mcp-adapter` と `/mcp` 登録で衝突するのを避けるための無効化指定 — adapter 側を使うので builtin は消している。extension 周りで衝突警告が出たらこの行が残っているかを確認する
 

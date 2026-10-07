@@ -10,6 +10,12 @@
 # Audit:  mise exec -- pullfrog config list --repo wwwyo/dotfiles
 #
 # BYOK keys are org-scoped (OPENCODE_API_KEY inherited) — see `pf secret list`.
+#
+# Pinned models can vanish upstream: opencode-go free/contributor tiers are
+# removed without notice (space-bunny-free's deletion broke pullfrog checks on
+# every repo at once). Recovery = `pullfrog config set model <new> --repo <r>`
+# to fix the backend immediately AND update the pf_set model line below —
+# re-running this script otherwise re-pins the dead model.
 set -euo pipefail
 
 REPO="wwwyo/dotfiles"

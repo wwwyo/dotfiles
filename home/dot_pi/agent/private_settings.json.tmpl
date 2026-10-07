@@ -1,0 +1,18 @@
+{{- /* pi は TUI での操作（既定 model・provider・theme の選択、changelog 既読）を
+        settings.json に書き戻す。file 単位 symlink だとその書き戻しが repo 正本を
+        汚すので、sandbox.json・codex config.toml と同じく local file と base を
+        合成する実ファイルにする。書き戻し対象の key は local の値を残す。
+        stat（symlink 先を見る）で存在確認する — lstat だと旧 symlink 配備の
+        リンクが切れた状態でも include しに行って apply が壊れる。 */ -}}
+{{- $local := dict -}}
+{{- $path := joinPath .chezmoi.homeDir ".pi" "agent" "settings.json" -}}
+{{- if stat $path -}}
+{{- $local = include $path | fromJson -}}
+{{- end -}}
+{{- $base := includeTemplate "pi-settings-base.json" . | fromJson -}}
+{{- range $key := list "defaultProvider" "defaultModel" "defaultThinkingLevel" "theme" "lastChangelogVersion" -}}
+{{-   if hasKey $local $key -}}
+{{-     $_ := set $base $key (get $local $key) -}}
+{{-   end -}}
+{{- end -}}
+{{- mergeOverwrite $local $base | toPrettyJson -}}
