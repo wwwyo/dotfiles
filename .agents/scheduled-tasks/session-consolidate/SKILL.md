@@ -66,7 +66,7 @@ SC=~/.agents/scheduled-tasks/session-consolidate/tools/session_consolidate.py
 
 ## automation 登録
 
-orca automation `session-consolidate`（3日おき 20:00、provider devin、workspace = wwwyo/me の既存 workspace）から起動される想定。実行間隔は溜まった分を処理するだけなので自由 — pending が閾値（5 件）未満なら run 自体を見送るため、実際の処理頻度は溜まり具合で決まる。手動実行も可。
+orca automation `session-consolidate`（毎日 20:00、provider devin、workspace = wwwyo/me の既存 workspace）から起動される想定。36h の探索窓より短い間隔で実行する。pending が閾値（5 件）未満なら run 自体を見送るため、実際の処理頻度は溜まり具合で決まる。手動実行も可。
 
 登録の SSOT は `automation.toml`（この dir）。upsert は共通 tool:
 

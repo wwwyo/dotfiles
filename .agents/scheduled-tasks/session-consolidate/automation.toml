@@ -8,10 +8,8 @@ provider = "devin"
 enabled = true
 timezone = "Asia/Tokyo"
 
-# 3日おき 20:00 — 閾値未満の run は SKILL 側で見送るので間隔は粗め。
-# RRULE の INTERVAL は scheduler が発火判定に使わない (parse はされる)
-# ので cron で書く。詳細は tools/sync_automations.py の docstring
-trigger = "0 20 */3 * *"
+# 毎日 20:00 — 36h の探索窓内で次の run が対象を拾えるようにする。
+trigger = "0 20 * * *"
 
 # 既存 workspace で回す（新 worktree/run ではない）。
 # username 非依存にするため ~ 形式。sync 側で展開して path:<abs> を渡す
