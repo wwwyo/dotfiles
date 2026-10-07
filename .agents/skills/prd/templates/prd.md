@@ -6,7 +6,7 @@ status: draft
 
 ## Problem
 
-<誰が何に困っていて、なぜ解決するか>
+<誰が何に困っているかを端的に>
 
 ## 導出
 
@@ -14,7 +14,7 @@ status: draft
 
 ## Overview
 
-<利用者が何をできるようになるか>
+<利用者の体験の概要だけを短く>
 
 ### Goals
 
@@ -34,7 +34,7 @@ status: draft
 
 ## Acceptance Criteria
 
-- <誰が何をして、どんな結果を得られるか>
+- <目的や価値の成立に不可欠な結果。誰が何をして得られるか>
 
 ## Success Metrics
 
