@@ -78,7 +78,7 @@ SENTINEL = "session-consolidate-batch:5d1e8b4a"
 se.SENTINEL = SENTINEL
 SCORE_EVALUATED = "evaluated_until"   # session-eval が書く watermark/完了 marker
 SCORE_CONSOLIDATED = "consolidated"   # この batch が書く処理済み marker
-DEFAULT_LOOKBACK_HOURS = 2160.0       # 90d。閾値ゲートで保留された pending
+DEFAULT_LOOKBACK_HOURS = 36.0         # 閾値ゲートで保留された pending
                                       # session はこの窓を超えると静かに落ちる
 SESSION_WORKERS = 8                   # comment/sentinel/repo 解決の並列度
 LEARNING_HEADING = "学習候補"
