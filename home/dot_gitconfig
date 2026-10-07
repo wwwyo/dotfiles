@@ -1,6 +1,6 @@
 [user]
 	name = yuito.watanabe
-	email = w.ytmrm11811@gmail.com
+	email = 72675978+wwwyo@users.noreply.github.com
 	signingkey = ~/.ssh/id_ed25519.pub
 [gpg]
 	format = ssh
