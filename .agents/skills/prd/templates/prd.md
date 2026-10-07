@@ -26,7 +26,7 @@ status: draft
 
 ## Acceptance Criteria
 
-- [ ] <誰が何をして、どんな結果を得られるか>
+- <誰が何をして、どんな結果を得られるか>
 
 ## Success Metrics
 
