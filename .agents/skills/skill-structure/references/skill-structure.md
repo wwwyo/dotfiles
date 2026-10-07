@@ -39,6 +39,8 @@
 - 長い skill は読み落とされる — 追記・変更のたびに「もっとシンプルにできるか」を問う。新しい行を足す前に既存の行へ統合できないか、削れる記述が無いかを見る。SKILL.md や reference が伸びてきたら追記ではなく再整理を優先する
 - skill 自身の AGENTS.md — この skill の load order・validation・governance を持つ（SKILL.md=runtime と分離）。`CLAUDE.md` は `@AGENTS.md` 1行だけで、読む index が違う agent に転送する。→「governance」
 - tools/（任意）— 決定論で確実に判定でき、false positive が出ず、具体的 fix があるものだけ lint 化。判断が要る / 新しい標準の制定は reference + 人間へ。tool は reference の従属物で、矛盾したら reference 優先
+- skill 本文に特定 agent・model provider の CLI 呼び出し（`claude --model haiku` 等）を固定で書かない — レビュー・判断の手順は実行中の agent 自身に委譲する書き方にする。別 harness では動かず、model 名の陳腐化でも壊れる
+- skill には workflow と必要情報の置き場を書き、調査結果の全量データは skill に入れず対象 repo の docs に置いてリンクする。tool 出力も context に全量を流さず、件数と参照先だけを返す設計にする
 - coverage gap — まだ標準の無い領域は「未確立」として明示しておく。推測で埋めない
 
 ## 配置と各ツール連携（初期構築時）

@@ -59,6 +59,11 @@ version-matched guide は coordinator 視点の記述が中心。dispatch され
 `focused topmost` 系エラーで全コマンドが拒否されるときは、accessibility 権限の欠落と対象 window が前面に無いこと（または画面ロック）を切り分ける — 権限は `orca computer permissions` で設定画面を開いて確認する。権限が通っていても解消しないなら、対象 window をユーザーに手動で前面へ出してもらう。`open -a` は agent の実行環境では app 名の解決・前面化に失敗することがあるので復帰手段に頼らない。click が効かない入力要素には `set-value` が fallback になる。
 
 - `native pipe startup failed` が出たら `js_reset` は効かない。Playwright/CDP へのフォールバックはユーザーが明示指定している場合に限るので、障害時は独断で切り替えず、その旨を報告・要求して止まる
+- `chrome:control-chrome` 系の権限確認（"saved browser permissions could not be
+  verified"）で embedded browser の操作が止まると、検証用 browser の別 profile では
+  サービス login が壁になる。ログイン済み実環境が要る診断は、ユーザーの普段の
+  Chrome で `chrome://inspect/#remote-debugging` を有効化して接続する経路が実効
+  した（2026-10、minaosi の note 実機検証で確認）
 
 ## embedded browser の Design Feedback
 

@@ -142,3 +142,8 @@ Langfuse の OTLP endpoint は traces しか受けないため hook/plugin 経�
   の確定を止め、次の hook で同じ ID に再送する。
 - **trace の確認は v2 API**: `GET /api/public/v2/observations?fields=core,basic,model,usage,metadata`
   （legacy `/api/public/traces` は 410。fields 指定しないと model/usage が返らない）
+- **units 課金は取り込み件数ベースで保存量ではない** — cloud 上の trace を消しても
+  units は戻らないので export→削除は節約にならない。削る手段は送信する observation
+  数を減らすことだけ（turn/full 集約の動機）。SDK の sampling は trace 単位なので
+  1 session=1 trace の構成では session の途中が欠けて使えない。Blob Export に
+  session comments は含まれない — 記録が要るなら comments API で別途取得する
