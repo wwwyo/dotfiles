@@ -60,8 +60,9 @@ Langfuse の OTLP endpoint は traces しか受けないため hook/plugin 経�
     `codex plugin add tracing@codex-observability-plugin`（初回に Stop hook の
     trust 承認あり）
   - Devin: `devin plugins install
-    wwwyo/devin-langfuse-plugin#plugins/devin-langfuse`（user level。
-    `--local` は machine 限定・更新は `devin plugins update`）
+    wwwyo/devin-langfuse-plugin#plugins/devin-langfuse`（user level の
+    snapshot — repo push は `devin plugins update` まで届かない。開発 loop は
+    `--local` で folder live link。hook は local session のみ発火、cloud 対象外）
 - **Devin exporter** は `wwwyo/devin-langfuse-plugin` repo の
   `plugins/devin-langfuse/hooks/` に置く（旧 `home/dot_config/devin/hooks/` から
   plugin 化して移設。以下この項の script 名はその dir の file）。vendored

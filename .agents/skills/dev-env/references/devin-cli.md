@@ -30,6 +30,14 @@ CLI 本体の install/upgrade は brew cask（`scripts/Brewfile` の `cask "devi
 
 ## CLI 挙動の非自明な点
 
+- **`devin plugins install` は repo から snapshot を fetch する**。repo への push は
+  install 済み copy に届かず、反映には `devin plugins update` が要る。plugin 開発の
+  loop は `devin plugins install --local ./<dir>` — machine 限定で folder を live
+  link し、edit は次の session に即効する。install は user level の personal
+  manifest に記録され、login した全マシンと cloud session の skill/rule/MCP に
+  届くが、hooks と custom subagent は local session（CLI / Devin Desktop）でしか
+  発火しない。hook は best-effort / fail-open で、load・実行に失敗しても
+  session は続く — guardrail には当てにできない
 - **Devin の SessionEnd は transcript を payload で渡さない**（`session_id`・`reason` のみ）。
   Langfuse への送信は `devin-langfuse` plugin（`wwwyo/devin-langfuse-plugin` repo）の
   `plugins/devin-langfuse/hooks/langfuse-export.py` が `~/.local/share/devin/cli/sessions.db` から
