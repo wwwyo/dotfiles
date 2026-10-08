@@ -9,7 +9,7 @@
 | パス | 中身 |
 | --- | --- |
 | `.pi/agent/settings.json` | skills パス・既定 provider / model / thinking level・`enabledModels` |
-| `.pi/agent/models.json` | openrouter の `data_collection: "deny"` compat + pi catalog 未掲載モデルの先行定義（現 `opencode-go` の `gpt-6-luna`。built-in に merge されるだけで provider 定義は壊れない） |
+| `.pi/agent/models.json` | openrouter の `data_collection: "deny"` compat + pi catalog 未掲載モデルの先行定義（現 `opencode-go` の `claude-haiku-5-5`。built-in に merge されるだけで provider 定義は壊れない） |
 | `home/.chezmoitemplates/pi-sandbox-base.json` | sandbox の共通設定（後述「Orca socket」）。個別の読み取り許可は `~/.pi/agent/sandbox.json` だけで管理 |
 | `.pi/agent/extensions/` | TypeScript extension 置き場（現在は空） |
 | `~/.pi/agent/AGENTS.md` | `.codex/AGENTS.md` への symlink。global 指示として効く |
@@ -26,7 +26,7 @@ skill は `settings.json` の `"skills": ["~/.claude/skills"]` 一本で読ま�
 
 - `models.json` で組み込み provider を再定義しない。`api` は provider 単位の設定なので、`opencode-go` を `api: "openai-completions"` として定義し直すと、本来 `/responses` を使う `gpt-6-luna` まで巻き込んで壊れる。DeepSeek 系も tool calling が壊れ、独自トークン形式が生テキストで漏れる。組み込み provider は `OPENCODE_API_KEY` を読み、モデルごとに正しい `api` を持っているので自前定義は不要。一方、`api`/`baseUrl`/`models` を書かず `compat` だけ書く部分定義は built-in と merge されるので安全 — openrouter の `compat.openRouterRouting.data_collection: "deny"`（`.pi/agent/models.json`）はこの形で入っている
 
-- opencode の Zen と Go は別 catalog。運用は `opencode-go`（Go サブスク枠、`zen/go/v1`）のみ — Zen 側（`opencode` provider、`zen/v1`）は従量課金なので使わない。**pi の catalog は `zen/go/v1/models` の実態より遅れる** — Go endpoint で生きている model（`/responses`・`/chat/completions` で 200）が pi catalog 未掲載なら `models.json` の `models` で先行定義する（現在 `gpt-6-luna`）。catalog に降りたら消す — 残すと自前の推測値が公式定義を上書きし続ける。`enabledModels` だけの先行登録は no-match warning が出るだけで有効化されない。Go catalog の model でも workspace の Privacy 設定で「train on request data」を許可しないと 400 になる（`muse-spark-1.3-contributor` 等）
+- opencode の Zen と Go は別 catalog。運用は `opencode-go`（Go サブスク枠、`zen/go/v1`）のみ — Zen 側（`opencode` provider、`zen/v1`）は従量課金なので使わない。**pi の catalog は `zen/go/v1/models` の実態より遅れる** — Go endpoint で生きている model（`/responses`・`/chat/completions`・`/messages` で 200）が pi catalog 未掲載なら `models.json` の `models` で先行定義する（現在 `claude-haiku-5-5`）。catalog に降りたら消す — 残すと自前の推測値が公式定義を上書きし続ける。`enabledModels` だけの先行登録は no-match warning が出るだけで有効化されない。`zen/go/v1/models` に未掲載でも実際の endpoint では使える場合がある（Haiku 5.5 の `/messages` で確認済み）。Go catalog の model でも workspace の Privacy 設定で「train on request data」を許可しないと 400 になる（`muse-spark-1.3-contributor` 等）
 
 - `auth.json`（machine 固有、link 対象外）の credential は env の `OPENCODE_API_KEY` より優先される。平文ではなく `"key": "!..."` の command credential を置く（pi は `!` 始まりの値を shell 実行して stdout を key にする）。中身は `MISE_AGE_KEY` で `mise x -- printenv OPENCODE_API_KEY` を返す一行 — 解決値が mise の SSOT と同じなので rotate しても env と不整合にならず、env に key が無い非対話 spawn（Orca daemon・`env -i`・pi-acp）でも動く。`/login` で生 key が書き戻されたら同じコマンド形式に戻す
 
@@ -34,7 +34,9 @@ skill は `settings.json` の `"skills": ["~/.claude/skills"]` 一本で読ま�
 
 - `settings.json` の `extensions` にある `-builtin:mcp` は、pi v1 の built-in `mcp` extension が package の `pi-mcp-adapter` と `/mcp` 登録で衝突するのを避けるための無効化指定 — adapter 側を使うので builtin は消している。extension 周りで衝突警告が出たらこの行が残っているかを確認する
 
-- `models.json` の `models` は built-in provider に id 単位で upsert merge される（新規 id は追加、既存 id は自前定義で置換）。model-level の `api` が必須 — 迷ったら対象 endpoint を `/responses` と `/chat/completions` の両方で叩いて 200 が返るほうを選ぶ
+- Haiku 5.5 の先行定義は model 単位で `api: "anthropic-messages"` と `baseUrl: "https://opencode.ai/zen/go"` を指定する（SDK が `/v1/messages` を足すため `/v1` は付けない）。`compat.forceAdaptiveThinking: true` がないと pi は旧形式の thinking budget を送り 400 になる。`compat.supportsTemperature: false` で非対応の temperature を省く。組み込み provider が `x-opencode-session` を付けるため、provider 全体の再定義は不要。
+
+- `models.json` の `models` は built-in provider に id 単位で upsert merge される（新規 id は追加、既存 id は自前定義で置換）。model-level の `api` が必須 — 迷ったら対象 endpoint の `/responses`・`/chat/completions`・`/messages` で 200 が返る形式を確認する
 
 - `enabledModels` には provider prefix を付ける。モデル ID だけ書くと部分一致で別 provider にまで広がる（`deepseek-v4.1-flash` が openrouter の `deepseek/deepseek-v4.1-flash` にもマッチする）。さらに pi は TUI での選択を `defaultProvider` ごと settings.json に書き戻すため、Ctrl+P で循環しただけで課金先が黙って変わる。`opencode-go/deepseek-v4.1-flash` のように書く
 
