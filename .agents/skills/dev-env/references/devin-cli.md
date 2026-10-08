@@ -30,6 +30,14 @@ CLI 本体の install/upgrade は brew cask（`scripts/Brewfile` の `cask "devi
 
 ## CLI 挙動の非自明な点
 
+- **`devin plugins install` は repo から snapshot を fetch する**。repo への push は
+  install 済み copy に届かず、反映には `devin plugins update` が要る。plugin 開発の
+  loop は `devin plugins install --local ./<dir>` — machine 限定で folder を live
+  link し、edit は次の session に即効する。install は user level の personal
+  manifest に記録され、login した全マシンと cloud session の skill/rule/MCP に
+  届くが、hooks と custom subagent は local session（CLI / Devin Desktop）でしか
+  発火しない。hook は best-effort / fail-open で、load・実行に失敗しても
+  session は続く — guardrail には当てにできない
 - **Devin の SessionEnd は transcript を payload で渡さない**（`session_id`・`reason` のみ）。
   Langfuse への送信は `devin-langfuse` plugin（`wwwyo/devin-langfuse-plugin` repo）の
   `plugins/devin-langfuse/hooks/langfuse-export.py` が `~/.local/share/devin/cli/sessions.db` から
@@ -48,3 +56,8 @@ CLI 本体の install/upgrade は brew cask（`scripts/Brewfile` の `cask "devi
   何を話していたか」はこの file を読めば答えられる。session の再開は `devin -r <session-id>`
   （[Devin の実行・診断手順](../../delegate/references/devin.md)を参照）
 - **usage メーターは「Sign in with ChatGPT」系のプラン共有とは別系統**。Devin Pro の quota は日次・週次の allowance として計量され（2026-03 に credit 制から移行）、ChatGPT プランはその allowance の付与元に含まれない — 実測でも ChatGPT 側残量と Devin 側残量は別々に動いた。promo モデルは共有対象外の可能性がある — 共有が効かないように見えるときは、週次 quota の残量・promo かどうか・host 側実装の行き渡りを切り分ける
+- **plugin source の形式**: repo 内の subfolder は `owner/repo#plugins/<dir>` の
+  `#` 記法で指す。install 前に提供物 preview（skill/hook/policy）が出て `-y` で
+  skip 可。remote install は repo の default branch を fetch するため `plugins/`
+  が main に無い間（PR 未 merge 等）は remote 経由では install できない —
+  merge 前の検証は `--local` で済ませる

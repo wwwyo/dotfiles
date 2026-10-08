@@ -13,7 +13,7 @@ description: 3日ごと、閾値を超えたキャッシュと不要になった
 
 ## 2. git worktree / branch
 
-対象は `~/src/github.com/wwwyo/` 配下の個人 repo のみ。
+対象は `~/src/github.com/wwwyo/` 配下の個人 repo のみ。**GitHub で archived 済みの repo は対象外** — 新しい merge も fetch 成功も起きないので、走査すると毎回 fetch 失敗のノイズになる。`gh repo view <name> --json isArchived -q .isArchived` で確認する。
 
 各 repo で順に:
 
@@ -22,6 +22,10 @@ git fetch -q origin && git remote prune origin
 git worktree prune                      # 実体が消えた登録を落とす
 git worktree list                       # 残ったものを点検
 ```
+
+`git fetch` が失敗したら「remote が無い」と即断しない。https remote + credential helper の破損では fetch/ls-remote が恒常的に使えないが、`gh api repos/{owner}/{repo}`（`/branches/<branch>` で head 照合）や `gh pr list` で remote 実状態は取れる。検証コマンドがその dir でエラーになるときは、別の cwd か `gh api` で再確認してから判定する（dir 内の `gh` 失敗で MERGED PR を見落とした実例あり）。認証不通が恒常化している repo は上の archived 疑いで対象外を検討する。
+
+fetch が失敗した repo では、API 照合は `origin/main` / `origin/<branch>` の local remote-tracking ref を更新しない — 下の削除判定は古い ref を見る。判定に使う remote ref の SHA が `gh api` で取れる現在の head と一致することを確認できるまで branch は消さず、一致を確認できなければ branch を残して `git gc --prune=now` も skip し、fetch 失敗と照合不可を報告に載せる。
 
 macOS 標準には `timeout` コマンドが無い（GNU coreutils 由来）。`git fetch` 等を timeout 付きにしたくても素の `timeout 60 git fetch` は command not found で空振りする。timeout なしでそのまま実行するか、`gtimeout`（coreutils）が入っている前提を確認してから使う。また `git worktree list` 等の出力を `| head` で切ると、行数がパイプのバッファ待ちで固まることがある。件数を絞りたいときはパイプせず、そのままの出力を読むかファイルへ書き出す。
 
@@ -54,7 +58,8 @@ worktree を消すと未 commit の変更は失われる。30日ルールはそ�
    - `CLOSED` / PR 無し → 3 へ
 3. remote branch が生きていて `git merge-base --is-ancestor <branch> origin/<branch>` が真 → 削除（remote から辿れる。ここに来るのは PR が CLOSED か無いものだけ）
 4. `git diff --stat origin/main...<branch>` が空 → 削除（固有の中身が無い）
-5. それ以外 → **削除しない**。local にしか無い実体差分を持つので、branch 名と差分の規模（`N files changed, +X/-Y`）を報告してユーザーの判断を待つ
+5. それ以外 → まず**差分の中身が main に実質包含されていないか**を確認する。squash merge で sha が変わったもの・同じ変更が別経路で入ったもの・main 側に上位互換があるものは ancestor 判定に落ちないまま抜け殻として溜まる。`git diff origin/main...<branch>` の残差分を読み、`git show origin/main:<file>` で該当ファイルの現状と突き合わせ、同等・上位互換が既に main にあると確認できたら削除してよい（抜け殻。根拠を報告に添える）
+6. 包含も確認できないもの → **削除しない**。local にしか無い実体差分を持つので、branch 名と差分の規模（`N files changed, +X/-Y`）に**中身の要約（何を変える branch か）と main との包含確認の結果**を添えて報告し、ユーザーの判断を待つ。差分規模だけだと中身を1本ずつ聞き返される往復が起きる
 
 `gh` は sandbox 解除で実行する。
 
@@ -62,10 +67,10 @@ PR の state だけで残すと、remote に push 済みで消しても失われ
 
 ## 3. gc
 
-上で worktree か branch を削除した repo で `git gc --prune=now` を実行する。何も削除しなかった repo は回収するものが無いので skip する。
+fetch が成功した、または fetch 失敗後に判定で使う remote ref の SHA を GitHub API と照合できた repo で、上で worktree か branch を削除した場合に `git gc --prune=now` を実行する。照合できない repo と何も削除しなかった repo は skip する。
 
-`gc --prune=now` は参照の無い commit の実体を消すので reflog 経由の復旧も効かなくなるが、branch 判定の 5 を守っている限り失うのは main か remote から辿れる重複だけ。detached HEAD の worktree を消した場合は、削除前に `git branch --contains <sha>` でその HEAD が local branch から到達可能かを確認しておく。
+`gc --prune=now` は参照の無い commit の実体を消すので reflog 経由の復旧も効かなくなる。branch 判定の 5 は変更内容が main に実質包含されることだけを確認し、元の commit が main や remote から到達可能とは限らない — 消した時点で同等のコードは残っても元の commit 履歴は gc で失われる。その履歴を残す必要があるなら gc 前に別 ref を作る。detached HEAD の worktree を消した場合は、削除前に `git branch --contains <sha>` でその HEAD が local branch から到達可能かを確認しておく。
 
 ## 報告
 
-1行サマリ（freed 合計 / 削除した worktree・branch の本数）と、判断を残した項目（30日以内に触られている dirty な worktree、branch 判定の 5 に落ちた branch のみ）を列挙する。5 の branch は差分規模を添える。30日ルールで消した worktree は未 commit の変更ごと消えるので、path と件数を報告に残す。skip だけで終わったならそう書く。なお `OPEN` PR がある branch を残すのは定常動作なので判断待ちには数えない — open PR の棚卸しは pr-auto-merge task（`.agents/scheduled-tasks/pr-auto-merge/`）が日次で担う。
+1行サマリ（freed 合計 / 削除した worktree・branch の本数）と、判断を残した項目（30日以内に触られている dirty な worktree、branch 判定の 6 に落ちた branch のみ）を列挙する。6 の branch は差分規模に加えて中身の要約と main との包含確認の結果を添える。5 で消した抜け殻 branch は何が main のどこに入っているかの根拠を添える。30日ルールで消した worktree は未 commit の変更ごと消えるので、path と件数を報告に残す。skip だけで終わったならそう書く。なお `OPEN` PR がある branch を残すのは定常動作なので判断待ちには数えない — open PR の棚卸しは pr-auto-merge task（`.agents/scheduled-tasks/pr-auto-merge/`）が日次で担う。

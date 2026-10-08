@@ -12,7 +12,8 @@ with tempfile.TemporaryDirectory(prefix="agent-config-") as temp:
     root = Path(temp)
     home = root / "another user's home"
     home.mkdir()
-    targets = [home / ".codex/config.toml", home / ".pi/agent/sandbox.json", home / ".config/devin/config.json"]
+    targets = [home / ".codex/config.toml", home / ".pi/agent/sandbox.json",
+               home / ".config/devin/config.json", home / ".pi/agent/settings.json"]
     for target in targets:
         target.parent.mkdir(parents=True, exist_ok=True)
     cli = ["chezmoi", "--config", "/dev/null", "--config-format", "toml", "--source", str(REPO),
@@ -30,12 +31,16 @@ with tempfile.TemporaryDirectory(prefix="agent-config-") as temp:
     codex = tomllib.loads(targets[0].read_text())
     pi = json.loads(targets[1].read_text())
     devin = json.loads(targets[2].read_text())
+    settings = json.loads(targets[3].read_text())
+    pi_base = json.loads((REPO / "home/.chezmoitemplates/pi-settings-base.json").read_text())
     assert codex["model"] == "gpt-6.1-sol"
     assert not codex.get("projects") and not codex.get("hooks", {}).get("state")
     assert "perPath" not in codex["desktop"]["open-in-target-preferences"]
     assert "model_availability_nux" not in codex["tui"]
     assert pi["enabled"] is False and not pi["filesystem"].get("allowRead")
     assert devin["devin"]["org_id"] == "org_N6dZEjgnb5biUvFw"
+    assert settings["defaultProvider"] == "opencode-go"
+    assert settings["enabledModels"] == pi_base["enabledModels"]
     assert all(not target.is_symlink() for target in targets)
     assert all(target.stat().st_mode & 0o777 == 0o600 for target in targets)
 
@@ -60,6 +65,12 @@ with tempfile.TemporaryDirectory(prefix="agent-config-") as temp:
     targets[1].write_text(json.dumps(pi))
     devin["devin"]["org_id"] = "org_local_fixture"
     targets[2].write_text(json.dumps(devin))
+    settings["defaultModel"] = "local-model"
+    settings["theme"] = "dark"
+    settings["lastChangelogVersion"] = "9.9.9"
+    settings["enabledModels"] = ["local-only/model"]
+    settings["localFixture"] = {"keep": True}
+    targets[3].write_text(json.dumps(settings))
     apply()
     codex = tomllib.loads(targets[0].read_text())
     after = json.loads(targets[1].read_text())
@@ -77,6 +88,13 @@ with tempfile.TemporaryDirectory(prefix="agent-config-") as temp:
     assert after["network"]["allowUnixSockets"] == pi["network"]["allowUnixSockets"]
     assert after["localFixture"] == {"keep": True}
     assert json.loads(targets[2].read_text())["devin"]["org_id"] == "org_local_fixture"
+    after_settings = json.loads(targets[3].read_text())
+    assert after_settings["defaultModel"] == "local-model"
+    assert after_settings["theme"] == "dark"
+    assert after_settings["lastChangelogVersion"] == "9.9.9"
+    assert after_settings["enabledModels"] == pi_base["enabledModels"]
+    assert after_settings["packages"] == pi_base["packages"]
+    assert after_settings["localFixture"] == {"keep": True}
     saved = [target.read_bytes() for target in targets]
     apply()
     assert saved == [target.read_bytes() for target in targets]
@@ -100,7 +118,8 @@ with tempfile.TemporaryDirectory(prefix="agent-config-") as temp:
         result = subprocess.run(["sh", "-c", command], input="{}", text=True, capture_output=True)
         assert result.returncode == 0 and result.stdout == "portable-hook", result
 
-    for target, broken in [(targets[0], 'model = [\n'), (targets[1], '{broken'), (targets[2], '{broken')]:
+    for target, broken in [(targets[0], 'model = [\n'), (targets[1], '{broken'), (targets[2], '{broken'),
+                           (targets[3], '{broken')]:
         target.write_text(broken)
         apply(target, success=False)
         assert target.read_text() == broken

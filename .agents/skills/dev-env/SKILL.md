@@ -19,6 +19,7 @@ description: "dotfiles で管理する開発環境の tool 設定・hooks・tele
 | macOS アプリを brew/cask/run_once で code 管理する判断 | [references/macos-app-install.md](references/macos-app-install.md) |
 | Claude Code の settings.json（env・sandbox）を触る | [references/claude-code.md](references/claude-code.md) |
 | Codex CLI の stdin・出力・起動不調を調べる | [Codex の実行・診断手順](../delegate/references/codex.md) |
+| Codex の config.toml の key 意味（features gate・memories 等）を調べる | [references/codex.md](references/codex.md) |
 | Devin CLI の設定（config.json・rules・hooks 配置・CLI 挙動）を触る | [references/devin-cli.md](references/devin-cli.md) |
 | Devin CLI の認証・起動・session 再開を調べる | [Devin の実行・診断手順](../delegate/references/devin.md) |
 | pi の設定・認証・モデル・sandbox・起動不調を調べる | [references/pi.md](references/pi.md) |

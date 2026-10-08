@@ -19,6 +19,8 @@ description: "別 agent への委譲・相談・レビューで harness・model�
 - 候補の順序: 先頭優先。使えない場合に次の候補へ fallback する。
 - 記法: `harness:model:effort`。選んだ値を起動時に指定する。
 - 例外: automation は固定せず task の要件に合わせて選ぶ（実値は各 `automation.toml` の `provider`）。Pullfrog は public なら `opencode-go/muse-spark-1.3-contributor:high`、private なら `opencode-go/mimo-v2.6-flash:high`。プロダクトの LLM モデル（opencode 等）も対象外
+- `opencode-go` の free/contributor 枠は upstream が予告なく削除する（`space-bunny-free` 消失で pin 先の pullfrog が全 repo 全滅した実例）。表の候補・自動化側の pin は差し替え前提で選び、消えたら backend の `pullfrog config set` と SSOT の config script を同じ変更で更新する
+- 無料・格安枠の「非学習」「ZDR」表記は保証の粒度が違う — 月次更新の契約脚注、学習許可と引換の contributor 枠、保持日数のみの表記、provider 非開示でホスト地を検証できないものがある。personal/work の区分で選ぶときは表記ではなく裏付け（契約期間・学習可否・ホスト）を確認する
 
 ## 起動時の権限モード
 

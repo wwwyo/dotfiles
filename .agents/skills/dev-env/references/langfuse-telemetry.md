@@ -60,8 +60,9 @@ Langfuse の OTLP endpoint は traces しか受けないため hook/plugin 経�
     `codex plugin add tracing@codex-observability-plugin`（初回に Stop hook の
     trust 承認あり）
   - Devin: `devin plugins install
-    wwwyo/devin-langfuse-plugin#plugins/devin-langfuse`（user level。
-    `--local` は machine 限定・更新は `devin plugins update`）
+    wwwyo/devin-langfuse-plugin#plugins/devin-langfuse`（user level の
+    snapshot — repo push は `devin plugins update` まで届かない。開発 loop は
+    `--local` で folder live link。hook は local session のみ発火、cloud 対象外）
 - **Devin exporter** は `wwwyo/devin-langfuse-plugin` repo の
   `plugins/devin-langfuse/hooks/` に置く（旧 `home/dot_config/devin/hooks/` から
   plugin 化して移設。以下この項の script 名はその dir の file）。vendored
@@ -141,3 +142,8 @@ Langfuse の OTLP endpoint は traces しか受けないため hook/plugin 経�
   の確定を止め、次の hook で同じ ID に再送する。
 - **trace の確認は v2 API**: `GET /api/public/v2/observations?fields=core,basic,model,usage,metadata`
   （legacy `/api/public/traces` は 410。fields 指定しないと model/usage が返らない）
+- **units 課金は取り込み件数ベースで保存量ではない** — cloud 上の trace を消しても
+  units は戻らないので export→削除は節約にならない。削る手段は送信する observation
+  数を減らすことだけ（turn/full 集約の動機）。SDK の sampling は trace 単位なので
+  1 session=1 trace の構成では session の途中が欠けて使えない。Blob Export に
+  session comments は含まれない — 記録が要るなら comments API で別途取得する

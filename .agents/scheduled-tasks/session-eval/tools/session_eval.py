@@ -55,6 +55,11 @@ from pathlib import Path
 # session-eval/automation.toml の prompt にも書かれている。変えるときは
 # 3 箇所同時に変えないと自己評価ループが復活する
 SENTINEL = "session-eval-batch:9f3a2c7e"
+# 合成 fixture session (telemetry QA 等) は評価・consolidate 対象から外す。
+# sid prefix は API を呼ばずに弾け、root input の marker は sentinel と同じ
+# 経路で拾う 2 段構え。除外対象は score/comment で追跡しない
+SYNTHETIC_SESSION_PREFIX = "telemetry-qa-"
+SYNTHETIC_MARKER = "[Synthetic"
 SCORE_WATERMARK = "evaluated_until"  # 観測済み最新 obs の endTime or startTime の epoch (NUMERIC)。完了 marker を兼ねる
 STATE_DIR = Path.home() / ".local" / "state" / "session-eval"
 LOCK_DIR = STATE_DIR / "batch.lockdir"
@@ -373,27 +378,50 @@ def resolve_repo(md):
 
 # ---------- sentinel ----------
 
-def _sentinel_hit(o):
+def _io_marker_hit(o, needle):
     v = o.get("input")
-    # str なら dumps 不要 — sentinel 文字列は JSON escape 対象の文字を含まない
+    # str なら dumps 不要 — marker 文字列は JSON escape 対象の文字を含まない
     if not isinstance(v, str):
         v = json.dumps(v, ensure_ascii=False)
-    return SENTINEL in v
+    return needle in v
 
 
-def has_sentinel(sid):
+def _io_prefix_hit(o, needle):
+    """input 文字列の先頭に marker がある場合だけ True。
+    fixture marker は root prompt の先頭に付ける約束なので、本文中の
+    引用 ("[Synthetic example] のような..." 等) では合成 session と
+    誤判定しない。"""
+    v = o.get("input")
+    return isinstance(v, str) and v.lstrip().startswith(needle)
+
+
+def _sentinel_hit(o):
+    return _io_marker_hit(o, SENTINEL)
+
+
+def _synthetic_hit(o):
+    return _io_prefix_hit(o, SYNTHETIC_MARKER)
+
+
+def skip_marker_kind(sid):
     """session の root observation (=turn) の user input に sentinel があれば
-    eval batch 自身の session。失敗時は False (=含める) に倒す —
-    transcript 側が再判定するので、ここでの取りこぼしは再評価で済む。"""
+    eval batch 自身の session ("self")、[Synthetic 系の fixture marker があれば
+    合成 session ("synthetic")。どちらでもなければ None。
+    失敗時は None (=含める) に倒す — transcript 側が再判定するので、
+    ここでの取りこぼしは再評価で済む。"""
     try:
         for o in paged("/api/public/v2/observations",
                        {"sessionId": sid, "fields": "basic,io",
                         "filter": ROOT_FILTER}):
-            if o.get("sessionId") == sid and _sentinel_hit(o):
-                return True
+            if o.get("sessionId") != sid:
+                continue
+            if _sentinel_hit(o):
+                return "self"
+            if _synthetic_hit(o):
+                return "synthetic"
     except Exception:
         pass
-    return False
+    return None
 
 
 # ---------- subcommands ----------
@@ -499,20 +527,27 @@ def _cmd_targets(a):
     # sentinel 判定は session ごとに API round trip が要るので並列にする。
     # workdir/repo_root も stat 連打と git subprocess があるため同じ pool で回す
     def _sentinel_and_repo(sid):
-        if has_sentinel(sid):
-            return True, None, None
+        if sid.startswith(SYNTHETIC_SESSION_PREFIX):
+            return "synthetic", None, None
+        kind = skip_marker_kind(sid)
+        if kind:
+            return kind, None, None
         wd, rr = resolve_repo(sessions[sid]["hints"])
-        return False, wd, rr
+        return None, wd, rr
 
     with ThreadPoolExecutor(max_workers=SENTINEL_WORKERS) as ex:
         info_map = dict(zip(pending, ex.map(_sentinel_and_repo, pending)))
 
     targets = []
     n_self = 0
+    n_synthetic = 0
     for sid in pending:
-        is_self, wd, rr = info_map[sid]
-        if is_self:
+        kind, wd, rr = info_map[sid]
+        if kind == "self":
             n_self += 1
+            continue
+        if kind == "synthetic":
+            n_synthetic += 1
             continue
         s = sessions[sid]
         wm = last_wm.get(sid)
@@ -532,6 +567,7 @@ def _cmd_targets(a):
           "window": {"from": _iso(since), "to": _iso(now)},
           "targets": targets,
           "skipped": {"evaluated": n_eval, "self": n_self,
+                      "synthetic": n_synthetic,
                       "unsafe_sid": len(unsafe_sids),
                       "unsafe_sids": sorted(unsafe_sids)}})
 
@@ -621,6 +657,12 @@ def _cmd_transcript(a):
     # 「本文なし = signal なし」の判定は evaluator に任せる
     if any(_sentinel_hit(o) for o in turns):
         emit({"ok": True, "self": True, "session_id": sid})
+        return
+    if sid.startswith(SYNTHETIC_SESSION_PREFIX) or \
+            any(_synthetic_hit(o) for o in turns):
+        # self=true に寄せるのは後方互換 — caller は self だけ見て skip する
+        emit({"ok": True, "self": True, "synthetic": True,
+              "session_id": sid})
         return
 
     counts, tool_names = Counter(), Counter()
