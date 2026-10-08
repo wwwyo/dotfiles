@@ -63,11 +63,12 @@ README、設計書、ADR、提案書、技術仕様、意思決定文書など�
 
 ### 2. フォーマットを選ぶ
 
-定義済みの形式が合うなら使う。着手前に、対応する `assets/` テンプレートと
-`references/` ガイドラインの両方を読む。記憶や既存文書だけを基に構成を決めない。
+定義済みの形式が合うなら使う。着手前に、対応するテンプレートとガイドラインを読む。
+ADR は `references/adr-format.md` に両方を含む。他の形式は `assets/` と `references/` の両方を読む。
+記憶や既存文書だけを基に構成を決めない。
 
 - DesignDoc: テンプレート `assets/design-doc.md` ／ ガイドライン `references/design-doc.md`
-- ADR（設計判断の記録）: テンプレート `assets/adr.md` ／ ガイドライン `references/adr.md`
+- ADR（設計判断の記録）: [references/adr-format.md](references/adr-format.md)（テンプレートを含む）
 - README: テンプレート `assets/readme.md` ／ ガイドライン `references/readme.md`
 - PRD: `prd` スキルを参照
 - AGENTS.md（repo 起動時 index）: テンプレート `assets/agents-md.md` ／ ガイドライン `references/agents-md.md`

@@ -19,7 +19,7 @@ Actively build and sharpen the project's domain model as you design. This is the
 └── src/
 ```
 
-The glossary lives in `AGENTS.md` because it is the one file every session reads unconditionally; a separate glossary file would only be read when someone remembers to. Create things lazily: add the `## Glossary` section when the first term is resolved, create the ADR directory when the first ADR is needed. `docs/adr/` is the default; follow [document's ADR placement rules](../document/references/adr.md#配置と更新) when the user or repository specifies another location. If `AGENTS.md` itself does not exist, create it at the repo root.
+The glossary lives in `AGENTS.md` because it is the one file every session reads unconditionally; a separate glossary file would only be read when someone remembers to. Create things lazily: add the `## Glossary` section when the first term is resolved, create `docs/adr/` when the first ADR is needed. If `AGENTS.md` itself does not exist, create it at the repo root.
 
 ## During the session
 
@@ -47,12 +47,10 @@ The Glossary should be totally devoid of implementation details. Do not treat it
 
 ### Offer ADRs sparingly
 
-When the user explicitly requests an ADR, follow [references/adr-format.md](references/adr-format.md). The conditions below apply only to offering an ADR during design discussions.
-
 Only offer to create an ADR when all three are true:
 
 1. **Hard to reverse**: the cost of changing your mind later is meaningful
 2. **Surprising without context**: a future reader will wonder "why did they do it this way?"
 3. **The result of a real trade-off**: there were genuine alternatives and you picked one for specific reasons
 
-If any of the three is missing, skip the ADR. Follow the [ADR instructions](references/adr-format.md) to write it.
+If any of the three is missing, skip the ADR. Use the format in [document ADR format](../document/references/adr-format.md).
