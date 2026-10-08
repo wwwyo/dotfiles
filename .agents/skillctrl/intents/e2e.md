@@ -11,6 +11,8 @@ e2e は PRD の criterion を検証する QA の実行基盤として使う。PR
 モデルの既定は OpenCode Go とする。安価な open model を選び、UI 操作に
 必要な画像入力・ツール呼び出しを確認する。キーは既存の秘密管理から受け取り、
 Vercel のログインや Gateway の設定を通常のセットアップの前提にしない。
+安価な Claude の具体例には Haiku 5.5 を使い、接続先に合ったモデル ID と
+認証方式を示す。ChatGPT のサブスク認証でこのモデルを呼ぶ案内を置かない。
 Go のエンドポイントとクライアント識別・session header を明示する。
 モデル名は共通環境変数から取得し、templateの固定fallbackとの二重管理を避ける。
 

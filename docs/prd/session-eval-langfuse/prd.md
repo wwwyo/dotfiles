@@ -8,7 +8,7 @@ SessionEnd hook が「transcript 組み立て → signal 判定 + 5見出し要�
 
 - **3重実装**: Claude・Codex・Devin で別々の script と transcript 正規化を持つ（Claude/Codex は JSONL、Devinは sessions.db の read-only 走査）
 - **終了即時実行の複雑さ**: nohup detach・mkdir lock・再帰 guard・retry・`ACP_BACKEND` unset・`--permission-mode dangerous` といった防御コードが全部「終了イベントに乗せる」という選択から生じている
-- **実績の不安定さ**: 2026-09-24 の sessions.md では同一 session の二重記録と、`gpt-6-luna` が ChatGPT アカウントで unsupported であることによる要約生成失敗が多発した
+- **実績の不安定さ**: 2026-09-24 の sessions.md では同一 session の二重記録と、選択モデルが ChatGPT アカウントで未対応だったことによる要約生成失敗が多発した
 
 一方で session の trace は既に Langfuse に流れている（Devin は自作 exporter、Claude/Codex/pi は公式 plugin）。評価だけが hook 側に残っている。trace が揃った後なら評価は終了即時でなくてよく、定時 batch で足りる — 終了イベント由来の防御コードをまるごと消せる。
 
