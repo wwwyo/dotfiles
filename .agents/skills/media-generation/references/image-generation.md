@@ -11,7 +11,7 @@
 
 ## 経路 A — Codex の組み込み画像生成ツール（第一選択）
 
-Codex に**組み込まれた画像生成ツール**を呼ぶ。この親セッションには `image_gen.imagegen` が実際に提供されており、**`OPENAI_API_KEY` の新規設定は不要**。
+Codex に**組み込まれた画像生成ツール**を呼ぶ。**提供されている場合のみ**使う（下の「判定」）。提供されていれば **`OPENAI_API_KEY` の新規設定は不要**。提供形態の例: この作業を行った Codex セッションでは `image_gen.imagegen` というツールとして提供されていた（**ツール ID はセッション・バージョンに依存するため固定しない**）。
 
 ### 判定
 
@@ -33,10 +33,10 @@ Codex に**組み込まれた画像生成ツール**を呼ぶ。この親セッ�
 
 ツールが公開していない機能は書かない・約束しない:
 
-- **モデル名指定は保証しない**。OpenAI 公式の [Image generation](https://learn.chatgpt.com/docs/image-generation) は Codex の built-in image generation を `gpt-image-2` と記載する（確認日 2026-10-08）が、この親セッションの `image_gen.imagegen` の schema は `model` 引数も backend API endpoint も公開していない。モデル名が必要なら**実行環境の現行ドキュメントで確認**し、この skill 内ではモデルを保証・固定しない
+- **モデル名指定は保証しない**。OpenAI 公式の [Image generation](https://learn.chatgpt.com/docs/image-generation) は Codex の built-in image generation を `gpt-image-2` と記載する（確認日 2026-10-08）が、観測したツールの schema は `model` 引数も backend API endpoint も公開していない。モデル名が必要なら**実行環境の現行ドキュメントで確認**し、この skill 内ではモデルを保証・固定しない
 - **「無料 / 無制限」とは断定しない**。公式 docs は built-in が Codex の general usage limits に計上されると記載している（確認日 2026-10-08）
 - **保存先を生成時の引数で指定できるとも断定しない**（既定の保存場所は実行環境に依存する。指定保存先には生成後の確認・コピーで対応する）
-- この技能の主題は**実行経路の選択**であって、モデルの優劣比較ではない
+- 画像生成の主題は**実行経路の選択**であって、モデルの優劣比較ではない
 
 ### UI 自動操作は別物
 
