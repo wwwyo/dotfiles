@@ -51,7 +51,7 @@ Cloudflare AI を手元で試す場合は、[Access 経由の実験手順](../..
 - 認証方式の選択: 個人なら policy は「Cloudflare アカウントのメンバー」が最も確実。メール条件を使う場合、`email_domain` はそのドメインの検証済みアドレスを持つ全員を許可する — `gmail.com` のような共有ドメインを指定すると事実上公開になる。自分だけなら Zero Trust 側でメールアドレス完全一致（`emails`）のポリシーにする。外部 IdP/OIDC・service token・複雑なポリシーは Zero Trust 側で高度設定。機械からのアクセス（CI・他サービス）は Service Auth ポリシー + service token（`CF-Access-Client-Id`/`CF-Access-Client-Secret` header）。**service token をクライアントアプリや公開リポジトリに埋め込まない** — 共有 token は全員が持つので制御にならず、漏洩時に全利用者を止められない。
 - Worker 側は `ctx.access.getIdentity()` または JWT / `/cdn-cgi/access/get-identity` でサインイン済みユーザーを読める。
 - 注意点:
-  - Access のログインは `CF-Authorization` cookie で維持される。ブラウザの fetch が `credentials: "omit"` だと cookie が送られずログイン済みでも 403/302 になる — preview から API を呼ぶ SPA では `credentials: "include"` と cookie の SameSite/ドメインを確認。
+  - Access のログインは `CF_Authorization` cookie で維持される。ブラウザの fetch が `credentials: "omit"` だと cookie が送られずログイン済みでも 403/302 になる — preview から API を呼ぶ SPA では `credentials: "include"` と cookie の SameSite/ドメインを確認。
   - preflight（OPTIONS）には cookie が付かないため Access が 403 を返す。Access app の CORS 設定で「Cloudflare に preflight 応答させる」または「OPTIONS を origin へ bypass」する（bypass するなら origin 側で CORS を強制すること）。
   - iframe・third-party cookie ブロック・Safari の挙動で Access cookie が送られないケースがある。Incognito での検証は避ける。
   - Turnstile の sitekey は hostname 紐付け — preview の hostname を widget の許可 hostname に含めるか、preview 用 widget を分ける（§5）。

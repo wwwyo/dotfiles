@@ -62,7 +62,7 @@ Vercel プロジェクトの公開・保護・課金まわりの非自明な仕�
 
 出典: [Project Configuration](https://vercel.com/docs/project-configuration) / [vercel.json](https://vercel.com/docs/project-configuration/vercel-json) / [WAF Custom Rules](https://vercel.com/docs/vercel-firewall/vercel-waf/custom-rules)
 
-- file 系（`vercel.json`/`vercel.toml`/`vercel.ts`、1 project につき 1 つ）が書けるのは build/routing/functions/cron など。domains・Deployment Protection・Spend Management 等は、この build/routing 設定ファイルと別に dashboard/API/CLI で管理する。secret は repo に値を書かず provider の環境設定へ注入する。「vercel.json を見れば全設定が分かる」とは扱わず、外部 state の正本と変更経路も記録する
+- file 系（`vercel.json`/`vercel.ts` など、1 project につき 1 つ）が書けるのは build/routing/functions/cron など。domains・Deployment Protection・Spend Management 等は、この build/routing 設定ファイルと別に dashboard/API/CLI で管理する。secret は repo に値を書かず provider の環境設定へ注入する。「vercel.json を見れば全設定が分かる」とは扱わず、外部 state の正本と変更経路も記録する
 - 優先順位は一方向ではない: `buildCommand`/`installCommand`/`outputDirectory`/`devCommand`/`framework`/`ignoreCommand`/`regions` は **vercel.json が dashboard の Project Settings を上書きする**。逆に **Fluid compute 有効時は function の memory を vercel.json に書けず dashboard 設定が正**（vercel.json では `functions.maxDuration` だけ上書き可）。項目ごとにどちらが正本か変わるので両方を確認する
 - WAF の宣言は `vercel.json` の `routes[].mitigate` でもできるが、対応 action は `challenge`/`deny` のみ。`log`/`bypass`/`rate_limit`/`redirect` まで含む管理は dashboard/API/CLI/Terraform を使う。全 WAF state を `vercel.json` へ移せるわけではない。管理面を混ぜるとどこが正か分からなくなるので経路を一本化する
 - ローカルの secret 管理は [secret-env](../../secret-env/SKILL.md)、CLI の pin は [mise](mise.md)を参照する
