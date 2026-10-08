@@ -10,7 +10,7 @@ baselineは一時workspaceで実行する。oldのrunはこのtreeに保存し�
 対象snapshotは `db1fa8c3be8f29278ba6a9f1f35ad6f2d0e39abf`。
 後続のmain取り込み・レビュー修正を含む最新headでは全モデル評価を再実行していない。
 2026-10-03にagent-qaの4ケースを削除し、e2eの発火・非発火ケースを4件追加した。
-現行も82依頼だが、以下の保存結果は変更前のケース集合の実測であり、新しい集合では再評価していない。
+現行は84依頼だが（2026-10-08 に image-generation → media-generation の rename に伴い動画2件を追加）、以下の保存結果は変更前のケース集合の実測であり、新しい集合では再評価していない。
 
 | 評価 | Current |
 | --- | ---: |
@@ -55,7 +55,7 @@ current単体の82依頼では、この依頼の誤発火も含めて上表を�
 
 ## 方法と限界
 
-- 現行の `triggers.json` はsecret-envを含む31 skillを扱う82依頼。
+- 現行の `triggers.json` はsecret-envを含む31 skillを扱う84依頼。
   タスク・scheduled automationの実運用は検証しない。
 - 全40 skillをGit archiveで固定し、Pi自身のloaderで読み込みを確認する。
   user queryを加工せず、対象snapshotのSKILL.mdを実際に読めたことを発火の証拠にする。
@@ -97,6 +97,7 @@ bash .agents/skillctrl/eval.test.sh
 
 現在のケースは、検索・作成の依頼を統合済みの `skillctrl` skill に向ける。`learn` のケースも Karpathy の方法で説明を作る新しい skill に合わせている。保存結果は旧 skill を評価した記録なので書き換えない。保存結果と同じケース・snapshotを再実行する場合は、[当時の評価ケースとrunner](https://github.com/wwwyo/dotfiles/tree/db1fa8c3be8f29278ba6a9f1f35ad6f2d0e39abf/.agents/skillctrl/evals/skill-quality) を使い、`--ref db1fa8c3be8f29278ba6a9f1f35ad6f2d0e39abf` を指定する。現在のケースを旧 snapshot に適用しない。
 一時的な前後比較はfresh workspaceに `--ref <current-commit> --before <baseline-commit>` を指定する。
+baseline は現行ケースの target skill を含む commit を選ぶ。`image-generation` → `media-generation` の rename より前の commit は target 検証で拒否される（設計どおり。現行ケースを旧 snapshot に適用しない方針と同じ）。rename 前後を比較したい場合は、上記のように当時の評価ケースと runner を当時の tree から使う。
 通常実行ではoldのsnapshot・runを作らず、tasksも同じmanifestの対象だけを実行する。
 
 ref・model・Pi version・datasetが変わったworkspaceの再利用は拒否する。
