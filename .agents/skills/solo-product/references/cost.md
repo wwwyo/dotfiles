@@ -12,7 +12,7 @@
 - 大きな request body・レスポンス、長い wall time（CPU 時間外だが timeout 設計は必要）。
 - ビルド・preview・CI の実行コスト（公開 repo で誰でも PR を出せると CI が回る）。
 
-**対策の順序**: まず安い拒否を前に置く（認証・Turnstile・WAF rate limit、いずれも cloudflare.md §3-5）。次に量を絞る（ユーザー別 quota・全体 quota・同時実行・body/timeout/fanout 上限）。最後に消費の上限（CPU limit・AI の最大 token・retry 上限）。rate limit は「流量」であって「支出上限」ではない — 分散・長時間・正規アカウント経由を抜かれるので、**厳密な月次上限が必要なら自分のアプリ側で quota を集計する**か provider の課金制御を使う。強制（enforcement）できる制御がある provider もある — Cloudflare AI Gateway の spend limits は window 内の累計支出が上限に達すると以降を 429 で block できる（Access 経由なら `cf.user_id` 単位も）。使っている gateway/provider に強制手段があるかを先に確認し、あれば自前 quota と併用・代替する。
+**対策の順序**: まず安い拒否を前に置く（認証・Turnstile・WAF rate limit、いずれも cloudflare.md §3-5）。拒否チェーンの内部順序もコストになる — Turnstile の siteverify 呼出し自体が外部 subrequest なので **rate limit より後に置く**。先に siteverify へ送ると偽トークンの連打がそのまま外部への subrequest 増幅になる。token の有無・形式の確認（外部送信しないローカル検証）は先にしてよい。次に量を絞る（ユーザー別 quota・全体 quota・同時実行・body/timeout/fanout 上限）。最後に消費の上限（CPU limit・AI の最大 token・retry 上限）。rate limit は「流量」であって「支出上限」ではない — 分散・長時間・正規アカウント経由を抜かれるので、**厳密な月次上限が必要なら自分のアプリ側で quota を集計する**か provider の課金制御を使う。強制（enforcement）できる制御がある provider もある — Cloudflare AI Gateway の spend limits は window 内の累計支出が上限に達すると以降を 429 で block できる（Access 経由なら `cf.user_id` 単位も）。使っている gateway/provider に強制手段があるかを先に確認し、あれば自前 quota と併用・代替する。
 
 ## quota と fail closed の設計
 
