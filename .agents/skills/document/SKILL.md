@@ -1,11 +1,11 @@
 ---
 name: document
-description: ドキュメント作成を支援する簡潔な共同執筆ワークフロー。README・設計書・提案書・技術仕様・事後分析などの作成、既存ドキュメントの改善・要約・再構成時に使う。「READMEを書く」「READMEを改善」「ドキュメントを書く」「提案書を作る」「仕様書を書く」「設計書を書く」などの依頼で起動。
+description: ドキュメント作成を支援する簡潔な共同執筆ワークフロー。README・設計書・ADR（Architecture Decision Record）・提案書・技術仕様・事後分析などの作成、既存ドキュメントの改善・要約・再構成時に使う。「READMEを書く」「READMEを改善」「ドキュメントを書く」「提案書を作る」「仕様書を書く」「設計書を書く」「ADRを書く」「ADRを更新」「設計判断を記録」などの依頼で起動。
 ---
 
 # ドキュメント共同作成
 
-README、設計書、提案書、技術仕様、意思決定文書などを作るときに使う。
+README、設計書、ADR、提案書、技術仕様、意思決定文書などを作るときに使う。
 
 ## 基本方針
 
@@ -67,6 +67,7 @@ README、設計書、提案書、技術仕様、意思決定文書などを作�
 `references/` ガイドラインの両方を読む。記憶や既存文書だけを基に構成を決めない。
 
 - DesignDoc: テンプレート `assets/design-doc.md` ／ ガイドライン `references/design-doc.md`
+- ADR（設計判断の記録）: テンプレート [assets/adr.md](assets/adr.md) ／ ガイドライン [references/adr.md](references/adr.md)
 - README: テンプレート `assets/readme.md` ／ ガイドライン `references/readme.md`
 - PRD: `prd` スキルを参照
 - AGENTS.md（repo 起動時 index）: テンプレート `assets/agents-md.md` ／ ガイドライン `references/agents-md.md`
