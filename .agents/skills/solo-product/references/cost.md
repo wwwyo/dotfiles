@@ -41,4 +41,4 @@
 - 複雑な WAF ルール・高度な bot 対策・大規模な DDoS 防御の自作 — provider の既定防御の範囲を確認し、必要な箇所だけ個別対策する。
 - 厳密な会計システムの自作 — 「おおよそ閾値で止める」で足りるなら自作 quota は簡易カウンタでよい。厳密さが要るのは課金請求や SLA があるとき。
 - 多層の冗長化 — 単一障害点を引き受ける代わりに、復旧手順を明確にしておく方が個人では現実的。
-provider 固有の強制停止・通知・上限・rollback は [Cloudflare の設定・公開・課金](../../dev-env/references/cloudflare.md)、[Vercel の設定・公開・課金](../../dev-env/references/vercel.md)を参照する。
+provider 固有の強制停止・通知・上限・rollback は [Cloudflare の設定・公開・課金](cloudflare.md)、[Vercel の設定・公開・課金](vercel.md)を参照する。

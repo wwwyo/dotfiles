@@ -9,7 +9,7 @@ description: "個人開発のサービスを公開・運用・緊急停止する
 
 ## この skill が扱うもの・扱わないもの
 
-- 扱う: 公開の是非と入口設計（ドメイン・preview・認証）、abuse・課金暴走への防御設計、公開前/運用中/緊急時の確認、provider 固有設定（Cloudflare・Vercel）への導線。
+- 扱う: 公開の是非と入口設計（ドメイン・preview・認証）、abuse・課金暴走への防御設計、公開前/運用中/緊急時の確認、provider 固有の公開・保護・課金設定（Cloudflare・Vercel）の管理。
 - 扱わない: Cloudflare 製品の選定全般（[cloudflare](../cloudflare/SKILL.md)）、secret の保管・注入の手順（[secret-env](../secret-env/SKILL.md)）、コード品質のレビュー。
 
 ## 判断の順序
@@ -25,8 +25,8 @@ description: "個人開発のサービスを公開・運用・緊急停止する
 
 | やること | 読む reference |
 | --- | --- |
-| Cloudflare の公開・保護・課金設定 | [Cloudflare の設定・公開・課金](../dev-env/references/cloudflare.md) |
-| Vercel の公開・保護・課金設定 | [Vercel の設定・公開・課金](../dev-env/references/vercel.md) |
+| Cloudflare の公開・保護・課金設定 | [Cloudflare の設定・公開・課金](references/cloudflare.md) |
+| Vercel の公開・保護・課金設定 | [Vercel の設定・公開・課金](references/vercel.md) |
 | アカウント・secret・認証/認可・input・dependency・プライバシーの確認 | [references/security.md](references/security.md) |
 | 課金対策の設計・観測・kill switch・abuse 増幅の分析 | [references/cost.md](references/cost.md) |
 | ブラウザ拡張の公開（BYOK の key 保管・content script の脅威モデル） | [references/extension.md](references/extension.md) |

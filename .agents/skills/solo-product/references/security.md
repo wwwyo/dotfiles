@@ -47,4 +47,4 @@
 
 参照: OWASP Top 10 (https://owasp.org/www-project-top-ten/)、OWASP Cheat Sheet Series (https://cheatsheetseries.owasp.org/) — 詳細は各項目の該当 cheat sheet（Authentication / CSRF / SSRF / Secrets Management）を参照。確認日 2026-10-04。
 
-provider 固有の設定・上限・検証は [Cloudflare の設定・公開・課金](../../dev-env/references/cloudflare.md)、[Vercel の設定・公開・課金](../../dev-env/references/vercel.md)を参照する。
+provider 固有の設定・上限・検証は [Cloudflare の設定・公開・課金](cloudflare.md)、[Vercel の設定・公開・課金](vercel.md)を参照する。
