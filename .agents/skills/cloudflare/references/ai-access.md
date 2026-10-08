@@ -4,7 +4,7 @@ Cloudflare AI / Workers AI を手元で試すときは、Cloudflare Access で�
 
 ## Request
 
-URL は global mise の `CF_AI_ACCESS_URL` に age 暗号化して格納する。これは `/compat/chat/completions` を含む完全な request URL。平文の URL を skill・コード・設定へ転記しない。環境変数が見えない agent / GUI の実行経路では `mise exec --` で注入する。未設定なら設定を確認し、旧 `CF_AIG_TOKEN` や既定の gateway endpoint へ迂回しない。
+URL は global mise の `CF_AI_ACCESS_URL` に age 暗号化して格納する。これは `/compat/chat/completions` を含む完全な request URL。平文の URL を skill・コード・設定へ転記しない。環境変数が見えない agent / GUI の実行経路では `mise exec --` で注入する。未設定なら設定を確認し、長期 gateway token や既定の gateway endpoint へ迂回しない。
 
 mise 管理の `cloudflared` を使い、Access の認証済み session で呼び出す:
 

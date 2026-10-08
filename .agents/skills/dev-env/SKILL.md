@@ -1,11 +1,13 @@
 ---
 name: dev-env
-description: "dotfiles で管理する開発環境の tool 設定・hooks・telemetry・macOS アプリ管理の非自明な制約を調べる。Orca の keybindings・browser のフォーカス移動、Claude/Codex/Devin/pi の設定・認証・起動不調、hook の不調、Langfuse opt-in、cf/Wrangler の運用を触るときに参照する。"
+description: "dotfiles で管理する開発環境の tool 設定・hooks・telemetry・macOS アプリ管理の非自明な制約を調べる。Orca の keybindings・browser のフォーカス移動、Claude/Codex/Devin/pi の設定・認証・起動不調、hook の不調、Langfuse opt-in、Cloudflare・Vercel の設定・公開・課金を触るときに参照する。"
 ---
 
 # dev-env
 
-この環境の tool 別の知見を `references/` に持つ。SKILL.md はルーター — 正本は各 reference。
+この環境の tool / provider 別の知見を `references/` に持つ。SKILL.md はルーター — 正本は各 reference。
+
+provider 固有の公開入口・認証・流量制御・課金・復旧設定も provider reference に集約する。security/cost の共通概念は [solo-product](../solo-product/SKILL.md) に置き、固有の値や操作を重複させない。
 
 置いてよいのは「調べてわかるが、発見に失敗コスト（設定を壊す・存在しない機能を掘る）が伴う」事実。`--help` や doc を読めばその場で出る情報は置かない。
 
@@ -27,7 +29,8 @@ description: "dotfiles で管理する開発環境の tool 設定・hooks・tele
 | agent hook を書く・共有する・tool_name でゲートする | [references/agent-hooks.md](references/agent-hooks.md) |
 | Langfuse telemetry の opt-in・exporter・secrets を触る | [references/langfuse-telemetry.md](references/langfuse-telemetry.md) |
 | CodeRabbit の central config・`.coderabbit.yaml` を触る | [references/coderabbit.md](references/coderabbit.md) |
-| Cloudflare（`cf` / Wrangler / R2 / Workers 契約まわり）を触る | [references/cloudflare.md](references/cloudflare.md) |
+| Cloudflare（CLI・契約・公開入口・Access・流量制御・課金・復旧）を触る | [Cloudflare の設定・公開・課金](references/cloudflare.md) |
+| Vercel（公開入口・Deployment Protection・流量制御・課金・復旧）を触る | [Vercel の設定・公開・課金](references/vercel.md) |
 | gh-aw の生成 workflow（`.github/workflows/*.md` + `*.lock.yml`）を触る | [references/gh-aw.md](references/gh-aw.md) |
 
 ## 関連 skill
