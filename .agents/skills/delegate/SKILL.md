@@ -12,7 +12,7 @@ description: "別 agent への委譲・相談・レビューで harness・model�
 | 役割 | public | personal | work |
 |---|---|---|---|
 | Operator | 1. codex:gpt-6.1-sol:high, 2. devin:swe-2:max | 同じ | 同じ |
-| worker | 1. devin:swe-2:medium, 2. pi:opencode-go/mimo-v2.6-flash:high, 3. pi:opencode-go/muse-spark-1.3-contributor:high | 1. devin:swe-2:medium, 2. pi:opencode-go/mimo-v2.6-flash:high, 3. pi:opencode-go/deepseek-v4.1-flash:high | 1. codex:gpt-6-luna:high |
+| worker | 1. devin:swe-2:medium, 2. pi:opencode-go/mimo-v2.6-flash:high, 3. pi:opencode-go/muse-spark-1.3-contributor:high | 1. devin:swe-2:medium, 2. pi:opencode-go/mimo-v2.6-flash:high, 3. pi:opencode-go/deepseek-v4.1-flash:high | 1. pi:opencode-go/claude-haiku-5-5:high |
 | review | 1. codex:gpt-6.1-sol:high, 2. pi:opencode-go/muse-spark-1.3-contributor:high | 1. codex:gpt-6.1-sol:high, 2. pi:opencode-go/mimo-v2.6-flash:high | 同左 |
 
 - personal / work: 個人の責任範囲で扱うデータ / 仕事として組織・案件の利用条件に従うデータ。

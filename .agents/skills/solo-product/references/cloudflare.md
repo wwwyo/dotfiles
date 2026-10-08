@@ -95,3 +95,4 @@ Cloudflare 操作の優先順位（`cf` CLI 優先・`cf cli search` で探す�
 - config で管理できない・別管理の state: Access application・service token・WAF custom rule・Turnstile widget・Zero Trust 設定・Budget alerts・deploy された secret 値。これらは API/dashboard の操作対象。`cloudflare.config.ts` に書けないからと宣言できるとは限らない — 「管理対象外であること」をプロジェクトの docs に明記する。
 - Wrangler にだけある設定と cf にだけある設定があるので、プロジェクトがどちらで deploy するかを確認してから config を書く。未移行 Wrangler プロジェクトに cf 前提の記述を足さない。
 - secret の値そのものは config に書かない（`wrangler secret put` 相当の API / cf の secret 操作で入れる）。
+- 公開サービスは https のみで配信する。セキュリティの前提として、zone 設定の Always Use HTTPS（`always_use_https`）を on にして http を 301 → https にする（確認: `curl -sI http://<domain>/`）。off のままだと http/https 両方で 200 配信され、平文アクセスを許すうえ重複コンテンツにもなり得る。

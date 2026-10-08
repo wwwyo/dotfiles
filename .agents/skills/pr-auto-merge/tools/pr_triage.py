@@ -206,14 +206,14 @@ def save_state(st):
 
 # ---------- subprocess wrappers ----------
 
-def sh(args, timeout=120):
+def sh(args, timeout=120, check=True):
     try:
         r = subprocess.run(args, capture_output=True, text=True,
                            timeout=timeout)
     except subprocess.TimeoutExpired:
         raise ApiError(f"{args[0]} {args[1] if len(args) > 1 else ''} "
                        f"timed out ({timeout}s)")
-    if r.returncode != 0:
+    if check and r.returncode != 0:
         raise ApiError(f"{args[0]} {args[1] if len(args) > 1 else ''} "
                        f"failed({r.returncode}): {r.stderr.strip()[:400]}")
     return r
@@ -228,9 +228,20 @@ def gh_json(args, timeout=120):
 
 
 def orca_json(args, timeout=120):
-    d = json.loads(sh([ORCA, *args, "--json"], timeout=timeout).stdout or "{}")
+    # Orca は非ゼロ終了時も stdout に JSON error を返す。先に終了コード
+    # だけで弾くと repo_not_found が失われ、自動登録へ進めなくなる。
+    r = sh([ORCA, *args, "--json"], timeout=timeout, check=False)
+    command = f"{ORCA} {' '.join(args[:2])}"
+    try:
+        d = json.loads(r.stdout or "{}")
+    except json.JSONDecodeError as e:
+        raise ApiError(f"{command} failed({r.returncode}): "
+                       f"{r.stderr.strip()[:400] or 'invalid JSON response'}") from e
     if isinstance(d, dict) and d.get("ok") is False:
-        raise ApiError(f"orca {' '.join(args)}: {d.get('error')}")
+        raise ApiError(f"{command}: {d.get('error')}")
+    if r.returncode != 0:
+        raise ApiError(f"{command} failed({r.returncode}): "
+                       f"{r.stderr.strip()[:400]}")
     return d.get("result", d) if isinstance(d, dict) else d
 
 
@@ -1328,6 +1339,10 @@ def build_dispatch_message(repo, pr, items):
         "まず各指摘が妥当かを判断してください。採用しないものは理由を書いて"
         "返信し、thread を resolve してください（レビュー指摘を常に採用する"
         "わけではありません）。merge はこちらで行うので不要です。",
+        "",
+        "既存 PR への対応は ~/.agents/skills/pr/SKILL.md の flow に従う"
+        "（push 後の CI・レビュー監視、指摘対応が終わったら draft なら "
+        "ready にするところまで）。",
         "",
         "未対応の指摘・障害:",
     ]

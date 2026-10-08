@@ -1,11 +1,12 @@
 #!/usr/bin/env bash
 # pr_triage.py の判定ロジックの検証（path 3分類・dispatch routing・
-# hard gate・上限・state/lock）。gh API と orca API に触れる経路は実環境
-# 依存なので対象外 — 純粋関数と state 操作だけを見る。
+# hard gate・上限・state/lock）と、fixture CLI による Orca のエラー処理・
+# dispatch 回復の検証。実際の gh / orca サービスへは接続しない。
 set -euo pipefail
 
 repo_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 PT="$repo_dir/.agents/skills/pr-auto-merge/tools/pr_triage.py"
+python3 "$repo_dir/.agents/skills/pr-auto-merge/tools/pr_triage_orca.test.py"
 TEST_ROOT=$(mktemp -d)
 trap 'rm -rf "$TEST_ROOT"' EXIT
 
