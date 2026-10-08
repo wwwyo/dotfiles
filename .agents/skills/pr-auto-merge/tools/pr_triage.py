@@ -1329,6 +1329,10 @@ def build_dispatch_message(repo, pr, items):
         "返信し、thread を resolve してください（レビュー指摘を常に採用する"
         "わけではありません）。merge はこちらで行うので不要です。",
         "",
+        "既存 PR への対応は ~/.agents/skills/pr/SKILL.md の flow に従う"
+        "（push 後の CI・レビュー監視、指摘対応が終わったら draft なら "
+        "ready にするところまで）。",
+        "",
         "未対応の指摘・障害:",
     ]
     if any(it["kind"] in ("conflict", "dependency_ci", "dependency_migration")
