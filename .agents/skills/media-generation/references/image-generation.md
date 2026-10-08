@@ -1,21 +1,12 @@
----
-name: image-generation
-description: "Generate or edit images via OpenRouter. Use for prompt-only image generation, image edits, and multi-image compositing. Defaults to the cheapest model and switches to a higher-quality one on demand."
-metadata:
-  emoji: 🎨
-  requires:
-    bins:
-      - uv
-    env:
-      - OPENROUTER_API_KEY
-  primaryEnv: OPENROUTER_API_KEY
----
+# Image generation (OpenRouter)
 
-# Image Generation
+画像生成・1枚の編集・複数画像合成の詳細。入口は [SKILL.md](../SKILL.md)。
 
 ## Overview
 
 Generate or edit images through OpenRouter. Support prompt-only generation, single-image edits, and multi-image composition.
+
+Required key: `OPENROUTER_API_KEY`（global mise に age 暗号化で登録済み）。
 
 ### Prompt-only generation
 
@@ -54,6 +45,8 @@ Default to the cheapest model. Only step up when the user asks for quality or th
 | `google/gemini-3.1-flash-image`      | $0.50 / $3.0                       | 1K, 2K      | Quality matters |
 
 Other OpenRouter image models can be passed to `--model` as-is. `google/gemini-3-pro-image` is the only one that reaches 4K, at $2.0 / $12.0.
+
+価格は変動する。実行前に [OpenRouter の model ページ](https://openrouter.ai/models) で単価を確認し、見積りに確認日を添える。
 
 ## Resolution
 
