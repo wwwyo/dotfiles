@@ -9,7 +9,7 @@
 
 ## Secret（保管・注入・漏洩時）
 
-- secret は平文で repo・設定ファイル・frontend bundle・拡張の storage に置かない。ローカルは mise+age（[secret-env](../../secret-env/SKILL.md)）、サーバー側は provider の secret 機能（`wrangler secret put` 等）で注入。
+- 開発者の共有 secret は平文で repo・設定ファイル・frontend bundle・拡張の storage に置かない。ローカルは mise+age（[secret-env](../../secret-env/SKILL.md)）、サーバー側は provider の secret 機能（`wrangler secret put` 等）で注入。
 - frontend・ブラウザ拡張・モバイルアプリに secret を持たせない — 利用者全員が同じ秘密を持つので制御にならない。サイトキー（Turnstile sitekey・publishable key 等「公開を前提に設計されたキー」）は例外で、それが本当に公開前提かを provider 資料で確認する。BYOK 等で利用者自身の key を拡張内に預かる設計は [extension.md](extension.md)。
 - 漏洩時: まず revoke/rotate（新しい key を発行してから旧 key を無効化）、repo・コミット履歴・ログ・issue・AI への貼り付け跡を洗う、再発防止として該当経路を skill/フックに反映。rotate の手順は予め各 provider ごとに控えておく。
 
