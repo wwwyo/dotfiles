@@ -122,22 +122,25 @@ video_uri=$(jq -r '.response.generateVideoResponse.generatedSamples[0].video.uri
 [ -n "$video_uri" ] || { echo "no video in response" >&2; exit 1; }
 
 # 取得は手動リダイレクトで行う。curl -L はカスタムヘッダをリダイレクト先へも
-# 送りかねないので、キーは Gemini 系の origin（*.googleapis.com）にだけ渡す
+# 送りかねないので、リダイレクトを数え、HTTPS で Gemini 系 origin
+# （*.googleapis.com）へのホップにだけキーを渡す。最後に 2xx で終える
 url="$video_uri"
-for _ in 1 2 3 4 5; do
+hops=0
+while :; do
+  case "$url" in https://*) ;; *) echo "refusing non-HTTPS URL: $url" >&2; exit 1 ;; esac
   host=$(python3 -c 'from urllib.parse import urlparse; import sys; print(urlparse(sys.argv[1]).netloc)' "$url")
   hdr=()
   case "$host" in *.googleapis.com) hdr=(-H "x-goog-api-key: ${GEMINI_API_KEY}") ;; esac   # 別ホストへキーは渡さない
   code=$(curl --silent --show-error -o out.mp4 -w '%{http_code}' "${hdr[@]}" "$url") \
     || { echo "download failed ($host)" >&2; exit 1; }
   case "$code" in
-    3*) url=$(curl --silent --show-error -o /dev/null -w '%{redirect_url}' "${hdr[@]}" "$url")
+    2*) [ -s out.mp4 ] || { echo "empty body from $host" >&2; exit 1; }; break ;;
+    3*) hops=$((hops + 1)); [ "$hops" -le 5 ] || { echo "too many redirects" >&2; exit 1; }
+        url=$(curl --silent --show-error -o /dev/null -w '%{redirect_url}' "${hdr[@]}" "$url")
         [ -n "$url" ] || { echo "redirect without Location" >&2; exit 1; } ;;
-    2*) break ;;
     *)  echo "download failed: HTTP $code ($host)" >&2; exit 1 ;;
   esac
 done
-[ -s out.mp4 ] || { echo "no bytes written to out.mp4" >&2; exit 1; }
 ```
 
 - **生成動画はサーバ側で2日で削除される**（公式記載）。2日以内にダウンロードする
