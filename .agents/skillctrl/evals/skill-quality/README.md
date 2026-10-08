@@ -10,7 +10,7 @@ baselineは一時workspaceで実行する。oldのrunはこのtreeに保存し�
 対象snapshotは `db1fa8c3be8f29278ba6a9f1f35ad6f2d0e39abf`。
 後続のmain取り込み・レビュー修正を含む最新headでは全モデル評価を再実行していない。
 2026-10-03にagent-qaの4ケースを削除し、e2eの発火・非発火ケースを4件追加した。
-現行も82依頼だが、以下の保存結果は変更前のケース集合の実測であり、新しい集合では再評価していない。
+現行は84依頼だが（2026-10-08 に image-generation → media-generation の rename に伴い動画2件を追加）、以下の保存結果は変更前のケース集合の実測であり、新しい集合では再評価していない。
 
 | 評価 | Current |
 | --- | ---: |
@@ -55,7 +55,7 @@ current単体の82依頼では、この依頼の誤発火も含めて上表を�
 
 ## 方法と限界
 
-- 現行の `triggers.json` はsecret-envを含む31 skillを扱う82依頼。
+- 現行の `triggers.json` はsecret-envを含む31 skillを扱う84依頼。
   タスク・scheduled automationの実運用は検証しない。
 - 全40 skillをGit archiveで固定し、Pi自身のloaderで読み込みを確認する。
   user queryを加工せず、対象snapshotのSKILL.mdを実際に読めたことを発火の証拠にする。

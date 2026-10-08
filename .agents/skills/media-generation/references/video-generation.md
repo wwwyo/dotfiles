@@ -28,7 +28,13 @@ WaveSpeed を選んだときだけ登録する。[secret-env](../../secret-env/S
 mise set --age-encrypt WAVESPEED_API_KEY='…'   # recipient が自動導出できない場合は skill 内の手順参照
 ```
 
-登録後は `mise env` で復号値が出ることを確認するだけにする。**現在この変数は未登録** — WaveSpeed を使わないなら登録しない。
+登録後は**値を出さずに「設定済みか」だけ**確認する（`mise env` は復号値を全部並べてしまうので使わない）:
+
+```bash
+mise x -- sh -c '[ -n "${WAVESPEED_API_KEY:-}" ] && echo "WAVESPEED_API_KEY: set"'
+```
+
+**現在この変数は未登録** — WaveSpeed を使わないなら登録しない。
 
 ## 無料枠と課金を混同しない
 
@@ -97,8 +103,8 @@ No text changes, no new objects. Natural daylight. Ambient street sound only.
 
 ```js
 import { fal } from "@fal-ai/client";
-// FAL_KEY は環境変数から自動で読まれる
-const { request_id } = await fal.queue.submit("minimax/h3-max/image-to-video", {
+// FAL_KEY は環境変数から自動で読まれる。subscribe は完了まで待って結果を返す
+const result = await fal.subscribe("minimax/h3-max/image-to-video", {
   input: {
     prompt: "…上の prompt…",
     image_url: "https://…/first-frame.jpg", // 開始画像（縦横比が出力に踏襲される）
@@ -108,14 +114,10 @@ const { request_id } = await fal.queue.submit("minimax/h3-max/image-to-video", {
   },
   logs: true,
 });
-const status = await fal.queue.status("minimax/h3-max/image-to-video", {
-  requestId: request_id, logs: true,
-});
-const result = await fal.queue.result("minimax/h3-max/image-to-video", {
-  requestId: request_id,
-});
 console.log(result.data.video.url);   // ここで取得
 ```
+
+- 非同期で回したいときは `fal.queue.submit` → `fal.queue.status` → `fal.queue.result`（公式ドキュメントの Queue 節）
 
 - `duration` の出力は要求より最大 ~0.7秒長いことがある。課金は実出力基準で見積もる
 - `image_url` を省略すると text-to-video として扱われ 16:9 になる
@@ -129,18 +131,25 @@ SUBMIT=$(curl --silent --show-error --fail-with-body \
   --url https://api.wavespeed.ai/api/v3/wavespeed-ai/minimax-h3/image-to-video \
   --header "Authorization: Bearer ${WAVESPEED_API_KEY}" \
   --header "Content-Type: application/json" \
-  --data '{"prompt":"…","image":"https://…/first-frame.jpg","resolution":"480p","duration":5}')
-ID=$(printf '%s' "$SUBMIT" | jq -r '.data.id')
+  --data '{"prompt":"…","image":"https://…/first-frame.jpg","resolution":"480p","duration":5}') \
+  || { echo "submit failed" >&2; exit 1; }
+ID=$(printf '%s' "$SUBMIT" | jq -r '.data.id // empty')
+[ -n "$ID" ] || { printf 'submit failed: %s\n' "$SUBMIT" >&2; exit 1; }
 
 RESULT_URL="https://api.wavespeed.ai/api/v3/predictions/${ID}/result"
-while true; do
+deadline=$(( $(date +%s) + 600 ))   # 打ち切り時刻（例: 10分）。超えたら失敗として止まる
+sleep_s=2
+while :; do
+  [ "$(date +%s)" -ge "$deadline" ] && { echo "polling timed out: $RESULT_URL" >&2; exit 1; }
   RESP=$(curl --silent --show-error --fail-with-body --request GET \
-    --url "$RESULT_URL" --header "Authorization: Bearer ${WAVESPEED_API_KEY}")
-  DATA=$(printf '%s' "$RESP" | jq -e '.data')
+    --url "$RESULT_URL" --header "Authorization: Bearer ${WAVESPEED_API_KEY}") \
+    || { echo "result poll failed" >&2; exit 1; }        # HTTP エラーで止める
+  DATA=$(printf '%s' "$RESP" | jq -e '.data') \
+    || { printf 'unexpected response: %s\n' "$RESP" >&2; exit 1; }
   case "$(printf '%s' "$DATA" | jq -er '.status')" in
     completed) printf '%s\n' "$DATA" | jq '.outputs'; break ;;
     failed|cancelled|timeout|deleted) printf '%s\n' "$DATA" | jq . >&2; exit 1 ;;
-    *) sleep 2 ;;   # 長いタスクほど間隔を広げる
+    *) sleep "$sleep_s"; sleep_s=$(( sleep_s < 30 ? sleep_s * 2 : sleep_s )) ;;  # 長いタスクほど間隔を広げる
   esac
 done
 ```
@@ -148,20 +157,27 @@ done
 **Google Veo API（代替）** — REST（[公式ドキュメント](https://ai.google.dev/gemini-api/docs/veo) の例に基づく。text-to-video の形。image-to-video は同ドキュメントの `image` フィールド / Python SDK の `image=` を使う）:
 
 ```bash
-operation_name=$(curl -s \
+operation_name=$(curl --silent --show-error --fail-with-body \
   "https://generativelanguage.googleapis.com/v1beta/models/veo-3.1-fast-generate-preview:predictLongRunning" \
   -H "x-goog-api-key: ${GEMINI_API_KEY}" -H "Content-Type: application/json" -X POST \
   -d '{"instances":[{"prompt":"…"}],
-       "parameters":{"aspectRatio":"9:16","durationSeconds":"4"}}' | jq -r .name)
+       "parameters":{"aspectRatio":"9:16","durationSeconds":"4"}}' | jq -r '.name // empty')
+[ -n "$operation_name" ] || { echo "submit failed" >&2; exit 1; }
 
-while true; do
-  r=$(curl -s -H "x-goog-api-key: ${GEMINI_API_KEY}" \
-    "https://generativelanguage.googleapis.com/v1beta/${operation_name}")
+deadline=$(( $(date +%s) + 600 ))   # 打ち切り時刻（例: 10分）。超えたら失敗として止まる
+while :; do
+  [ "$(date +%s)" -ge "$deadline" ] && { echo "polling timed out: $operation_name" >&2; exit 1; }
+  r=$(curl --silent --show-error --fail-with-body \
+    -H "x-goog-api-key: ${GEMINI_API_KEY}" \
+    "https://generativelanguage.googleapis.com/v1beta/${operation_name}") \
+    || { echo "poll failed" >&2; exit 1; }               # HTTP エラーで止める
+  err=$(jq -r '.error.message // empty' <<<"$r"); [ -z "$err" ] || { echo "$err" >&2; exit 1; }
   [ "$(jq -r .done <<<"$r")" = "true" ] && break
   sleep 10
 done
-video_uri=$(jq -r .response.generateVideoResponse.generatedSamples[0].video.uri <<<"$r")
-curl -L -o out.mp4 -H "x-goog-api-key: ${GEMINI_API_KEY}" "$video_uri"
+video_uri=$(jq -r '.response.generateVideoResponse.generatedSamples[0].video.uri // empty' <<<"$r")
+[ -n "$video_uri" ] || { echo "no video in response" >&2; exit 1; }
+curl -L --fail -o out.mp4 -H "x-goog-api-key: ${GEMINI_API_KEY}" "$video_uri"
 ```
 
 - **生成動画はサーバ側で2日で削除される**（公式記載）。2日以内にダウンロードする

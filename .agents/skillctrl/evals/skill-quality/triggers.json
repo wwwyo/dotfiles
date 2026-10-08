@@ -27,6 +27,8 @@
   {"id":"hallmark-near-miss","skill":"hallmark","should_trigger":false,"query":"保存APIのレスポンスschemaを見直して、error codeを統一して。画面やCSSのデザイン変更は不要です。"},
   {"id":"image-positive","skill":"media-generation","should_trigger":true,"query":"OpenRouter の画像生成モデルを使い、喫茶店の入口に置く木製看板の画像を生成して。横長で夕方の光にして。"},
   {"id":"image-near-miss","skill":"media-generation","should_trigger":false,"query":"repo にあるSVG iconの path を手で整理してサイズを小さくして。画像生成モデルは使わず既存ベクターを編集したい。"},
+  {"id":"video-positive","skill":"media-generation","should_trigger":true,"query":"カフェの実写写真を基準フレームに、SNS用の5秒くらいの短いクリップを生成AIで作りたい。まず経路の選び方と実行前の見積りを確認して進めて。"},
+  {"id":"video-near-miss","skill":"media-generation","should_trigger":false,"query":"既存のmp4をffmpegで尺を切り直してGIFに変換したい。画像も動画も生成せず、手元のファイルの変換だけを行う。"},
   {"id":"ingest-positive","skill":"ingest-to-markdown","should_trigger":true,"query":"Downloads にある会議資料のPDFと売上xlsxを、このPJのrefsへ資料として保存して。後で検索できる形にしておいて。"},
   {"id":"ingest-near-miss","skill":"ingest-to-markdown","should_trigger":false,"query":"取引先に返すxlsxの売上列にSUM式を追加して、xlsxのまま保存して。資料取り込みやMarkdown変換ではありません。"},
   {"id":"writing-positive","skill":"japanese-tech-writing","should_trigger":true,"query":"日本語の技術記事を推敲して。結論と根拠が離れていて読みにくいので、論証を保ちながら段落を組み直し、冗長な表現も削りたい。"},
