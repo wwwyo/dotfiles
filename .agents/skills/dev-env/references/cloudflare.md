@@ -78,6 +78,7 @@ Cloudflare AI を手元で試す場合は、[Access 経由の実験手順](../..
 人が書き込む・高コスト処理を呼ぶ公開フォームに入れる。**人間性確認であって、認証・権限・確実な支出上限ではない** — token を渡した人が大量に呼べば課金は増える（§4 と併用）。
 
 - sitekey は公開前提（HTML に出る）。secret key はサーバー側のみ — Worker の secret として管理し、フロントエンド・拡張・公開 repo に置かない（保管は secret-env skill）。
+- Siteverify は外部 subrequest なので、安い rate limit を先に適用してから呼ぶ。token の有無・形式など外部送信しない検証は先にしてよい。偽 token の連打を検証 API への増幅にしないための順序。
 - **server-side の Siteverify 呼出しは必須**。widget だけでは何も守れない: token は偽造できる・300 秒で失効・**1 回しか検証できない**（replay は `timeout-or-duplicate`）。
 - Siteverify 応答の `success` だけでなく `hostname`（意図した domain で発行されたか）・`action`/`cdata` を検証する。`idempotency_key` を付ければ検証呼出しを安全に retry できる。
 - 公開前に、開発用 test keys が本番に残っていないか確認する。test sitekey の `1x…`（常に pass）/`2x…`（常に fail）はどの domain でも動く。`3x…` は interactive challenge を強制するキーで、pass/fail 固定ではないので混同しない。本番 secret key は dummy token を拒否するため、本番 secret と dummy sitekey の混在は必ず fail する — それで検出できる。
@@ -116,3 +117,8 @@ Cloudflare AI を手元で試す場合は、[Access 経由の実験手順](../..
 - Access の user subject 付き request では、Gateway が付ける `cf.user_id` を metadata dimension の Split by value にすればユーザーごとの予算になる。Service token request には `cf.user_id` が付かない。client が任意に申告する user ID と混同しない。
 
 出典: [Workers limits](https://developers.cloudflare.com/workers/platform/limits/)、[AI Gateway spend limits](https://developers.cloudflare.com/ai-gateway/features/spend-limits/)、[AI Gateway Access](https://developers.cloudflare.com/ai-gateway/configuration/cloudflare-access/)（確認 2026-10-08）。
+
+- Gateway の rate limit（期間ごとの request 数）と Spend limits（費用）を併用し、認証を必須にする。既定の gateway endpoint を使うバックエンドは Authenticated Gateway を有効にして長期 key をサーバー側だけへ置く。手元の実験は Access-protected custom domain を使い、有効な Access JWT を送るため gateway key は併送しない。既定 endpoint は custom domain の Access policy では保護されない。
+- BYOK は upstream provider の key と請求を別管理する。Unified Billing は対応モデルの provider key 管理を不要にし、費用を Cloudflare 側へ集約するが、認証・流量・支出制御は引き続き必要。
+
+出典: [Gateway authentication](https://developers.cloudflare.com/ai-gateway/configuration/authentication/)、[Gateway rate limits](https://developers.cloudflare.com/ai-gateway/features/rate-limiting/)、[Unified Billing](https://developers.cloudflare.com/ai-gateway/features/unified-billing/)（確認 2026-10-08）。

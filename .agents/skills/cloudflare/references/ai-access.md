@@ -19,7 +19,7 @@ mise exec -- sh -c 'cloudflared access curl "${CF_AI_ACCESS_URL:?CF_AI_ACCESS_UR
 
 `workers-ai/` prefix は AI Gateway の compat endpoint 用。モデルは用途に合う安価な open model を選び、モデルごとの現行仕様を確認する。
 
-未認証・session 期限切れなら `cloudflared` のブラウザログインをユーザーに完了してもらう。必要なら先に `cloudflared access login "$CF_AI_ACCESS_URL"` を実行する。認証後も各 request に Access credential が必要で、`cloudflared access curl` が付与する。SDK / 別 HTTP client を使う場合も、その session の credential を request に付ける。Access JWT を global env・repo・ログに保存しない。
+未認証・session 期限切れなら `cloudflared` のブラウザログインをユーザーに完了してもらう。必要なら先に `cloudflared access login --quiet "$CF_AI_ACCESS_URL"` を実行する。`--quiet` は JWT の標準出力への表示を抑えるために必要。認証後も各 request に Access credential が必要で、`cloudflared access curl` が付与する。SDK / 別 HTTP client を使う場合も、その session の credential を request に付ける。Access JWT を global env・repo・ログに保存しない。
 
 ## Verification and scope
 
