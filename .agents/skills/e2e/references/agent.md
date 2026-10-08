@@ -16,7 +16,7 @@ import { gateway } from 'ai';
 
 export default {
   targets: [{ engine: web(), app: { url: 'http://127.0.0.1:3000' } }],
-  agents: { default: { model: gateway('openai/gpt-6-luna-fast') } },
+  agents: { default: { model: gateway('anthropic/claude-haiku-5.5') } },
 } satisfies E2EConfig;
 ```
 

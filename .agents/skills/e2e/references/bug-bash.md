@@ -64,7 +64,7 @@ const shared: E2EConfig = base;
 const context =
   'Sign in with the credential the goal names. The local app sends no email and has no AI key. Never start a paid run or connect an integration. ' +
   'Not bugs: a link that opens a new tab leaves this one unchanged; accessible text splits around inline links, so judge copy by the rendered screen when a screenshot is available and never report split text alone as broken copy; an infinite-scroll "Loading more" sentinel loads when scrolled into view; images lazy-load, so scroll and wait before calling one blank.';
-const persona = { model: gateway('openai/gpt-6-luna-fast'), maxSteps: 40, maxModelCalls: 40, context };
+const persona = { model: gateway('anthropic/claude-haiku-5.5'), maxSteps: 40, maxModelCalls: 40, context };
 
 export default {
   ...shared,

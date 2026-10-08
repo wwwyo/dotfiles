@@ -62,10 +62,12 @@ key, or a local endpoint. Authenticate:
 | OpenRouter | Set `OPENROUTER_API_KEY` |
 | Local or self-hosted endpoint | Set the endpoint URL and a model it serves, plus a key if required |
 
-Switching an existing config to ChatGPT: install `ai` and `@ai-sdk/openai`,
-set `model: chatgpt('gpt-6-luna')` from `e2e/oauth/chatgpt`, run `mise x -- e2e
-login openai`. `mise x -- e2e models` lists the ids each login serves. Use API keys
-in CI.
+Switching an existing config to Haiku 5.5: with an explicitly selected Vercel
+AI Gateway connection, use `model: gateway('anthropic/claude-haiku-5.5')`.
+For the default OpenCode Go connection, follow [OpenCode Go setup](opencode-go.md)
+and use an Anthropic Messages adapter with `claude-haiku-5-5`; the model does not
+use ChatGPT subscription authentication. `mise x -- e2e models` lists the ids
+each login serves. Use API keys in CI.
 
 ## The config
 
@@ -91,7 +93,7 @@ export default {
   // Model behind every agent.* step.
   agents: {
     default: {
-      model: gateway('openai/gpt-6-luna-fast'),
+      model: gateway('anthropic/claude-haiku-5.5'),
       system: 'You are a thorough QA agent. Verify every outcome on screen.',
     },
   },
@@ -278,7 +280,7 @@ export default {
   workers: 1,
   agents: {
     default: {
-      model: gateway('openai/gpt-6-luna-fast'),
+      model: gateway('anthropic/claude-haiku-5.5'),
       tools: mobileTools(iphone),
     },
   },
