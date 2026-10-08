@@ -49,6 +49,7 @@ skill/AGENTS だけの変更は、原因が判断基準・知識の欠落にあ�
 3. **skill・`AGENTS.md` への還元** — 手順・規約・非自明な事実の学び（`{REPO_ROOT}` の `.agents/skills/<domain>/`・`AGENTS.md`・`docs/`）。対象 repo に tool/テーマ別の reference を持つ学び skill（dotfiles の `dev-env` 等）や AGENTS.md の棲み分け規約があるなら、そちらを優先して従う — `AGENTS.md` は全 session のコンテキストに載るので、index 1行で済む知見を節として膨らませない
 4. **wiki への還元** — 抽象的な概念・判断の背景・横断的な理解。`{REPO_ROOT}` = `wwwyo/me`（fallback を含む）のときの置き場でもあり、wiki skill の構造規約に従う
 
+- **書き先は学びの domain で決め、session の話題では決めない。** PJ の session で拾った学びでも、内容がその PJ の理解・意思決定でないなら PJ の hub ページ（`wiki/<pj>/<pj>.md` 等）には置かない — 概念・横断的な知識は該当 domain のページか tech/ 側へ、置き場がなければ還元しない。session の文脈は根拠の記録に使うだけで、格納先の根拠にしない
 - 複数 session にまたがる同じ摩擦・失敗は1つの学びに束ねる。session ごとの個別の記述より、パターン（再発した手順ミス・共通の誤解）を優先する
 - 学習候補をそのまま転記しない。記録は evaluator の所見 — 既に書かれている内容・個人の好み・一回きりの事象は還元しない
 - **削除も consolidation の仕事** — repo を読む過程で見つけた不要な記述（stale な code comment・どこからも参照されない skill・役目を終えた docs/wiki の節）は、学びの還元と同じ PR で削る
