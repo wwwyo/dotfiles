@@ -1,8 +1,19 @@
-# Cloudflare でサービスを公開する
+# Cloudflare の設定・公開・課金
 
 Workers への公開設定・入口管理・abuse 対策・コストの一次情報。金額・制限・プラン別機能は変わりやすいため、各節末にリンクと確認日を置く。設定を実行する前に最新の公式ドキュメントで再確認する。確認日 2026-10-04。
 
-Cloudflare 操作の優先順位（`cf` CLI 優先・`cf cli search` で探す・未移行プロジェクトは Wrangler 継続）は global ルールと dev-env skill が SSOT なのでここでは繰り返さない。この reference は公開設定に関わる state だけを扱う。Access アプリケーションや Builds の状態など、config ファイルで宣言できない resource がある — 「IaC に書いたから管理下」とは限らない（§7）。詳細は [cloudflare skill](../../cloudflare/SKILL.md)。
+Cloudflare 固有の設定・制約はこの reference に集約する。公開するか・どのリスクを引き受けるかは [solo-product](../SKILL.md)、共通の [セキュリティ確認](security.md)・[課金と abuse の設計](cost.md) を参照する。製品選定は [cloudflare skill](../../cloudflare/SKILL.md)。
+
+## CLI・契約・デプロイ
+
+- **`cf` は beta で未対応領域がある**（`tail`・secret の個別操作など）。未対応の操作は Wrangler に残す。`wrangler.jsonc` → `cloudflare.config.ts` への移行は `cf migrate` で機械的にできる
+- **R2 の有効化には R2 subscription の追加が必要**（無料枠あり。有効化には支払い方法の登録が前提。Workers Paid 契約は不要 — 月 $5 は Workers Paid の最低料金で別の subscription）。subscription が無いアカウントでは API が `403 / error 10042`（`NotEntitled`）を返し続け、CLI 側では突破できない。10042 は KV namespace 不正等でも出る entitlement 汎用コード。支払い方法の登録はユーザー承認が要るので、R2 を使う設計では前提条件として早期に確認を上げる
+- **公開データの配信は R2 public bucket 直配信 + CDN cache + rate limit で足りる**。ただし cache / rate limit / WAF / Bot Management は custom domain（bucket と同じ account に zone として追加した domain）必須 — `r2.dev` の公開 URL は rate-limit 付きの開発用で、本番配信には使わない。配信用 Worker を噛ませるのは「完成前の URL への直接アクセスを止めたい」等の制御が必要な場合だけ
+- **Bot Fight Mode は API client にも challenge を出し得る**。機械的アクセスを受け付ける zone では有効化しない — bot 対策は一律排除ではなく cache + rate limit で受ける（こちらも custom domain 必須）
+- **Workers Builds の結果は GitHub Actions の check には出ない**。build の成否・ログは `cf builds` か Cloudflare ダッシュボードで確認する（Actions 側を待っても来ない）。`watch_paths` には worker のエントリだけでなく共有依存ファイル（shared packages・共通設定）も含める — 含まれない変更では build が skip される
+- **Workers AI binding のキャンセルは伝播しない** — 呼び出し側を abort・timeout しても binding 側の推論は走り切る（課金と log に残る）
+
+手元の AI Gateway 利用設定は [dev-env の AI Gateway 設定](../../dev-env/references/cloudflare.md)を参照する。
 
 ## 1. Custom domain と TLS
 
@@ -40,7 +51,7 @@ Cloudflare 操作の優先順位（`cf` CLI 優先・`cf cli search` で探す�
 - 認証方式の選択: 個人なら policy は「Cloudflare アカウントのメンバー」が最も確実。メール条件を使う場合、`email_domain` はそのドメインの検証済みアドレスを持つ全員を許可する — `gmail.com` のような共有ドメインを指定すると事実上公開になる。自分だけなら Zero Trust 側でメールアドレス完全一致（`emails`）のポリシーにする。外部 IdP/OIDC・service token・複雑なポリシーは Zero Trust 側で高度設定。機械からのアクセス（CI・他サービス）は Service Auth ポリシー + service token（`CF-Access-Client-Id`/`CF-Access-Client-Secret` header）。**service token をクライアントアプリや公開リポジトリに埋め込まない** — 共有 token は全員が持つので制御にならず、漏洩時に全利用者を止められない。
 - Worker 側は `ctx.access.getIdentity()` または JWT / `/cdn-cgi/access/get-identity` でサインイン済みユーザーを読める。
 - 注意点:
-  - Access のログインは `CF-Authorization` cookie で維持される。ブラウザの fetch が `credentials: "omit"` だと cookie が送られずログイン済みでも 403/302 になる — preview から API を呼ぶ SPA では `credentials: "include"` と cookie の SameSite/ドメインを確認。
+  - Access のログインは `CF_Authorization` cookie で維持される。ブラウザの fetch が `credentials: "omit"` だと cookie が送られずログイン済みでも 403/302 になる — preview から API を呼ぶ SPA では `credentials: "include"` と cookie の SameSite/ドメインを確認。
   - preflight（OPTIONS）には cookie が付かないため Access が 403 を返す。Access app の CORS 設定で「Cloudflare に preflight 応答させる」または「OPTIONS を origin へ bypass」する（bypass するなら origin 側で CORS を強制すること）。
   - iframe・third-party cookie ブロック・Safari の挙動で Access cookie が送られないケースがある。Incognito での検証は避ける。
   - Turnstile の sitekey は hostname 紐付け — preview の hostname を widget の許可 hostname に含めるか、preview 用 widget を分ける（§5）。
@@ -57,7 +68,7 @@ Cloudflare 操作の優先順位（`cf` CLI 優先・`cf cli search` で探す�
 - **WAF rate limiting rules** — Worker 実行前に Cloudflare エッジで弾く。プラン差は 3 軸で分かれる（確認 2026-10-04）。ルール数: Free 1・Pro 2・Business 5（Enterprise 別途）。expression: Free は Path/Verified Bot のみ、Pro で Host/URI/Full URI/Query、Method/Source IP/User Agent は Business 以上。counting characteristics（何で数えるか）: Free/Pro は IP のみ、Business で IP with NAT support、Query/Host/Header/Cookie/ASN 等の key は Enterprise with Advanced Rate Limiting のみ。period: Free 10s・Pro 最大 1 分・Business 最大 10 分。重要な注意: **「正確に N リクエスト止める」仕組みではない** — counter 反映に最大数秒の遅延があり、data center 単位でカウントされる。絶対的な上限として扱わない。
 - **Worker Rate Limiting binding** — Worker コード内から `env.X.limit({key})` で呼ぶ。key はユーザー ID・API key・tenant・path 等任意の文字列。period は 10 または 60 秒のみ。**カウンタは Cloudflare location 単位でローカル** — Sydney で 100/分を超えても他 location からは来る。global な厳密上限ではない。eventually consistent で「正確な会計」には使えないと公式が明記。dashboard に binding が出ないので、429 応答は Workers Logs / Analytics Engine で自分で観測する。IP を key にするのは非推奨（モバイル NAT で巻き込む）。
 - 両者の使い分け: 単純な無差別アクセスの流量制御は WAF rule（エッジで止まり課金も減る）。「ログインユーザーごと」「課金が重い endpoint だけ」は binding で key 設計。分散攻撃・正規アカウントの大量呼出しは per-IP では防げない — ユーザー別 quota・全体 quota を別途設ける。
-- rate limit は課金上限ではない。厳密な支出制御が必要なら、利用者別 quota・アカウント全体の日次/月次 quota・同時実行数制限・リクエスト body 上限・timeout・外部 API への fanout 制御・retry 回数・AI の最大 token を組み合わせる。quota の集計先は整合性を確認して選ぶ — KV は結果整合で原子的な read-modify-write がなく並行更新を取りこぼすため厳密な上限に使えず、厳密さが要るなら Durable Object（単一の強整合オブジェクト）や D1 の transaction で枠を先に確保する。増幅の分析は [cost.md](cost.md)。
+- rate limit は課金上限ではない。厳密な支出制御が必要なら、利用者別 quota・アカウント全体の日次/月次 quota・同時実行数制限・リクエスト body 上限・timeout・外部 API への fanout 制御・retry 回数・AI の最大 token を組み合わせる。quota の集計先は整合性を確認して選ぶ — KV は結果整合で原子的な read-modify-write がなく並行更新を取りこぼすため厳密な上限に使えず、厳密さが要るなら Durable Object（単一の強整合オブジェクト）や D1 の transaction で枠を先に確保する。増幅の分析は [共通の課金・abuse 設計](cost.md)。
 - 検証: ローカル or preview で `limit()` が `{ success: false }` を返し Worker が 429 を返すこと。WAF rule の発動は zone の Security Events（Security > Events）で確認する。429 が返ってもログに記録されるか確認。
 
 出典: https://developers.cloudflare.com/waf/rate-limiting-rules/、https://developers.cloudflare.com/workers/runtime-apis/bindings/rate-limit/ （確認 2026-10-04）
@@ -67,6 +78,7 @@ Cloudflare 操作の優先順位（`cf` CLI 優先・`cf cli search` で探す�
 人が書き込む・高コスト処理を呼ぶ公開フォームに入れる。**人間性確認であって、認証・権限・確実な支出上限ではない** — token を渡した人が大量に呼べば課金は増える（§4 と併用）。
 
 - sitekey は公開前提（HTML に出る）。secret key はサーバー側のみ — Worker の secret として管理し、フロントエンド・拡張・公開 repo に置かない（保管は secret-env skill）。
+- Siteverify は外部 subrequest なので、安い rate limit を先に適用してから呼ぶ。token の有無・形式など外部送信しない検証は先にしてよい。偽 token の連打を検証 API への増幅にしないための順序。
 - **server-side の Siteverify 呼出しは必須**。widget だけでは何も守れない: token は偽造できる・300 秒で失効・**1 回しか検証できない**（replay は `timeout-or-duplicate`）。
 - Siteverify 応答の `success` だけでなく `hostname`（意図した domain で発行されたか）・`action`/`cdata` を検証する。`idempotency_key` を付ければ検証呼出しを安全に retry できる。
 - 公開前に、開発用 test keys が本番に残っていないか確認する。test sitekey の `1x…`（常に pass）/`2x…`（常に fail）はどの domain でも動く。`3x…` は interactive challenge を強制するキーで、pass/fail 固定ではないので混同しない。本番 secret key は dummy token を拒否するため、本番 secret と dummy sitekey の混在は必ず fail する — それで検出できる。
@@ -83,11 +95,11 @@ Cloudflare 操作の優先順位（`cf` CLI 優先・`cf cli search` で探す�
   - **Budget alerts**（Billing > Billable Usage）— アカウント横断の usage-based 支出が閾値を超えたらメール。**informational only で、サービスを止めない・上限でもない**。請求確定は invoice。
   - **Usage notifications**（Notifications）— 製品ごとの指標（bytes・request 数等）で通知。これも通知のみ。
   - Cloudflare の請求通知系は自動停止しない。**確実に止めたいなら自分で kill switch を持つ**（下記）。
-- kill switch の作り方（予算を超えたら fail closed）: Worker 先頭で kill flag（KV/env var/config）を読み即 503 返却、workers_dev/route の disable、deploy の巻き戻し、外部 AI key の revoke。フラグを置く場所と操作手順を予め決めておく — 慌てて探すと遅い。
+- kill switch の作り方（予算を超えたら fail closed）: Worker 先頭で kill flag（KV/env var/config）を読み即 503 返却、入口ごとの disable/Access block、外部 AI key の revoke。workers.dev の disable は custom domain や明示的に開いた preview URL を止めない。deploy の巻き戻しは新規の消費を止める保証ではないので、停止手段として単独で頼らない。フラグを置く場所と操作手順を予め決めておく — 慌てて探すと遅い。
 - 観測: Billable Usage dashboard（invoice と同じ系統の日次内訳）、Workers Analytics、Workers Logs/Logpush。通知は Budget alerts + 製品別 usage notification を併用し、閾値は「月予算の 50%/80%」のように段階化する。
-- ロールバック: Versions/Deployments から前の version へ戻せる。version にはコード・binding・その時点の secret 値が含まれるため、rotate 後に巻き戻すと旧 secret が復活し得る（cost.md「運用・復旧」）。version 外の state（routes・workers.dev・custom domain・Access・保存データ）は戻らない — 入口の desired state は config 側で管理する。
+- ロールバック: Versions/Deployments から前の version へ戻せる。version にはコード・binding・その時点の secret 値が含まれるため、rotate 後に巻き戻すと旧 secret が復活し得る（[共通の運用・復旧](cost.md#運用復旧)）。version 外の state（routes・workers.dev・custom domain・Access・保存データ）は戻らない — 入口の desired state は config 側で管理する。
 
-出典: https://developers.cloudflare.com/workers/platform/pricing/、https://developers.cloudflare.com/workers/platform/limits/、https://developers.cloudflare.com/billing/manage/budget-alerts/、https://developers.cloudflare.com/billing/manage/billable-usage/ （確認 2026-10-04）
+出典: https://developers.cloudflare.com/workers/platform/pricing/、https://developers.cloudflare.com/workers/platform/limits/、https://developers.cloudflare.com/billing/manage/budget-alerts/、https://developers.cloudflare.com/billing/manage/billable-usage/ （確認 2026-10-04）。rollback の secret・設定範囲は [Workers rollbacks](https://developers.cloudflare.com/workers/versions-and-deployments/rollbacks/)（確認 2026-10-08）。
 
 ## 7. config/IaC と dashboard state の境界
 
@@ -96,3 +108,17 @@ Cloudflare 操作の優先順位（`cf` CLI 優先・`cf cli search` で探す�
 - Wrangler にだけある設定と cf にだけある設定があるので、プロジェクトがどちらで deploy するかを確認してから config を書く。未移行 Wrangler プロジェクトに cf 前提の記述を足さない。
 - secret の値そのものは config に書かない（`wrangler secret put` 相当の API / cf の secret 操作で入れる）。
 - 公開サービスは https のみで配信する。セキュリティの前提として、zone 設定の Always Use HTTPS（`always_use_https`）を on にして http を 301 → https にする（確認: `curl -sI http://<domain>/`）。off のままだと http/https 両方で 200 配信され、平文アクセスを許すうえ重複コンテンツにもなり得る。
+
+## 8. Workers の入力上限と AI Gateway の支出制御
+
+- Workers の request body 上限は Workers Paid 契約ではなく **zone の plan** で決まる。Free/Pro は 100 MB。製品上限をアプリの受入上限としてそのまま使わず、upload/API ごとに小さい上限を設ける。
+- AI Gateway の Spend limits は既知のモデル料金に基づく累計費用を window ごとに追跡し、超過後の request を provider へ送る前に `429` で拒否する。Unified Billing と BYOK の両方が対象。Settings > Spend limits または API で設定する。
+- **厳密な請求上限ではない**。費用は request 完了後に記録され、eventually consistent なため同時実行で一時的に超過する。料金推計も best effort。対象モデルの価格認識と、gateway を迂回する経路がないかを確認し、同時実行数・最大 token・アプリ側 quota と組み合わせる。
+- Access の user subject 付き request では、Gateway が付ける `cf.user_id` を metadata dimension の Split by value にすればユーザーごとの予算になる。Service token request には `cf.user_id` が付かない。client が任意に申告する user ID と混同しない。
+
+出典: [Workers limits](https://developers.cloudflare.com/workers/platform/limits/)、[AI Gateway spend limits](https://developers.cloudflare.com/ai-gateway/features/spend-limits/)、[AI Gateway Access](https://developers.cloudflare.com/ai-gateway/configuration/cloudflare-access/)（確認 2026-10-08）。
+
+- Gateway の rate limit（期間ごとの request 数）と Spend limits（費用）を併用し、認証を必須にする。既定の gateway endpoint を使うバックエンドは Authenticated Gateway を有効にして長期 key をサーバー側だけへ置く。手元の実験は Access-protected custom domain を使い、有効な Access JWT を送るため gateway key は併送しない。既定 endpoint は custom domain の Access policy では保護されない。
+- BYOK は upstream provider の key と請求を別管理する。Unified Billing は対応モデルの provider key 管理を不要にし、費用を Cloudflare 側へ集約するが、認証・流量・支出制御は引き続き必要。
+
+出典: [Gateway authentication](https://developers.cloudflare.com/ai-gateway/configuration/authentication/)、[Gateway rate limits](https://developers.cloudflare.com/ai-gateway/features/rate-limiting/)、[Unified Billing](https://developers.cloudflare.com/ai-gateway/features/unified-billing/)（確認 2026-10-08）。

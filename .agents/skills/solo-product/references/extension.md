@@ -15,6 +15,6 @@ BYOK で利用者自身の API key を預かる場合は拡張内に置くこと
 
 - ページ JS は拡張 API を直接叩けない（isolated world と拡張 ID 境界）。共有面は DOM・イベント・メッセージ中継だけ。
 - 最小権限の考え方は「長期秘密をページ同居プロセス（content script）に置かない」こと。侵害時の被害を「キー漏洩」から「機能の駆動（料金・濫用）」へ一段下げられる。
-- 機能駆動への対策はリクエスト経路で分ける: 自前 Worker を経由する場合は Turnstile（server-side siteverify）・rate limit・同時実行上限が効く（cost.md）。BYOK key で background から provider へ直接送る構成ではそれらは効かず、濫用は利用者 key の枠を消費する — ページ由来メッセージの検証と、provider 側の quota/spend limits で受ける。
+- 機能駆動への対策はリクエスト経路で分ける: 自前のバックエンドを経由する場合は人間性確認・rate limit・同時実行上限を設けられる（[共通の課金・abuse 設計](cost.md)）。Cloudflare 固有の検証 API と設定は [Cloudflare の設定・公開・課金](cloudflare.md)。BYOK key で background から provider へ直接送る構成ではそれらは効かず、濫用は利用者 key の枠を消費する — ページ由来メッセージの検証と、provider 側の quota/spend limits で受ける。
 
 出典: https://developer.chrome.com/docs/extensions/reference/api/storage、https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/API/storage/StorageArea/setAccessLevel （確認 2026-10-08）
