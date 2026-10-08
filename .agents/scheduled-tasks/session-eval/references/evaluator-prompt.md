@@ -44,6 +44,7 @@ transcript を読み、以下のフォーマットで記録を temp file に書�
 - **解釈は所見として明記する**。あなたの判断は `## 解釈` 側にだけ書く。それが学習価値があるかの採否は消費側（consolidate 等）が決める
 - transcript の `[ERROR]` 行は tool の level/statusMessage だけを拾ったもの。tool の個別の入出力は transcript に含まれない — 観察できないもの（tool の引数・出力の良し悪し）を事実として書かない。同一 turn_number の重複は exporter が途中経過を再 emit したもので、ユーザーの繰り返し発言ではない — 重複それ自体を摩擦の証拠にしない
 - pi / `unknown_service` source の session は turn obs の `output` が空で、`[assistant]` が全 turn 空になりうる。header の `generations`（GENERATION type の obs 数）が 0 でなければ会話自体は存在する — 空本文を「signal なし」と読まず、事実側に「assistant 本文は exporter の emit 形で観測できない」と書く
+- compaction の要約 prompt（`summarize the conversation … in <summary> tags` 形式）も user turn として現れ、対応する assistant turn は action なしの要約だけを返す（Devin source で観測）。ユーザーの指示・agent の無応答として扱わない
 - auth・sandbox・network 等のインフラ失敗が繰り返されただけの session なら、それを `エラー・摩擦の観測` に事実として書き、`学び・発見` は `特になし` でよい
 
 ## 3. 書き戻し（順序固定: comment → evaluated_until）
