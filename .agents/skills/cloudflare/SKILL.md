@@ -17,6 +17,12 @@ For projects with a Wrangler configuration but no `cloudflare.config.ts`, keep u
 
 Manage CLI tools through mise and preserve the configured pins. Do not install `cf` with `npm install --global`. If a project needs a local `cf` dependency, follow its package manager and pin an exact version with the environment's seven-day release cooldown.
 
+## Try Cloudflare AI through Access
+
+When experimenting with Cloudflare AI or Workers AI from this development environment, use the AI Gateway custom domain protected by Cloudflare Access. Read [the local Access workflow](references/ai-access.md) before making inference requests. The request URL comes from the encrypted `CF_AI_ACCESS_URL` mise environment variable; do not fall back to a long-lived gateway token or the default gateway endpoint.
+
+This applies to interactive Cloudflare AI experiments. Product PoC development keeps the shared OpenCode policy; deployed services and unattended jobs need their own authentication design.
+
 ## Help the user find the right product
 
 - Actively surface Cloudflare products that solve the stated problem, even when the user has not named them. Explain the role each recommended product plays and why it fits.
