@@ -31,7 +31,7 @@ chezmoi diff                                           # apply 前に差分確�
   読む consumer（hook・skill・scheduled task）の切替と別の変更に分けると、存在しない・旧名の
   file を読みに行く window が空く — 両者は同じ merge に束ねる
 - **OS 分岐**: shell script は `[[ "$OSTYPE" == darwin* ]]` or `[[ -x /opt/homebrew/bin/brew ]]` で分岐。JSON/TOML 等の data file は `.tmpl` 化して `{{ if eq .chezmoi.os "darwin" }}`。macOS 専用 entry は `.chezmoiignore` で linux 無効化
-- `home/dot_gitignore.tmpl` は `{{ include "../.gitignore" }}` で repo root の `.gitignore` を読む（git 用と deploy 用の SSOT）
+- `home/dot_gitignore.tmpl` は `{{ include "../.gitignore" }}` で repo root の `.gitignore` を読む（git 用と deploy 用の SSOT）。tool が cwd に生成する cache・state dir は各 repo の `.gitignore` ではなくこの `.gitignore` へ追加する — global gitignore として全 repo に効く（`**/.cloudflare/`・`**/.firecrawl/`・`**/.pi/npm/` が先例）
 
 ## 他 repo・他セッションから触るとき
 
