@@ -9,8 +9,8 @@
 
 ## Secret（保管・注入・漏洩時）
 
-- secret は平文で repo・設定ファイル・frontend bundle・拡張の storage に置かない。ローカルは mise+age（[secret-env](../../secret-env/SKILL.md)）、サーバー側は provider の secret 機能（`wrangler secret put` 等）で注入。
-- frontend・ブラウザ拡張・モバイルアプリに secret を持たせない — 利用者全員が同じ秘密を持つので制御にならない。サイトキー（Turnstile sitekey・publishable key 等「公開を前提に設計されたキー」）は例外で、それが本当に公開前提かを provider 資料で確認する。
+- 開発者の共有 secret は平文で repo・設定ファイル・frontend bundle・拡張の storage に置かない。ローカルは mise+age（[secret-env](../../secret-env/SKILL.md)）、サーバー側は provider の secret 機能（`wrangler secret put` 等）で注入。
+- frontend・ブラウザ拡張・モバイルアプリに secret を持たせない — 利用者全員が同じ秘密を持つので制御にならない。サイトキー（Turnstile sitekey・publishable key 等「公開を前提に設計されたキー」）は例外で、それが本当に公開前提かを provider 資料で確認する。BYOK 等で利用者自身の key を拡張内に預かる設計は [extension.md](extension.md)。
 - 漏洩時: まず revoke/rotate（新しい key を発行してから旧 key を無効化）、repo・コミット履歴・ログ・issue・AI への貼り付け跡を洗う、再発防止として該当経路を skill/フックに反映。rotate の手順は予め各 provider ごとに控えておく。
 
 ## 認証・認可・入口の設計
@@ -36,6 +36,7 @@
 ## ログ・AI trace・プライバシー
 
 - ログ・AI trace（Langfuse 等）・error reporting に、ユーザーの入力全文・API key・個人情報・決済情報を送らない。送る必要がある場合はマスク・サンプリング・保持期間を決める。削除要求に応えられるかを確認する。
+- AI 呼出しの経路でも同じ確認をする: Cloudflare AI Gateway のログ・provider 側のプロンプト/レスポンス保持（zero data retention 設定・学習利用の可否）は製品・プラン・申請要否で扱いが分かれる。保持が要らない処理は zero data retention 相当を有効にするか、保持しないと明記された provider/経路を選ぶ。
 - プライバシーポリシー・利用規約・cookie バナーは、収集するデータと法域に応じて必要になる — 法的判断はここで断定せず、対象ユーザーの法域（GDPR・日本の個情保等）を確認して判断する。個人・非商用・データをほぼ持たないサービスでも、メールアドレスや投稿内容を集めるなら何を集めるかの明示が最低ライン。
 
 ## 緊急時（漏洩・侵害の兆候）

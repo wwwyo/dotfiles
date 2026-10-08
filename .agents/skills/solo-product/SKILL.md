@@ -28,6 +28,7 @@ description: "個人開発のサービスを公開・運用・緊急停止する
 | Cloudflare に公開する（custom domain・workers.dev・preview・Access・rate limit・Turnstile・コスト） | [references/cloudflare.md](references/cloudflare.md) |
 | アカウント・secret・認証/認可・input・dependency・プライバシーの確認 | [references/security.md](references/security.md) |
 | 課金対策の設計・観測・kill switch・abuse 増幅の分析 | [references/cost.md](references/cost.md) |
+| ブラウザ拡張の公開（BYOK の key 保管・content script の脅威モデル） | [references/extension.md](references/extension.md) |
 
 フェーズ別の読み方:
 
