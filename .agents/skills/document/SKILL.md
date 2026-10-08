@@ -67,7 +67,7 @@ README、設計書、ADR、提案書、技術仕様、意思決定文書など�
 `references/` ガイドラインの両方を読む。記憶や既存文書だけを基に構成を決めない。
 
 - DesignDoc: テンプレート `assets/design-doc.md` ／ ガイドライン `references/design-doc.md`
-- ADR（設計判断の記録）: テンプレート [assets/adr.md](assets/adr.md) ／ ガイドライン [references/adr.md](references/adr.md)
+- ADR（設計判断の記録）: テンプレート `assets/adr.md` ／ ガイドライン `references/adr.md`
 - README: テンプレート `assets/readme.md` ／ ガイドライン `references/readme.md`
 - PRD: `prd` スキルを参照
 - AGENTS.md（repo 起動時 index）: テンプレート `assets/agents-md.md` ／ ガイドライン `references/agents-md.md`
