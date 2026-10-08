@@ -95,7 +95,4 @@ Cloudflare 操作の優先順位（`cf` CLI 優先・`cf cli search` で探す�
 - config で管理できない・別管理の state: Access application・service token・WAF custom rule・Turnstile widget・Zero Trust 設定・Budget alerts・deploy された secret 値。これらは API/dashboard の操作対象。`cloudflare.config.ts` に書けないからと宣言できるとは限らない — 「管理対象外であること」をプロジェクトの docs に明記する。
 - Wrangler にだけある設定と cf にだけある設定があるので、プロジェクトがどちらで deploy するかを確認してから config を書く。未移行 Wrangler プロジェクトに cf 前提の記述を足さない。
 - secret の値そのものは config に書かない（`wrangler secret put` 相当の API / cf の secret 操作で入れる）。
-- **zone レベルの設定は Wrangler/`cloudflare.config.ts` に現れない**。`always_use_https`（Always Use HTTPS）・SSL/TLS mode・その他 edge 挙動は zone 設定であり、wrangler 設定だけを見て「redirect 設定は無い」と判断してはいけない。サイトの http/https 挙動を調べる・変えるときは zone 設定を別途確認する。
-  - `always_use_https` が on なら `http://<domain>/` は 301 → https を返す。確認: `curl -sI http://<domain>/`。
-  - off の場合の挙動はオリジンや別のリダイレクト設定にも依存する。「全ページが http/https 2 系統で 200 を返す」と断定せず、実際の URL の応答を curl で確認する — 両方で 200 配信されると重複コンテンツになる。
-  - zone 設定の確認は `cf` CLI の参照系（zone info / settings）、変更は `cf` CLI の write 操作 = 本番変更なので承認ルールに従う。
+- 公開サービスは https のみで配信する。セキュリティの前提として、zone 設定の Always Use HTTPS（`always_use_https`）を on にして http を 301 → https にする（確認: `curl -sI http://<domain>/`）。off のままだと http/https 両方で 200 配信され、平文アクセスを許すうえ重複コンテンツにもなり得る。
