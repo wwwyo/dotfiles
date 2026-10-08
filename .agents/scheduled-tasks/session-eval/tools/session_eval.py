@@ -386,12 +386,21 @@ def _io_marker_hit(o, needle):
     return needle in v
 
 
+def _io_prefix_hit(o, needle):
+    """input 文字列の先頭に marker がある場合だけ True。
+    fixture marker は root prompt の先頭に付ける約束なので、本文中の
+    引用 ("[Synthetic example] のような..." 等) では合成 session と
+    誤判定しない。"""
+    v = o.get("input")
+    return isinstance(v, str) and v.lstrip().startswith(needle)
+
+
 def _sentinel_hit(o):
     return _io_marker_hit(o, SENTINEL)
 
 
 def _synthetic_hit(o):
-    return _io_marker_hit(o, SYNTHETIC_MARKER)
+    return _io_prefix_hit(o, SYNTHETIC_MARKER)
 
 
 def skip_marker_kind(sid):

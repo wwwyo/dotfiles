@@ -25,6 +25,8 @@ git worktree list                       # 残ったものを点検
 
 `git fetch` が失敗したら「remote が無い」と即断しない。https remote + credential helper の破損では fetch/ls-remote が恒常的に使えないが、`gh api repos/{owner}/{repo}`（`/branches/<branch>` で head 照合）や `gh pr list` で remote 実状態は取れる。検証コマンドがその dir でエラーになるときは、別の cwd か `gh api` で再確認してから判定する（dir 内の `gh` 失敗で MERGED PR を見落とした実例あり）。認証不通が恒常化している repo は上の archived 疑いで対象外を検討する。
 
+fetch が失敗した repo では、API 照合は `origin/main` / `origin/<branch>` の local remote-tracking ref を更新しない — 下の削除判定は古い ref を見る。判定に使う remote ref の SHA が `gh api` で取れる現在の head と一致することを確認できるまで branch は消さず、一致を確認できなければ branch を残して `git gc --prune=now` も skip し、fetch 失敗と照合不可を報告に載せる。
+
 macOS 標準には `timeout` コマンドが無い（GNU coreutils 由来）。`git fetch` 等を timeout 付きにしたくても素の `timeout 60 git fetch` は command not found で空振りする。timeout なしでそのまま実行するか、`gtimeout`（coreutils）が入っている前提を確認してから使う。また `git worktree list` 等の出力を `| head` で切ると、行数がパイプのバッファ待ちで固まることがある。件数を絞りたいときはパイプせず、そのままの出力を読むかファイルへ書き出す。
 
 **worktree の削除**: `git worktree list` の各 worktree について、中身と最終更新の2つを見る。
@@ -65,9 +67,9 @@ PR の state だけで残すと、remote に push 済みで消しても失われ
 
 ## 3. gc
 
-上で worktree か branch を削除した repo で `git gc --prune=now` を実行する。何も削除しなかった repo は回収するものが無いので skip する。
+fetch が成功した、または fetch 失敗後に判定で使う remote ref の SHA を GitHub API と照合できた repo で、上で worktree か branch を削除した場合に `git gc --prune=now` を実行する。照合できない repo と何も削除しなかった repo は skip する。
 
-`gc --prune=now` は参照の無い commit の実体を消すので reflog 経由の復旧も効かなくなるが、branch 判定の 6 を守っている限り失うのは main か remote から辿れる重複だけ。detached HEAD の worktree を消した場合は、削除前に `git branch --contains <sha>` でその HEAD が local branch から到達可能かを確認しておく。
+`gc --prune=now` は参照の無い commit の実体を消すので reflog 経由の復旧も効かなくなる。branch 判定の 5 は変更内容が main に実質包含されることだけを確認し、元の commit が main や remote から到達可能とは限らない — 消した時点で同等のコードは残っても元の commit 履歴は gc で失われる。その履歴を残す必要があるなら gc 前に別 ref を作る。detached HEAD の worktree を消した場合は、削除前に `git branch --contains <sha>` でその HEAD が local branch から到達可能かを確認しておく。
 
 ## 報告
 

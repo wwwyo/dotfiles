@@ -16,6 +16,7 @@ memory 機能は feature gate と `[memories]` sub-key の 2 層:
   `disable_on_external_context`（MCP・web search が有効な thread を `memory_mode="polluted"`
   にする抑止）・`dedicated_tools`（memory tool の公開）
 
-「memory を off にする」は粒度が 3 段階ある: `features.memories = false`（機能ごと停止）、
+「memory を off にする」は粒度が 4 段階ある: `features.memories = false`（機能ごと停止）、
+`use_memories = false`（developer prompt への memory 注入・使用指示だけ止める。生成は続く）、
 `generate_memories = false`（新規生成だけ止める）、`disable_on_external_context = true`
 （外部 context がある thread だけ抑止）。現在 base は `features.memories = false`。
