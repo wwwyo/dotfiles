@@ -1,15 +1,15 @@
 # Video generation — Video A（生成AI）
 
-入口は [SKILL.md](../SKILL.md) の Video A 節。このファイルは実行手順・見積り・制約の詳細。
+入口は [SKILL.md](../SKILL.md) の Video A 節。このファイルは実行手順・制約の詳細。
 
-**確認日: 2026-10-08**（料金・schema は変動する。実行前に出典を再確認し、見積りに確認日を添える）
+**確認日: 2026-10-08**（料金・schema は変動する。実行前に公式の出典を再確認する）
 
 ## 利用経路の選び方
 
 | 経路 | key | 主なモデル | 使いどころ |
 | --- | --- | --- | --- |
 | **fal（主）** | `FAL_KEY`（登録済み） | `minimax/h3-max/{text,image,reference}-to-video`、`fal-ai/veo3.1/fast/*` 等 | 既定。短い実写系カット、静止画→動画 |
-| **WaveSpeed（代替）** | `WAVESPEED_API_KEY`（利用時に登録） | `wavespeed-ai/minimax-h3/{text,image}-to-video` 等 | open-weights 版 H3 を WaveSpeed 自社ホストで回す経路 |
+| **WaveSpeed（代替）** | `WAVESPEED_API_KEY`（利用時に登録） | `wavespeed-ai/minimax-h3/{text,image}-to-video` 等 | open-weights 版 H3 を WaveSpeed 自社ホストで回す経路。**利用は console（Web）のみ確認済み — 備考参照** |
 | **Google Veo API（代替）** | `GEMINI_API_KEY`（登録済み） | `veo-3.1-generate-preview` / `-fast` / `-lite` | Google の課金・尺制約に置きたいとき |
 | MiniMax 公式 API（参考） | MiniMax 側の key | `MiniMax-H3` / `MiniMax-H3-Max` | 2K や video editing が必要なとき。価格は公式で要確認 |
 
@@ -20,57 +20,29 @@
 - **同じ「H3」の名前でも、モデル・解像度体系・単価・尺制約が違う。同一モデル・同一料金として計算しない。**
 - fal の標準 `minimax/h3`（非 Max）は別 endpoint。2K・reference・video editing はこちら側。
 
-### WAVESPEED_API_KEY の登録（条件付き）
+### WaveSpeed の備考
 
-WaveSpeed を選んだときだけ登録する。[secret-env](../../secret-env/SKILL.md) と [mise-age](../../secret-env/references/mise-age.md) に従い、値を平文で表示しない:
+- **利用経路は console（Web）からのみ確認できている。API 呼び出しでの利用は未確認** — 実行前に公式で確認し、API が使えないなら console 上で prompt・開始画像・解像度・秒数を設定して生成する
+- それでも API を試す場合の key が `WAVESPEED_API_KEY`。WaveSpeed を選んだときだけ [secret-env](../../secret-env/SKILL.md) と [mise-age](../../secret-env/references/mise-age.md) に従って登録する（値を平文で表示しない）:
 
 ```bash
 mise set --age-encrypt WAVESPEED_API_KEY='…'   # recipient が自動導出できない場合は skill 内の手順参照
 ```
 
-登録後は**値を出さずに「設定済みか」だけ**確認する（`mise env` は復号値を全部並べてしまうので使わない）:
+  登録後は**値を出さずに「設定済みか」だけ**確認する（`mise env` は復号値を全部並べてしまうので使わない）:
 
 ```bash
 mise x -- sh -c '[ -n "${WAVESPEED_API_KEY:-}" ] && echo "WAVESPEED_API_KEY: set"'
 ```
 
-**現在この変数は未登録** — WaveSpeed を使わないなら登録しない。
+  **現在この変数は未登録** — WaveSpeed を使わないなら登録しない。
 
 ## 無料枠と課金を混同しない
 
 - **fal のブラウザ（sandbox / playground）**: サインインで **5本/日まで無料**、1本最大15秒、音声付き、24時間ローリングリセット（[H3 Max ページ](https://fal.ai/minimax-h3-max)、確認日 2026-10-08）。**これはブラウザ枠。API 呼び出しは常に課金で、API 側の無料枠は無い。**
 - **Gemini API の Veo 3.1**: Free Tier は「Not available」（[Gemini pricing](https://ai.google.dev/gemini-api/docs/pricing)、確認日 2026-10-08）。
 - **WaveSpeed**: 無料枠の額・適用は未確認。**断定せず、公式の確認結果だけを使う。**
-- GUI / playground の無料枠と API の課金を同じ予算計算に混ぜない。
-
-## 実行前の見積り
-
-`単価 × 課金秒数` で出し、出典 URL と確認日を添える。**プロモ価格と通常価格、入力側の課金を必ず見る。**
-
-### 単価の目安（確認日 2026-10-08）
-
-- **fal H3 Max**（[H3 Max ページ Pricing 節](https://fal.ai/minimax-h3-max)）: 480p $0.05/秒、768p $0.08/秒、1080p $0.16/秒。Turbo は各半額。text-to-video / image-to-video は同単価。
-  - **75% のローンチ割引は 2026-09-14 に終了** — これより前の記事・表を信用しない。
-  - [fal pricing ページ](https://fal.ai/pricing) は最小単価（例: $0.05/秒）で表示する。解像度別の実単価は model page で確認する。
-  - 例: 768p で 5 秒 = $0.40。
-- **fal Veo 3.1 Fast**（model page の課金表示）: 720p/1080p で $0.10/秒（音声オフ）・$0.15/秒（音声オン）。4k は $0.30 / $0.35。
-- **Gemini API Veo 3.1**（[pricing](https://ai.google.dev/gemini-api/docs/pricing)）: Fast $0.10/秒 (720p)・$0.12 (1080p)・$0.30 (4k)、Standard $0.40/秒 (720p/1080p)、Lite $0.05/秒 (720p)。
-- **WaveSpeed `wavespeed-ai/minimax-h3/image-to-video`**（[model page](https://wavespeed.ai/models/wavespeed-ai/minimax-h3/image-to-video)）: 480p $0.04/秒、540p $0.06/秒、768p $0.08/秒、1080p $0.16/秒。duration 3–15秒（フレームグリッドに揺られるため 5秒要求は ~5.2秒になる）。
-  - このページ自身が「ドキュメント価格は参考・古い可能性がある。**Generate ボタンの見積もりが最新、最終課金はタスク実績**」と注記している。ページ内部には割引率付きの promo 表示も混ざっている — **プロモ価格と通常価格を同じ見積に混ぜない。**
-- **WaveSpeed の動画編集系（例: `bytedance/seedance-2.0/video-edit`）は入力+出力の秒数を合算で課金**（例: 入力5秒+出力5秒 = 課金10秒。入力は2–15秒に丸められる。[model page](https://wavespeed.ai/models/bytedance/seedance-2.0/video-edit)、確認日 2026-10-08）。実写編集を WaveSpeed で回すときは**入力側の秒数も見積に入れる**。
-- WaveSpeed の MCP / playground は **spending 前の見積もり**を出す機能を持つ（llms.txt 記載）。API から回す場合も、送信前に model page の見積もりか価格表で確認する。
-
-### 見積りの作り方（例）
-
-```bash
-python3 - <<'PY'
-# fal H3 Max 768p（出典: https://fal.ai/minimax-h3-max, 確認日 2026-10-08）
-rate, seconds = 0.08, 5
-print(f"estimate: ${rate * seconds:.2f} / clip")
-PY
-```
-
-予算が厳しいとき: 有料の合計上限を先に決める（例: $1）。上限内なら「768p 5秒 ×1本 = $0.40」のように積み、超過しそうなら fal ブラウザの無料枠（5本/日）か 480p / Turbo に落とす。**この上限は案件ごとの例であって、この skill の固定値ではない。**
+- GUI / playground の無料枠と API の課金を同じ予算計算に混ぜない。料金はプロモ価格と通常価格が混在し、動画編集系（例: `bytedance/seedance-2.0/video-edit`）は**入力秒+出力秒の合算で課金**されることがあるため、実行前に該当 model page で確認する。
 
 ## 手順
 
@@ -119,40 +91,11 @@ console.log(result.data.video.url);   // ここで取得
 
 - 非同期で回したいときは `fal.queue.submit` → `fal.queue.status` → `fal.queue.result`（公式ドキュメントの Queue 節）
 
-- `duration` の出力は要求より最大 ~0.7秒長いことがある。課金は実出力基準で見積もる
+- `duration` の出力は要求より最大 ~0.7秒長くなることがある（課金は実際の出力秒数基準）
 - `image_url` を省略すると text-to-video として扱われ 16:9 になる
 - 最終フレームを固定したい場合は `end_image_url`、参照素材で人物・スタイルを揃えたい場合は `minimax/h3-max/reference-to-video`（`reference_image_urls` / `reference_video_urls` / `reference_audio_urls`、合計12ファイル・合計15秒まで）
 
-**WaveSpeed（代替）** — 公式 llms.txt の例（`jq` 必要）:
-
-```bash
-SUBMIT=$(curl --silent --show-error --fail-with-body \
-  --request POST \
-  --url https://api.wavespeed.ai/api/v3/wavespeed-ai/minimax-h3/image-to-video \
-  --header "Authorization: Bearer ${WAVESPEED_API_KEY}" \
-  --header "Content-Type: application/json" \
-  --data '{"prompt":"…","image":"https://…/first-frame.jpg","resolution":"480p","duration":5}') \
-  || { echo "submit failed" >&2; exit 1; }
-ID=$(printf '%s' "$SUBMIT" | jq -r '.data.id // empty')
-[ -n "$ID" ] || { printf 'submit failed: %s\n' "$SUBMIT" >&2; exit 1; }
-
-RESULT_URL="https://api.wavespeed.ai/api/v3/predictions/${ID}/result"
-deadline=$(( $(date +%s) + 600 ))   # 打ち切り時刻（例: 10分）。超えたら失敗として止まる
-sleep_s=2
-while :; do
-  [ "$(date +%s)" -ge "$deadline" ] && { echo "polling timed out: $RESULT_URL" >&2; exit 1; }
-  RESP=$(curl --silent --show-error --fail-with-body --request GET \
-    --url "$RESULT_URL" --header "Authorization: Bearer ${WAVESPEED_API_KEY}") \
-    || { echo "result poll failed" >&2; exit 1; }        # HTTP エラーで止める
-  DATA=$(printf '%s' "$RESP" | jq -e '.data') \
-    || { printf 'unexpected response: %s\n' "$RESP" >&2; exit 1; }
-  case "$(printf '%s' "$DATA" | jq -er '.status')" in
-    completed) printf '%s\n' "$DATA" | jq '.outputs'; break ;;
-    failed|cancelled|timeout|deleted) printf '%s\n' "$DATA" | jq . >&2; exit 1 ;;
-    *) sleep "$sleep_s"; sleep_s=$(( sleep_s < 30 ? sleep_s * 2 : sleep_s )) ;;  # 長いタスクほど間隔を広げる
-  esac
-done
-```
+**WaveSpeed（代替）** — **利用は console（Web）のみ確認済み**。[model page](https://wavespeed.ai/models/wavespeed-ai/minimax-h3/image-to-video) で prompt・開始画像・解像度・秒数を設定して Generate し、結果をダウンロードする。REST API の公開ドキュメント（model page の API タブ / `llms.txt`）は存在するが **API での利用は未確認** — API を試すときはまず公式で確認し、使うならドキュメントの送信〜ポーリング例に従う（`WAVESPEED_API_KEY` が必要。WaveSpeed の備考節参照）。
 
 **Google Veo API（代替）** — REST（[公式ドキュメント](https://ai.google.dev/gemini-api/docs/veo) の例に基づく。text-to-video の形。image-to-video は同ドキュメントの `image` フィールド / Python SDK の `image=` を使う）:
 
@@ -189,7 +132,7 @@ curl -L --fail -o out.mp4 -H "x-goog-api-key: ${GEMINI_API_KEY}" "$video_uri"
 - [ ] 実物写真と並べて、建物・物・人物・配色が一致するか。崩れていたら次は prompt で絞る、ダメなら**実写・原写真の編集へ戻る**
 - [ ] 文字・金額・看板が生成で壊れていないか（壊れているならそのカットは不採用。文字は HyperFrames で載せる）
 - [ ] 実在場所が勝手に変わっていないか（架空改変があるなら不採用）
-- [ ] 課金が見積りと大きくずれていないか（実績を確認）
+- [ ] 課金実績が予算内に収まっているか（送信前に確認した料金と実績を比べる）
 
 ## 尺・縦横比の制約（確認日 2026-10-08）
 
@@ -211,4 +154,4 @@ curl -L --fail -o out.mp4 -H "x-goog-api-key: ${GEMINI_API_KEY}" "$video_uri"
 - 現物が保てない・実在場所の改変が出る → **実写・原写真の編集**に戻る（生成を使わない）
 - 文字・金額・図表・字幕 → **HyperFrames（Video B）** で載せる
 - 再現できる編集・合成、長い構成 → **HyperFrames（Video B）**
-- 有料が合わない → fal ブラウザの無料枠（5本/日）に切り替える、または下位解像度 / Turbo / 別経路の見積を出す
+- 有料が合わない → fal ブラウザの無料枠（5本/日）に切り替える、または下位解像度 / Turbo / 別経路の料金を確認する

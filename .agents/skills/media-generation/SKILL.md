@@ -40,7 +40,7 @@ uv run {baseDir}/scripts/generate_image.py \
 名前付きの利用経路は次の3つ。**同一モデル名でもホストが違えば別モデル・別単価として扱う**:
 
 1. **fal（主経路）** — `FAL_KEY`。MiniMax H3 / H3 Max（`minimax/h3-max/*`）、Veo 3.1（`fal-ai/veo3.1/*`）等。既定はこちら
-2. **WaveSpeed（代替）** — `WAVESPEED_API_KEY`（利用時に登録）。`wavespeed-ai/minimax-h3/*` は **open-weights 版 MiniMax H3 の WaveSpeed 自社ホスト**で、fal の H3 Max（fal が post-train した variant）とは**同一モデル・同一料金として扱わない**
+2. **WaveSpeed（代替）** — `WAVESPEED_API_KEY`（利用時に登録）。`wavespeed-ai/minimax-h3/*` は **open-weights 版 MiniMax H3 の WaveSpeed 自社ホスト**で、fal の H3 Max（fal が post-train した variant）とは**同一モデル・同一料金として扱わない**。**利用は console（Web）のみ確認済み — API 利用は未確認（reference の備考参照）**
 3. **Google Veo API（代替）** — `GEMINI_API_KEY`。Gemini API の `veo-3.1-*`。Google の課金・尺制約に置きたいとき
 
 進め方の原則:
@@ -49,11 +49,11 @@ uv run {baseDir}/scripts/generate_image.py \
 - 生成後は必ず**実物と照合**する（場所・物・人物・配色が写真と一致するか）
 - **文字・金額・固有の表示は生成映像に任せない**。必要なら HyperFrames（Video B）で重ねる
 - **実在場所の架空改変を避ける**。現物が保てなければ**実写・原写真の編集へ戻す**
-- 実行前に**見積り**を出す（単価 × 秒数、出典 URL と確認日つき）。GUI/ブラウザの無料枠と API 課金を混同しない。プロモ価格と通常価格、入力側の課金（動画編集系）も見積りに入れる
+- 実行前に**料金・無料枠を公式で確認**する（プロモ価格と通常価格、動画編集系の入力課金に注意）。GUI/ブラウザの無料枠と API 課金を混同しない
 - 無料枠は「確認できたもの」だけ使う。額や適用が未確認なら断定せず、公式で確認する
 - 新しいモデル = 目的への最適ではない。無料/低コスト優先で、ユーザーの予算を厳守する（予算が厳しいときの例: 有料生成の合計上限を先に決めてから無料枠と短いカットで試す。この上限は案件ごとの例であって、この skill の固定手順ではない）
 
-手順・見積り・コピペ可能な prompt/command 例・尺/縦横比の制約は [references/video-generation.md](references/video-generation.md) を読む。**この repo に動画生成 CLI は無い** — reference の curl / JS client / Python をそのまま使う。
+手順・コピペ可能な prompt/command 例・尺/縦横比の制約は [references/video-generation.md](references/video-generation.md) を読む。**この repo に動画生成 CLI は無い** — reference のコピペ可能な例（curl / JS client）をそのまま使う。
 
 ## Video B — HyperFrames
 
@@ -75,5 +75,5 @@ HyperFrames の実装・workflow の中身をこの skill に複製しない。�
 
 ## 共通ルール
 
-- 料金・機能・API schema は**公式資料で確認**してから動く。見積りには出典 URL と確認日を添える（この skill の調査確認日: 2026-10-08。価格は変動するため実行前に再確認する）
+- 料金・機能・API schema は**公式資料で確認**してから動く（この skill の調査確認日: 2026-10-08。価格・提供形態は変動するため実行前に再確認する）
 - 実課金・素材アップロード・実生成は、ユーザーが明示的に許可するまで行わない。検証は `--help`・dry-run・公開 schema の読解で行う
