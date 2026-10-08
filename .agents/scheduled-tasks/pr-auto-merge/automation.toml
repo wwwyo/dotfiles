@@ -6,9 +6,8 @@
 
 name = "pr-auto-merge"
 workspace_path = "~/src/github.com/wwwyo/me"
-# provider は devin（model は ~/.config/devin/config.json の agent.model
-# に従う — automation 単位の model 指定は Orca に無い）
-provider = "devin"
+# executor は codex。provider/model はユーザーの明示指示なしに変更しない。
+provider = "codex"
 enabled = true
 timezone = "Asia/Tokyo"
 
@@ -21,11 +20,8 @@ timezone = "Asia/Tokyo"
 # 明示する
 trigger = "*/30 9-23 * * *"
 
-# devin provider では reuseSession が効かない（reuse の成立には前回 run の
-# pane + PTY が live であることが必要）ので fresh 起動になる。run ごとの
-# session 堆積は避けられないが、plan は毎回 script が出すので
-# 判定への影響はない。true のまま残すのは provider を codex に戻した
-# 場合に効く意図を保持するため
+# 前回の live session を使い回し、tick ごとの executor session 堆積を防ぐ。
+# 前回 terminal がなくなった場合は Orca が fresh session に fallback する。
 reuse_session = true
 
 precheck = "python3 ~/.agents/skills/pr-auto-merge/tools/pr_triage.py gate"
