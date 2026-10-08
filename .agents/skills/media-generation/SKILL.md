@@ -1,6 +1,6 @@
 ---
 name: media-generation
-description: "Generate or edit images and videos. Routes OpenRouter image generation, single-image edits, and multi-image compositing; generative video (text-to-video, image-to-video from a real photo, reference-based generation, real-footage editing) through fal as the primary route with WaveSpeed and the Google Veo API as named alternatives; and demos, product launches, motion graphics, captions, numbers, and reproducible edits/compositions through HyperFrames. Use for 「画像を生成」「画像を編集」「動画を作って」「プロモ動画」「demo動画」「モーショングラフィックス」などの依頼で."
+description: "Generate or edit images and videos. Routes image generation, single-image edits, and multi-image compositing to the running session's built-in image tool when a Codex session provides one, otherwise to OpenRouter's generate_image.py; generative video (text-to-video, image-to-video from a real photo, reference-based generation, real-footage editing) through fal as the primary route with WaveSpeed and the Google Veo API as named alternatives; and demos, product launches, motion graphics, captions, numbers, and reproducible edits/compositions through HyperFrames. Use for 「画像を生成」「画像を編集」「動画を作って」「プロモ動画」「demo動画」「モーショングラフィックス」などの依頼で."
 metadata:
   emoji: 🎬
 ---
@@ -11,27 +11,37 @@ metadata:
 
 | やりたいこと | 経路 |
 | --- | --- |
-| 画像の生成・1枚の編集・複数画像の合成 | **Image** — OpenRouter（[references/image-generation.md](references/image-generation.md)） |
+| 画像の生成・1枚の編集・複数画像の合成 | **Image** — 実行環境で二択（Codex の組み込みツール / OpenRouter）（[references/image-generation.md](references/image-generation.md)） |
 | テキスト→動画、実写真を基準にした短いカット、必要時の実写編集 | **Video A** — 生成AI（[references/video-generation.md](references/video-generation.md)） |
 | demo / product launch / motion graphic、図・字幕・数値、再現できる編集・合成 | **Video B** — HyperFrames（下節） |
 | 生成したカットを1本に組み立てる | **併用** — A で撮影単位を作り、B で組み立てる |
 
 必要な key は経路ごとに異なる（値は表示しない。登録済みの key は global mise に age 暗号化で入っている）:
 
-- Image = `OPENROUTER_API_KEY`（登録済み）
+- Image = **経路 A（Codex の組み込み画像生成ツール）は key 不要**、**経路 B（OpenRouter）のみ `OPENROUTER_API_KEY`**（登録済み）。`OPENROUTER_API_KEY` は全ルートの必須条件ではない
 - Video A / fal = `FAL_KEY`（登録済み）、Video A / Google Veo API = `GEMINI_API_KEY`（登録済み）
 - Video A / WaveSpeed = `WAVESPEED_API_KEY`（**未登録**。WaveSpeed を選んだときに [secret-env](../secret-env/SKILL.md) の手順で `mise set --age-encrypt` して登録する）
 - Video B = key 不要
 
 ## Image
 
-OpenRouter で prompt-only 生成・画像編集・複数画像合成。モデル/解像度の選択、実行コマンド、troubleshooting は [references/image-generation.md](references/image-generation.md)。
+**実行環境による二択**（どちらも新規生成・1枚の編集・複数画像の合成に対応）。手順の詳細は [references/image-generation.md](references/image-generation.md)。
 
-```
-uv run {baseDir}/scripts/generate_image.py \
-  --prompt "A cinematic sunset over snow-capped mountains" \
-  --filename sunset.png
-```
+1. **Codex + 組み込み画像生成ツールあり → 第一選択**
+   - この親セッションには組み込みの画像生成ツール（`image_gen.imagegen`）が実際に提供されている。新規生成・実写真参照の編集・複数画像の合成・透過背景をここで行う。**`OPENAI_API_KEY` の新規設定は不要**
+   - **Codex という名前だけでツールの提供を断定しない** — 実際の tool availability を確認する。未提供ならその旨を説明し、経路 B（OpenRouter）に代替できることを示す
+   - **ツールが公開していない機能は断定しない**: モデル名を指定できる・無料/無制限・保存先を生成時の引数で指定できる、など。公式 docs は built-in を `gpt-image-2` と記載するが、このツールの schema は `model` 引数も backend API endpoint も公開していない。モデル名が必要なら実行環境の現行ドキュメントで確認する
+   - 編集対象がローカルなら、先に `view_image` で会話に読み込んでから、**当該セッションの tool schema に従って**参照画像を指定する
+   - 指定保存先があれば、生成後に**出力の実ファイルを確認してコピー**する
+   - **ChatGPT UI（デスクトップ/ブラウザ）の自動操作は手順にしない** — Codex に組み込まれた画像生成ツールの呼び出しとして扱う
+2. **Codex 以外、または組み込みツールが未提供 → OpenRouter（既存）**
+   - 既存の `generate_image.py`。`OPENROUTER_API_KEY` が必要（mise + age 管理、価格優先の既定モデル）
+
+   ```
+   uv run {baseDir}/scripts/generate_image.py \
+     --prompt "A cinematic sunset over snow-capped mountains" \
+     --filename sunset.png
+   ```
 
 ## Video A — 生成AI
 
@@ -76,4 +86,5 @@ HyperFrames の実装・workflow の中身をこの skill に複製しない。�
 ## 共通ルール
 
 - 料金・機能・API schema は**公式資料で確認**してから動く（この skill の調査確認日: 2026-10-08。価格・提供形態は変動するため実行前に再確認する）
+- 画像の主題は**実行経路の選択**であってモデル比較ではない。モデル名・料金・提供機能は経路ごとに現行ドキュメントで確認する
 - 実課金・素材アップロード・実生成は、ユーザーが明示的に許可するまで行わない。検証は `--help`・dry-run・公開 schema の読解で行う
