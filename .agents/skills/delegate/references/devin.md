@@ -46,9 +46,12 @@ python3 "$DELEGATE_SKILL_DIR/scripts/devin-evidence.py" --session <session-id> -
 
 # 対象 session のものと確認した CLI log の既知 transport event だけ追加
 python3 "$DELEGATE_SKILL_DIR/scripts/devin-evidence.py" --session <session-id> --log <対象logの絶対パス>
+
+# transcript がまだ無い場合も、明示した log だけを読む
+python3 "$DELEGATE_SKILL_DIR/scripts/devin-evidence.py" --log <対象logの絶対パス>
 ```
 
-`--transcript <path>` で native ATIF を明示指定してもよい。helper の `ok: false` / exit 1 は読取失敗であり、空の成功と区別する。ATIF/DB schema が変わった場合は生 dump に切り替えず、必要 field だけを再確認する。log の時刻不正行は件数を示して除外し、DB の model 不明件数は既知 model の集計と分ける。既知 event 0件は接続正常の証明ではなく、明示した log の session 帰属は別に確認する。書出し条件・DB の重複・model 欄の意味は [native evidence の制約](../../dev-env/references/devin-cli.md#native-evidence-で実-modelturn停止を区別する) を参照。
+`--transcript <path>` で native ATIF を明示指定してもよい。helper の `ok: false` / exit 1 は読取失敗であり、空の成功と区別する。指定した transcript/DB が読めない場合は自動で log-only 成功へ切り替えない。ATIF/DB schema が変わった場合は生 dump に切り替えず、必要 field だけを再確認する。ATIF の省略可能な時刻は null のまま返し、step ID で増分を確認する。log の時刻不正行は件数を示して除外し、DB の model 不明件数は既知 model の集計と分ける。既知 event 0件は接続正常の証明ではなく、明示した log の session 帰属は別に確認する。書出し条件・DB の重複・model 欄の意味は [native evidence の制約](../../dev-env/references/devin-cli.md#native-evidence-で実-modelturn停止を区別する) を参照。
 
 ## Connection error で turn が止まったとき
 

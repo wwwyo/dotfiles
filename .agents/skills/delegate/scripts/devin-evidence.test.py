@@ -60,6 +60,18 @@ class EvidenceTest(unittest.TestCase):
         self.assertEqual(data["logs"][0]["unrecognized_target_logger_lines"], 1)
         self.assertEqual(data["logs"][0]["invalid_timestamp_target_logger_lines"], 1)
         self.assertFalse(data["logs"][0]["events"][0]["is_timeout"])
+        log_only = self.run_reader("--log", log)
+        self.assertNotIn("transcript", log_only)
+        self.assertNotIn("database", log_only)
+        self.assertEqual(log_only["logs"], data["logs"])
+        native = json.loads(path.read_text())
+        for step in native["steps"]:
+            step.pop("timestamp")
+        path.write_text(json.dumps(native))
+        untimed = self.run_reader("--transcript", path, "--after-step", 3)["transcript"]
+        self.assertIsNone(untimed["last_agent"]["timestamp"])
+        self.assertIsNone(untimed["latest_turns"][0]["user_timestamp"])
+        self.assertEqual(untimed["sources"], {"user": 1, "agent": 1})
 
     def test_fail_closed_without_raw_exception(self):
         path = self.root / "invalid.json"
@@ -75,6 +87,9 @@ class EvidenceTest(unittest.TestCase):
         truncated = self.root / "truncated.log.gz"
         truncated.write_bytes(gzip.compress(CONTENT_MARKER.encode())[:-8])
         self.run_reader("--transcript", self.transcript(), "--log", truncated, success=False)
+        self.run_reader("--log", truncated, success=False)
+        self.run_reader(success=False, failure_code=2)
+        self.run_reader("--log", truncated, "--after-step", 1, success=False)
 
     def test_database_dedup_generation_time_and_read_only(self):
         path = self.root / "sessions.db"

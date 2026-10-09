@@ -56,7 +56,8 @@ def transcript_summary(path, after_step):
         extra = step.get("extra") or {}
         if not isinstance(extra, dict):
             raise ValueError("invalid_step")
-        row = {"step_id": step_id, "timestamp": timestamp(step.get("timestamp")), "source": source}
+        time = step.get("timestamp")
+        row = {"step_id": step_id, "timestamp": timestamp(time) if time is not None else None, "source": source}
         row["model_name"] = metadata(step.get("model_name"))
         row["generation_model"] = metadata(extra.get("generation_model"))
         if step_id > after_step:
@@ -183,7 +184,7 @@ def database_summary(path, session_id, since_time):
 
 def main():
     parser = EvidenceArgumentParser(description=__doc__)
-    inputs = parser.add_mutually_exclusive_group(required=True)
+    inputs = parser.add_mutually_exclusive_group()
     inputs.add_argument("--session", help="Local session ID, not a resume command")
     inputs.add_argument("--transcript", type=Path, help="Explicit native ATIF-v1.7 JSON file")
     parser.add_argument("--after-step", type=int, default=0, help="Summarize only newer steps")
@@ -191,19 +192,26 @@ def main():
     parser.add_argument("--after-time", help="For database only: ISO timestamp of last known generation/user input")
     parser.add_argument("--log", type=Path, action="append", default=[], help="Explicit CLI log or .gz (repeatable)")
     args = parser.parse_args()
+    if args.session is None and args.transcript is None and not args.log:
+        parser.error("An explicit evidence input is required")
     try:
         if args.after_step < 0:
             raise ValueError("invalid_after_step")
         if (args.database and (not args.session or args.after_step)) or (args.after_time and not args.database):
+            raise ValueError("incompatible_arguments")
+        if args.after_step and args.session is None and args.transcript is None:
             raise ValueError("incompatible_arguments")
         path = args.transcript
         if args.session is not None:
             if not re.fullmatch(r"[a-zA-Z0-9_-]{1,120}", args.session):
                 raise ValueError("invalid_session_id")
             path = Path.home() / ".local/share/devin/cli/transcripts" / (args.session + ".json")
-        evidence = {"database": database_summary(args.database, args.session,
-                    timestamp(args.after_time) if args.after_time else None)} if args.database else {
-                    "transcript": transcript_summary(path, args.after_step)}
+        evidence = {}
+        if args.database:
+            evidence["database"] = database_summary(args.database, args.session,
+                                       timestamp(args.after_time) if args.after_time else None)
+        elif path is not None:
+            evidence["transcript"] = transcript_summary(path, args.after_step)
         result = {"ok": True, **evidence,
                   "logs": [log_summary(path) for path in args.log],
                   "limitations": ["No message, reasoning, tool arguments, config or raw log text emitted",
