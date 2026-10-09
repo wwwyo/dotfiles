@@ -1,17 +1,18 @@
 ---
 name: media-generation
-description: "Generate or edit images and videos. Routes image generation, single-image edits, and multi-image compositing to the running session's built-in image tool when a Codex session provides one, otherwise to OpenRouter's generate_image.py; generative video (text-to-video, image-to-video from a real photo, reference-based generation, real-footage editing) through fal as the primary route with WaveSpeed and the Google Veo API as named alternatives; and demos, product launches, motion graphics, captions, numbers, and reproducible edits/compositions through HyperFrames. Use for 「画像を生成」「画像を編集」「動画を作って」「プロモ動画」「demo動画」「モーショングラフィックス」などの依頼で."
+description: "Generate or edit images and videos, and generate speech or narration. Routes image generation, single-image edits, and multi-image compositing to the running session's built-in image tool when a Codex session provides one, otherwise to OpenRouter's generate_image.py; speech and narration through Fish Audio; generative video (text-to-video, image-to-video from a real photo, reference-based generation, real-footage editing) through fal as the primary route with WaveSpeed and the Google Veo API as named alternatives; and demos, product launches, motion graphics, captions, numbers, and reproducible edits/compositions through HyperFrames. Use for 「画像を生成」「画像を編集」「音声を作って」「ナレーションを作って」「動画を作って」「プロモ動画」「demo動画」「モーショングラフィックス」などの依頼で."
 metadata:
   emoji: 🎬
 ---
 
 # Media Generation
 
-画像と動画の生成を扱うルーター。実行手順の詳細は下の reference に出すので、まず経路を選ぶ。
+画像・音声・動画の生成を扱うルーター。実行手順の詳細は下の reference に出すので、まず経路を選ぶ。
 
 | やりたいこと | 経路 |
 | --- | --- |
 | 画像の生成・1枚の編集・複数画像の合成 | **Image** — 実行環境で二択（Codex の組み込みツール / OpenRouter）（[references/image-generation.md](references/image-generation.md)） |
+| 読み上げ音声・ナレーションの生成 | **Audio** — Fish Audio（[references/audio-generation.md](references/audio-generation.md)） |
 | テキスト→動画、実写真を基準にした短いカット、必要時の実写編集 | **Video A** — 生成AI（[references/video-generation.md](references/video-generation.md)） |
 | demo / product launch / motion graphic、図・字幕・数値、再現できる編集・合成 | **Video B** — HyperFrames（下節） |
 | 生成したカットを1本に組み立てる | **併用** — A で撮影単位を作り、B で組み立てる |
@@ -19,6 +20,7 @@ metadata:
 必要な key は経路ごとに異なる（値は表示しない。登録済みの key は global mise に age 暗号化で入っている）:
 
 - Image = **経路 A（Codex の組み込み画像生成ツール）は key 不要**、**経路 B（OpenRouter）のみ `OPENROUTER_API_KEY`**（登録済み）。`OPENROUTER_API_KEY` は全ルートの必須条件ではない
+- Audio = [音声生成手順](references/audio-generation.md) の認証設定を使う
 - Video A / fal = `FAL_KEY`（登録済み）、Video A / Google Veo API = `GEMINI_API_KEY`（登録済み）
 - Video A / WaveSpeed = `WAVESPEED_API_KEY`（**未登録**。WaveSpeed を選んだときに [secret-env](../secret-env/SKILL.md) の手順で `mise set --age-encrypt` して登録する）
 - Video B = key 不要
@@ -43,6 +45,10 @@ metadata:
      --prompt "A cinematic sunset over snow-capped mountains" \
      --filename sunset.png
    ```
+
+## Audio — 読み上げ・ナレーション
+
+音声生成のモデル・話者・認証・感情や話し方のタグ・日本語の読み分け・失敗時の扱いは [references/audio-generation.md](references/audio-generation.md) を正本とする。音声を作る前に読む。`learn` などの呼び出し側にはこの手順を複製せず、参照を置く。
 
 ## Video A — 生成AI
 
