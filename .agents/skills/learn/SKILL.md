@@ -65,7 +65,7 @@ When the arguments start with `clean`, or the user asks to clean up pages / the 
 
 skill の取得・更新は環境の `skillctrl` skill に従う。原本更新時もHTMLの既定・動画の明示依頼時のみの生成・理解確認を保つ。
 
-## 1. 判断：要不要制作教材
+## 1. 判断：教材を作るか
 
 形式の明示指定があれば優先する。形式未指定では、下記のいずれかならHTML図解シートを作る。動画は明示依頼時だけ選ぶ：
 
@@ -186,22 +186,17 @@ Selection rules:
 - One sentence says one thing.
 - Use the active voice. Write steps in the imperative ("Close the valve", not "The valve should be closed").
 - One word, one meaning. Call the same thing by the same name throughout.
-- Sentence length limits: steps (ordered lists) 20 words in English / 35 characters in Chinese; descriptions 25 words in English / 45 characters in Chinese.
+- 文の長さの検査基準：日本語・中国語では手順（番号付きリスト）は35文字、説明は45文字。英語では手順は20語、説明は25語。
 - No more than 6 sentences per paragraph. Use lists for complex content.
 - In English, use common short words: use, not utilize; start, not commence; before, not prior to.
-- In Chinese, do not use light verbs (`进行优化` → `优化`, `加以说明` → `说明`), do not chain more than three `的`, and do not use clichés (`赋能`, `闭环`, `至关重要`…).
+- 日本語の文体例：「最適化を行う」→「最適化する」、「説明を加える」→「説明する」のように動詞で直接書く。「の」が重なる長い修飾句は文を分ける。中身を示さない強調や常套句は上記の `japanese-tech-writing` に従って直す。これらは執筆時の規範で、自動検査がすべてを検出するわけではない。
 - For counter-examples shown on purpose, use `~~strikethrough~~` or put them in a table row whose status is `no`; the check skips them.
 
 ## 6. Explainer videos (am video, 3Blue1Brown style)
 
 ユーザーが動画を明示的に依頼した場合だけ、この動画生成を使う。形式未指定の通常の解説は第2節のHTML図解シートを使う。
-音声はFish Audioを `--voice fish` で明示する。モデルは `s2.1-pro-free`、話者は旧learnと同じ「さとる（ナレーション）」の `297a6fd278df47c3b9da9bfdf55ac89a` を使う。
-認証はmise + ageで管理した `FISH_API_KEY` を `mise exec` から渡す。話者変更は `FISH_VOICE_ID`。秘密情報は原稿・設定ファイル・ログに平文で置かず、privateな情報を含む台本をFish Audioへ送らない。
-`mise exec` 後も `FISH_API_KEY` が見えないとき、空のprocess.envだけで未登録と結論しない。global/repo-local のmise設定への登録有無とage復号鍵（`MISE_AGE_KEY`）の注入を分けて確認する。確認だけでなく音声生成の `mise exec` 側にも同じ注入を付ける。登録済みキーが復号できれば再登録を求めずそのまま音声生成し、復号を確認しても不足する場合だけユーザーに質問する。
-モデル名はCLIが固定ヘッダーで指定する。キー不足やAPI失敗時は停止し、有料モデル・システムTTS・別providerへ自動で切り替えない。
-無料モデルの期間・条件は利用時に [公式案内](https://fish.audio/blog/s2-1-pro-free-api/) で確認する。2026-10-05確認時点で無料期間は2026-11-30まで。
+音声を作る前に [media-generation の音声生成手順](../media-generation/references/audio-generation.md) を読む。モデル・話者・認証・日本語の読み分け・失敗時の扱いはその手順を正本とし、このskillに複製しない。
 各ナレーションをWAVで生成し、実際の音声長で図の段階表示と字幕を同期する。
-日本語では表示用の原稿とTTS用の読みを分ける。字幕には漢字・正式な識別子を残し、読みは文脈に合わせたかな表記にする。`FISH_TTS_READINGS_FILE` にJSONファイルのパスを渡すと、字幕を保ったまま読みだけをFish Audioへ送る。JSONは各ナレーションの表示テキストをキー、読み上げテキストを値にする（例：`{"冪等キーで重複を防ぐ。":"べきとうキーで、ちょうふくをふせぐ。"}`）。全ナレーション分を用意し、フォーカス指定の `[名前]` は角括弧を外してキーにする。読みを直したら音声を再生成し、試聴で発音・間を確認する。
 HTMLだけ、文章だけ、無音の指定があれば、その指定を優先する。音声が生成できなければ理由を報告し、音声付きとして完成扱いしない。
 
 A video draft has the same format as a page draft, with one extra rule: lines starting with `>` are narration, one beat per line.
@@ -231,9 +226,9 @@ AM_EOF
 - Write `[name]` in narration: the camera zooms in on the node or actor with that name and highlights it. The name must match how it is written in the component.
 - Nodes with the same name in adjacent scenes move smoothly to their new position. To keep the viewer following one object, reuse the same name in the next scene.
 - 3–6 scenes per video, one or two sentences per narration line.
-- Narration is read aloud, so write it as speech, as if explaining to someone face to face: transitions like `你看`, `那问题来了`, `我们换个角度看` are fine, and characters' "lines" go in quotes. Do not write it like a manual (`客户端发送 SYN 报文以请求建立连接`). Sentence length is still subject to the STE check.
+- ナレーションは相手に話しかける言葉で書く。「ここを見てください」「では、どうなるでしょう」「別の例で考えてみましょう」のように話をつなぎ、登場人物の台詞にはかぎ括弧を付ける。「クライアントは接続を要求するためにSYNパケットを送信する」のような手順書調を避け、「まず、クライアントが接続したいと伝えます」のように話す。文の長さはSTE検査の対象になる。
 - The look follows the theme in the settings by default (usually the blueprint drawing style). When the user wants "that dark 3b1b style", write `theme: 3b1b` in the frontmatter.
-- 音声：既定は `--voice fish`（`auto` もFish Audioを選ぶ）。他のproviderはユーザーが明示した場合だけ使い、無音指定は `--voice off`。音声とモデルの指定は `am help video` で確認できる。
+- 音声の呼び出しは上の `--voice fish` を使う。無音指定は `--voice off`。設定の詳細は [media-generation の音声生成手順](../media-generation/references/audio-generation.md)、CLIの引数は `am help video` で確認する。
 - The output is a single-file player page under `~/.answer-me-with-html/videos/` (audio embedded). When the user wants a video file, add `--mp4`; this needs Chrome, ffmpeg and Node.js 22+ on the machine. The CLI uses libx264 when available, otherwise h264_videotoolbox on macOS (8 Mbps), without installing extra libraries. Export speed depends on the machine.
 - Full syntax: `am help video`. In the terminal, reply with one sentence plus the player page path (and the MP4 path).
 
