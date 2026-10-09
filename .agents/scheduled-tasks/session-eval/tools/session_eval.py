@@ -57,7 +57,8 @@ from pathlib import Path
 SENTINEL = "session-eval-batch:9f3a2c7e"
 # 合成 fixture session (telemetry QA 等) は評価・consolidate 対象から外す。
 # sid prefix は API を呼ばずに弾け、root input の marker は sentinel と同じ
-# 経路で拾う 2 段構え。除外対象は score/comment で追跡しない
+# 経路で拾う 2 段構え。除外対象は score/comment で追跡しない。
+# この prefix は外部 consumer (wwwyo/me の day_sessions.py) も先判定に使う
 SYNTHETIC_SESSION_PREFIX = "telemetry-qa-"
 SYNTHETIC_MARKER = "[Synthetic"
 SCORE_WATERMARK = "evaluated_until"  # 観測済み最新 obs の endTime or startTime の epoch (NUMERIC)。完了 marker を兼ねる
@@ -175,13 +176,15 @@ def _err_body(e):
 def _request(method, path, params=None, body=None):
     """429/5xx は retry。429 の Retry-After を尊重する (Langfuse API limits の案内)。
     POST は輸送層エラー (timeout/接続断) で再送しない — サーバ到達済みか判別不能で、
-    再送すると score が二重に付く。GET は冪等なので何でも retry する。"""
+    再送すると score が二重に付く。GET は冪等なので何でも retry する。
+    429 は rate-limit window が分単位なので 1,2,4 秒の再試行では window を
+    跨げず全滅しうる — Retry-After 無しのときは 4s からの backoff で跨ぐ。"""
     url = _base() + path
     if params:
         url += "?" + urllib.parse.urlencode(params)
     data = json.dumps(body).encode() if body is not None else None
     last = None
-    for i in range(4):
+    for i in range(6):
         try:
             req = urllib.request.Request(
                 url, data=data, method=method,
@@ -193,16 +196,21 @@ def _request(method, path, params=None, body=None):
             if not (e.code == 429 or e.code >= 500):
                 raise ApiError(f"{method} {path} -> {e.code}: {_err_body(e)}")
             last = e
-            if i == 3:
+            if i == 5:
                 break
             ra = (e.headers.get("Retry-After") or "")
-            wait = min(float(ra), 30.0) if ra.isdigit() else float(2 ** i)
+            if ra.isdigit():
+                wait = min(float(ra), 30.0)
+            elif e.code == 429:
+                wait = min(4.0 * (2 ** i), 30.0)
+            else:
+                wait = float(2 ** i)
             time.sleep(wait)
         except Exception as e:
             if method == "POST":
                 raise ApiError(f"POST {path}: {e} (レスポンス不明のため再送しない)")
             last = e
-            if i == 3:
+            if i == 5:
                 break
             time.sleep(2 ** i)
     raise ApiError(f"{method} {path} failed after retries: {last}")
@@ -408,7 +416,11 @@ def skip_marker_kind(sid):
     eval batch 自身の session ("self")、[Synthetic 系の fixture marker があれば
     合成 session ("synthetic")。どちらでもなければ None。
     失敗時は None (=含める) に倒す — transcript 側が再判定するので、
-    ここでの取りこぼしは再評価で済む。"""
+    ここでの取りこぼしは再評価で済む。
+
+    外部 consumer: wwwyo/me の daily-end (day_sessions.py) が sentinel 表示に
+    この戻り値を使う。語彙 ("self"/"synthetic"/None) を変えるときは
+    そちらも追従させる。"""
     try:
         for o in paged("/api/public/v2/observations",
                        {"sessionId": sid, "fields": "basic,io",

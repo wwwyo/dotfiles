@@ -51,6 +51,18 @@ Avoid restating everything an agent already knows or requiring approval for
 routine actions the user already authorized. Keep credentials and personal
 configuration out of a public package.
 
+Verify external-service capabilities against the live API/CLI, not against
+documentation alone — docs describe features that the installed version or
+account plan may not expose. Before writing a command, flag, or model/tool ID
+into a skill, run its `--help` or a read-only call. For capabilities that
+depend on the runtime (plan tier, installed version, provider state), describe
+them conditionally ("if `x` is available / returns") instead of hardcoding IDs
+that may be absent.
+
+Never pair redirect-following HTTP (`curl -L`, equivalent clients) with
+Authorization or other credential headers unless every redirect target is
+trusted — a cross-origin redirect can carry the credentials to a third party.
+
 Put substantial task-specific details in `references/`, reusable deterministic
 helpers in `scripts/`, and templates in `assets/`. Link each resource from
 `SKILL.md` with a condition for reading or running it. Keep the entrypoint under

@@ -152,7 +152,9 @@ head SHA ごとに記録されるため同じ PR は1行に集約し、当日の
 は理由にそれを明記する）
 
 ## Error
-（tick_error・script 失敗があった日だけ。時刻（JST）|内容 の表で）
+（tick_error・script 失敗・dispatch の send/revive/spawn 失敗があった日だけ。
+時刻（JST）|内容 の表で。plan の action を処理しきった=送信成功ではない — 
+失敗した dispatch はここに明記し、Hold の理由にも残す）
 
 ## 修正
 （競合・依存 CI を実際に修正して push した PR を 時刻（JST）|repo|PR|内容・根拠 の表で）
@@ -184,6 +186,11 @@ head SHA ごとに記録されるため同じ PR は1行に集約し、当日の
   しない。過去の失敗は Error に残す。
 - judge ng の理由は Hold の理由列に1行で書き、判定根拠・検証手順の長い
   記述は jsonl の note に置く（md の節の外に段落をぶら下げない）
+- 失敗の断定と未取得・未検証を混ぜない。API ・check が取れなかった、
+  確認できなかったは「未取得」「未確認」と書く。billing 障害・infra 障害・
+  upstream の不具合のような原因断定は、API 応答・status page・upstream の
+  issue 等の根拠を引いたときだけ書く — 「動かなかった」だけの観測を
+  原因の断定として書かない
 - 競合・依存 CI を実際に修正して push したものは `## 修正` に根拠付きで載せる。
   修正依頼の送信だけではこの節に載せない。cooldown 待ちは Hold に解除日時を書く
 - `orca file open` で開くのは merge があった日だけでよい（hold だけの日は開かない）

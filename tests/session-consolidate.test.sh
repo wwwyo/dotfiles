@@ -13,7 +13,7 @@ fail() { echo "FAIL: $*" >&2; exit 1; }
 
 # HOME を差し替えると mise shim 経由の python3 が real config を untrusted
 # 扱いするので、元の config path を明示して shim を通す
-export MISE_TRUSTED_CONFIG_PATHS="$HOME/.config/mise/config.toml:$repo_dir/mise.toml"
+export MISE_TRUSTED_CONFIG_PATHS="$HOME/.config/mise/config.toml:$HOME/.config/mise/conf.d:$repo_dir/mise.toml"
 export HOME="$TEST_ROOT/home"
 mkdir -p "$HOME"
 

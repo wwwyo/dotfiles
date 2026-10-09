@@ -28,6 +28,10 @@ skill は `settings.json` の `"skills": ["~/.claude/skills"]` 一本で読ま�
 
 - opencode の Zen と Go は別 catalog。運用は `opencode-go`（Go サブスク枠、`zen/go/v1`）のみ — Zen 側（`opencode` provider、`zen/v1`）は従量課金なので使わない。**pi の catalog は `zen/go/v1/models` の実態より遅れる** — Go endpoint で生きている model（`/responses`・`/chat/completions`・`/messages` で 200）が pi catalog 未掲載なら `models.json` の `models` で先行定義する（現在 `claude-haiku-5-5`）。catalog に降りたら消す — 残すと自前の推測値が公式定義を上書きし続ける。`enabledModels` だけの先行登録は no-match warning が出るだけで有効化されない。`zen/go/v1/models` に未掲載でも実際の endpoint では使える場合がある（Haiku 5.5 の `/messages` で確認済み）。Go catalog の model でも workspace の Privacy 設定で「train on request data」を許可しないと 400 になる（`muse-spark-1.3-contributor` 等）
 
+- Go サブスクで実際に使えるのは catalog の free/contributor 枠だけ — `claude-sonnet-*`/`claude-opus-*` 系は `enabledModels` に足しても endpoint が拒否する。`enabledModels` に Anthropic の上位 model が並ばないのは漏れではなくこの境界のため。upstream が枠から model を消す例は [delegate](../../delegate/SKILL.md) に集約する
+
+- prompt editor の Vim mode は `pi-vim` package（base の `packages` に `npm:pi-vim@0.14.2` で exact pin）が提供する。設定 flag ではないので、vim モードが効かなくなったら `packages` 行が残っているかを見る。pin を緩めると upstream の後方互換のない更新がそのまま入る
+
 - `auth.json`（machine 固有、link 対象外）の credential は env の `OPENCODE_API_KEY` より優先される。平文ではなく `"key": "!..."` の command credential を置く（pi は `!` 始まりの値を shell 実行して stdout を key にする）。中身は `MISE_AGE_KEY` で `mise x -- printenv OPENCODE_API_KEY` を返す一行 — 解決値が mise の SSOT と同じなので rotate しても env と不整合にならず、env に key が無い非対話 spawn（Orca daemon・`env -i`・pi-acp）でも動く。`/login` で生 key が書き戻されたら同じコマンド形式に戻す
 
 - `~/.pi/agent` の管理ファイルは `home/dot_pi/agent/` 配下の chezmoi file 単位 symlink（`auth.json`・`sessions`・`models-store.json` 等は machine 固有の実ファイル）。settings.json は symlink だと pi の TUI 書き戻しが repo 正本を汚して PR diff に乗るため、合成する実ファイルにしている（上の表）。新しい設定ファイルは `home/dot_pi/agent/` に足して `chezmoi apply` しないと live に効かない

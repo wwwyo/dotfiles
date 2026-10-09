@@ -20,3 +20,12 @@ memory 機能は feature gate と `[memories]` sub-key の 2 層:
 `use_memories = false`（developer prompt への memory 注入・使用指示だけ止める。生成は続く）、
 `generate_memories = false`（新規生成だけ止める）、`disable_on_external_context = true`
 （外部 context がある thread だけ抑止）。現在 base は `features.memories = false`。
+
+## shell_environment_policy
+
+`inherit = "core"` は codex が spawn する shell の env を最小限に絞る — 親 process
+の env はほぼ丸ごと落ち、`[shell_environment_policy.set]` の key だけが追加される。
+Codex session 内で `SSH_AUTH_SOCK` や個人の PATH・token 類が「無い」のは親 env の
+問題ではなくこの policy の動作。session 内コマンドに env が要るときは呼び出し側で
+明示する（`env FOO=… cmd`）か base の `[shell_environment_policy.set]` に載せる —
+外側の shell で export 済みでも codex 側には届かない。
