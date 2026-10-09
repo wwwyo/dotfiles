@@ -65,7 +65,7 @@ When the arguments start with `clean`, or the user asks to clean up pages / the 
 
 skill の取得・更新は環境の `skillctrl` skill に従う。原本更新時もHTMLの既定・動画の明示依頼時のみの生成・理解確認を保つ。
 
-## 1. 判断：要不要制作教材
+## 1. 判断：教材を作るか
 
 形式の明示指定があれば優先する。形式未指定では、下記のいずれかならHTML図解シートを作る。動画は明示依頼時だけ選ぶ：
 
@@ -186,10 +186,10 @@ Selection rules:
 - One sentence says one thing.
 - Use the active voice. Write steps in the imperative ("Close the valve", not "The valve should be closed").
 - One word, one meaning. Call the same thing by the same name throughout.
-- Sentence length limits: steps (ordered lists) 20 words in English / 35 characters in Chinese; descriptions 25 words in English / 45 characters in Chinese.
+- 文の長さの検査基準：日本語・中国語では手順（番号付きリスト）は35文字、説明は45文字。英語では手順は20語、説明は25語。
 - No more than 6 sentences per paragraph. Use lists for complex content.
 - In English, use common short words: use, not utilize; start, not commence; before, not prior to.
-- In Chinese, do not use light verbs (`进行优化` → `优化`, `加以说明` → `说明`), do not chain more than three `的`, and do not use clichés (`赋能`, `闭环`, `至关重要`…).
+- 日本語の文体例：「最適化を行う」→「最適化する」、「説明を加える」→「説明する」のように動詞で直接書く。「の」が重なる長い修飾句は文を分ける。中身を示さない強調や常套句は上記の `japanese-tech-writing` に従って直す。これらは執筆時の規範で、自動検査がすべてを検出するわけではない。
 - For counter-examples shown on purpose, use `~~strikethrough~~` or put them in a table row whose status is `no`; the check skips them.
 
 ## 6. Explainer videos (am video, 3Blue1Brown style)
@@ -226,7 +226,7 @@ AM_EOF
 - Write `[name]` in narration: the camera zooms in on the node or actor with that name and highlights it. The name must match how it is written in the component.
 - Nodes with the same name in adjacent scenes move smoothly to their new position. To keep the viewer following one object, reuse the same name in the next scene.
 - 3–6 scenes per video, one or two sentences per narration line.
-- Narration is read aloud, so write it as speech, as if explaining to someone face to face: transitions like `你看`, `那问题来了`, `我们换个角度看` are fine, and characters' "lines" go in quotes. Do not write it like a manual (`客户端发送 SYN 报文以请求建立连接`). Sentence length is still subject to the STE check.
+- ナレーションは相手に話しかける言葉で書く。「ここを見てください」「では、どうなるでしょう」「別の例で考えてみましょう」のように話をつなぎ、登場人物の台詞にはかぎ括弧を付ける。「クライアントは接続を要求するためにSYNパケットを送信する」のような手順書調を避け、「まず、クライアントが接続したいと伝えます」のように話す。文の長さはSTE検査の対象になる。
 - The look follows the theme in the settings by default (usually the blueprint drawing style). When the user wants "that dark 3b1b style", write `theme: 3b1b` in the frontmatter.
 - 音声の呼び出しは上の `--voice fish` を使う。無音指定は `--voice off`。設定の詳細は [media-generation の音声生成手順](../media-generation/references/audio-generation.md)、CLIの引数は `am help video` で確認する。
 - The output is a single-file player page under `~/.answer-me-with-html/videos/` (audio embedded). When the user wants a video file, add `--mp4`; this needs Chrome, ffmpeg and Node.js 22+ on the machine. The CLI uses libx264 when available, otherwise h264_videotoolbox on macOS (8 Mbps), without installing extra libraries. Export speed depends on the machine.
