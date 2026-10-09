@@ -205,8 +205,12 @@ assert se.skip_marker_kind("mid-quote") is None
 assert se.skip_marker_kind("boom") is None
 se.paged = real_paged
 
-# _request: 429 の retry。urlopen/sleep を stub して試行回数と wait を pin
+# _request: 429 の retry。urlopen/sleep を stub して試行回数と wait を pin。
+# _auth() は env の LANGFUSE_* を直接読む — 無い環境 (CI) では KeyError が
+# GET retry に落ちて stub に届かないので、dummy を立てておく
 import email.message, io, urllib.error
+os.environ.setdefault("LANGFUSE_PUBLIC_KEY", "pk-test")
+os.environ.setdefault("LANGFUSE_SECRET_KEY", "sk-test")
 def http_err(code, ra=None):
     m = email.message.Message()
     if ra is not None:
