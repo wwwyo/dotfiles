@@ -11,7 +11,8 @@ import unittest
 
 
 SCRIPT = Path(__file__).with_name("devin-evidence.py")
-SECRET = "private-test-token-DO-NOT-EMIT"
+# Synthetic content sentinel; no credentials or private data are used in fixtures.
+CONTENT_MARKER = "fixture-content-marker-MUST-NOT-EMIT"
 
 
 class EvidenceTest(unittest.TestCase):
@@ -20,11 +21,11 @@ class EvidenceTest(unittest.TestCase):
         self.root = Path(self.tmp.name)
         self.addCleanup(self.tmp.cleanup)
 
-    def run_reader(self, *args, success=True):
+    def run_reader(self, *args, success=True, failure_code=1):
         result = subprocess.run([sys.executable, str(SCRIPT), *map(str, args)],
                                 capture_output=True, text=True)
-        self.assertEqual(result.returncode, 0 if success else 1, result.stdout)
-        self.assertNotIn(SECRET, result.stdout + result.stderr)
+        self.assertEqual(result.returncode, 0 if success else failure_code, result.stdout)
+        self.assertNotIn(CONTENT_MARKER, result.stdout + result.stderr)
         data = json.loads(result.stdout)
         self.assertEqual(data["ok"], success)
         return data
@@ -34,8 +35,8 @@ class EvidenceTest(unittest.TestCase):
         path.write_text(json.dumps({"schema_version": "ATIF-v1.7", "session_id": "fixture",
             "agent": {"name": "devin", "version": "3000.11.3", "model_name": "SWE-2 Medium"},
             "steps": [{"step_id": i, "source": source, "timestamp": f"2026-10-09T03:33:0{i}Z",
-                       "message": SECRET, "reasoning_content": SECRET,
-                       "tool_calls": [{"arguments": SECRET}],
+                       "message": CONTENT_MARKER, "reasoning_content": CONTENT_MARKER,
+                       "tool_calls": [{"arguments": CONTENT_MARKER}],
                        "model_name": "swe-2-medium" if source == "agent" else None,
                        "extra": {"generation_model": "swe-2-medium" if source == "agent" else None}}
                       for i, source in enumerate(("system", "user", "agent", "user", "agent"), 1)]}))
@@ -45,10 +46,10 @@ class EvidenceTest(unittest.TestCase):
         path = self.transcript()
         log = self.root / "native.log.gz"
         with gzip.open(log, "wt") as stream:
-            stream.write(f"2026-10-09T03:45:00Z INFO toolbox: command={SECRET} HTTP 502 Bad Gateway\n")
-            stream.write(f"2026-10-09T03:45:01Z WARN connect_rpc::stream: is_timeout=false is_body=false is_decode=true error={SECRET} unexpected EOF during chunk size line HTTP body stream error while reading Connect response\n")
-            stream.write(f"2026-10-09T03:45:02Z ERROR affogato::agent::control_loop: attempts=3 error={SECRET} Exhausted inference retries; stopping turn\n")
-            stream.write(f"2026-10-09T03:45:03Z WARN inference::retry: unknown={SECRET}\n")
+            stream.write(f"2026-10-09T03:45:00Z INFO toolbox: command={CONTENT_MARKER} HTTP 502 Bad Gateway\n")
+            stream.write(f"2026-10-09T03:45:01Z WARN connect_rpc::stream: is_timeout=false is_body=false is_decode=true error={CONTENT_MARKER} unexpected EOF during chunk size line HTTP body stream error while reading Connect response\n")
+            stream.write(f"2026-10-09T03:45:02Z ERROR affogato::agent::control_loop: attempts=3 error={CONTENT_MARKER} Exhausted inference retries; stopping turn\n")
+            stream.write(f"2026-10-09T03:45:03Z WARN inference::retry: unknown={CONTENT_MARKER}\n")
         data = self.run_reader("--transcript", path, "--after-step", 3, "--log", log)
         self.assertEqual(data["transcript"]["sources"], {"user": 1, "agent": 1})
         self.assertEqual(data["transcript"]["latest_turns"][0]["first_agent_step_id"], 5)
@@ -60,12 +61,18 @@ class EvidenceTest(unittest.TestCase):
 
     def test_fail_closed_without_raw_exception(self):
         path = self.root / "invalid.json"
-        path.write_text(SECRET)
+        path.write_text(CONTENT_MARKER)
         self.run_reader("--transcript", path, success=False)
-        path.write_text(json.dumps({"schema_version": "ATIF-v99", "message": SECRET}))
+        path.write_text(json.dumps({"schema_version": "ATIF-v99", "message": CONTENT_MARKER}))
         self.run_reader("--transcript", path, success=False)
         self.run_reader("--session", "../escape", success=False)
-        self.run_reader("--transcript", self.root / SECRET, success=False)
+        self.run_reader("--session", "", success=False)
+        self.run_reader("--transcript", self.root / CONTENT_MARKER, success=False)
+        self.run_reader("--transcript", self.transcript(), "--after-step", CONTENT_MARKER,
+                        success=False, failure_code=2)
+        truncated = self.root / "truncated.log.gz"
+        truncated.write_bytes(gzip.compress(CONTENT_MARKER.encode())[:-8])
+        self.run_reader("--transcript", self.transcript(), "--log", truncated, success=False)
 
     def test_database_dedup_generation_time_and_read_only(self):
         path = self.root / "sessions.db"
@@ -76,7 +83,7 @@ class EvidenceTest(unittest.TestCase):
                     (2, "a", "assistant", "03:01:00", "swe-2-max"),
                     (3, "a", "assistant", "03:01:00", "swe-2-max"),
                     (4, "c", "assistant", "03:02:00", "compactor")):
-                message = {"message_id": mid, "role": role, "content": SECRET,
+                message = {"message_id": mid, "role": role, "content": CONTENT_MARKER,
                            "metadata": {"is_user_input": role == "user", "created_at": f"2026-10-09T{time}Z",
                                         "generation_model": model}}
                 db.execute("INSERT INTO message_nodes VALUES (?, ?, ?)", (rid, "fixture", json.dumps(message)))

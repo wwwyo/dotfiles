@@ -11,6 +11,14 @@ from pathlib import Path
 import re
 import sqlite3
 import sys
+import zlib
+
+
+class EvidenceArgumentParser(argparse.ArgumentParser):
+    def error(self, message):
+        # argparse's default message includes the rejected argument verbatim.
+        print(json.dumps({"ok": False, "error": "invalid_arguments", "hint": "See --help for supported arguments"}))
+        self.exit(2)
 
 
 def metadata(value):
@@ -166,7 +174,7 @@ def database_summary(path, session_id, since_time):
 
 
 def main():
-    parser = argparse.ArgumentParser(description=__doc__)
+    parser = EvidenceArgumentParser(description=__doc__)
     inputs = parser.add_mutually_exclusive_group(required=True)
     inputs.add_argument("--session", help="Local session ID, not a resume command")
     inputs.add_argument("--transcript", type=Path, help="Explicit native ATIF-v1.7 JSON file")
@@ -181,7 +189,7 @@ def main():
         if (args.database and (not args.session or args.after_step)) or (args.after_time and not args.database):
             raise ValueError("incompatible_arguments")
         path = args.transcript
-        if args.session:
+        if args.session is not None:
             if not re.fullmatch(r"[a-zA-Z0-9_-]{1,120}", args.session):
                 raise ValueError("invalid_session_id")
             path = Path.home() / ".local/share/devin/cli/transcripts" / (args.session + ".json")
@@ -193,7 +201,7 @@ def main():
                   "limitations": ["No message, reasoning, tool arguments, config or raw log text emitted",
                                   "Transcript progress is not completion or current process/network health",
                                   "Unrecognized log events are not classified; zero events does not prove health"]}
-    except (OSError, ValueError, TypeError, KeyError, sqlite3.Error) as error:
+    except (OSError, ValueError, TypeError, KeyError, sqlite3.Error, EOFError, zlib.error) as error:
         # JSONDecodeError and filesystem errors may quote content or sensitive paths.
         category = "evidence_read_failed"
         if isinstance(error, FileNotFoundError):
