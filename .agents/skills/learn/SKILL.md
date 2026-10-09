@@ -101,7 +101,7 @@ In Claude Code, the path above is replaced with this skill's directory automatic
 2. Choose components by the shape of the information (see section 4).
 3. Render in one go with a heredoc:
 
-```bash
+````bash
 mise exec -- node "${CLAUDE_SKILL_DIR}/scripts/am.mjs" render - <<'AM_EOF'
 ---
 title: Title
@@ -111,7 +111,7 @@ title: Title
 A -> B: label
 ```
 AM_EOF
-```
+````
 
 4. Read the output:
    - `✓ <path>`: success. Whether the browser opens automatically depends on the user's settings (`am config`); `--no-open` affects only this run.
@@ -152,24 +152,23 @@ Table status words: ok / no / warn (may carry text: "ok approved") → ✓ / ✗
 ```
 
 - The panel letter ID can be omitted; it is assigned automatically.
-- `html /` svg fenced blocks are embedded as-is. **Use them only when no component can express the content.**
+- `html` / `svg` fenced blocks are embedded as-is. **Use them only when no component can express the content.**
 - Full reference: `am help format`; component syntax: `am help <component>`; component list: `am list`.
 
 ## 4. Choose components by the shape of the information
 
 
-| Shape of the information                               | Component                          | Minimal syntax                                                                                                                   |
-| ------------------------------------------------------ | ---------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
-| What connects to what, architecture, decision branches | `flow [LR]`                        | `A -> B: label`, `A --> C` dashed, `A -> B & C` fan-out, `{decision?}` `(start)` `[(database)]`, `*emphasis`, `group name: A, B` |
-| Messages between actors over time                      | `sequence [num]`                   | `A -> B: request`, `B --> A: response`, `note A, B: note`, `== phase ==`                                                         |
-| Hierarchy / directories / taxonomy                     | `tree [list]`                      | indentation for levels, `label | description`, ``id` label`                                                                      |
-| History / phases                                       | `timeline [v]`                     | `time | title | description`, `*` highlights                                                                                     |
-| Values and limits                                      | `limits`                           | `label | 13 / 20 | unit`, limit only: `label | max 20`                                                                           |
-| Word-by-word comments on one sentence                  | `annot`                            | `# heading | right note`, `[span]{note}`, `[wrong word]{!red note}`, `> footnote`                                                |
-| Metadata / title block                                 | `kv [cols=2]`                      | `key: value`, `* wide cell: value`                                                                                               |
-| Conclusion / warning                                   | `callout <info|ok|warn|err> title` | Markdown body                                                                                                                    |
-| Multi-dimension comparison, can / cannot list          | Markdown table                     | write ok / no / warn in the status column                                                                                        |
-
+| Shape of the information | Component | Minimal syntax |
+|---|---|---|
+| What connects to what, architecture, decision branches | `flow [LR]` | `A -> B: label`, `A --> C` dashed, `A -> B & C` fan-out, `{decision?}` `(start)` `[(database)]`, `*emphasis`, `group name: A, B` |
+| Messages between actors over time | `sequence [num]` | `A -> B: request`, `B --> A: response`, `note A, B: note`, `== phase ==` |
+| Hierarchy / directories / taxonomy | `tree [list]` | indentation for levels, `label \| description`, `` `id` label `` |
+| History / phases | `timeline [v]` | `time \| title \| description`, `*` highlights |
+| Values and limits | `limits` | `label \| 13 / 20 \| unit`, limit only: `label \| max 20` |
+| Word-by-word comments on one sentence | `annot` | `# heading \| right note`, `[span]{note}`, `[wrong word]{!red note}`, `> footnote` |
+| Metadata / title block | `kv [cols=2]` | `key: value`, `* wide cell: value` |
+| Conclusion / warning | `callout <info\|ok\|warn\|err> title` | Markdown body |
+| Multi-dimension comparison, can / cannot list | Markdown table | write ok / no / warn in the status column |
 
 Selection rules:
 
@@ -207,7 +206,7 @@ HTMLだけ、文章だけ、無音の指定があれば、その指定を優先�
 
 A video draft has the same format as a page draft, with one extra rule: lines starting with `>` are narration, one beat per line.
 
-```bash
+````bash
 mise exec -- node "${CLAUDE_SKILL_DIR}/scripts/am.mjs" video - --voice fish --no-open <<'AM_EOF'
 ---
 title: The TCP three-way handshake
@@ -225,7 +224,7 @@ Client -> Server: ACK
 > [Server] answers with SYN-ACK.
 > The client replies with ACK, and the connection is open.
 AM_EOF
-```
+````
 
 - One `##`  is one scene. Put one component (or one table, one list) in a scene as the picture, and write 2–5 narration lines below it.
 - When the Nth narration line plays, the picture shows step N. In flow / sequence / tree every source line is one step; timeline, limits, table rows and list items step by entry. So the line order of the component is the order of the explanation. When there are more narration lines than steps, the extra first lines serve as an opening and show nothing new.
