@@ -30,7 +30,9 @@ metadata:
 **優先順位付きの3経路**（いずれも新規生成・1枚の編集・複数画像の合成に対応）。手順の詳細は [references/image-generation.md](references/image-generation.md)。
 
 1. **ブラウザ ChatGPT → 第一選択**（無料枠を優先。追加購入しない）
-   - Orca 内蔵ブラウザを `orca` CLI（orca-cli skill）で操作し、ログイン済みアカウントの**利用可能な無料枠**で生成する。「無料」はそのアカウントの既存契約・無料枠の範囲という意味で、**無制限・全アカウント利用可能とは断言しない**
+   - **Orca 内蔵ブラウザが使える session でのみ第一選択**。orca-cli skill の解決規則で選んだ executable（`ORCA`）で操作する — **素の `orca` を呼ばない**（非 Orca 管理の Linux 端末では GNOME screen reader に解決しうる）。`ORCA` が解決できない・Orca 未起動で起動もできない・`runtime_access_denied` なら経路 A を試さず B へ
+   - ログイン済みアカウントの**利用可能な無料枠**で生成する。「無料」はそのアカウントの既存契約・無料枠の範囲という意味で、**無制限・全アカウント利用可能とは断言しない**
+   - 編集・合成は**参照画像を chat に添付できる場合のみ**経路 A で行う。添付できなければ B/C へ
    - 未ログイン・passkey/MFA が要る・利用上限に達した場合は次の経路へ fallback（認証は本人に引き継ぎ、credentials/tokens は扱わない）
 2. **実行中 session の組み込み画像生成ツール → ChatGPT が使えないときの次点**
    - **そのセッションに組み込みの画像生成ツールが実際に提供されている場合のみ**使う（Codex の例: `image_gen.imagegen`。**ツール ID はセッション・バージョンで変わりうるため固定しない**）。**`OPENAI_API_KEY` の新規設定は不要**
