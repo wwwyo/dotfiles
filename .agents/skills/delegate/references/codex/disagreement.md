@@ -23,11 +23,11 @@ Paths in commands are relative to the skill root (the directory containing `SKIL
 | 状態             | 対応                                                             |
 | ---------------- | ---------------------------------------------------------------- |
 | 採用             | 反映する                                                         |
-| 判断への反論     | 根拠・制約・反例を `resume` で返す                               |
-| 事実に疑義       | **先にコード・テスト・一次情報で検証**し、結果を `resume` で返す |
+| 判断への反論     | 根拠・制約・反例を同じ session に返す                               |
+| 事実に疑義       | **先にコード・テスト・一次情報で検証**し、結果を同じ session に返す |
 | 情報不足・抽象的 | 具体化を求める（該当行・再現条件・代替案）                       |
 | ユーザー判断     | 往復上限を待たず、早期にユーザーへ委ねる                         |
-| 実行失敗         | err.log を確認し、再実行または新規セッション                     |
+| 実行失敗         | terminal の状態・エラーを確認し、対象 session の復旧を判断する |
 
 **事実の対立を LLM 同士の対話で解決しない。** 自分の認識が誤っている可能性もある。
 二つの LLM が合意しても事実確認にはならないので、コードの再読・テスト実行・
@@ -47,7 +47,7 @@ Paths in commands are relative to the skill root (the directory containing `SKIL
 「争点は整理できた」という自己判定で未提示の反論を握りつぶせてしまう。
 
 ```
-分類 → 事実なら検証 → 反論を resume → Codex の応答を受ける → 終了判定
+分類 → 事実なら検証 → 同じ session に反論を送信 → Codex の応答を受ける → 終了判定
 ```
 
 以下のいずれかで終了:
@@ -55,39 +55,17 @@ Paths in commands are relative to the skill root (the directory containing `SKIL
 1. 未解決の実質的な反論がなくなった
 2. 反論を実際に提示し**その応答を得た上で**、残る相違を前提・根拠・判断基準・
    トレードオフとして整理できた（**合意しなくてよい**）
-3. 打ち切り — 初回を含め Codex の回答が **3回**（= `resume` は最大2回）に達した、
+3. 打ち切り — 初回を含め Codex の回答が **3回**（= 追加の応答は最大2回）に達した、
    または **新しい根拠なしに同じ主張が反復**された時点。新しい証拠が出ている場合のみ1回延長可
 
 打ち切り時はユーザーに委ね、**争点・自分側の根拠・Codex 側の根拠・ユーザーが決めるべき点**を
 並べて提示する。「Codex が折れないので押し切りました」も「Codex が言うので従いました」も
 報告として不適切。
 
-### resume の使い方
+### 同じ対話 session に返す
 
-```bash
-# session id 指定（推奨）
-codex exec --skip-git-repo-check --dangerously-bypass-approvals-and-sandbox -m "$MODEL" -c "model_reasoning_effort=$EFFORT" --cd <project_directory> resume <session_id> "<反論・追加情報>" < /dev/null 2>"$TMPDIR/codex-err.log"
+1. 初回に控えた Orca terminal handle を使い、`terminal read` で入力可能な状態を確認する。
+2. `terminal send --terminal <handle> --text "<反論・追加情報>" --enter` で送る。ready・送信証明・重複送信の扱いは `orca-cli` に従う。
+3. 同じ session の新しい応答を `terminal read` または監督下の報告経路で確認する。回答後も session は残す。
 
-# 直前のセッション
-codex exec ... resume --last "<反論・追加情報>" < /dev/null 2>"$TMPDIR/codex-err.log"
-```
-
-**session id は初回実行時の stderr banner から控える**（`2>` で退避した err.log に出る）:
-
-```
-OpenAI Codex v0.144.4
---------
-workdir: /tmp
-model: <選択したモデル>
-...
-session id: 019f7d9f-24c0-7752-9966-ffc231990d35
---------
-```
-
-`--last` は **cwd でフィルタされた** 最新セッションを指す（`--all` でフィルタ解除）。
-同一プロジェクトで複数の相談を並行・連続で走らせると **別のセッションを掴む**。
-往復する前提なら初回の session id を控えて明示指定すること。
-
-長い反論は初回と同様に一時ファイル + stdin pipe（`resume <session_id> -`）で渡す。
-
----
+process が終了した場合だけ、[対話モードの再開手順](../codex.md#対話-session-の起動再開) で対象 session ID を指定して再開し、ready 後に追加情報を送る。生きている session と並行して resume を立てない。`--last` は同じ project の別 session を拾い得るため使わない。
