@@ -65,6 +65,10 @@ package (`node_modules/e2e/docs` in a single-package project); a link such as
 | `mcp` | [references/mcp.md](references/mcp.md) | Driving the live app from a coding agent over MCP: `e2e mcp`, its tools, and the explore-then-write loop |
 | `bug-bash` | [references/bug-bash.md](references/bug-bash.md) | Asked to bug bash, QA, or hunt for bugs across an app or a branch: parallel `e2e explore` charters, merging findings, proving each with a repro test |
 
+モデルの画像入力・schema・tool call の診断 helper は
+[debugging の Tools](references/debugging.md#tools)、証跡の秘密混入検査 helper は
+[running の Output](references/running.md#output) を必要時に読む。
+
 ## Workflow
 
 1. Look at what exists: `e2e.config.ts` or `e2e.config.mts`, the `tests` glob

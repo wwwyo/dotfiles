@@ -85,6 +85,14 @@ its own tools.
 
 ## Output
 
+証跡を共有する前の秘密混入検査は、対象 project を cwd にして
+`mise exec -- bun <e2e-skill>/tools/audit-artifacts.ts`（入力は `--help`）。
+既定の `.e2e` 全体と trace ZIP の内容・名前を検査し、件数のみを返す。
+env の秘密値・URL host と JWT・age private key を検出し、独自名の秘密は
+`--secret-env NAME` で追加する。ZIP の検査には PATH 上の `unzip` が必要。
+symlink・読めない ZIP は失敗扱いで、ZIP 内の再圧縮 archive は再帰検査しない。
+env にない任意の秘密や画像・動画の画素に写った秘密は保証しないので、目視確認は別に行う。
+
 `<output>` (`.e2e` by default) holds `report.json`, `junit.xml`,
 `summary.md`, `failures/`, `ai-trace.json`, `sessions/`, and `artifacts/`
 (screenshots, Playwright traces, videos, `--debug` transcripts, downloads).

@@ -37,6 +37,12 @@ description: "別 agent への委譲・相談・レビューで harness・model�
 
 `worktree create --agent` は Orca の設定済みランチャーを使う。Orca Settings の Agents 画面に保存された起動引数が bypass になっていることと、インストール済み CLI の `--help` に合うことを確認する。設定を参照できない場合や引数が合わない場合は、`orca-cli` のカスタム起動手順で `terminal create --command` に対応する引数を明示する。他の harness も `--help` で対応する指定を確認し、通常の権限モードへ黙って fallback しない。
 
+## 通常の session を開いて prompt を送る
+
+委譲・相談・レビューは、harness を問わず Orca の terminal に通常の対話 session（TUI）を開き、入力 ready を確認してから prompt を送る。短い依頼でもこの手順を使う。新規・再開・fallback に適用し、`devin -p` / `pi -p` / `codex exec` などの one-shot はユーザーが非対話実行を明示した場合だけ使う。pi の `--no-session` も通常の委譲では付けない。
+
+追加指示は起動済みの同じ terminal / session に送る。回答後も session は残し、通常の委譲を print mode の繰り返しで代用しない。process が終了したときだけ、対象 session ID を指定して対話モードで再開する。起動・送信・開始確認の具体的な操作は後述の Orca 手順に従う。
+
 ## Harness ごとの手順
 
 共通設定で選んだ harness の reference を読む。ユーザーが harness を指定した場合も同じ入口を使い、モデル・effort・権限モードは本文の共通設定に従う。
@@ -44,8 +50,8 @@ description: "別 agent への委譲・相談・レビューで harness・model�
 | やること | 読む reference |
 |---|---|
 | Codex へ相談・レビュー・調査を依頼する / 同じ session で対話を続ける | [references/codex.md](references/codex.md) |
-| Devin を起動する / 非対話で実行する / session を再開する | [references/devin.md](references/devin.md) |
-| pi を起動する / 非対話で実行する / session を継続する | [references/pi.md](references/pi.md) |
+| Devin の対話 session を起動する / 再開する | [references/devin.md](references/devin.md) |
+| pi の対話 session を起動する / 継続する | [references/pi.md](references/pi.md) |
 
 設定・認証・起動不調の調査は [dev-env](../dev-env/SKILL.md) から対象の reference を読む。Orca の terminal 操作と handoff・監督の使い分けは後述の「起動・連携は Orca 経由」に従う。
 
@@ -74,6 +80,10 @@ description: "別 agent への委譲・相談・レビューで harness・model�
 - **担当を別 repo / agent / worktree へ渡す handoff の場合**: [`orca-cli`](../orca-cli/SKILL.md) の Full Handoffs を使う。引き継ぎ先と送信確認を報告したら親は終了し、完了まで監督しない。
 
 Orca を利用できない場合は、そのエラーを報告し、別経路へ切り替えない。CLI の解決・バージョンに合った手順の取得・起動確認は上記 skill に従う。
+
+同じ checkout で新しい session を開く場合は `terminal create --worktree <selector> --command '<harness の対話起動コマンド>'` を使う。別 checkout が必要な場合は `worktree create --agent <harness>` を使い、保存済みランチャーが選んだ model・effort・bypass に合わなければカスタム起動にする。`terminal create` の command 内の変数は委譲先の shell で展開されるため、親だけで設定した変数に依存せず、選んだ値を引数へ埋め込む。
+
+いずれも `terminal wait --for tui-idle` の `satisfied: true` を確認してから送信する。送信受付と turn 開始を区別し、開始を確認できない場合は同じ prompt を重複送信しない。監督下では orchestration の dispatch / mailbox 手順で依頼を届ける場合も、worker 自体は対話 session で起動する。
 
 ## Devin / pi への handoff
 

@@ -16,6 +16,11 @@ Vercel のログインや Gateway の設定を通常のセットアップの前�
 Go のエンドポイントとクライアント識別・session header を明示する。
 モデル名は共通環境変数から取得し、templateの固定fallbackとの二重管理を避ける。
 
+モデル能力の診断と証跡の秘密混入検査は共有 helper に持つ。診断は対象 project の
+config のモデルと導入済み SDK を使い、project 固有の import・transport や
+helper 側のモデル既定を持たない。SDK payload や秘密値を出力せず、検査不能な
+証跡は成功と扱わない。実アプリの QA と画像内容の目視確認は別に必要。
+
 TesterArmy への telemetry と feedback の自動送信を行わない。明示的な
 opt-out を初回起動・MCP・CI にも適用し、上流の feedback 指示を復活させない。
 モデルへの推論リクエストとローカル保存は telemetry と区別して説明する。

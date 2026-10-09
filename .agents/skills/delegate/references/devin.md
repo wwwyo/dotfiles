@@ -8,24 +8,22 @@
 
 [delegate](../SKILL.md) の「Agent・モデルの共通設定」に従う。`devin models list --format json` で使用可能な model UID を確認し、以下の `DEVIN_MODEL_ID` に代入する。Devin は effort を含む UID で指定する（例: `swe-2:medium` → `swe-2-medium`）。
 
-## 基本コマンド
+## 対話 session の起動・再開
+
+以下を Orca の `terminal create --command` に渡す。新しい worktree で保存済みランチャーを使う場合は [delegate の handoff 手順](../SKILL.md#devin--pi-への-handoff) に従う。起動時には prompt を付けず、ready 後に送る。
 
 ```bash
 # 対話セッション
 mise x -- env -u ACP_BACKEND devin --permission-mode dangerous --respect-workspace-trust false --model "$DEVIN_MODEL_ID"
 
-# 非対話で実行して終了
-mise x -- env -u ACP_BACKEND devin --permission-mode dangerous --respect-workspace-trust false --model "$DEVIN_MODEL_ID" -p "<タスクと完了条件>"
-
-# 長い依頼はファイルから渡す
-mise x -- env -u ACP_BACKEND devin --permission-mode dangerous --respect-workspace-trust false --model "$DEVIN_MODEL_ID" --prompt-file <prompt-file> -p
-
 # セッションを探して再開
 mise x -- env -u ACP_BACKEND devin list
-mise x -- env -u ACP_BACKEND devin --permission-mode dangerous --respect-workspace-trust false -r <session-id> -p "<追加の指示>"
+mise x -- env -u ACP_BACKEND devin --permission-mode dangerous --respect-workspace-trust false -r <session-id>
 ```
 
 再開時は保存されたモデルを引き継ぐ。変更するときだけ `--model` を付ける。
+
+追加指示・長い依頼も、起動済み terminal に `terminal send --text ... --enter` で送る。回答後も session を残す。`-p` / `--print` は処理後に終了する非対話モードなので、ユーザーが one-shot を明示した場合だけ使う。
 
 ## Orca で起動・継続を確認する
 
