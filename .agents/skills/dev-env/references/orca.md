@@ -41,6 +41,7 @@ GitHub issue forms 管理 — `[Feature]:` 接頭辞と enhancement label は fo
 
 - **`provider: devin` では `reuseSession: true` が効かない**（session が溜まり続けるのを実測）。reuse の成立条件は provider ではなく「前回 run が記録した pane + PTY が live」— `run.workspaceId` が一致し、pane に agent status `done` が乗り、PTY が生きているときだけ既存 PTY へ prompt が貼られる。`workspaceMode: new_per_run` で workspace が毎回変わる・pane に `done` が乗らない・PTY が既に死んでいる、のどれでも新規 session が立つ
 - **dispatch が `turn_started not observed` / `dispatched: false` を返しても devin provider では誤報になりうる**。再送する前に対象 terminal を実査して session 稼働を確認する — 二重送信の方が害が大きい
+- **Devin の `provider: "unsupported"` は turn/model の証明が Orca 側で取れないという意味**。受付済み入力を未送信と断定して再送しない。描画と [Devin の native evidence](devin-cli.md#native-evidence-で実-modelturn停止を区別する) を併用する。稼働中は transcript が未作成でも DB の実 generation が取れる場合がある
 - `orca.yaml` の `scripts.setup` は各 worktree の working tree を `readFileSync` で読む — その worktree 内の未 commit 変更も即反映される。新規 worktree に入らないのは push 不足ではなく、start-from の ref に commit されていないため。`commandSourcePolicy`（`shared-only` / `local-only` / `run-both`。旧 `shared-first` は `shared-only` に正規化）は `orca.yaml` の key ではなく Settings の repo ごとローカル設定。`local-only` で local script が空なら shared に fallback せず何も走らない。UI の local script 欄を消しても policy が変わらないのは明示保存済みのときだけ — 未設定（`undefined`）だと local script の有無から effective policy が決まり、消すと `local-only` → `shared-only` に反転する
 
 - 溜まった automation session record を掃除する専用コマンドは無い。`terminal close --worktree <selector> --all`（destructive）は指定した worktree の全 terminal を live session 込みで閉じるので、掃除用途には使わない
@@ -52,6 +53,7 @@ version-matched guide は coordinator 視点の記述が中心。dispatch され
 - `orca orchestration check --terminal <自分の handle> --json` で読む。`--run <run_id>` は Run scope を明示する flag で、worker が自分の mailbox を読むときは省略する（既定は自分の bound Run）
 - `worker_done` を送る直前に1回 check する — 直前の redirect・追加指示を取りこぼさないため。check には live な preamble の自分の terminal handle を使う（古い handle には新しい Run の message は届かない）
 - 消費せず中身だけ見るときは `--peek`（unread を read にしない）。応答の `ok: false` は「0件」ではなく失敗 — 空と区別して扱う
+- `send` 成功は durable enqueue、nudge は best-effort であり worker の受領/理解を証明しない。worker は `check` の全 message を処理し、変更に影響する指示は受領と現在の到達点を status で返す。delivery が replay される版では処理済み `deliveryId` を version-matched guide に従って ack する。本文を時刻で絞り込んで古い未処理指示を捨てない
 - 待機は `check --wait`（stderr に keepalive が流れる）。呼び出し側の tool 実行には blocking 上限（1分程度）があるので、長い待機は繰り返し呼ぶ
 
 ## `orca computer` が focused window を取れないとき

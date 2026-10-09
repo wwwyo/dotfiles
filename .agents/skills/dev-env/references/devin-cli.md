@@ -61,3 +61,15 @@ CLI 本体の install/upgrade は brew cask（`scripts/Brewfile` の `cask "devi
   skip 可。remote install は repo の default branch を fetch するため `plugins/`
   が main に無い間（PR 未 merge 等）は remote 経由では install できない —
   merge 前の検証は `--local` で済ませる
+
+## native evidence で実 model・turn・停止を区別する
+
+2026-10-09、CLI 3000.11.3 の native ATIF-v1.7 と `sessions.db` を読み取りで確認した。狭い取得と復旧操作は [delegate の実行・継続手順](../../delegate/references/devin.md#orca-で起動継続を確認する) に置く。schema は undocumented なので版が変われば必要欄だけを確認する。秘密や会話を含む file の生 dump はしない。
+
+- ATIF の `agent.model_name` は表示名、`steps[].model_name` / `steps[].extra.generation_model` は step の実 UID を記録する。Orca の `unsupported` は native evidence が無いことを意味しない。user step の後の agent step で開始を確認できるが、成功終了や現在の process 状態は示さない。
+- transcript は常に稼働中の最新 turn を反映するとは限らない。初見 Max worker は DB 登録/生成が進んでも transcript が未作成だった。CLI help は `--export [PATH]` を after each turn の export と記載するが、自動 transcript の作成条件・保持期間や明示 export の形式/障害時更新は未検証。不在/mtime 停滞だけで停止・model 不適用と扱わない。
+- 稼働中の補助根拠は `sessions.db` を SQLite URI `mode=ro` で開き、session ID を bind して `message_nodes.chat_message` の必要 metadata だけを抽出する。`sessions.model` は Max worker で空文字だったため実行 model の根拠にしない。assistant の `metadata.generation_model` / `started_generation_at`、実 user input の `metadata.is_user_input` / `created_at` を使う。
+- DB は chain 再記録で同じ `message_id` が複数 row に載る。`row_id` と DB row の `created_at` は過去会話の再記録でも進むため turn watermark にしない。全 row から `message_id` で重複を除き、同 ID の最新 metadata を使い、生成/入力の metadata 時刻で増分を見る。`generation_model=compactor` は主 worker の model 変更として数えない。
+- CLI log は `~/.local/share/devin/cli/logs/`。対象 session と時刻を確認し、logger・event・HTTP status・EOF・retry 回数だけを取る。exec の command/会話が error 文を引用するため、単純な `rg error` の件数は通信失敗数ではない。
+
+この日の Medium worker は Connect HTTP 応答本文の `unexpected EOF during chunk size line` (`is_timeout=false`, `is_decode=true`) が繰り返され、`affogato::agent::control_loop` が `attempts=3` で2回 turn 停止。途中に `inference::retry` の HTTP 502、ACP に unavailable / retryable=true の応答があり、同 session の次 user/agent steps で継続を確認できた。これが示すのは推論 transport の失敗と CLI retry 枯渇であり、認証失敗・context 超過・モデル能力不足の証拠ではない。サーバー/中継/ローカル回線のどこが切断したかは未特定。認証/doctor 成功と持続的な推論接続の健全性は分ける。
