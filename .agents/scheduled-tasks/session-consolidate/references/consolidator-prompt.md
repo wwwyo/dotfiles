@@ -73,7 +73,7 @@ skill/AGENTS だけの変更は、原因が判断基準・知識の欠落にあ�
 
 ## 4. consolidated score（順序固定: PR 作成後に書く）
 
-処理が終わった session 全て（還元した・しなかった・`特になし`、いずれも）に `consolidated` score を書く。値には入力 JSON のその session の `evaluated_until` をそのまま渡す — 壁時計ではなく coverage にすると、後から再評価された session は `consolidated < evaluated_until` で次回 run の対象に自然に戻る。`--comment` に PR URL または `no changes` を書く。**例外が2つ**: (1) `misrouted` — `{REPO_ROOT}` と無関係と判定した session は score を書かず `outcomes` で報告する（未 mark → 次 run で再対象・再割当される）。(2) `multi_dest: true` の session — `{REPO_ROOT}` 宛の部分を処理しても score は書かず `outcomes` で `done`/`misrouted` を報告する。score は coordinator が**全宛先の consolidator の `done` を確認してから**書く — 一部宛先の mark は他宛先の失敗・誤判定を session 単位の処理済み marker で隠し、その宛先分の学びを静かに落とす。
+処理が終わった session 全て（還元した・しなかった・`特になし`、いずれも）に `consolidated` score を書く。値には入力 JSON のその session の `evaluated_until` をそのまま渡す — 壁時計ではなく coverage にすると、後から再評価された session は `consolidated < evaluated_until` で次回 run の対象に自然に戻る。`--comment` に PR URL または `no changes` を書く。**例外が2つ — 両方とも step 3 の各種理由付き mark 規定（共有 repo・CI 失敗・恒久失敗）より優先する**: (1) `misrouted` — `{REPO_ROOT}` と無関係と判定した session は score を書かず `outcomes` で報告する（未 mark → 次 run で再対象・再割当される）。(2) `multi_dest: true` の session — `{REPO_ROOT}` 宛の部分を処理しても score は書かず `outcomes` で `done`/`misrouted` を報告する。score は coordinator が**全宛先の consolidator の `done` を確認してから**書く — 一部宛先の mark は他宛先の失敗・誤判定を session 単位の処理済み marker で隠し、その宛先分の学びを静かに落とす。`multi_dest` session が共有 repo・CI 失敗・恒久失敗など理由付き mark 相当の終端に当たった場合も score は書かず、`outcomes` で `failed:<reason>`（`shared repo`・`ci failing` 等の既存の語彙）を報告する — coordinator が理由付き mark に変換する。一時的な失敗は通常どおり score も outcome にも書かず、次 run の再試行に任せる。
 
 ```bash
 python3 ~/.agents/scheduled-tasks/session-consolidate/tools/session_consolidate.py score \
@@ -88,8 +88,8 @@ score が書けなかった session は次回 run で再対象になる。PR 作
 
 ```
 consolidated <repo_root>; pr=<url or none>; marked=<n>/<total>
-outcomes: <session_id>=<done|misrouted>[, <session_id>=<...>]
+outcomes: <session_id>=<done|misrouted|failed:<reason>>[, <session_id>=<...>]
 ```
 
 - `total` は spec の session 総数、`n` はこの worker が score を書いた数 — misrouted・`multi_dest` で書かなかった分は含めない
-- `outcomes` には `multi_dest: true` の session と `{REPO_ROOT}` と無関係と判定した session の結果を列挙する（`done` = `{REPO_ROOT}` 宛部分を処理した・`misrouted` = この repo と無関係）。該当なしなら `outcomes: none`
+- `outcomes` には `multi_dest: true` の session と `{REPO_ROOT}` と無関係と判定した session の結果を列挙する（`done` = `{REPO_ROOT}` 宛部分を処理した・`misrouted` = この repo と無関係・`failed:<reason>` = 理由付き mark 相当の恒久失敗で `shared repo`・`ci failing` 等の語彙を使う）。該当なしなら `outcomes: none`
