@@ -71,7 +71,7 @@ test("configuration and help expose Fish as the default", () => {
     assert.equal(help.status, 0, help.stderr);
     assert.match(help.stdout, /--voice fish \(default: Fish Audio/);
     assert.match(help.stdout, /s2\.1-pro-free/);
-    assert.match(help.stdout, /297a6fd278df47c3b9da9bfdf55ac89a/);
+    assert.match(help.stdout, /Shiori, a female narrator \(5da7f24e9e274f91b2b677669c818ce9\)/);
   });
 });
 

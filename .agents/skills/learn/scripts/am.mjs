@@ -4844,7 +4844,7 @@ function hasCommand(cmd) {
 // src/video/tts.js
 var SAMPLE_RATE = 22050;
 var FISH_MODEL = "s2.1-pro-free";
-var FISH_DEFAULT_VOICE = "297a6fd278df47c3b9da9bfdf55ac89a";
+var FISH_DEFAULT_VOICE = "5da7f24e9e274f91b2b677669c818ce9";
 var FISH_TIMEOUT_MS = 18e4;
 var ELEVEN_DEFAULT_VOICE = "bIHbv24MWmeRgasZH58o";
 var ELEVEN_DEFAULT_MODEL = "eleven_v4_turbo";
@@ -5940,7 +5940,7 @@ Client -> Server: ACK
 - Nodes / participants with the same name in adjacent scenes move smoothly from the old position to the new one (cross-scene morph).
 - Voice-over: --voice fish (default: Fish Audio; auto is an alias for fish) | elevenlabs | local | system | off.
   Fish Audio needs FISH_API_KEY from mise + age. The model header is fixed to s2.1-pro-free; no paid model or other provider fallback is attempted.
-  The default voice is Satoru (297a6fd278df47c3b9da9bfdf55ac89a); set FISH_VOICE_ID to select another voice.
+  The default voice is Shiori, a female narrator (5da7f24e9e274f91b2b677669c818ce9); set FISH_VOICE_ID to select another voice.
   Fish Audio returns 16-bit mono WAV at 44100 Hz, resampled for the player timeline. Each beat uses its actual audio duration.
   FISH_TTS_READINGS_FILE optionally names a JSON object mapping every narration line to its spoken text. Captions keep the original text.
   Match narration text after removing focus brackets [name]. Updating the readings invalidates the audio cache.
