@@ -28,7 +28,7 @@ skill は `settings.json` の `"skills": ["~/.claude/skills"]` 一本で読ま�
 
 - opencode の Zen と Go は別 catalog。運用は `opencode-go`（Go サブスク枠、`zen/go/v1`）のみ — Zen 側（`opencode` provider、`zen/v1`）は従量課金なので使わない。**pi の catalog は `zen/go/v1/models` の実態より遅れる** — Go endpoint で生きている model（`/responses`・`/chat/completions`・`/messages` で 200）が pi catalog 未掲載なら `models.json` の `models` で先行定義する（現在 `claude-haiku-5-5`）。catalog に降りたら消す — 残すと自前の推測値が公式定義を上書きし続ける。`enabledModels` だけの先行登録は no-match warning が出るだけで有効化されない。`zen/go/v1/models` に未掲載でも実際の endpoint では使える場合がある（Haiku 5.5 の `/messages` で確認済み）。Go catalog の model でも workspace の Privacy 設定で「train on request data」を許可しないと 400 になる（`muse-spark-1.3-contributor` 等）
 
-- Go サブスクで使えるかは `zen/go/v1/models` の catalog が決める — `claude-sonnet-*`/`claude-opus-*` 系は枠に無く、`enabledModels` に足しても endpoint が拒否する。`enabledModels` に Anthropic の上位 model が並ばないのは漏れではなくこの境界のため。upstream が枠から model を消す例は [delegate](../../delegate/SKILL.md) に集約する
+- Go サブスクで使えるかは catalog 掲載ではなく endpoint が決める — 直上の Haiku 5.5 例のように catalog 未掲載でも生きている model がある一方、`claude-sonnet-*`/`claude-opus-*` 系は endpoint が `Model is unavailable` で拒否するので `enabledModels` に足しても動かない。`enabledModels` に Anthropic の上位 model が並ばないのは漏れではなくこの境界のため。upstream が枠から model を消す例は [delegate](../../delegate/SKILL.md) に集約する
 
 - prompt editor の Vim mode は `pi-vim` package（base の `packages` に `npm:pi-vim@0.14.2` で exact pin）が提供する。設定 flag ではないので、vim モードが効かなくなったら `packages` 行が残っているかを見る。pin を緩めると upstream の後方互換のない更新がそのまま入る
 
