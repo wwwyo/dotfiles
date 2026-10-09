@@ -32,6 +32,8 @@ imports:
   - shared/skillctrl-engine.md
 steps:
   - name: Read the trusted skillctrl pin
+    env:
+      CHECKER_SOURCE: ${{ needs.select.outputs.source }}
     run: |
       mkdir -p /tmp/gh-aw/skillctrl-cli
       python3 - <<'PYTHON'

@@ -54,6 +54,14 @@ for workflow in [pr_workflow, upd_workflow]:
     pin_scripts = runs(workflow, 'Read the trusted skillctrl pin')
     assert len(pin_scripts) == 4 and len(set(pin_scripts)) == 1
 assert runs(test_workflow, 'Read the trusted skillctrl pin') == [pin_scripts[0]]
+# Agent-job environment is not inherited from the selection job. The first
+# trusted pin read must receive its immutable source before any setup runs.
+for workflow, compiled in [(pr_workflow, pr_compiled), (upd_workflow, upd_compiled)]:
+    setup = workflow.split('\nsteps:\n', 1)[1].split('\npost-steps:\n', 1)[0]
+    agent_job = re.split(r'\n  [\w-]+:\n', compiled.split('\n  agent:\n', 1)[1], maxsplit=1)[0]
+    binding = 'CHECKER_SOURCE: ${{ needs.select.outputs.source }}'
+    for document in [setup, agent_job]:
+        assert document.index(binding) < document.index("source = os.environ['CHECKER_SOURCE']")
 assert 'CHECKER_SOURCE: ${{ github.event.pull_request.base.sha || github.sha }}' in pr_workflow + upd_workflow
 assert 'SKILLCTRL_BIN: ${{ steps.skillctrl-cli.outputs.binary }}' in pr_compiled + upd_compiled
 assert '--mount /tmp/gh-aw:/tmp/gh-aw:rw' in pr_compiled + upd_compiled
