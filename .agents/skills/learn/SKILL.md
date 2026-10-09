@@ -195,6 +195,7 @@ Selection rules:
 ユーザーが動画を明示的に依頼した場合だけ、この動画生成を使う。形式未指定の通常の解説は第2節のHTML図解シートを使う。
 音声はFish Audioを `--voice fish` で明示する。モデルは `s2.1-pro-free`、話者は旧learnと同じ「さとる（ナレーション）」の `297a6fd278df47c3b9da9bfdf55ac89a` を使う。
 認証はmise + ageで管理した `FISH_API_KEY` を `mise exec` から渡す。話者変更は `FISH_VOICE_ID`。秘密情報は原稿・設定ファイル・ログに平文で置かず、privateな情報を含む台本をFish Audioへ送らない。
+`mise exec` 後も `FISH_API_KEY` が見えないとき、空のprocess.envだけで未登録と結論しない。global/repo-local のmise設定への登録有無とage復号鍵（`MISE_AGE_KEY`）の注入を分けて確認し、Keychain→process envの注入手順は [secret-env](../secret-env/references/mise-age.md) のmacOS例に従う。登録済みキーが復号できれば再登録を求めずそのまま音声生成し、復号を確認しても不足する場合だけユーザーに質問する。
 モデル名はCLIが固定ヘッダーで指定する。キー不足やAPI失敗時は停止し、有料モデル・システムTTS・別providerへ自動で切り替えない。
 無料モデルの期間・条件は利用時に [公式案内](https://fish.audio/blog/s2-1-pro-free-api/) で確認する。2026-10-05確認時点で無料期間は2026-11-30まで。
 各ナレーションをWAVで生成し、実際の音声長で図の段階表示と字幕を同期する。
