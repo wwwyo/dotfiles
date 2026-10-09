@@ -50,6 +50,7 @@ class EvidenceTest(unittest.TestCase):
             stream.write(f"2026-10-09T03:45:01Z WARN connect_rpc::stream: is_timeout=false is_body=false is_decode=true error={CONTENT_MARKER} unexpected EOF during chunk size line HTTP body stream error while reading Connect response\n")
             stream.write(f"2026-10-09T03:45:02Z ERROR affogato::agent::control_loop: attempts=3 error={CONTENT_MARKER} Exhausted inference retries; stopping turn\n")
             stream.write(f"2026-10-09T03:45:03Z WARN inference::retry: unknown={CONTENT_MARKER}\n")
+            stream.write(f"{CONTENT_MARKER} ERROR affogato::agent::control_loop: Exhausted inference retries; stopping turn\n")
         data = self.run_reader("--transcript", path, "--after-step", 3, "--log", log)
         self.assertEqual(data["transcript"]["sources"], {"user": 1, "agent": 1})
         self.assertEqual(data["transcript"]["latest_turns"][0]["first_agent_step_id"], 5)
@@ -57,6 +58,7 @@ class EvidenceTest(unittest.TestCase):
         self.assertEqual(data["logs"][0]["event_counts"],
                          {"http_body_stream_error": 1, "inference_retries_exhausted": 1})
         self.assertEqual(data["logs"][0]["unrecognized_target_logger_lines"], 1)
+        self.assertEqual(data["logs"][0]["invalid_timestamp_target_logger_lines"], 1)
         self.assertFalse(data["logs"][0]["events"][0]["is_timeout"])
 
     def test_fail_closed_without_raw_exception(self):
@@ -82,15 +84,17 @@ class EvidenceTest(unittest.TestCase):
             for rid, mid, role, time, model in ((1, "u", "user", "03:00:00", None),
                     (2, "a", "assistant", "03:01:00", "swe-2-max"),
                     (3, "a", "assistant", "03:01:00", "swe-2-max"),
-                    (4, "c", "assistant", "03:02:00", "compactor")):
+                    (4, "c", "assistant", "03:02:00", "compactor"),
+                    (5, "unknown", "assistant", "03:00:30", None)):
                 message = {"message_id": mid, "role": role, "content": CONTENT_MARKER,
                            "metadata": {"is_user_input": role == "user", "created_at": f"2026-10-09T{time}Z",
                                         "generation_model": model}}
                 db.execute("INSERT INTO message_nodes VALUES (?, ?, ?)", (rid, "fixture", json.dumps(message)))
         before = path.read_bytes()
         data = self.run_reader("--session", "fixture", "--database", path)["database"]
-        self.assertEqual((data["raw_rows"], data["unique_message_ids"], data["agent_messages"]), (4, 3, 1))
+        self.assertEqual((data["raw_rows"], data["unique_message_ids"], data["agent_messages"]), (5, 4, 2))
         self.assertEqual(data["generation_models"], {"swe-2-max": 1})
+        self.assertEqual(data["unknown_generation_model_messages"], 1)
         self.assertIsNone(data["saved_model_not_execution_proof"])
         delta = self.run_reader("--session", "fixture", "--database", path,
                                 "--after-time", "2026-10-09T12:01:00+09:00")["database"]

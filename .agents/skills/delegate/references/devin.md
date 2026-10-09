@@ -34,6 +34,8 @@ ready 後に送信する順序は [delegate の handoff 手順](../SKILL.md#devi
 読み込んだ delegate skill directory の絶対パスを `DELEGATE_SKILL_DIR` に設定して、[読み取り専用 helper](../scripts/devin-evidence.py) を使う。Python 標準ライブラリだけで動き、session を再開せず、会話本文・reasoning・tool 引数・config・生ログを出さない。
 
 ```bash
+: "${DELEGATE_SKILL_DIR:?Set the absolute path of the loaded delegate skill directory}"
+
 # 保存済み native ATIF。--after-step は送信前の last_step_id
 python3 "$DELEGATE_SKILL_DIR/scripts/devin-evidence.py" --session <session-id>
 python3 "$DELEGATE_SKILL_DIR/scripts/devin-evidence.py" --session <session-id> --after-step <last-step-id>
@@ -46,13 +48,13 @@ python3 "$DELEGATE_SKILL_DIR/scripts/devin-evidence.py" --session <session-id> -
 python3 "$DELEGATE_SKILL_DIR/scripts/devin-evidence.py" --session <session-id> --log <対象logの絶対パス>
 ```
 
-`--transcript <path>` で native ATIF を明示指定してもよい。helper の `ok: false` / exit 1 は読取失敗であり、空の成功と区別する。ATIF/DB schema が変わった場合は生 dump に切り替えず、必要 field だけを再確認する。既知 event 0件は接続正常の証明ではなく、明示した log の session 帰属は別に確認する。書出し条件・DB の重複・model 欄の意味は [native evidence の制約](../../dev-env/references/devin-cli.md#native-evidence-で実-modelturn停止を区別する) を参照。
+`--transcript <path>` で native ATIF を明示指定してもよい。helper の `ok: false` / exit 1 は読取失敗であり、空の成功と区別する。ATIF/DB schema が変わった場合は生 dump に切り替えず、必要 field だけを再確認する。log の時刻不正行は件数を示して除外し、DB の model 不明件数は既知 model の集計と分ける。既知 event 0件は接続正常の証明ではなく、明示した log の session 帰属は別に確認する。書出し条件・DB の重複・model 欄の意味は [native evidence の制約](../../dev-env/references/devin-cli.md#native-evidence-で実-modelturn停止を区別する) を参照。
 
 ## Connection error で turn が止まったとき
 
 1. coordinator は `terminal read/show` と対象 log を確認する。`Exhausted inference retries; stopping turn` や `Connection error, send a message to continue retrying` は turn 停止の根拠になる。PTY が live なだけ、無反応、`unsupported`、transcript 不在だけでは停止と判断しない。
-2. 停止が確認でき、同じ agent が入力を受けられる場合に、同 session へ継続 prompt を1回送る。Task/Dispatch、現在の cwd/変更保持、mailbox と最新 brief の読み直し、現在の到達点の status 報告を含める。元タスク全体の二重送信や自動再送はしない。曖昧な送信失敗は Orca の version-matched receipt / retry 手順に従う。
-3. native evidence の新 user input と agent generation で継続を確認し、再び止まったら別の接続失敗として時刻・attempts を記録する。CLI process が終了した場合の再開は supervised Dispatch の recovery 手順を coordinator が判断する。生きている process と並行して `devin -r` を立てない。
+2. 停止が確認でき、同じ agent が入力を受けられる場合に、同 session へ継続 prompt を1回送る。Task/Dispatch、現在の cwd/変更保持、mailbox と最新 brief の読み直し、現在の到達点の status 報告を含める。元タスク全体の二重送信や自動再送はしない。曖昧な送信失敗は [orca-cli が読み込む version-matched guide](../../orca-cli/SKILL.md#load-the-version-matched-guide-before-running-orca-commands) の receipt / retry 手順に従う。
+3. native evidence の新 user input と agent generation で継続を確認し、再び止まったら別の接続失敗として時刻・attempts を記録する。CLI process が終了した場合の再開は [orchestration が読み込む version-matched guide](../../orchestration/SKILL.md#load-the-version-matched-guide-before-running-orca-commands) の supervised Dispatch recovery 手順を coordinator が判断する。生きている process と並行して `devin -r` を立てない。
 
 接続停止と候補の品質不一致は別の記録にする。候補提出・独立検査待ち・候補固定は対象 repo の既存手順に従う。監督下の follow-up は durable enqueue や nudge だけでは読まれたと扱わず、worker の `check` と受領報告を確認する（[Orca の mailbox 補足](../../dev-env/references/orca.md#orchestration-worker-が自分の-mailbox-を読むとき)）。
 

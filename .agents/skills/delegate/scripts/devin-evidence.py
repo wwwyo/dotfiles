@@ -90,7 +90,7 @@ def transcript_summary(path, after_step):
 def log_summary(path):
     # Only exact logger/message combinations emit evidence; prompts can quote errors.
     header = re.compile(r"^(\S+)\s+(WARN|ERROR)\s+(connect_rpc::stream|inference::retry|affogato::agent::control_loop|run_acp_server: chisel_core::translator): (.*)$")
-    events, unrecognized = [], 0
+    events, unrecognized, invalid_timestamps = [], 0, 0
     opener = gzip.open if path.suffix == ".gz" else open
     with opener(path, "rt", encoding="utf-8", errors="replace") as stream:
         for number, line in enumerate(stream, 1):
@@ -98,7 +98,12 @@ def log_summary(path):
             if not match:
                 continue
             time, level, component, text = match.groups()
-            event = {"line": number, "timestamp": timestamp(time), "level": level, "component": component}
+            try:
+                event_time = timestamp(time)
+            except ValueError:
+                invalid_timestamps += 1
+                continue
+            event = {"line": number, "timestamp": event_time, "level": level, "component": component}
             if component == "connect_rpc::stream" and "HTTP body stream error while reading Connect response" in text:
                 event["kind"] = "http_body_stream_error"
                 event["unexpected_eof"] = "unexpected EOF during chunk size line" in text
@@ -126,6 +131,7 @@ def log_summary(path):
             events.append(event)
     return {"event_counts": dict(Counter(event["kind"] for event in events)),
             "events": events[-30:], "unrecognized_target_logger_lines": unrecognized,
+            "invalid_timestamp_target_logger_lines": invalid_timestamps,
             "attribution": "explicit_log_input_not_session_verified"}
 
 
@@ -169,7 +175,9 @@ def database_summary(path, session_id, since_time):
             "raw_rows": len(rows), "unique_message_ids": len(messages),
             "after_time": since_time, "user_inputs": len(users), "agent_messages": len(agents),
             "compactor_messages": compactor,
-            "generation_models": dict(Counter(row["generation_model"] for row in agents)),
+            "generation_models": dict(Counter(row["generation_model"] for row in agents
+                                               if row["generation_model"] is not None)),
+            "unknown_generation_model_messages": sum(row["generation_model"] is None for row in agents),
             "latest_user_inputs": users[-5:], "last_agent": agents[-1] if agents else None}
 
 
