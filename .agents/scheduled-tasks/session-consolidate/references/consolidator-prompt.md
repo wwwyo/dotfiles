@@ -1,6 +1,7 @@
 <!-- consolidator worker へ渡す spec テンプレート。coordinator（親）は
-     {REPO_ROOT} を置換し、targets 出力の sessions JSON を末尾に
-     そのまま貼って `orca orchestration worker-start --spec` に渡す。
+     {REPO_ROOT} を置換し、sessions JSON（宛先解決済み・複数宛先には
+     multi_dest: true 付与）を末尾に貼って `orca orchestration
+     worker-start --spec` に渡す。
      先頭の sentinel 行は自己 consolidation ループ防止に必須 — spec
      全文が worker session の root turn input になるので、消すとこの
      batch の session が翌回の対象になる。sentinel は
@@ -19,7 +20,7 @@ sentinel: session-eval-batch:9f3a2c7e
 
 ## 1. 入力
 
-この prompt の末尾に sessions の JSON 配列がある。各要素は `session_id`・`evaluated_until`・`learning`（記録 comment の 学習候補 節の本文）・`last_activity` を持つ。`learning` が `特になし` の session は還元の判断材料には使わず、step 4 の score 対象にだけ数える。
+この prompt の末尾に sessions の JSON 配列がある。各要素は `session_id`・`evaluated_until`・`learning`（記録 comment の 学習候補 節の本文）・`last_activity` を持つ。複数 repo に割り当てられた session には `multi_dest: true` が付く（score の扱いは step 4 を参照）。`learning` が `特になし` の session は還元の判断材料には使わず、step 4 の score 対象にだけ数える。
 
 記録だけでは原因や還元の良し悪しが決められない session は、必要な記録・transcript に drill down する:
 
@@ -32,7 +33,7 @@ python3 ~/.agents/scheduled-tasks/session-eval/tools/session_eval.py transcript 
 
 **判断の前に対象 repo を実際に読む。** `{REPO_ROOT}` の code・`.agents/skills/`・`AGENTS.md`・`docs/`（`wwwyo/me` のときは `wiki/` も）を読んでコンテキストに入れてから採否・書き先を決める。記録 comment だけでは既存の記述との重複・矛盾・コードが既に直っているかが判断できない。
 
-**還元するのは `{REPO_ROOT}` 宛の学びだけ。** spec の sessions は coordinator が宛先解決済みで渡す。session の学びが複数 repo にまたがる場合は `{REPO_ROOT}` 宛の部分だけ還元し、他 repo 宛はその repo の consolidator が担当する（score は `{REPO_ROOT}` 分を処理済みとして書く）。`{REPO_ROOT}` と無関係な session・部分は還元せず、他 repo にも書かず、score も書かない — session_id を `worker_done` の summary に「misrouted」として報告する（未 mark なので次 run で再対象になる）。自分で他 repo の checkout を作って書きに行ってはいけない。
+**還元するのは `{REPO_ROOT}` 宛の学びだけ。** spec の sessions は coordinator が宛先解決済みで渡す。session の学びが複数 repo にまたがる場合（`multi_dest: true`）は `{REPO_ROOT}` 宛の部分だけ還元し、他 repo 宛はその repo の consolidator が担当する。`{REPO_ROOT}` と無関係な session・部分は還元せず、他 repo にも書かず、score も書かない — step 5 の `outcomes` 行で `misrouted` として報告する（未 mark なので次 run で再対象になる）。自分で他 repo の checkout を作って書きに行ってはいけない。
 
 **変更前に root cause（根本原因）を確認する。** 失敗・摩擦の候補ごとに、観測された症状、発生条件、原因とその証拠を整理する。evaluator の修正案は仮説として扱い、記録・transcript と現在のコード・設定・実行経路を突き合わせる。同じ症状でも原因が違えば別に扱い、原因が同じなら session をまたいで束ねる。証拠が足りなければ原因を断定せず、未確認の点を結果に残す。
 
@@ -72,7 +73,7 @@ skill/AGENTS だけの変更は、原因が判断基準・知識の欠落にあ�
 
 ## 4. consolidated score（順序固定: PR 作成後に書く）
 
-処理が終わった session 全て（還元した・しなかった・`特になし`、いずれも）に `consolidated` score を書く。値には入力 JSON のその session の `evaluated_until` をそのまま渡す — 壁時計ではなく coverage にすると、後から再評価された session は `consolidated < evaluated_until` で次回 run の対象に自然に戻る。`--comment` に PR URL または `no changes` を書く。**例外は misrouted** — `{REPO_ROOT}` と無関係と判定した session は score を書かず `worker_done` で報告する（未 mark → 次 run で再対象・再割当される）。同じ session が他 repo の spec にも重複して入っている場合は、`{REPO_ROOT}` 宛の部分を処理した時点で書いてよい — 重複 spec の worker が同じ `evaluated_until` で書くので冪等。
+処理が終わった session 全て（還元した・しなかった・`特になし`、いずれも）に `consolidated` score を書く。値には入力 JSON のその session の `evaluated_until` をそのまま渡す — 壁時計ではなく coverage にすると、後から再評価された session は `consolidated < evaluated_until` で次回 run の対象に自然に戻る。`--comment` に PR URL または `no changes` を書く。**例外が2つ**: (1) `misrouted` — `{REPO_ROOT}` と無関係と判定した session は score を書かず `outcomes` で報告する（未 mark → 次 run で再対象・再割当される）。(2) `multi_dest: true` の session — `{REPO_ROOT}` 宛の部分を処理しても score は書かず `outcomes` で `done`/`misrouted` を報告する。score は coordinator が**全宛先の consolidator の `done` を確認してから**書く — 一部宛先の mark は他宛先の失敗・誤判定を session 単位の処理済み marker で隠し、その宛先分の学びを静かに落とす。
 
 ```bash
 python3 ~/.agents/scheduled-tasks/session-consolidate/tools/session_consolidate.py score \
@@ -83,4 +84,12 @@ score が書けなかった session は次回 run で再対象になる。PR 作
 
 ## 5. 出力
 
-完了時は注入された orchestration preamble の手順で `worker_done` を1回だけ送る。summary に根本原因・対処・検証結果と、原因未確認や暫定対処があればその内容を残す。`consolidated` score は処理済み marker であり、根本解決の証明ではない。summary の末尾に `consolidated <repo_root>; pr=<url or none>; marked=<n>/<total>` の 1 行を含める — coordinator はこの行を集計に使う。
+完了時は注入された orchestration preamble の手順で `worker_done` を1回だけ送る。summary に根本原因・対処・検証結果と、原因未確認や暫定対処があればその内容を残す。`consolidated` score は処理済み marker であり、根本解決の証明ではない。summary の末尾に次の2行を含める — coordinator はこの行を集計に使う:
+
+```
+consolidated <repo_root>; pr=<url or none>; marked=<n>/<total>
+outcomes: <session_id>=<done|misrouted>[, <session_id>=<...>]
+```
+
+- `total` は spec の session 総数、`n` はこの worker が score を書いた数 — misrouted・`multi_dest` で書かなかった分は含めない
+- `outcomes` には `multi_dest: true` の session と `{REPO_ROOT}` と無関係と判定した session の結果を列挙する（`done` = `{REPO_ROOT}` 宛部分を処理した・`misrouted` = この repo と無関係）。該当なしなら `outcomes: none`
