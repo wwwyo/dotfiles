@@ -23,9 +23,11 @@ memory 機能は feature gate と `[memories]` sub-key の 2 層:
 
 ## shell_environment_policy
 
-`inherit = "core"` は codex が spawn する shell の env を最小限に絞る — 親 process
-の env はほぼ丸ごと落ち、`[shell_environment_policy.set]` の key だけが追加される。
-Codex session 内で `SSH_AUTH_SOCK` や個人の PATH・token 類が「無い」のは親 env の
-問題ではなくこの policy の動作。session 内コマンドに env が要るときは呼び出し側で
-明示する（`env FOO=… cmd`）か base の `[shell_environment_policy.set]` に載せる —
-外側の shell で export 済みでも codex 側には届かない。
+`inherit = "core"` は codex が spawn する shell の env を core set（PATH・HOME 等の
+最低限）に絞る — 親 process の env は core に含まれない key が丸ごと落ち、
+`[shell_environment_policy.set]` の key だけが追加される。Codex session 内で
+`SSH_AUTH_SOCK`・token 類・PATH への追加先が「無い」のは親 env の問題ではなく
+この policy の動作（core 外の key と PATH 内の追加 entry が捨てられる）。
+session 内コマンドに env が要るときは呼び出し側で明示する（`env FOO=… cmd`）か
+base の `[shell_environment_policy.set]` に載せる — 外側の shell で export 済み
+でも codex 側には届かない。
