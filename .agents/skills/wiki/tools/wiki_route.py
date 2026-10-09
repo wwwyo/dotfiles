@@ -348,7 +348,8 @@ def cmd_route(root: Path, args) -> int:
 
     def shape_results(pairs, score_key):
         rows = [
-            {"path": p["path"], "title": p["title"], score_key: score, "abs_path": str(root / p["path"])}
+            {"path": p["path"], "title": p["title"], "description": p["description"],
+             score_key: score, "abs_path": str(root / p["path"])}
             for p, score in pairs
         ]
         if score_key == "prob" and args.min_prob is not None:
