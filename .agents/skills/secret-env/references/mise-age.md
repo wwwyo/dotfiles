@@ -21,5 +21,6 @@ MISE_AGE_KEY="$(security find-generic-password -a "$USER" -s mise-age-key -w)" \
 ```
 
   判定は presence boolean に留め、`env` ・config 全量・鍵値をログに出さない。`set -x` も使わない。これで `present` ならキーは登録済みで、不足しているのは復号鍵の注入だけなので再登録は不要。
+  `missing` は未登録を証明しない（注入した鍵の不一致や strict 時の復号エラー終了もあり得る）。その場合は値を出さず鍵名だけで登録有無を確認する（例: `rg -l 'FISH_API_KEY' ~/.config/mise/config.toml mise.toml`）。また確認コマンドだけに prefix を付けても本体コマンドには効かない — secret を使う `mise exec` 側にも同じ注入を付ける。macOS + Keychain account=`$USER` 前提の例であり、Linux や account 不一致では `security` の引き方を環境に合わせる。
 - Context7 MCP は `CONTEXT7_API_KEY` env を読むため、Claude/Codex の MCP config に `--api-key` 平文を置かず `args = []` / `args: []` にして親プロセスの mise+age env を継承させる。
 - `mise.toml` の `[env]` は mise activate 済みの対話 shell が対象 dir に `cd` したときにだけ shell env へ注入される。agent の desktop app / GUI ランチャーは自前でプロセスを spawn しこの経路を通らないため、`[env]` に平文/暗号文どちらを置いても効かない。確実に効かせたい env は対象アプリの起動経路に直接乗る設定へ置く — Claude Code なら `~/.claude/settings.json` の `env`、Devin Desktop の MCP なら `mcp_config.json` の command を `mise x -- <tool>` にして global config の env を注入させる。terminal から `mise activate` 済み shell 経由で起動する場合は従来どおり `[env]` が効く。
