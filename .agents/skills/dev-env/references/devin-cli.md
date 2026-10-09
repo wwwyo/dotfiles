@@ -37,7 +37,10 @@ CLI 本体の install/upgrade は brew cask（`scripts/Brewfile` の `cask "devi
   manifest に記録され、login した全マシンと cloud session の skill/rule/MCP に
   届くが、hooks と custom subagent は local session（CLI / Devin Desktop）でしか
   発火しない。hook は best-effort / fail-open で、load・実行に失敗しても
-  session は続く — guardrail には当てにできない
+  session は続く — guardrail には当てにできない。なお Orca の bound-session 経由で
+  立った Devin worker session は local session 扱いになり、`config.json` の native
+  hook（mailbox reminder 等）は worker 内で発火することを E2E 確認済み（2026-10-09）—
+  「worker では hook が効かないはず」と切り分けの前提にしない
 - **Devin の SessionEnd は transcript を payload で渡さない**（`session_id`・`reason` のみ）。
   Langfuse への送信は `devin-langfuse` plugin（`wwwyo/devin-langfuse-plugin` repo）の
   `plugins/devin-langfuse/hooks/langfuse-export.py` が `~/.local/share/devin/cli/sessions.db` から
