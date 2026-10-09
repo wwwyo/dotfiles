@@ -7,7 +7,7 @@ import { once } from 'node:events';
 
 const args = process.argv.slice(2);
 if (args.length === 1 && args[0] === '--help') {
-  console.log('Usage: mise exec -- bun <skill>/tools/check-model.ts [--config path]\nRun from the target project. Uses its installed ai/playwright and agents.default.model.\nDefault config: e2e.config.ts or e2e.config.mts (exactly one). Performs 3 synthetic image requests.\nNo SDK payloads are printed. Exit 0: passed; 1: failed; 2: invalid arguments.');
+  console.log('Usage: mise exec -- bun <e2e-skill>/tools/check-model.ts [--config path]\nRun from the target project. Uses its installed ai/playwright and agents.default.model.\nDefault config: e2e.config.ts or e2e.config.mts (exactly one). Performs 3 synthetic image requests.\nNo SDK payloads are printed. Config imports are trusted code; their raw stream writes are outside console suppression.\nExit 0: passed; 1: failed; 2: invalid arguments.');
   process.exit(0);
 }
 if (args.length && (args.length !== 2 || args[0] !== '--config' || !args[1] || args[1].startsWith('-'))) {
@@ -36,7 +36,7 @@ if (!process.execArgv.includes('--no-install')) {
   process.exit(process.exitCode);
 }
 const write = process.stdout.write.bind(process.stdout);
-// Config imports and SDK warnings may contain credentials; only our fixed verdict crosses stdout.
+// Silence console diagnostics from trusted config imports and SDK warnings; never dump caught errors.
 for (const method of ['log', 'info', 'warn', 'error', 'debug', 'trace', 'dir', 'table'] as const) console[method] = () => {};
 let stage = 'configuration';
 let code = 'MODEL_CAPABILITY_FAILED';

@@ -6,7 +6,7 @@ import { promisify } from 'node:util';
 
 const args = process.argv.slice(2);
 if (args.length === 1 && args[0] === '--help') {
-  console.log('Usage: mise exec -- bun <skill>/tools/audit-artifacts.ts [--dir path] [--secret-env NAME ...]\nRun from the target project. Default directory: .e2e.\nScans files, names and ZIP contents for environment secrets/URL hosts, age private keys and JWTs.\nSecret env names match KEY, TOKEN, SECRET, PASSWORD, CREDENTIAL, URL or ENDPOINT; --secret-env adds a required value.\nOutputs counts only. Symlinks, unreadable/invalid ZIPs and files over 128 MiB fail closed.\nImage/video pixel inspection is separate. Exit 0: passed; 1: failed; 2: invalid arguments.');
+  console.log('Usage: mise exec -- bun <e2e-skill>/tools/audit-artifacts.ts [--dir path] [--secret-env NAME ...]\nRun from the target project. Default directory: .e2e. ZIP inspection requires unzip on PATH.\nScans files, names and ZIP contents for environment secrets/URL hosts, age private keys and JWTs.\nSecret env names match KEY, TOKEN, SECRET, PASSWORD, CREDENTIAL, URL or ENDPOINT; --secret-env adds a required value.\nOutputs counts only. Symlinks, unreadable/invalid ZIPs and files over 128 MiB fail closed.\nImage/video pixel inspection is separate. Exit 0: passed; 1: failed; 2: invalid arguments.');
   process.exit(0);
 }
 let directory = '.e2e';

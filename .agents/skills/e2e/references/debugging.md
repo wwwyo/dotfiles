@@ -83,6 +83,8 @@ project の導入済み `ai` / `playwright` と `e2e.config.ts` / `.mts` の
 `agents.default.model` を使い、transport と認証を二重管理しない。
 合成した赤・青の画像への JSON 判定と実 tool call の3 requestsだけを送り、
 telemetry を無効にする。失敗 JSON は段階と固定 code のみ。
+config import は信頼済みコードとして実行する。console は抑制するが、独自 logger の
+stdout/stderr 直接書き込みまでは隔離しない。
 この診断は runner 固有の response grammar や実アプリの QA の代わりにはならない。
 共有 path は agent が解決し、project の package scripts や wrapper に固定しない。
 
