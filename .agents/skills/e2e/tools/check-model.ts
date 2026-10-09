@@ -2,6 +2,8 @@ import { createRequire } from 'node:module';
 import { access } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
+import { spawn } from 'node:child_process';
+import { once } from 'node:events';
 
 const args = process.argv.slice(2);
 if (args.length === 1 && args[0] === '--help') {
@@ -14,6 +16,25 @@ if (args.length && (args.length !== 2 || args[0] !== '--config' || !args[1] || a
 }
 
 process.env.E2E_TELEMETRY_DISABLED = '1';
+// Bun otherwise fetches packages when node_modules is absent, including during config import.
+if (!process.execArgv.includes('--no-install')) {
+  const child = spawn(process.execPath, ['--no-install', import.meta.path, ...args], { stdio: 'inherit' });
+  const forwardInt = () => { child.kill('SIGINT'); };
+  const forwardTerm = () => { child.kill('SIGTERM'); };
+  process.on('SIGINT', forwardInt);
+  process.on('SIGTERM', forwardTerm);
+  try {
+    const [exitCode] = await once(child, 'exit');
+    process.exitCode = exitCode ?? 1;
+  } catch {
+    console.log(JSON.stringify({ status: 'failed', stage: 'configuration', code: 'RUNTIME_FAILED' }));
+    process.exitCode = 1;
+  } finally {
+    process.off('SIGINT', forwardInt);
+    process.off('SIGTERM', forwardTerm);
+  }
+  process.exit(process.exitCode);
+}
 const write = process.stdout.write.bind(process.stdout);
 // Config imports and SDK warnings may contain credentials; only our fixed verdict crosses stdout.
 for (const method of ['log', 'info', 'warn', 'error', 'debug', 'trace', 'dir', 'table'] as const) console[method] = () => {};

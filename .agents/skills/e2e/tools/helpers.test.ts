@@ -86,6 +86,14 @@ test('missing, ambiguous and explicit configs are deterministic', async () => fi
   expect(cli(root, modelHelper, ['--config', 'e2e.config.ts']).code).toBe(0);
   expect(JSON.parse(cli(root, modelHelper, ['--config', 'e2e.config.mts']).output).code).toBe('MODEL_NOT_CONFIGURED');
 }));
+test('missing project packages never trigger Bun auto-install or write a package cache', async () => fixture(async root => {
+  await writeFile(join(root, 'e2e.config.ts'), 'export default { agents: { default: { model: { doGenerate() {} } } } };');
+  expect(cli(root, modelHelper).code).toBe(1);
+  const { readdir } = await import('node:fs/promises');
+  let cache: string[] = [];
+  try { cache = await readdir(join(root, '.bun', 'install', 'cache')); } catch {}
+  expect(cache).toEqual([]);
+}));
 test('SIGTERM aborts a pending model request and closes the browser without payload output', async () => fixture(async root => {
   await modelProject(root, 'hang');
   const child = spawn(process.execPath, [modelHelper], { cwd: root, env: environment(root), stdio: ['ignore', 'pipe', 'pipe'] });
