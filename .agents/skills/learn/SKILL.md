@@ -7,6 +7,7 @@ description: >-
   動画は明示的に依頼されたときだけ生成する。「教えて」「仕組みを理解したい」「図で説明して」
   「解説動画を作って」「理解できたか確認して」や /learn で使う。実装・修正だけを求める依頼には使わない。
 ---
+
 # Learn：図解動画・HTMLで説明し、理解を確認する
 
 You write only the **content draft** (extended Markdown). The `am` CLI does all layout, colours, dark mode and diagram coordinates. **Do not hand-write HTML / CSS / SVG.**
@@ -97,11 +98,11 @@ mise exec -- node "${CLAUDE_SKILL_DIR}/scripts/am.mjs"
 In Claude Code, the path above is replaced with this skill's directory automatically. If you see the variable unreplaced (other agents), replace it with the absolute path of the directory that contains this SKILL.md. If the user installed the `am` command globally, you can also use `am` directly.
 
 1. First list 3–8 panels in your head. Each panel answers one sub-question only.
- The draft language follows the language of the user's question: an English question gets an English draft, a Chinese question a Chinese draft, a Japanese question a Japanese draft. The page button labels, `<html lang>` and the STE check rules switch automatically by the draft language (a draft containing kana counts as Japanese); STE applies the English or Chinese rules to each sentence by its language (Japanese sentences get only the sentence-length and paragraph-length checks, with the same character limits as Chinese). To force the interface language, write `lang: en`, `lang: zh` or `lang: ja` in the frontmatter.
+   The draft language follows the language of the user's question: an English question gets an English draft, a Chinese question a Chinese draft, a Japanese question a Japanese draft. The page button labels, `<html lang>` and the STE check rules switch automatically by the draft language (a draft containing kana counts as Japanese); STE applies the English or Chinese rules to each sentence by its language (Japanese sentences get only the sentence-length and paragraph-length checks, with the same character limits as Chinese). To force the interface language, write `lang: en`, `lang: zh` or `lang: ja` in the frontmatter.
 2. Choose components by the shape of the information (see section 4).
 3. Render in one go with a heredoc:
 
-```bash
+````bash
 mise exec -- node "${CLAUDE_SKILL_DIR}/scripts/am.mjs" render - <<'AM_EOF'
 ---
 title: Title
@@ -111,7 +112,7 @@ title: Title
 A -> B: label
 ```
 AM_EOF
-```
+````
 
 4. Read the output:
    - `✓ <path>`: success. Whether the browser opens automatically depends on the user's settings (`am config`); `--no-open` affects only this run.
@@ -122,12 +123,12 @@ AM_EOF
 
 When a page already exists and only one panel needs to change, do not rewrite the whole page. Take the source draft from the HTML's `#am-source`, replace only the matching `##` section, and overwrite the page in place:
 
-```bash
+````bash
 mise exec -- node "${CLAUDE_SKILL_DIR}/scripts/am.mjs" patch page.html --panel "Panel title" <<'AM_EOF'
 ## A Panel title
 New content
 AM_EOF
-```
+````
 
 `--panel` matches the title, the letter ID, or `ID title`. If the panel is not found or the page has no `#am-source`, leave the file unchanged. patch keeps the original page's theme, light/dark mode and STE style; add `--theme` / `--mode` / `--style` to change them. Full usage: `am help patch`.
 
@@ -152,24 +153,22 @@ Table status words: ok / no / warn (may carry text: "ok approved") → ✓ / ✗
 ```
 
 - The panel letter ID can be omitted; it is assigned automatically.
-- `html /` svg fenced blocks are embedded as-is. **Use them only when no component can express the content.**
+- Fenced blocks with `html` or `svg` are embedded as-is. **Use them only when no component can express the content.**
 - Full reference: `am help format`; component syntax: `am help <component>`; component list: `am list`.
 
 ## 4. Choose components by the shape of the information
 
-
-| Shape of the information                               | Component                          | Minimal syntax                                                                                                                   |
-| ------------------------------------------------------ | ---------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
-| What connects to what, architecture, decision branches | `flow [LR]`                        | `A -> B: label`, `A --> C` dashed, `A -> B & C` fan-out, `{decision?}` `(start)` `[(database)]`, `*emphasis`, `group name: A, B` |
-| Messages between actors over time                      | `sequence [num]`                   | `A -> B: request`, `B --> A: response`, `note A, B: note`, `== phase ==`                                                         |
-| Hierarchy / directories / taxonomy                     | `tree [list]`                      | indentation for levels, `label | description`, ``id` label`                                                                      |
-| History / phases                                       | `timeline [v]`                     | `time | title | description`, `*` highlights                                                                                     |
-| Values and limits                                      | `limits`                           | `label | 13 / 20 | unit`, limit only: `label | max 20`                                                                           |
-| Word-by-word comments on one sentence                  | `annot`                            | `# heading | right note`, `[span]{note}`, `[wrong word]{!red note}`, `> footnote`                                                |
-| Metadata / title block                                 | `kv [cols=2]`                      | `key: value`, `* wide cell: value`                                                                                               |
-| Conclusion / warning                                   | `callout <info|ok|warn|err> title` | Markdown body                                                                                                                    |
-| Multi-dimension comparison, can / cannot list          | Markdown table                     | write ok / no / warn in the status column                                                                                        |
-
+| Shape of the information | Component | Minimal syntax |
+|---|---|---|
+| What connects to what, architecture, decision branches | `flow [LR]` | `A -> B: label`, `A --> C` dashed, `A -> B & C` fan-out, `{decision?}` `(start)` `[(database)]`, `*emphasis`, `group name: A, B` |
+| Messages between actors over time | `sequence [num]` | `A -> B: request`, `B --> A: response`, `note A, B: note`, `== phase ==` |
+| Hierarchy / directories / taxonomy | `tree [list]` | indentation for levels, `label \| description`, `` `id` label `` |
+| History / phases | `timeline [v]` | `time \| title \| description`, `*` highlights |
+| Values and limits | `limits` | `label \| 13 / 20 \| unit`, limit only: `label \| max 20` |
+| Word-by-word comments on one sentence | `annot` | `# heading \| right note`, `[span]{note}`, `[wrong word]{!red note}`, `> footnote` |
+| Metadata / title block | `kv [cols=2]` | `key: value`, `* wide cell: value` |
+| Conclusion / warning | `callout <info\|ok\|warn\|err> title` | Markdown body |
+| Multi-dimension comparison, can / cannot list | Markdown table | write ok / no / warn in the status column |
 
 Selection rules:
 
@@ -207,7 +206,7 @@ HTMLだけ、文章だけ、無音の指定があれば、その指定を優先�
 
 A video draft has the same format as a page draft, with one extra rule: lines starting with `>` are narration, one beat per line.
 
-```bash
+````bash
 mise exec -- node "${CLAUDE_SKILL_DIR}/scripts/am.mjs" video - --voice fish --no-open <<'AM_EOF'
 ---
 title: The TCP three-way handshake
@@ -225,9 +224,9 @@ Client -> Server: ACK
 > [Server] answers with SYN-ACK.
 > The client replies with ACK, and the connection is open.
 AM_EOF
-```
+````
 
-- One `##`  is one scene. Put one component (or one table, one list) in a scene as the picture, and write 2–5 narration lines below it.
+- One `## ` is one scene. Put one component (or one table, one list) in a scene as the picture, and write 2–5 narration lines below it.
 - When the Nth narration line plays, the picture shows step N. In flow / sequence / tree every source line is one step; timeline, limits, table rows and list items step by entry. So the line order of the component is the order of the explanation. When there are more narration lines than steps, the extra first lines serve as an opening and show nothing new.
 - Write `[name]` in narration: the camera zooms in on the node or actor with that name and highlights it. The name must match how it is written in the component.
 - Nodes with the same name in adjacent scenes move smoothly to their new position. To keep the viewer following one object, reuse the same name in the next scene.
@@ -235,8 +234,9 @@ AM_EOF
 - Narration is read aloud, so write it as speech, as if explaining to someone face to face: transitions like `你看`, `那问题来了`, `我们换个角度看` are fine, and characters' "lines" go in quotes. Do not write it like a manual (`客户端发送 SYN 报文以请求建立连接`). Sentence length is still subject to the STE check.
 - The look follows the theme in the settings by default (usually the blueprint drawing style). When the user wants "that dark 3b1b style", write `theme: 3b1b` in the frontmatter.
 - 音声：既定は `--voice fish`（`auto` もFish Audioを選ぶ）。他のproviderはユーザーが明示した場合だけ使い、無音指定は `--voice off`。音声とモデルの指定は `am help video` で確認できる。
-- The output is a single-file player page under `~/.answer-me-with-html/videos/` (audio embedded). When the user wants a video file, add `--mp4`; this needs Chrome, ffmpeg and Node.js 22+ on the machine. The CLI uses libx264 when available, otherwise h264\_videotoolbox on macOS (8 Mbps), without installing extra libraries. Export speed depends on the machine.
+- The output is a single-file player page under `~/.answer-me-with-html/videos/` (audio embedded). When the user wants a video file, add `--mp4`; this needs Chrome, ffmpeg and Node.js 22+ on the machine. The CLI uses libx264 when available, otherwise h264_videotoolbox on macOS (8 Mbps), without installing extra libraries. Export speed depends on the machine.
 - Full syntax: `am help video`. In the terminal, reply with one sentence plus the player page path (and the MP4 path).
+
 
 ## 7. 成果物の検証
 
