@@ -30,7 +30,9 @@ python3 ~/.agents/scheduled-tasks/session-eval/tools/session_eval.py transcript 
 
 ## 2. 還元の判断
 
-**判断の前に対象 repo を実際に読む。** `{REPO_ROOT}` の code・`.agents/skills/`・`AGENTS.md`・`docs/`（`wwwyo/me` のときは `wiki/` も）を読んでコンテキストに入れてから採否・書き先を決める。fallback group から別 repo へ reroute する学びがあるときはその reroute 先も同様に読む。記録 comment だけでは既存の記述との重複・矛盾・コードが既に直っているかが判断できない。
+**判断の前に対象 repo を実際に読む。** `{REPO_ROOT}` の code・`.agents/skills/`・`AGENTS.md`・`docs/`（`wwwyo/me` のときは `wiki/` も）を読んでコンテキストに入れてから採否・書き先を決める。記録 comment だけでは既存の記述との重複・矛盾・コードが既に直っているかが判断できない。
+
+**還元するのは `{REPO_ROOT}` 宛の学びだけ。** spec の sessions は coordinator が宛先解決済みで渡す。session の学びが複数 repo にまたがる場合は `{REPO_ROOT}` 宛の部分だけ還元し、他 repo 宛はその repo の consolidator が担当する（score は `{REPO_ROOT}` 分を処理済みとして書く）。`{REPO_ROOT}` と無関係な session・部分は還元せず、他 repo にも書かず、score も書かない — session_id を `worker_done` の summary に「misrouted」として報告する（未 mark なので次 run で再対象になる）。自分で他 repo の checkout を作って書きに行ってはいけない。
 
 **変更前に root cause（根本原因）を確認する。** 失敗・摩擦の候補ごとに、観測された症状、発生条件、原因とその証拠を整理する。evaluator の修正案は仮説として扱い、記録・transcript と現在のコード・設定・実行経路を突き合わせる。同じ症状でも原因が違えば別に扱い、原因が同じなら session をまたいで束ねる。証拠が足りなければ原因を断定せず、未確認の点を結果に残す。
 
@@ -59,7 +61,7 @@ skill/AGENTS だけの変更は、原因が判断基準・知識の欠落にあ�
 
 - **targets に来る session の repo は opt-in 済みとして扱う** — Langfuse に記録がある時点で export gate を通過した repo なので、読み取り・還元・PR は opt-in の範囲内。repo 側での再検証はしない
 - **共有・業務 repo には push / PR を作らない**。`( cd '{REPO_ROOT}' && gh repo view --json owner -q '.owner.login' )` の結果が `gh api user -q .login` と異なる repo（opt-in 済みでも他者と共有しているもの）は、無人で生えた branch/PR がレビュー無しに PR auto-merge へ流れうる。該当したら学びの還元はせず、全 session の score を `--comment 'shared repo'` で mark して報告に残す。owner 判定自体を実行できない（gh 未認証・rate limit・GitHub remote が無い等）は「shared」と決め打ちせず、末尾の恒久/一時的失敗と同じ分類に従う
-- `{REPO_ROOT}` = `wwwyo/me` の fallback group は repo 解決不能な session の置き場。ただし学びの本来の宛先は workdir ではなく内容が決める — 記録から宛先 repo（dotfiles の `.agents/skills/` 等）が特定できる学びは、owner チェックを通してからそこへ書いてよい。特定できない・宛先不明なものだけ wwwyo/me に書く
+- `{REPO_ROOT}` = `wwwyo/me` の group は、宛先を特定できなかった session と me/wiki 宛の学びを持つ session の置き場（宛先は coordinator が割当済み — ここでも `{REPO_ROOT}` 宛の学びだけを扱う）
 - あなたは `{REPO_ROOT}` の **Orca worktree 内で起動されている**（coordinator が repo の default branch から新規に切った。cwd = その worktree）。自分で追加の worktree は切らない。canonical checkout には他セッションが乗っている前提で、この worktree 内だけで作業する
 - **対象 repo に open の `consolidate/*` PR が既にあるなら、新規 PR ではなくその branch に commit を積む**。`git fetch origin <その PR の head branch>` して `git switch --detach FETCH_HEAD` で作業し、commit 後 `git push origin HEAD:<head branch>` で積む — 前回 run の worktree がその branch を checkout したまま残っているので local に同名 branch は切らない（`git switch <branch>` は "already used by worktree" で落ちる）。未 merge の学び PR が積まれても読まれる確率は上がらない — PR の open 在庫は最新1本に絞る。無いときはこの worktree で `git switch -c consolidate/<YYYY-MM-DD>` して `git push -u origin`（同日2回目以降は `-2` 等を付ける）。新規 PR の base は repo の default branch
 - PR は `pr` skill（`~/.agents/skills/pr/SKILL.md`）の workflow に従って出す。この batch 固有の差分だけここに書く: draft のままにする（step 9 の ready 化は consolidator のスコープ外）、`orca tab create` は skip してよい。監視は consolidator が自分の repo の PR だけを見るので並列性は損なわない
@@ -70,7 +72,7 @@ skill/AGENTS だけの変更は、原因が判断基準・知識の欠落にあ�
 
 ## 4. consolidated score（順序固定: PR 作成後に書く）
 
-処理が終わった session 全て（還元した・しなかった・`特になし`、いずれも）に `consolidated` score を書く。値には入力 JSON のその session の `evaluated_until` をそのまま渡す — 壁時計ではなく coverage にすると、後から再評価された session は `consolidated < evaluated_until` で次回 run の対象に自然に戻る。`--comment` に PR URL または `no changes` を書く。
+処理が終わった session 全て（還元した・しなかった・`特になし`、いずれも）に `consolidated` score を書く。値には入力 JSON のその session の `evaluated_until` をそのまま渡す — 壁時計ではなく coverage にすると、後から再評価された session は `consolidated < evaluated_until` で次回 run の対象に自然に戻る。`--comment` に PR URL または `no changes` を書く。**例外は misrouted** — `{REPO_ROOT}` と無関係と判定した session は score を書かず `worker_done` で報告する（未 mark → 次 run で再対象・再割当される）。同じ session が他 repo の spec にも重複して入っている場合は、`{REPO_ROOT}` 宛の部分を処理した時点で書いてよい — 重複 spec の worker が同じ `evaluated_until` で書くので冪等。
 
 ```bash
 python3 ~/.agents/scheduled-tasks/session-consolidate/tools/session_consolidate.py score \
