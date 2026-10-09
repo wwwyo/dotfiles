@@ -45,6 +45,10 @@ internal=(.cursor .github .agent .git)
 for entry in .[!.]*/; do
   dir="${entry%/}"
   case " ${internal[*]} " in *" $dir "*) continue ;; esac
+  # Tool caches are not deploy candidates; tracked files still require a link.
+  if [ -z "$(git ls-files -- "$dir/")" ] && git check-ignore -q "$dir/"; then
+    continue
+  fi
   grep -q "\$WT/$dir" "$link_script" || \
     fail "$dir は deploy 対象候補だが link script にも internal allowlist にも無い"
 done
