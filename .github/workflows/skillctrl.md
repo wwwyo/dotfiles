@@ -41,6 +41,8 @@ imports:
   - shared/skillctrl-engine.md
 steps:
   - name: Read the trusted skillctrl pin
+    env:
+      CHECKER_SOURCE: ${{ needs.select.outputs.source }}
     run: |
       mkdir -p /tmp/gh-aw/skillctrl-cli
       python3 - <<'PYTHON'
@@ -262,10 +264,15 @@ safe-outputs:
             git apply /tmp/gh-aw/skillctrl/repair.patch
         - name: Verify the accepted lock and publish
           run: |
+            mkdir -p "$CI_DIR"
             "$SKILLCTRL_BIN" check > "$CI_DIR/check.json"
             jq -e '.local.lock_changed == false' "$CI_DIR/check.json"
             cp "$CI_DIR/check.json" /tmp/skillctrl-lock-state.json
-            git add -A -- .agents/skillctrl/lock.json .agents/skillctrl/upstreams.json .agents/skillctrl/intents/lock.json
+            for path in .agents/skillctrl/lock.json .agents/skillctrl/upstreams.json .agents/skillctrl/intents/lock.json; do
+              if [[ -e "$path" ]] || git ls-files --error-unmatch "$path" >/dev/null 2>&1; then
+                git add -A -- "$path"
+              fi
+            done
             if git diff --cached --quiet; then
               echo 'No changes to publish.'
               exit 0
@@ -500,9 +507,14 @@ jobs:
           "$SKILLCTRL_BIN" record
       - name: Verify the accepted lock and publish
         run: |
+          mkdir -p "$CI_DIR"
           "$SKILLCTRL_BIN" check > "$CI_DIR/check.json"
           jq -e '.local.lock_changed == false' "$CI_DIR/check.json"
-          git add -A -- .agents/skillctrl/lock.json .agents/skillctrl/upstreams.json .agents/skillctrl/intents/lock.json
+          for path in .agents/skillctrl/lock.json .agents/skillctrl/upstreams.json .agents/skillctrl/intents/lock.json; do
+            if [[ -e "$path" ]] || git ls-files --error-unmatch "$path" >/dev/null 2>&1; then
+              git add -A -- "$path"
+            fi
+          done
           if git diff --cached --quiet; then
             echo 'No changes to publish.'
           else

@@ -11,6 +11,14 @@ from pathlib import Path
 import re
 import sqlite3
 import sys
+import zlib
+
+
+class EvidenceArgumentParser(argparse.ArgumentParser):
+    def error(self, message):
+        # argparse's default message includes the rejected argument verbatim.
+        print(json.dumps({"ok": False, "error": "invalid_arguments", "hint": "See --help for supported arguments"}))
+        self.exit(2)
 
 
 def metadata(value):
@@ -48,7 +56,8 @@ def transcript_summary(path, after_step):
         extra = step.get("extra") or {}
         if not isinstance(extra, dict):
             raise ValueError("invalid_step")
-        row = {"step_id": step_id, "timestamp": timestamp(step.get("timestamp")), "source": source}
+        time = step.get("timestamp")
+        row = {"step_id": step_id, "timestamp": timestamp(time) if time is not None else None, "source": source}
         row["model_name"] = metadata(step.get("model_name"))
         row["generation_model"] = metadata(extra.get("generation_model"))
         if step_id > after_step:
@@ -82,7 +91,7 @@ def transcript_summary(path, after_step):
 def log_summary(path):
     # Only exact logger/message combinations emit evidence; prompts can quote errors.
     header = re.compile(r"^(\S+)\s+(WARN|ERROR)\s+(connect_rpc::stream|inference::retry|affogato::agent::control_loop|run_acp_server: chisel_core::translator): (.*)$")
-    events, unrecognized = [], 0
+    events, unrecognized, invalid_timestamps = [], 0, 0
     opener = gzip.open if path.suffix == ".gz" else open
     with opener(path, "rt", encoding="utf-8", errors="replace") as stream:
         for number, line in enumerate(stream, 1):
@@ -90,7 +99,12 @@ def log_summary(path):
             if not match:
                 continue
             time, level, component, text = match.groups()
-            event = {"line": number, "timestamp": timestamp(time), "level": level, "component": component}
+            try:
+                event_time = timestamp(time)
+            except ValueError:
+                invalid_timestamps += 1
+                continue
+            event = {"line": number, "timestamp": event_time, "level": level, "component": component}
             if component == "connect_rpc::stream" and "HTTP body stream error while reading Connect response" in text:
                 event["kind"] = "http_body_stream_error"
                 event["unexpected_eof"] = "unexpected EOF during chunk size line" in text
@@ -118,6 +132,7 @@ def log_summary(path):
             events.append(event)
     return {"event_counts": dict(Counter(event["kind"] for event in events)),
             "events": events[-30:], "unrecognized_target_logger_lines": unrecognized,
+            "invalid_timestamp_target_logger_lines": invalid_timestamps,
             "attribution": "explicit_log_input_not_session_verified"}
 
 
@@ -161,13 +176,15 @@ def database_summary(path, session_id, since_time):
             "raw_rows": len(rows), "unique_message_ids": len(messages),
             "after_time": since_time, "user_inputs": len(users), "agent_messages": len(agents),
             "compactor_messages": compactor,
-            "generation_models": dict(Counter(row["generation_model"] for row in agents)),
+            "generation_models": dict(Counter(row["generation_model"] for row in agents
+                                               if row["generation_model"] is not None)),
+            "unknown_generation_model_messages": sum(row["generation_model"] is None for row in agents),
             "latest_user_inputs": users[-5:], "last_agent": agents[-1] if agents else None}
 
 
 def main():
-    parser = argparse.ArgumentParser(description=__doc__)
-    inputs = parser.add_mutually_exclusive_group(required=True)
+    parser = EvidenceArgumentParser(description=__doc__)
+    inputs = parser.add_mutually_exclusive_group()
     inputs.add_argument("--session", help="Local session ID, not a resume command")
     inputs.add_argument("--transcript", type=Path, help="Explicit native ATIF-v1.7 JSON file")
     parser.add_argument("--after-step", type=int, default=0, help="Summarize only newer steps")
@@ -175,25 +192,32 @@ def main():
     parser.add_argument("--after-time", help="For database only: ISO timestamp of last known generation/user input")
     parser.add_argument("--log", type=Path, action="append", default=[], help="Explicit CLI log or .gz (repeatable)")
     args = parser.parse_args()
+    if args.session is None and args.transcript is None and not args.log:
+        parser.error("An explicit evidence input is required")
     try:
         if args.after_step < 0:
             raise ValueError("invalid_after_step")
         if (args.database and (not args.session or args.after_step)) or (args.after_time and not args.database):
             raise ValueError("incompatible_arguments")
+        if args.after_step and args.session is None and args.transcript is None:
+            raise ValueError("incompatible_arguments")
         path = args.transcript
-        if args.session:
+        if args.session is not None:
             if not re.fullmatch(r"[a-zA-Z0-9_-]{1,120}", args.session):
                 raise ValueError("invalid_session_id")
             path = Path.home() / ".local/share/devin/cli/transcripts" / (args.session + ".json")
-        evidence = {"database": database_summary(args.database, args.session,
-                    timestamp(args.after_time) if args.after_time else None)} if args.database else {
-                    "transcript": transcript_summary(path, args.after_step)}
+        evidence = {}
+        if args.database:
+            evidence["database"] = database_summary(args.database, args.session,
+                                       timestamp(args.after_time) if args.after_time else None)
+        elif path is not None:
+            evidence["transcript"] = transcript_summary(path, args.after_step)
         result = {"ok": True, **evidence,
                   "logs": [log_summary(path) for path in args.log],
                   "limitations": ["No message, reasoning, tool arguments, config or raw log text emitted",
                                   "Transcript progress is not completion or current process/network health",
                                   "Unrecognized log events are not classified; zero events does not prove health"]}
-    except (OSError, ValueError, TypeError, KeyError, sqlite3.Error) as error:
+    except (OSError, ValueError, TypeError, KeyError, sqlite3.Error, EOFError, zlib.error) as error:
         # JSONDecodeError and filesystem errors may quote content or sensitive paths.
         category = "evidence_read_failed"
         if isinstance(error, FileNotFoundError):

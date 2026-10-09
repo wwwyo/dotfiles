@@ -32,6 +32,8 @@ imports:
   - shared/skillctrl-engine.md
 steps:
   - name: Read the trusted skillctrl pin
+    env:
+      CHECKER_SOURCE: ${{ needs.select.outputs.source }}
     run: |
       mkdir -p /tmp/gh-aw/skillctrl-cli
       python3 - <<'PYTHON'
@@ -271,6 +273,7 @@ safe-outputs:
             done
         - name: Verify the accepted lock and publish
           run: |
+            mkdir -p "$CI_DIR"
             "$SKILLCTRL_BIN" check > "$CI_DIR/check.json"
             jq -e '.local.lock_changed == false' "$CI_DIR/check.json"
             cp "$CI_DIR/check.json" /tmp/skillctrl-lock-state.json
@@ -545,6 +548,7 @@ jobs:
           done
       - name: Verify the accepted lock and publish
         run: |
+          mkdir -p "$CI_DIR"
           "$SKILLCTRL_BIN" check > "$CI_DIR/check.json"
           jq -e '.local.lock_changed == false' "$CI_DIR/check.json"
           git add -A -- .agents skills-lock.json
@@ -564,11 +568,11 @@ jobs:
             git -c "http.https://github.com/.extraheader=AUTHORIZATION: basic $credential" \
               push origin "HEAD:refs/heads/automation/skillctrl-update"
             python3 - <<'PY'
-            import json
-            from pathlib import Path
-            plan = json.loads(Path('/tmp/skillctrl/input/plan.json').read_text())
-            Path('/tmp/skillctrl/existing-pr.txt').write_text(plan.get('existing_pr') or '')
-            PY
+          import json
+          from pathlib import Path
+          plan = json.loads(Path('/tmp/skillctrl/input/plan.json').read_text())
+          Path('/tmp/skillctrl/existing-pr.txt').write_text(plan.get('existing_pr') or '')
+          PY
             if [[ ! -s /tmp/skillctrl/existing-pr.txt ]]; then
               gh pr create --draft --base "$DEFAULT_BRANCH" --head automation/skillctrl-update \
                 --title "chore(skills): weekly upstream refresh" \

@@ -64,7 +64,7 @@ CLI 本体の install/upgrade は brew cask（`scripts/Brewfile` の `cask "devi
 
 ## native evidence で実 model・turn・停止を区別する
 
-2026-10-09、CLI 3000.11.3 の native ATIF-v1.7 と `sessions.db` を読み取りで確認した。狭い取得と復旧操作は [delegate の実行・継続手順](../../delegate/references/devin.md#orca-で起動継続を確認する) に置く。schema は undocumented なので版が変われば必要欄だけを確認する。秘密や会話を含む file の生 dump はしない。
+2026-10-09、CLI 3000.11.3 の native ATIF-v1.7 と `sessions.db` を読み取りで確認した。狭い取得と復旧操作は [delegate の実行・継続手順](../../delegate/references/devin.md#orca-で起動継続を確認する) に置く。Devin 固有の DB / extra 欄は undocumented なので版が変われば必要欄だけを確認する。[ATIF-v1.7 の schema](https://github.com/neulab/agent-data-protocol/blob/main/schema/atif.py) では step の時刻は省略可能なため、欠損時は時刻を補わず step ID を使う。秘密や会話を含む file の生 dump はしない。
 
 - ATIF の `agent.model_name` は表示名、`steps[].model_name` / `steps[].extra.generation_model` は step の実 UID を記録する。Orca の `unsupported` は native evidence が無いことを意味しない。user step の後の agent step で開始を確認できるが、成功終了や現在の process 状態は示さない。
 - transcript は常に稼働中の最新 turn を反映するとは限らない。初見 Max worker は DB 登録/生成が進んでも transcript が未作成だった。CLI help は `--export [PATH]` を after each turn の export と記載するが、自動 transcript の作成条件・保持期間や明示 export の形式/障害時更新は未検証。不在/mtime 停滞だけで停止・model 不適用と扱わない。

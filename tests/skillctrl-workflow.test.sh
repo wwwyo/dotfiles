@@ -54,6 +54,14 @@ for workflow in [pr_workflow, upd_workflow]:
     pin_scripts = runs(workflow, 'Read the trusted skillctrl pin')
     assert len(pin_scripts) == 4 and len(set(pin_scripts)) == 1
 assert runs(test_workflow, 'Read the trusted skillctrl pin') == [pin_scripts[0]]
+# Agent-job environment is not inherited from the selection job. The first
+# trusted pin read must receive its immutable source before any setup runs.
+for workflow, compiled in [(pr_workflow, pr_compiled), (upd_workflow, upd_compiled)]:
+    setup = workflow.split('\nsteps:\n', 1)[1].split('\npost-steps:\n', 1)[0]
+    agent_job = re.split(r'\n  [\w-]+:\n', compiled.split('\n  agent:\n', 1)[1], maxsplit=1)[0]
+    binding = 'CHECKER_SOURCE: ${{ needs.select.outputs.source }}'
+    for document in [setup, agent_job]:
+        assert document.index(binding) < document.index("source = os.environ['CHECKER_SOURCE']")
 assert 'CHECKER_SOURCE: ${{ github.event.pull_request.base.sha || github.sha }}' in pr_workflow + upd_workflow
 assert 'SKILLCTRL_BIN: ${{ steps.skillctrl-cli.outputs.binary }}' in pr_compiled + upd_compiled
 assert '--mount /tmp/gh-aw:/tmp/gh-aw:rw' in pr_compiled + upd_compiled
@@ -218,6 +226,18 @@ UNRELATED_SECRET = "fixture-only-do-not-copy"
     assert not (root / '.agents/skillctrl/upstreams.json').exists()
     base = commit()
     env['PR_BASE'] = base
+
+    # Publish jobs start on independent runners. Exercise the real source and
+    # compiled scripts with no output directory or obsolete lock files.
+    # A clean checkout exits before any remote operation.
+    for document_id, document in enumerate([pr_workflow, upd_workflow, pr_compiled, upd_compiled]):
+        for index in range(2):
+            fresh = tmp / f'publish-{document_id}-{index}'
+            assert not fresh.exists()
+            run_step(document, 'Verify the accepted lock and publish', index=index,
+                     extra={'CI_DIR': str(fresh)})
+            assert json.loads((fresh / 'check.json').read_text())['local']['lock_changed'] is False
+            assert not git('status', '--porcelain')
 
     # An intent-only edit leaves the accepted lock aligned; the AI job and the
     # deterministic repair lane are both skipped.
