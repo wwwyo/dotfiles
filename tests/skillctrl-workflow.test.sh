@@ -227,6 +227,18 @@ UNRELATED_SECRET = "fixture-only-do-not-copy"
     base = commit()
     env['PR_BASE'] = base
 
+    # Publish jobs start on independent runners. Exercise the real source and
+    # compiled scripts with no output directory or obsolete lock files.
+    # A clean checkout exits before any remote operation.
+    for document_id, document in enumerate([pr_workflow, upd_workflow, pr_compiled, upd_compiled]):
+        for index in range(2):
+            fresh = tmp / f'publish-{document_id}-{index}'
+            assert not fresh.exists()
+            run_step(document, 'Verify the accepted lock and publish', index=index,
+                     extra={'CI_DIR': str(fresh)})
+            assert json.loads((fresh / 'check.json').read_text())['local']['lock_changed'] is False
+            assert not git('status', '--porcelain')
+
     # An intent-only edit leaves the accepted lock aligned; the AI job and the
     # deterministic repair lane are both skipped.
     write('.agents/skillctrl/intents/handwritten.md', 'edited intent only\n')
