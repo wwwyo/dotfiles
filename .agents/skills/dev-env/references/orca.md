@@ -49,13 +49,19 @@ GitHub issue forms 管理 — `[Feature]:` 接頭辞と enhancement label は fo
 
 ## orchestration: worker が自分の mailbox を読むとき
 
-version-matched guide は coordinator 視点の記述が中心。dispatch された worker が自分宛の follow-up を読むときの差分:
+version-matched guide は coordinator 視点の記述が中心。worker 側の契約は `orca skills get orchestration --reference worker-contract` に独立してある — preamble を持つ worker はまずそれを読む。ここには読み違えやすい差分と guide に載らない挙動だけ置く:
 
 - `orca orchestration check --terminal <自分の handle> --json` で読む。`--run <run_id>` は Run scope を明示する flag で、worker が自分の mailbox を読むときは省略する（既定は自分の bound Run）
 - `worker_done` を送る直前に1回 check する — 直前の redirect・追加指示を取りこぼさないため。check には live な preamble の自分の terminal handle を使う（古い handle には新しい Run の message は届かない）
 - 消費せず中身だけ見るときは `--peek`（unread を read にしない）。応答の `ok: false` は「0件」ではなく失敗 — 空と区別して扱う
+- `check` が `consumer_fenced` を返したら、その process は自分の Dispatch の owner ではなくなっている（Attempt が別 worker に付け替えられたか、自分抜きで settle した）。止まり、`worker_done` も check の再試行もしない。空の check は「置き換えられた」意味ではない — 置き換えは `consumer_fenced` でしか分からない
 - `send` 成功は durable enqueue、nudge は best-effort であり worker の受領/理解を証明しない。worker は `check` の全 message を処理し、変更に影響する指示は受領と現在の到達点を status で返す。delivery が replay される版では処理済み `deliveryId` を version-matched guide に従って `check --ack` する。ack の返り値にも次の FIFO batch が含まれるため、本文の処理・status 応答・ack を deliveryId が null になるまで繰り返す。`replayed: true` は未 ack の旧 delivery であり新規0件ではない。本文を時刻で絞り込んで古い未処理指示を捨てない
 - 待機は `check --wait`（stderr に keepalive が流れる）。呼び出し側の tool 実行には blocking 上限（1分程度）があるので、長い待機は繰り返し呼ぶ
+- sibling worker との連絡は group address で届く。`@all` 等の Run group は sender の属する Run の live Dispatch 群を指す（worker からは sibling、coordinator は含まれない）。worker が coordinator へ blocker を上げる宛先は group ではなく `run:<id>`。`worker_done` 等の lifecycle message は group 宛にしない
+
+## 自分のいる worktree を消すとき
+
+`orca worktree rm` は対象を cwd にしている process の足元も消す — cwd が消えた後は相対 path・`getcwd` 依存のコマンドが元の意味をなさないエラーで落ちる。自分が中にいる worktree（pr-auto-merge sweep 等で自分の worktree が対象に含まれうるケース含む）を消す操作の前に、実行側 shell の `pwd` が対象外であることを確認する。確認せず消して後続コマンドが不可解な `ENOENT` / deleted-path エラーで落ちたときの原因はこれ。
 
 ## `orca computer` が focused window を取れないとき
 

@@ -13,7 +13,7 @@ fail() { echo "FAIL: $*" >&2; exit 1; }
 # --- lock: acquire → busy → release ---
 # HOME を差し替えると mise shim 経由の python3 が real config を untrusted
 # 扱いするので、元の config path を明示して shim を通す
-export MISE_TRUSTED_CONFIG_PATHS="$HOME/.config/mise/config.toml:$repo_dir/mise.toml"
+export MISE_TRUSTED_CONFIG_PATHS="$HOME/.config/mise/config.toml:$HOME/.config/mise/conf.d:$repo_dir/mise.toml"
 export REAL_HOME="$HOME"
 export HOME="$TEST_ROOT/home"
 mkdir -p "$HOME"
@@ -181,6 +181,84 @@ shutil.rmtree(ld); ld.mkdir()
 mk.mkdir(); (mk / "owner").write_text("nonce-c")
 assert not se._recover_owned(dir_ino, "nonce-c", info_ts)
 assert not mk.exists(), "迷い込んだ marker が掃除されていない"
+
+# skip_marker_kind: sentinel→"self"、synthetic marker→"synthetic"、
+# 通常→None、API 失敗→fail-open の None (wwwyo/me の day_sessions.py が
+# この語彙の consumer — 変えると向こうの sentinel 表示が壊れる)
+real_paged = se.paged
+def fake_paged(path, params):
+    sid = params["sessionId"]
+    if sid == "boom":
+        raise se.ApiError("429 storm")
+    inp = {"self-sid": f"x {se.SENTINEL} y",
+           "syn-sid": "[Synthetic fixture] qa",
+           "mid-quote": "前段で [Synthetic fixture] を引用した本文"}.get(
+               sid, "real work")
+    yield {"sessionId": sid, "input": inp}
+se.paged = fake_paged
+assert se.skip_marker_kind("self-sid") == "self"
+assert se.skip_marker_kind("syn-sid") == "synthetic"
+assert se.skip_marker_kind("real-sid") is None
+# 本文中の引用は誤判定しない（先頭 marker だけが対象）
+assert se.skip_marker_kind("mid-quote") is None
+# lookup 失敗は None に倒す（除外しない）
+assert se.skip_marker_kind("boom") is None
+se.paged = real_paged
+
+# _request: 429 の retry。urlopen/sleep を stub して試行回数と wait を pin。
+# _auth() は env の LANGFUSE_* を直接読む — 無い環境 (CI) では KeyError が
+# GET retry に落ちて stub に届かないので、dummy を立てておく
+import email.message, io, urllib.error
+os.environ.setdefault("LANGFUSE_PUBLIC_KEY", "pk-test")
+os.environ.setdefault("LANGFUSE_SECRET_KEY", "sk-test")
+def http_err(code, ra=None):
+    m = email.message.Message()
+    if ra is not None:
+        m["Retry-After"] = ra
+    return urllib.error.HTTPError("https://x.test/y", code, "e", m, None)
+opened = {"n": 0}
+sleeps = []
+real_urlopen = se.urllib.request.urlopen
+real_sleep = se.time.sleep
+try:
+    # Retry-After 指定の 429 は指定秒を尊重して成功まで retry する
+    se.time.sleep = sleeps.append
+    def flaky(url, **kw):
+        opened["n"] += 1
+        if opened["n"] <= 3:
+            raise http_err(429, ra="2")
+        return io.StringIO('{"ok": true}')
+    se.urllib.request.urlopen = flaky
+    assert se.api_get("/y", {}) == {"ok": True}
+    assert opened["n"] == 4 and sleeps == [2.0, 2.0, 2.0]
+    # Retry-After 無しの持続 429 は floor つき backoff で最後まで retry
+    opened["n"] = 0; sleeps.clear()
+    def always429(url, **kw):
+        opened["n"] += 1
+        raise http_err(429)
+    se.urllib.request.urlopen = always429
+    try:
+        se.api_get("/y", {})
+        raise AssertionError("429 storm should raise ApiError")
+    except se.ApiError:
+        pass
+    assert opened["n"] == 6
+    assert sleeps == [4.0, 8.0, 16.0, 30.0, 30.0]
+    # POST の輸送層エラーは再送しない（score 二重付与防止）
+    opened["n"] = 0; sleeps.clear()
+    def conn_reset(url, **kw):
+        opened["n"] += 1
+        raise OSError("connection reset")
+    se.urllib.request.urlopen = conn_reset
+    try:
+        se.api_post("/y", {})
+        raise AssertionError("POST transport error should raise ApiError")
+    except se.ApiError:
+        pass
+    assert opened["n"] == 1 and sleeps == []
+finally:
+    se.urllib.request.urlopen = real_urlopen
+    se.time.sleep = real_sleep
 print("ok")
 EOF
 

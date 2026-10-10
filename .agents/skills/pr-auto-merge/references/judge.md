@@ -132,6 +132,14 @@ nits や codemod という説明も実際の差分と照合する。
   tool version bump がその tool の非互換を踏まないか
 - **script が分類不能にしたファイル**（未知の拡張子・basename）: 中身が
   無害かどうかここで決める
+- **agent の runtime 設定**: hold segment（`.agents` `.claude` `.codex` `.pi`
+  `.github`）の外にも agentic 設定はある — dotfiles では
+  `home/dot_codex`・`home/dot_pi`・`home/dot_claude` のような chezmoi
+  source が deployed 設定の正本になる。model pin・権限・hook・sandbox・
+  automation を変える差分は「誰が・どの権限で・何を自動実行するか」の
+  変更として見る — 権限拡大・model の上位化・既定 reviewer/approver の
+  差し替えが紛れていれば ng、単なる値の整理・追加の権限抑制なら通常の
+  基準で ok
 
 ## 判定の書き方
 

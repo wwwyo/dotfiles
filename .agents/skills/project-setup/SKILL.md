@@ -11,6 +11,8 @@ argument-hint: <project-name>
 
 外部 OSS の fork では、upstream へ contribute する差分に個人用の setup が混ざらないよう、**main を upstream の対応ブランチと同じ commit に保つ**。setup 用の commit は作らず、開発・contribution は main から別ブランチを切って行う。
 
+upstream を維持するだけで自分では開発しない fork（mirror・参照用）は、このワークフロー自体を適用しない — ローカル設定さえ不要なら setup なしで終える判断も正しい。
+
 この場合は、以下の通常ワークフローより本節を優先し、**setup は Git の差分に出ないローカル設定だけ**に限定する。
 
 - upstream の構成・開発手順をそのまま使い、既存の tracked file を変更しない。`AGENTS.md`・`CLAUDE.md`・README・`mise.toml`・`.gitignore`・workflow の生成や上書き、依存関係・lockfile の変更は行わない。

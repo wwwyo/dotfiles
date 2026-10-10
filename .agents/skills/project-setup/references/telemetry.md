@@ -28,4 +28,4 @@ scripts:
 
 Orca の repo 設定は `orca repo show --repo path:<repo-root> --json` の `result.repo.hookSettings` を確認する。`commandSourcePolicy` が未設定なら local script がある場合は `local-only`、なければ `shared-only` に解決される。明示的な `local-only` では local setup が空でも `orca.yaml` は使われない（[解決規則の詳細](../../dev-env/references/orca.md)）。共有 setup を使う repo は Project Settings → Worktree Hooks の詳細設定で `orca.yaml のみ` を選ぶ。CLI に setter がなければ bundled computer-use で操作し、ユーザーから修正を依頼済みなら改めて許可を求めない。未登録の repo は初回 commit 後に `orca repo add --path <repo-root> --json` で登録し、handoff 前に同じ確認を行う。
 
-完了確認は main のファイル存在だけで終えない。収集対象の新規 Orca worktree で 3 agent の opt-in と `.pi/npm/` の install を確認し、実 session の Langfuse 受信を照合する。guard による helper 不在の skip や setup の終了コードだけを成功の根拠にしない。収集を必要としない automation の `--setup skip` は不備として扱わない。
+完了確認は main のファイル存在だけで終えない。収集対象の新規 Orca worktree で 3 agent の opt-in と `.pi/npm/` の install を確認し、実 session の Langfuse 受信を照合する。guard による helper 不在の skip や setup の終了コードだけを成功の根拠にしない。収集を必要としない automation の `--setup skip` は不備として扱わない。実 session の照合はその agent を起動できることが前提 — この workflow でサポートする認証方式で `claude` の実 session を開始できない場合は Claude 分の live 検証を未完として扱い、「検証できなかった agent」を明示して成功扱いにしない。起動できる場合は live 検証を実施する。

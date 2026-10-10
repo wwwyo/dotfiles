@@ -20,3 +20,16 @@ memory 機能は feature gate と `[memories]` sub-key の 2 層:
 `use_memories = false`（developer prompt への memory 注入・使用指示だけ止める。生成は続く）、
 `generate_memories = false`（新規生成だけ止める）、`disable_on_external_context = true`
 （外部 context がある thread だけ抑止）。現在 base は `features.memories = false`。
+
+## shell_environment_policy
+
+`inherit = "core"` は codex が spawn する shell の env を core set（PATH・HOME・
+SHELL・TERM・USER・TMPDIR 等）に絞る — 親 process の env のうち core に含まれない
+key（`SSH_AUTH_SOCK`・token 類・mise 由来の var 等）が丸ごと落ち、
+`[shell_environment_policy.set]` の key だけが追加される。PATH は core に含まれ
+親の値がそのまま通るので、PATH entry が欠けるときはこの policy ではなく
+spawn 経路（daemon 起動時の env 等）を疑う。session 内コマンドに env が要る
+ときは呼び出し側で明示する（`env FOO=… cmd`）か base の
+`[shell_environment_policy.set]` に載せる — 外側の shell で export 済みでも
+codex 側には届かない。ただし PATH は `[set]` に書かない — literal の `$HOME`・
+旧ユーザー名が残る（AGENTS.md「ユーザー名に依存しない」節の制約）。
