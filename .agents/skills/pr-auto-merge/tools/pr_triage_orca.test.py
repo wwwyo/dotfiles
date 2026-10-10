@@ -106,8 +106,8 @@ elif tool == 'gh':
 elif tool == 'mise':
     assert args == ['x', '--', 'pi', '--offline', '--list-models']
     if mode != 'fallback':
-        print('opencode-go mimo-v2.6-flash 1M 128K yes yes')
-    print('opencode-go deepseek-v4.1-flash 1M 128K yes yes')
+        print('opencode-go deepseek-v4.1-flash 1M 128K yes yes')
+    print('opencode-go mimo-v2.6-flash 1M 128K yes yes')
 elif tool != 'git':
     raise AssertionError(tool)
 '''
@@ -155,7 +155,7 @@ class OrcaCliTest(unittest.TestCase):
         create_call = next(c for c in calls if c[:3] == ["orca", "terminal", "create"])
         command = shlex.split(create_call[create_call.index("--command") + 1])
         self.assertEqual(command[:5], ["mise", "x", "--", "pi", "--no-sandbox"])
-        self.assertEqual(command[5:], ["--model", "opencode-go/mimo-v2.6-flash", "--thinking", "high"])
+        self.assertEqual(command[5:], ["--model", "opencode-go/deepseek-v4.1-flash", "--thinking", "high"])
         checkout = next(i for i, c in enumerate(calls) if c[0] == "git" and "checkout" in c)
         launch = next(i for i, c in enumerate(calls) if c[:3] == ["orca", "terminal", "create"])
         self.assertLess(checkout, launch)
@@ -202,7 +202,7 @@ class OrcaCliTest(unittest.TestCase):
         calls = [json.loads(s) for s in (self.root / "calls.jsonl").read_text().splitlines()]
         launch = next(c for c in calls if c[:3] == ["orca", "terminal", "create"])
         command = shlex.split(launch[launch.index("--command") + 1])
-        self.assertEqual(command[command.index("--model") + 1], "opencode-go/deepseek-v4.1-flash")
+        self.assertEqual(command[command.index("--model") + 1], "opencode-go/mimo-v2.6-flash")
 
     def test_parallel_dispatch_sends_once(self):
         (self.root / "registered").touch()

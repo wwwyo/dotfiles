@@ -24,9 +24,13 @@ skill は `settings.json` の `"skills": ["~/.claude/skills"]` 一本で読ま�
 
 - `--no-tools` を付けると skill が読み込まれない。pi の skill は read tool で SKILL.md を開く仕組みなので、tools を切ると skill 機能ごと死ぬ。`--no-skills` と同じ結果になるため「skill が効いていない」と誤診しやすい。skill の検証は必ず tools を有効にして行う
 
-- `models.json` で組み込み provider を再定義しない。`api` は provider 単位の設定なので、`opencode-go` を `api: "openai-completions"` として定義し直すと、本来 `/messages` を使う anthropic-messages 系 model まで巻き込んで壊れる。DeepSeek 系も tool calling が壊れ、独自トークン形式が生テキストで漏れる。組み込み provider は `OPENCODE_API_KEY` を読み、モデルごとに正しい `api` を持っているので自前定義は不要。一方、`api`/`baseUrl`/`models` を書かず `compat` だけ書く部分定義は built-in と merge されるので安全 — openrouter の `compat.openRouterRouting.data_collection: "deny"`（`.pi/agent/models.json`）はこの形で入っている
+- `models.json` で組み込み provider を再定義しない。`api` は provider 単位の設定なので、`opencode-go` を `api: "openai-completions"` として定義し直すと、本来 `/messages` を使う anthropic-messages 系 model まで巻き込んで壊れる。組み込み provider は `OPENCODE_API_KEY` を読み、モデルごとに正しい `api` を持っているので自前定義は不要。一方、`api`/`baseUrl`/`models` を書かず `compat` だけ書く部分定義は built-in と merge されるので安全 — openrouter の `compat.openRouterRouting.data_collection: "deny"`（`.pi/agent/models.json`）はこの形で入っている
 
 - opencode の Zen と Go は別 catalog。運用は `opencode-go`（Go サブスク枠、`zen/go/v1`）のみ — Zen 側（`opencode` provider、`zen/v1`）は従量課金なので使わない。**pi の catalog は `zen/go/v1/models` の実態より遅れる** — Go endpoint で生きている model（`/responses`・`/chat/completions`・`/messages` で 200）が pi catalog 未掲載なら `models.json` の `models` で先行定義する。catalog に降りたら消す — 残すと自前の推測値が公式定義を上書きし続ける（`claude-haiku-5-5` は catalog に降りた＋使用停止で削除済み）。`enabledModels` だけの先行登録は no-match warning が出るだけで有効化されない。`zen/go/v1/models` に未掲載でも実際の endpoint では使える場合がある（旧 `claude-haiku-5-5` の `/messages` で確認済み）。Go catalog の model でも workspace の Privacy 設定で「train on request data」を許可しないと 400 になる（`muse-spark-1.3-contributor` 等）
+
+- Go privacy 表は既定モデル選定の前提（2026-10-10 確認）。MiMo-V2.6-Flash は学習不使用・data retention 0 days、DeepSeek V4.1 Flash も同じ値だが ZDR は**月次更新の契約**（当時は 2026-10-31 まで）で、MiMo 側に期限は無い。既定モデルを deepseek にしたため [Go privacy 表](https://opencode.ai/docs/go/#privacy) は月次で確認する。どちらの 0 days でも Go 経由の実際の推論 provider・処理地域は非公開なので、非学習を中国外での処理の保証として扱わない
+
+- 既定・優先モデルにした `deepseek-v4.1-flash` の tool calling・画像入力は未実測（MiMo は 2026-10-03 に function call・JSON schema・画像入力を確認済み）。personal repo の修復 worker がこのモデルで回るので、Go の quota が戻りしだい1回目の tool call を確認して結果をここに追記する
 
 - Go サブスクで使えるかは catalog 掲載ではなく endpoint が決める — 直上の Haiku 5.5 例のように catalog 未掲載でも生きている model がある一方、`claude-sonnet-*`/`claude-opus-*` 系は endpoint が `Model is unavailable` で拒否するので `enabledModels` に足しても動かない。`enabledModels` に Anthropic の上位 model が並ばないのは漏れではなくこの境界のため。upstream が枠から model を消す例は [delegate](../../delegate/SKILL.md) に集約する
 

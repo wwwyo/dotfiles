@@ -12,12 +12,12 @@ description: "別 agent への委譲・相談・レビューで harness・model�
 | 役割       | public                                                                                        | personal                                                                           | work                                       |
 | -------- | --------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- | ------------------------------------------ |
 | Operator | 1. codex:gpt-6.1-sol:high, 2. pi:opencode-go/step-5-preview-free:high                                                    | 同じ                                                                                 | 同じ                                         |
-| worker   | 1. pi:opencode-go/muse-spark-1.3-contributor:high, 2. pi:opencode-go/step-5-preview-free:high | 1. pi:opencode-go/mimo-v2.6-flash:high, 2. pi:opencode-go/step-5-preview-free:high | 1. pi:opencode-go/step-5-preview-free:high |
-| review   | 1. codex:gpt-6.1-sol:high, 2. pi:opencode-go/muse-spark-1.3-contributor:high                  | 1. codex:gpt-6.1-sol:high, 2. pi:opencode-go/mimo-v2.6-flash:high                  | 同左                                         |
+| worker   | 1. pi:opencode-go/muse-spark-1.3-contributor:high, 2. pi:opencode-go/step-5-preview-free:high | 1. pi:opencode-go/deepseek-v4.1-flash:high, 2. pi:opencode-go/mimo-v2.6-flash:high, 3. pi:opencode-go/step-5-preview-free:high | 1. pi:opencode-go/step-5-preview-free:high |
+| review   | 1. codex:gpt-6.1-sol:high, 2. pi:opencode-go/muse-spark-1.3-contributor:high                  | 1. codex:gpt-6.1-sol:high, 2. pi:opencode-go/deepseek-v4.1-flash:high                  | 同左                                         |
 
 
 - personal / work: 個人の責任範囲で扱うデータ / 仕事として組織・案件の利用条件に従うデータ。
-- pi 本体の既定モデルは MiMo v2.6 Flash・high。役割ごとの選択値は起動時に明示し、既定モデルに任せない。
+- pi 本体の既定モデルは DeepSeek V4.1 Flash・high。役割ごとの選択値は起動時に明示し、既定モデルに任せない。
 - Operator はデータ区分を問わず Codex を優先し、pi を使う場合は常に Step 5 Preview Free・high を明示する。
 - 候補の順序: 先頭優先。使えない場合に次の候補へ fallback する。
 - 記法: `harness:model:effort`。選んだ値を起動時に指定する。
