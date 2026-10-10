@@ -38,7 +38,7 @@ resume・同じ session の継続では、初回の `MODEL`・`EFFORT` を引き
 
 **`worktree create --prompt` を使わない**（他の harness では可）。pi の TUI は入力 ready 前のキー入力を保持せず、prompt が滞留または消失して静かに失敗する。Orca の send 証明も `provider: "unsupported"` で未送信を検知できない（stablyai/orca#22580）。`orca-cli` の通常の handoff 手順に対し、次の順序を使う。
 
-1. `worktree create --agent pi` で起動する。`--prompt` は付けない。pi には Orca 既定の bypass 引数が無いため、sandbox extension を使う環境では次の 2 コマンドに替える（`--worktree` を省くと呼び出し元の worktree で pi が動く）。`--agent` 無しの create は fallback shell が残るので、`terminal list` で未使用を確認してから閉じる。sandbox の有効・無効の確認は前述の `pi --help` の手順に従う。
+1. `worktree create --agent pi` で起動する。`--prompt` は付けない。pi には Orca 既定の bypass 引数が無いため、sandbox extension を使う環境では次の 2 コマンドに替える（`--worktree` を省くと呼び出し元の worktree で pi が動く）。`--agent` 無しの create は fallback shell が残るので、`terminal list` で未使用を確認してから閉じる。sandbox の有効・無効の確認は前述の `pi --help` の手順に従う。`$MODEL`・`$EFFORT` は親の env で export した変数ではなく、選んだ値を command 文字列へそのまま埋め込む。
    ```text
     ORCA worktree create --name <task-name> --no-parent --json
     ORCA terminal create --worktree id:<repoId>::<worktreePath> --command 'pi --no-sandbox --model "$MODEL" --thinking "$EFFORT"' --json
