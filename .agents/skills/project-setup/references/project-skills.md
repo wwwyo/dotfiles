@@ -1,6 +1,6 @@
 # Project-local skill の導入
 
-ステップ3で合意した技術スタックに紐づくskillを [skillctrl](../../skillctrl/SKILL.md) の手順で探索・追加する。プロジェクト固有のskillをローカルにインストールし、使う予定の agent 全部（claude / codex / pi / devin）から使えるようにする。
+ステップ3で合意した技術スタックに紐づくskillを [skillctrl](../../skillctrl/SKILL.md) の手順で探索・追加する。プロジェクト固有のskillをローカルにインストールし、使う予定の agent 全部（claude / codex / pi）から使えるようにする。
 
 #### 11.1. 候補探索（find）
 
@@ -52,7 +52,7 @@ find の結果をそのまま install してはいけない。以下を1 skill �
 
 対象 repo に `.agents/skills/` がなければ作成し、repo の承認済み commit 手順で clean にする。候補の `SKILL.md` と同梱ファイルを確認してから、名前を明示して取り込む。upstream の installer は実行しない。
 
-CLI の JSON 結果に含まれる `repo` が実際の変更先なので、その worktree の差分・取得元・管理 lock（root の `skills-lock.json` と `.agents/skillctrl/upstreams.json`）を確認する。取得元と local skill の置き場を対象 repo の `AGENTS.md` の Skills 節に1行で記録する。Claude Code 用に `.claude/skills/<name>` → `../../.agents/skills/<name>` の相対 symlink を張る。codex・pi・devin は `.agents/skills/` を直接読む。既存の skill や link がある場合は差分を確認する。
+CLI の JSON 結果に含まれる `repo` が実際の変更先なので、その worktree の差分・取得元・管理 lock（root の `skills-lock.json` と `.agents/skillctrl/upstreams.json`）を確認する。取得元と local skill の置き場を対象 repo の `AGENTS.md` の Skills 節に1行で記録する。Claude Code 用に `.claude/skills/<name>` → `../../.agents/skills/<name>` の相対 symlink を張る。codex・pi は `.agents/skills/` を直接読む。既存の skill や link がある場合は差分を確認する。
 
 ```bash
 # cd into the approved target worktree, then import the named skill.

@@ -18,7 +18,7 @@ pi は opencode Go サブスク（月 $10、5時間 $12 / 週 $30 / 月 $60 の�
 
 以下の実行例は、この環境で登録済みの `pi-sandbox` extension を読み込む前提。`pi --help` の Extension CLI Flags に `--no-sandbox` が出ることを確認する。出なければ [設定・認証](../../dev-env/references/pi.md)で extension の読み込みを確認し、未知の引数を付けたまま解除済みと判断しない。sandbox extension 自体を使用していない環境では、解除用の引数は不要。
 
-以下を対象 worktree の Orca `terminal create --command` に渡す。起動時には prompt を付けず、[delegate の handoff 手順](../SKILL.md#devin--pi-への-handoff) で ready を確認してから送る。
+以下を対象 worktree の Orca `terminal create --command` に渡す。起動時には prompt を付けず、[delegate の handoff 手順](../SKILL.md#pi-への-handoff) で ready を確認してから送る。
 
 ```bash
 # 新規の対話 session

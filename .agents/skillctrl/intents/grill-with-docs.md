@@ -2,7 +2,7 @@
 
 ## 文脈
 
-Codex・pi・Devin・Claude Code で同じ skill を使い、文書作成からも呼び出す。特定 harness の Skill tool 名だけでは実行できない。
+Codex・pi・Claude Code で同じ skill を使い、文書作成からも呼び出す。特定 harness の Skill tool 名だけでは実行できない。
 
 ## 意図
 

@@ -2,7 +2,9 @@
 # `.agents/scheduled-tasks/tools/sync_automations.py check` で drift を検出できる。
 
 name = "cleanup"
-provider = "devin"
+# personal データを扱う task。モデル・thinking は delegate の worker/personal に従い
+# Orca Settings → Agents の pi 起動引数に指定する（automation CLI に model flag は無い）。
+provider = "pi"
 enabled = true
 timezone = "Asia/Tokyo"
 

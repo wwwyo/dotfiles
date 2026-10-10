@@ -31,7 +31,7 @@ Orca 操作の正本は `orca-cli` skill — `ORCA skills get orca-cli` が vers
 
 ## worktree・session が消えたとき
 
-Orca 管理の worktree を消す経路は2つある — scheduled task `cleanup`（`.agents/scheduled-tasks/cleanup/`、3日おき。`liveTerminalCount==0` かつ git 側の条件を満たすものを `orca worktree rm`）と、`pr-auto-merge` の sweep（merged PR の worktree を同日中に消す）。PTY は Orca 再起動や shell 終了で落ちるので「勝手に閉じられた」ように見える。確認先は `orca automations runs --id <automation> --json` の `outputSnapshot.content`（run ごとの agent 最終報告。snapshot が null / `truncated` のときはその run からは辿れない。削除した path が残るのは cleanup の30日ルール経由のみで、抜け殻削除は本数のみ）。pr-auto-merge 側の削除は `wwwyo/me` の `daily/<date>/pr-watch.jsonl` に `worktree_rm` event として残り、人間向けの報告は同 dir の `pr-watch.md`。git 側の復元は cleanup SKILL.md、terminal scrollback は戻らないが Devin session の本文は transcript から辿れる（[devin-cli.md](devin-cli.md)）。
+Orca 管理の worktree を消す経路は2つある — scheduled task `cleanup`（`.agents/scheduled-tasks/cleanup/`、3日おき。`liveTerminalCount==0` かつ git 側の条件を満たすものを `orca worktree rm`）と、`pr-auto-merge` の sweep（merged PR の worktree を同日中に消す）。PTY は Orca 再起動や shell 終了で落ちるので「勝手に閉じられた」ように見える。確認先は `orca automations runs --id <automation> --json` の `outputSnapshot.content`（run ごとの agent 最終報告。snapshot が null / `truncated` のときはその run からは辿れない。削除した path が残るのは cleanup の30日ルール経由のみで、抜け殻削除は本数のみ）。pr-auto-merge 側の削除は `wwwyo/me` の `daily/<date>/pr-watch.jsonl` に `worktree_rm` event として残り、人間向けの報告は同 dir の `pr-watch.md`。git 側の復元は cleanup SKILL.md、terminal scrollback は戻らないが pi session の本文は `~/.pi/agent/sessions/` の JSONL に残る。
 
 ## stablyai/orca への issue
 
@@ -39,9 +39,10 @@ GitHub issue forms 管理 — `[Feature]:` 接頭辞と enhancement label は fo
 
 ## automation の非自明な挙動
 
-- **`provider: devin` では `reuseSession: true` が効かない**（session が溜まり続けるのを実測）。reuse の成立条件は provider ではなく「前回 run が記録した pane + PTY が live」— `run.workspaceId` が一致し、pane に agent status `done` が乗り、PTY が生きているときだけ既存 PTY へ prompt が貼られる。`workspaceMode: new_per_run` で workspace が毎回変わる・pane に `done` が乗らない・PTY が既に死んでいる、のどれでも新規 session が立つ
-- **dispatch が `turn_started not observed` / `dispatched: false` を返しても devin provider では誤報になりうる**。再送する前に対象 terminal を実査して session 稼働を確認する — 二重送信の方が害が大きい
-- **Devin の `provider: "unsupported"` は turn/model の証明が Orca 側で取れないという意味**。受付済み入力を未送信と断定して再送しない。描画と [Devin の native evidence](devin-cli.md#native-evidence-で実-modelturn停止を区別する) を併用する。稼働中は transcript が未作成でも DB の実 generation が取れる場合がある
+- **reuse の成立条件は前回 run の pane + PTY が live なこと**。`run.workspaceId` が一致し、pane に agent status `done` が乗り、PTY が生きているときだけ既存 PTY へ prompt が貼られる。`workspaceMode: new_per_run`・pane の `done` 不在・PTY 終了では新規 session が立つ。
+- **入力受付と turn/model の証明を区別する**。`provider: "unsupported"` や `turn_started not observed` だけで未送信と断定して再送しない。対象 terminal の描画と pi session の新しい user/assistant message を確認し、二重送信を避ける。
+- **automation CLI は model/thinking の per-run flag を持たない**。`provider = "pi"` の task は delegate の task/データ区分でモデルを決め、Orca Settings → Agents の pi コマンド・起動引数に設定する。異なるデータ区分の task を同じ launcher に混ぜず、別モデルが要る委譲は `terminal create --command` で指定する。GUI 起動では `mise x -- pi` を使い telemetry の global env も注入する。
+- **新規 Mac・automation 同期前の launcher 確認**。`sync_automations.py` は provider だけを同期し、GUI の起動引数は検査・配備しない。同期前に全 pi task のデータ区分を確認する。現在の6件は personal。delegate の worker/personal の第一候補が `pi --list-models` にあることを確認し、Settings → Agents の command を `mise`、args を `x -- pi --no-sandbox --model <provider/model> --thinking <effort>` に保存する。試験用 worktree を標準 pi launcher で起動して footer の model/thinking と Langfuse の有効表示を照合する。異なる区分の task を追加した場合は共通 launcher のまま有効化せず、task ごとの起動モデルを指定できる経路を整える。稼働済みの再利用 session は設定変更で切り替わらないため、対象 task の terminal を個別に確認する。
 - `orca.yaml` の `scripts.setup` は各 worktree の working tree を `readFileSync` で読む — その worktree 内の未 commit 変更も即反映される。新規 worktree に入らないのは push 不足ではなく、start-from の ref に commit されていないため。`commandSourcePolicy`（`shared-only` / `local-only` / `run-both`。旧 `shared-first` は `shared-only` に正規化）は `orca.yaml` の key ではなく Settings の repo ごとローカル設定。`local-only` で local script が空なら shared に fallback せず何も走らない。UI の local script 欄を消しても policy が変わらないのは明示保存済みのときだけ — 未設定（`undefined`）だと local script の有無から effective policy が決まり、消すと `local-only` → `shared-only` に反転する
 
 - 溜まった automation session record を掃除する専用コマンドは無い。`terminal close --worktree <selector> --all`（destructive）は指定した worktree の全 terminal を live session 込みで閉じるので、掃除用途には使わない
@@ -53,7 +54,7 @@ version-matched guide は coordinator 視点の記述が中心。dispatch され
 - `orca orchestration check --terminal <自分の handle> --json` で読む。`--run <run_id>` は Run scope を明示する flag で、worker が自分の mailbox を読むときは省略する（既定は自分の bound Run）
 - `worker_done` を送る直前に1回 check する — 直前の redirect・追加指示を取りこぼさないため。check には live な preamble の自分の terminal handle を使う（古い handle には新しい Run の message は届かない）
 - 消費せず中身だけ見るときは `--peek`（unread を read にしない）。応答の `ok: false` は「0件」ではなく失敗 — 空と区別して扱う
-- `send` 成功は durable enqueue、nudge は best-effort であり worker の受領/理解を証明しない。worker は `check` の全 message を処理し、変更に影響する指示は受領と現在の到達点を status で返す。delivery が replay される版では処理済み `deliveryId` を version-matched guide に従って ack する。本文を時刻で絞り込んで古い未処理指示を捨てない
+- `send` 成功は durable enqueue、nudge は best-effort であり worker の受領/理解を証明しない。worker は `check` の全 message を処理し、変更に影響する指示は受領と現在の到達点を status で返す。delivery が replay される版では処理済み `deliveryId` を version-matched guide に従って `check --ack` する。ack の返り値にも次の FIFO batch が含まれるため、本文の処理・status 応答・ack を deliveryId が null になるまで繰り返す。`replayed: true` は未 ack の旧 delivery であり新規0件ではない。本文を時刻で絞り込んで古い未処理指示を捨てない
 - 待機は `check --wait`（stderr に keepalive が流れる）。呼び出し側の tool 実行には blocking 上限（1分程度）があるので、長い待機は繰り返し呼ぶ
 
 ## `orca computer` が focused window を取れないとき

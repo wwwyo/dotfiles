@@ -32,6 +32,7 @@ SC=~/.agents/scheduled-tasks/session-consolidate/tools/session_consolidate.py
      - `特になし` や宛先を特定できない session だけ `wwwyo/me` の group に残す（workdir/repo 解決不能 session の fallback として me に解決するのは PRD の決定済み事項）
      - 誤判定は受け側 worker が `misrouted` として score 未 mark で報告するので致命的でない — 未 mark の session は次 run で再対象になる。**収束ルール**: 直近の `~/src/github.com/wwwyo/me/daily/*/session-consolidate.md`（新しいものから数件、閾値見送り・lock busy 等で report が無い日は飛ばす）に `misrouted <session_id>` と記録された session は、その報告先 repo を負の証拠として再割当しない（report が1件も無ければ通常どおり判定 — 欠測時は再割当を増やさない方向に倒す）。別の宛先も特定できなければ coordinator が `--comment 'unresolved destination'` で理由付き mark して終了させる — 決定的な coordinator が同じ誤割当を繰り返して 36h lookback で静かに落ちるのを防ぐ
    - group ごとに repo id を解決する: `orca repo list --json` で `path` と `repo_root` を突合する（`repo_root: null` からの割当分を含む解決済みの宛先 repo で照合する）。repo が Orca に未登録なら `orca repo add --path <repo_root> --json` で登録してから使う（targets の `repo_root` 由来の group のみ — learning 由来の宛先は上記どおり登録済みに限る）
+   - worker のモデル・thinking は [delegate](../../skills/delegate/SKILL.md) の worker/personal から選ぶ。記録 comment は非公開 session を含むため、還元先が public repo でも public 区分にはしない。`worker-start --agent pi` は Orca Settings → Agents の pi 起動引数を使うので、起動前に選択値との一致を確認する。
    - worker 起動前に `git -C <repo_root> fetch origin` して remote ref を新鮮にし、`git -C <repo_root> symbolic-ref --short refs/remotes/origin/HEAD` で default branch を解決する — stale な base から worktree を切ると merge 済みの学びを重複還元する（Orca 登録の baseRef は古いことがあるので live の origin/HEAD を使う）
    - 各 group について、`references/consolidator-prompt.md` の `{REPO_ROOT}` をその group の宛先 repo root（targets の `repo_root`、または `repo_root: null` からの割当で解決したパス）に置換し、末尾にその group の sessions JSON を貼って spec を組み立てる。追加指示・書き換えはしない（sentinel 行が欠けると自己 consolidation ループになる — spec 全文が worker session の root turn input になるので sentinel が効く）。prompt はファイルに書いてから渡す:
      ```bash
@@ -42,7 +43,7 @@ SC=~/.agents/scheduled-tasks/session-consolidate/tools/session_consolidate.py
        --name consolidate-<basename>-<YYYY-MM-DD> \
        --base-branch <resolved origin/HEAD> \
        --setup skip \
-       --agent devin --run <run_id> --json
+       --agent pi --run <run_id> --json
      ```
    - **同じ `{REPO_ROOT}` に解決される session 束は1つの spec に統合して worker を1つだけ起動する**。targets が保証するのは「同じ repo_root キーの group が複数ない」ことだけ — `repo_root: null` からの割当で同じ宛先 repo に入った session は、その repo の group の sessions と連結した1 spec にする（2026-10-07 に同一 repo へ2 worker 立った実例。10-04 run は統合していた）
    - `worker-start` が非0で返ったら再起動せず、receipt の `failedStage`・`residualResources`・`recovery` を読んで報告に残す（起動失敗は fail-open の対象 — repo_root と stage を記録して次の group へ）
@@ -73,7 +74,7 @@ SC=~/.agents/scheduled-tasks/session-consolidate/tools/session_consolidate.py
 
 ## automation 登録
 
-orca automation `session-consolidate`（毎日 20:00、provider devin、workspace = wwwyo/me の既存 workspace）から起動される想定。36h の探索窓より短い間隔で実行する。pending が閾値（5 件）未満なら run 自体を見送るため、実際の処理頻度は溜まり具合で決まる。手動実行も可。
+orca automation `session-consolidate`（毎日 20:00、provider pi、workspace = wwwyo/me の既存 workspace）から起動される想定。36h の探索窓より短い間隔で実行する。pending が閾値（5 件）未満なら run 自体を見送るため、実際の処理頻度は溜まり具合で決まる。手動実行も可。
 
 登録の SSOT は `automation.toml`（この dir）。upsert は共通 tool:
 

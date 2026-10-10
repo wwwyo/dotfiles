@@ -27,7 +27,7 @@ SE=~/.agents/scheduled-tasks/session-eval/tools/session_eval.py
    - marker 起点でも長期停止後は obs 量で MAX_PAGES に当たりうる。その場合は fail-loud に止まる（無音喪失ではない）ので、手動で `--since` を区切って追いつき、終わったら `next_since` をその時刻に更新する
 3. targets ごとに evaluator subagent を spawn する
    - prompt は `references/evaluator-prompt.md` を読み、`{SESSION_ID}` を置換したものをそのまま渡す。追加指示・書き換えはしない（sentinel 行が欠けると自己評価ループになる）
-   - devin では `subagent_general` profile で background 並列 spawn してよい。10 件超のときは 5 件ずつの wave に分ける
+   - pi では `pi-subagents` extension の `subagents_enable` で tool を読み込み、`subagent` の `delegate` agent に依頼する。モデル・thinking は [delegate](../../skills/delegate/SKILL.md) の worker/personal を `subagent` の `model`（`provider/model:effort`）に明示し、profile の既定モデルに任せない。10 件超のときは 5 件ずつの wave に分ける
 4. 全 subagent の完了を待ち、`next_since` を更新してから `python3 "$SE" lock release`:
    `python3 -c 'from datetime import datetime, timedelta, timezone; print((datetime.now(timezone.utc) - timedelta(hours=24)).strftime("%Y-%m-%dT%H:%M:%SZ"))' > ~/.local/state/session-eval/next_since`
    - `next_since` = 次回 run が `--since` に渡す値。24h 引くのは、turn の startTime が user message 時刻へ backdate されるので、前回 run の fetch 後に完了した長い turn が窓から漏れないようマージンを取るため
@@ -46,7 +46,7 @@ SE=~/.agents/scheduled-tasks/session-eval/tools/session_eval.py
 
 ## automation 登録
 
-orca automation `session-eval`（daily 19:00、provider devin、workspace = wwwyo/me の既存 workspace）から起動される想定。
+orca automation `session-eval`（daily 19:00、provider pi、workspace = wwwyo/me の既存 workspace）から起動される想定。
 
 登録の SSOT は `automation.toml`（この dir）。upsert は共通 tool で行う:
 
