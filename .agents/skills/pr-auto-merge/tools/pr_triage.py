@@ -1868,10 +1868,18 @@ def local_session_audit(state, worktrees, terms_cache, record=True):
         repo = match.group(1)
         w["githubRepo"] = repo
         lp = w.get("linkedPR") or {}
+        v = None
         if lp.get("number"):
-            v = gh_json(["pr", "view", str(lp["number"]), "--repo", repo,
-                         "--json", "number,state,headRefName,headRefOid,mergedAt"])
-        else:
+            try:
+                v = gh_json(["pr", "view", str(lp["number"]), "--repo", repo,
+                             "--json", "number,state,headRefName,headRefOid,mergedAt"])
+            except ApiError as e:
+                # Orca の upstream PR 番号と origin fork が食い違う場合は
+                # branch から照合し直す。通信障害等は fail-closed のまま。
+                missing = f"Could not resolve to a PullRequest with the number of {lp['number']}."
+                if missing not in str(e):
+                    raise
+        if v is None:
             found = gh_json(["pr", "list", "--repo", repo, "--state", "merged",
                              "--head", branch, "--limit", "1", "--json",
                              "number,state,headRefName,headRefOid,mergedAt"])

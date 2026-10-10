@@ -975,6 +975,29 @@ assert len(pt.sweep_candidates(state, [done])) == 1
 assert not pt.sweep_candidates(state, [dict(done, isActive=True)])
 assert not pt.sweep_candidates(state, [dict(done, childWorktreeIds=['child'])])
 assert not pt.sweep_candidates(state, [dict(done, workspaceStatus='in-progress')])
+
+# upstream の PR link が origin fork に存在しなければ branch で再照合。
+# merge 済みの根拠がない worktree は削除候補にしない。通信障害は止める。
+for found in [[], [{'number': 1, 'state': 'MERGED', 'headRefName': 'wwwyo/x',
+                    'headRefOid': 'abc', 'mergedAt': '2026-10-03T00:00:00Z'}]]:
+    with mock.patch.object(pt, 'terminal_list', return_value=[]), \
+            mock.patch.object(pt, 'sh', return_value=SimpleNamespace(stdout='git@github.com:wwwyo/me.git\n')), \
+            mock.patch.object(pt, 'gh_json', side_effect=[pt.ApiError(
+                'GraphQL: Could not resolve to a PullRequest with the number of 8. (repository.pullRequest)'), found]) as api:
+        st = {}
+        pt.local_session_audit(st, [dict(done)], {}, record=False)
+        assert api.call_args.args[0][:2] == ['pr', 'list']
+        assert api.call_args.args[0][api.call_args.args[0].index('--head') + 1] == 'wwwyo/x'
+        assert len(pt.sweep_candidates(st, [done])) == len(found)
+with mock.patch.object(pt, 'terminal_list', return_value=[]), \
+        mock.patch.object(pt, 'sh', return_value=SimpleNamespace(stdout='git@github.com:wwwyo/me.git\n')), \
+        mock.patch.object(pt, 'gh_json', side_effect=pt.ApiError('connection failed')) as api:
+    try:
+        pt.local_session_audit({}, [dict(done)], {}, record=False)
+        raise AssertionError('audit network error ignored')
+    except pt.ApiError:
+        pass
+    api.assert_called_once()
 assert pt.sweep_sessions_ready(done, [{'agentIdentity': 'codex'}, {'connected': True, 'preview': '$'}])
 assert not pt.sweep_sessions_ready(done, [{'connected': True, 'preview': 'building...'}])
 assert not pt.sweep_sessions_ready(dict(done, agents=[{'state': 'working'}]), [])
