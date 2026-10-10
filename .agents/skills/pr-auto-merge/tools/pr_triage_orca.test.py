@@ -2,6 +2,7 @@
 
 import json
 import os
+import shlex
 from pathlib import Path
 import subprocess
 import sys
@@ -19,7 +20,7 @@ args = sys.argv[1:]
 root = Path(os.environ['FIXTURE_ROOT'])
 mode = os.environ['FIXTURE_MODE']
 with (root / 'calls.jsonl').open('a') as f:
-    f.write(json.dumps([tool, *args[:2]]) + '\n')
+    f.write(json.dumps([tool, *args]) + '\n')
 
 def reply(result):
     print(json.dumps({'ok': True, 'result': result}))
@@ -51,6 +52,8 @@ if tool == 'orca':
     elif args[:2] == ['repo', 'add']:
         (root / 'registered').touch()
         reply({})
+    elif args[:2] == ['terminal', 'create']:
+        reply({'terminal': {'handle': 'fixture-agent'}})
     elif args[:2] == ['terminal', 'wait']:
         reply({'wait': {'satisfied': True}})
     elif args[:2] == ['terminal', 'send']:
@@ -110,9 +113,17 @@ class OrcaCliTest(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         self.assertTrue(json.loads(result.stdout)["dispatched"])
         calls = [json.loads(s) for s in (self.root / "calls.jsonl").read_text().splitlines()]
-        self.assertEqual([c[1:] for c in calls if c[0] == "orca"], [
+        self.assertEqual([c[1:3] for c in calls if c[0] == "orca"], [
             ["worktree", "ps"], ["worktree", "create"], ["repo", "add"],
-            ["worktree", "create"], ["terminal", "wait"], ["terminal", "send"]])
+            ["worktree", "create"], ["terminal", "create"],
+            ["terminal", "wait"], ["terminal", "send"]])
+        create_call = next(c for c in calls if c[:3] == ["orca", "terminal", "create"])
+        command = shlex.split(create_call[create_call.index("--command") + 1])
+        self.assertEqual(command[:5], ["mise", "x", "--", "pi", "--no-sandbox"])
+        self.assertEqual(command[5:], ["--model", "opencode-go/mimo-v2.6-flash", "--thinking", "high"])
+        checkout = next(i for i, c in enumerate(calls) if c[0] == "git" and "checkout" in c)
+        launch = next(i for i, c in enumerate(calls) if c[:3] == ["orca", "terminal", "create"])
+        self.assertLess(checkout, launch)
 
     def test_other_errors_fail_closed_with_diagnostics(self):
         for mode, expected in [("denied", "runtime_access_denied"),

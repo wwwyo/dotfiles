@@ -1,6 +1,6 @@
 ---
 name: delegate
-description: "別 agent への委譲・相談・レビューで harness・model・effort と fallback を選び、起動・再開する共通手順。「Codex に聞いて」「Devin に任せて」「pi でやって」や、別 repo・独立したセッションへの Orca 経由の委譲で使う。通常の分担方法は agent の判断に任せる。"
+description: "別 agent への委譲・相談・レビューで harness・model・effort と fallback を選び、起動・再開する共通手順。「Codex に聞いて」「pi でやって」や、別 repo・独立したセッションへの Orca 経由の委譲で使う。通常の分担方法は agent の判断に任せる。"
 ---
 
 # 別 agent の選択と委譲
@@ -11,8 +11,8 @@ description: "別 agent への委譲・相談・レビューで harness・model�
 
 | 役割 | public | personal | work |
 |---|---|---|---|
-| Operator | 1. codex:gpt-6.1-sol:high, 2. devin:swe-2:max | 同じ | 同じ |
-| worker | 1. devin:swe-2:medium, 2. pi:opencode-go/mimo-v2.6-flash:high, 3. pi:opencode-go/muse-spark-1.3-contributor:high | 1. devin:swe-2:medium, 2. pi:opencode-go/mimo-v2.6-flash:high, 3. pi:opencode-go/deepseek-v4.1-flash:high | 1. pi:opencode-go/claude-haiku-5-5:high |
+| Operator | 1. codex:gpt-6.1-sol:high, 2. pi:opencode-go/mimo-v2.6-flash:high | 同じ | 1. codex:gpt-6.1-sol:high, 2. pi:opencode-go/claude-haiku-5-5:high |
+| worker | 1. pi:opencode-go/mimo-v2.6-flash:high, 2. pi:opencode-go/muse-spark-1.3-contributor:high | 1. pi:opencode-go/mimo-v2.6-flash:high, 2. pi:opencode-go/deepseek-v4.1-flash:high | 1. pi:opencode-go/claude-haiku-5-5:high |
 | review | 1. codex:gpt-6.1-sol:high, 2. pi:opencode-go/muse-spark-1.3-contributor:high | 1. codex:gpt-6.1-sol:high, 2. pi:opencode-go/mimo-v2.6-flash:high | 同左 |
 
 - personal / work: 個人の責任範囲で扱うデータ / 仕事として組織・案件の利用条件に従うデータ。
@@ -31,7 +31,6 @@ description: "別 agent への委譲・相談・レビューで harness・model�
 | harness | bypass の指定 |
 |---|---|
 | Codex | `--dangerously-bypass-approvals-and-sandbox` |
-| Devin | `--permission-mode dangerous`（`mise x -- env -u ACP_BACKEND devin ...` で起動） |
 | pi | `--no-sandbox`（この環境の `pi-sandbox` extension が提供。読み込み確認は [pi の手順](references/pi.md)） |
 | Claude Code | `--dangerously-skip-permissions` |
 
@@ -39,7 +38,7 @@ description: "別 agent への委譲・相談・レビューで harness・model�
 
 ## 通常の session を開いて prompt を送る
 
-委譲・相談・レビューは、harness を問わず Orca の terminal に通常の対話 session（TUI）を開き、入力 ready を確認してから prompt を送る。短い依頼でもこの手順を使う。新規・再開・fallback に適用し、`devin -p` / `pi -p` / `codex exec` などの one-shot はユーザーが非対話実行を明示した場合だけ使う。pi の `--no-session` も通常の委譲では付けない。
+委譲・相談・レビューは、harness を問わず Orca の terminal に通常の対話 session（TUI）を開き、入力 ready を確認してから prompt を送る。短い依頼でもこの手順を使う。新規・再開・fallback に適用し、`pi -p` / `codex exec` などの one-shot はユーザーが非対話実行を明示した場合だけ使う。pi の `--no-session` も通常の委譲では付けない。
 
 追加指示は起動済みの同じ terminal / session に送る。回答後も session は残し、通常の委譲を print mode の繰り返しで代用しない。process が終了したときだけ、対象 session ID を指定して対話モードで再開する。起動・送信・開始確認の具体的な操作は後述の Orca 手順に従う。
 
@@ -50,7 +49,6 @@ description: "別 agent への委譲・相談・レビューで harness・model�
 | やること | 読む reference |
 |---|---|
 | Codex へ相談・レビュー・調査を依頼する / 同じ session で対話を続ける | [references/codex.md](references/codex.md) |
-| Devin の対話 session を起動する / 再開する | [references/devin.md](references/devin.md) |
 | pi の対話 session を起動する / 継続する | [references/pi.md](references/pi.md) |
 
 設定・認証・起動不調の調査は [dev-env](../dev-env/SKILL.md) から対象の reference を読む。Orca の terminal 操作と handoff・監督の使い分けは後述の「起動・連携は Orca 経由」に従う。
@@ -85,11 +83,11 @@ Orca を利用できない場合は、そのエラーを報告し、別経路へ
 
 いずれも `terminal wait --for tui-idle` の `satisfied: true` を確認してから送信する。送信受付と turn 開始を区別し、開始を確認できない場合は同じ prompt を重複送信しない。監督下では orchestration の dispatch / mailbox 手順で依頼を届ける場合も、worker 自体は対話 session で起動する。
 
-## Devin / pi への handoff
+## pi への handoff
 
-**Devin と pi では `worktree create --prompt` を使わない**（Claude・Codex は可）。この2つの TUI は入力 ready 前のキー入力を保持せず、prompt が滞留または消失して静かに失敗する。Orca の send 証明も `provider: "unsupported"` で未送信を検知できない（stablyai/orca#22580）。`orca-cli` の通常の handoff 手順に対し、次の順序を使う。
+**pi では `worktree create --prompt` を使わない**（Claude・Codex は可）。pi の TUI は入力 ready 前のキー入力を保持せず、prompt が滞留または消失して静かに失敗する。Orca の send 証明も `provider: "unsupported"` で未送信を検知できない（stablyai/orca#22580）。`orca-cli` の通常の handoff 手順に対し、次の順序を使う。
 
-1. `worktree create --agent devin` または `worktree create --agent pi` で起動する。`--prompt` は付けない。pi には Orca 既定の bypass 引数が無いため、sandbox extension を使う環境では次の 2 コマンドに替える（`--worktree` を省くと呼び出し元の worktree で pi が動く）。`--agent` 無しの create は fallback shell が残るので、`terminal list` で未使用を確認してから閉じる。sandbox の有効・無効の確認は [pi の手順](references/pi.md) に従う。
+1. `worktree create --agent pi` で起動する。`--prompt` は付けない。pi には Orca 既定の bypass 引数が無いため、sandbox extension を使う環境では次の 2 コマンドに替える（`--worktree` を省くと呼び出し元の worktree で pi が動く）。`--agent` 無しの create は fallback shell が残るので、`terminal list` で未使用を確認してから閉じる。sandbox の有効・無効の確認は [pi の手順](references/pi.md) に従う。
 
    ```text
    ORCA worktree create --name <task-name> --no-parent --json

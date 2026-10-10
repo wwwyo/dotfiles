@@ -6,4 +6,4 @@
 
 ## 意図
 
-レビュー pass の実行は platform 自身の subagent primitive（Claude Code の Agent/Task、Codex の spawn_agent、Devin の run_subagent）への dispatch のみに限定する。Orca 経由の別 session 起動や delegate skill のモデル選択表には依存しない。primitive が無い・dispatch が回復不能な場合でも自分で inline に代替実行せず、失敗を報告して止まる。
+レビュー pass の実行は platform 自身の subagent primitive（Claude Code の Agent/Task、Codex の spawn_agent、pi の pi-subagents extension の subagent）への dispatch のみに限定する。Orca 経由の別 session 起動や delegate skill のモデル選択表には依存しない。primitive が無い・dispatch が回復不能な場合でも自分で inline に代替実行せず、失敗を報告して止まる。

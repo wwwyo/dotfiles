@@ -1267,7 +1267,8 @@ def route_dispatch(worktrees, terminals_by_wt, repo, pr):
         return {"route": "defer", "worktree": w, "handle": None,
                 "reason": "agent working"}
 
-    t = agent_terminal(terms)
+    t = agent_terminal([t for t in terms
+                        if t.get("agentIdentity") != "devin"])
     if t:
         return {"route": "send", "worktree": w, "handle": t["handle"],
                 "reason": f"matched via {how}; agent idle/done"}
@@ -1415,15 +1416,31 @@ def send_prompt(handle, text):
     return False, res or {"error": err}
 
 
+def pi_worker_command():
+    """個人 repo の repair worker は delegate の worker/personal を使う。"""
+    policy = Path(__file__).resolve().parents[2] / "delegate" / "SKILL.md"
+    for line in policy.read_text(encoding="utf-8").splitlines():
+        cells = [cell.strip() for cell in line.strip("|").split("|")]
+        if cells[0] == "worker" and len(cells) == 4:
+            first = cells[2].split(",", 1)[0]
+            match = re.fullmatch(r"1\. pi:([\w./-]+):(off|minimal|low|medium|high|xhigh|max)", first)
+            if match:
+                model, thinking = match.groups()
+                return shlex.join(["mise", "x", "--", "pi", "--no-sandbox",
+                                   "--model", model, "--thinking", thinking])
+            break
+    raise ApiError("delegate worker/personal has no supported primary pi candidate")
+
+
 def spawn_worktree(repo_name, number, head_ref):
-    """専用 worktree を立てて devin agent を起動し (handle, path, wtid) を
-    返す。devin は --prompt を TUI ready 前に送ると入力が消失するので
-    （--agent のみで起動 → wait tui-idle → send）の手順を取る。
-    head branch は作成した worktree 内で checkout する。"""
+    """専用 worktree に pi を起動し (handle, path, wtid) を返す。
+    pi は ready 前の prompt を保持しないので起動後に wait/send する。
+    head branch は agent 起動前に作成した worktree 内で checkout する。"""
+    command = pi_worker_command()
     name = f"pr{number}-review"
     try:
         res = orca_json(["worktree", "create", "--repo", f"name:{repo_name}",
-                         "--name", name, "--agent", "devin"], timeout=300)
+                         "--name", name, "--no-parent"], timeout=300)
     except ApiError as e:
         # repo 未登録 (repo_not_found) のときだけ登録して再試行する
         # （~/src/github.com/wwwyo/<name> が個人 repo の規約 path）。
@@ -1436,20 +1453,12 @@ def spawn_worktree(repo_name, number, head_ref):
         orca_json(["repo", "add", "--path", str(canonical)], timeout=60)
         res = orca_json(["worktree", "create", "--repo",
                          f"name:{repo_name}", "--name", name,
-                         "--agent", "devin"], timeout=300)
+                         "--no-parent"], timeout=300)
     wt = (res or {}).get("worktree") or {}
     wtid = wt.get("id") or wt.get("worktreeId")
     path = wt.get("path") or (wtid or "").split("::", 1)[-1]
-    handle = ((res or {}).get("startupTerminal") or {}).get("handle")
     if not wtid or not path:
         raise ApiError(f"worktree create returned no path: {res}")
-    if not handle:
-        for t in terminal_list(wtid):
-            if t.get("agentIdentity"):
-                handle = t["handle"]
-                break
-    if not handle:
-        raise ApiError("worktree created but no agent terminal handle")
 
     # head branch を checkout（他 worktree で checkout 済みでないことは
     # gate 側で確認済み。ここでの失敗は spawn 失敗として上位へ）
@@ -1468,6 +1477,12 @@ def spawn_worktree(repo_name, number, head_ref):
     # 作らない — local 実体が残っている場合の分岐は動かさない）
     subprocess.run(["git", "-C", path, "merge", "--ff-only", "FETCH_HEAD"],
                    capture_output=True, text=True, timeout=60)
+    res = orca_json(["terminal", "create", "--worktree", "id:" + wtid,
+                     "--command", command], timeout=120)
+    handle = ((res or {}).get("terminal") or {}).get("handle") or \
+        (res or {}).get("handle")
+    if not handle:
+        raise ApiError(f"terminal create returned no handle: {res}")
     return handle, path, wtid
 
 
@@ -1984,7 +1999,7 @@ def _cmd_dispatch(a):
     elif route["route"] == "revive":
         res = orca_json(["terminal", "create", "--worktree",
                          route["worktree"]["worktreeId"],
-                         "--command", "devin"], timeout=120)
+                         "--command", pi_worker_command()], timeout=120)
         handle = ((res or {}).get("terminal") or {}).get("handle") or \
             (res or {}).get("handle")
         if not handle:

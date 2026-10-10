@@ -30,4 +30,4 @@ AGENTS.md は、agent が起動時に読む repo の案内である。
 read @AGENTS.md
 ```
 
-この1行のみ。AGENTS.md が正本で、CLAUDE.md はそれを読まない agent（Claude Code 等）への転送役。Devin は両方読むので内容を重複させない。
+この1行のみ。AGENTS.md が正本で、CLAUDE.md はそれを読まない agent（Claude Code 等）への転送役。転送先と内容を重複させない。

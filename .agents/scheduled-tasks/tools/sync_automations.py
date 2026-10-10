@@ -16,7 +16,7 @@ orca CLI に任せる (workspace/repo の解決・sourceContext の付与は orc
 manifest schema:
 
   name           automation 名 (upsert の照合 key)
-  provider       agent id (devin 等)
+  provider       agent id (pi 等)
   enabled        bool
   timezone       IANA tz
   workspace_path 既存 workspace の path (~ 可。repo に username を書かない
@@ -116,7 +116,7 @@ def load_manifest(p):
     prompt = prompt.replace("{{workspace_path}}", wp or "")
     prompt = prompt.replace("{{repo_path}}", rp or "")
     return {
-        "name": m["name"], "provider": m.get("provider", "devin"),
+        "name": m["name"], "provider": m["provider"],
         "enabled": bool(m.get("enabled", True)),
         "timezone": m.get("timezone"),
         "workspace_path": wp, "repo_path": rp,

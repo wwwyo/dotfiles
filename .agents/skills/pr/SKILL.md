@@ -108,7 +108,7 @@ CI・レビューが既に完了し、以下の終了条件を全て満たして
 
 コメント対応ポリシー:
 
-- AIレビューボット（devin, copilot, claude, codex, coderabbit, pullfrogなど）のコメントには自動で返信・対応してよい
+- AIレビューボット（copilot, claude, codex, coderabbit, pullfrogなど。過去に別の bot が付けた指摘も含む）のコメントには自動で返信・対応してよい
 - 人間のレビュアーのコメントには返信しない。ユーザーに対応が必要な旨を報告するのみ
   - 例外としてユーザ本人(wwwyo)へは返信して良い
 - AIレビューボットのコメントに返信したら、コード編集の有無に関係なく該当するすべてのレビューthreadをresolveする（`gh api` のGraphQLで `resolveReviewThread` を呼ぶ）。
