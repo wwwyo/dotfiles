@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # /// script
-# requires-python = ">=3.9"
+# requires-python = ">=3.11"
 # ///
 """pr_triage — pr-merge-lane routine の triage tool。
 
@@ -31,6 +31,7 @@ script の決定を実行するだけ。merge 候補の QA・Blast Radius の意
 merge 発行権は持たない）が、bot の依存更新のみの PR で全更新が
 minor/patch・devDependencies（major 含む）と base/head の実 manifest 差分から
 確定できるものは script が自動 ok とし、judge を介さず merge 候補にする。
+mise の [tools] の固定 semver pin 更新は devDependencies 相当として扱う。
 runtime dependency の major（0.x 台の minor を含む）・peerDependencies の
 更新・確定不能な更新・依存以外の差分を含む PR は従来どおり judge 経路。
 
@@ -55,6 +56,7 @@ import shutil
 import subprocess
 import sys
 import time
+import tomllib
 import uuid
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -87,7 +89,7 @@ SWEEP_TRANSIENT_REASONS = ("worktree gone", "terminal/agent live")
 THREADS_PAGE = 50           # reviewThreads の page size
 MAX_PAGES = 20              # ページング暴走の止血帯
 PR_ENUM_LIMIT = 100         # search の page size。total > limit*pages は fail-closed
-JUDGE_POLICY_VERSION = 9   # bot 依存更新の minor/patch/devDep は script 自動 ok
+JUDGE_POLICY_VERSION = 10  # mise tool pin は devDependencies 相当で自動 ok
 DISPATCH_MSG_MAX = 3500     # terminal send へ送る指摘一覧の上限 chars
 try:
     SEND_WAIT_S = max(0, int(os.environ.get("PR_WATCH_SEND_WAIT_S", "30")))
@@ -749,9 +751,7 @@ def classify_pr(files, meta, diff, renamed_from=()):
 
 # ---------- bot 依存更新の script 自動 ok ----------
 
-# 自動 ok の判定対象は package.json の依存 section だけ。それ以外の manifest
-# （go.mod・mise.toml 等）と workflow には dev/runtime の区分や更新種別を
-# 確定できる基準が無いので judge に残す
+# mise の [tools] は開発用依存として扱う。他の設定変更は自動 ok にしない。
 DEP_SECTIONS = ("dependencies", "devDependencies",
                 "peerDependencies", "optionalDependencies")
 DEV_DEP_SECTIONS = ("devDependencies",)
@@ -759,19 +759,74 @@ DEV_DEP_SECTIONS = ("devDependencies",)
 # でも自動 ok にはせず judge 経路に回す。optionalDependencies は optional
 # なので dependencies と同じ扱い（minor/patch のみ自動 ok）
 NO_AUTO_OK_SECTIONS = ("peerDependencies",)
-# package.json の写像として扱える npm 系 lockfile。これ以外の lockfile
-# （go.sum・Cargo.lock・Gemfile.lock 等）は対応 manifest が判定不能なので
-# 自動 ok では skip せず「未マッピング」として judge に回す
+# package.json の写像として扱える npm 系 lockfile。対応する mise manifest
+# の mise.lock も除外する。それ以外は「未マッピング」として judge に回す。
 NPM_LOCKFILE_BASENAMES = {"package-lock.json", "npm-shrinkwrap.json",
                           "bun.lock", "bun.lockb", "yarn.lock",
                           "pnpm-lock.yaml", "pnpm-lock.yml"}
 DEP_SPEC_RE = re.compile(
     r"^([~^]?)v?(\d+)\.(\d+)\.(\d+)((?:[-+][0-9A-Za-z.\-]+)?)$")
+TOOL_PIN_RE = re.compile(
+    r"^v?(\d+)\.(\d+)\.(\d+)"
+    r"(?:-([0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*))?"
+    r"(?:\+[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?$")
+
+
+def is_mise_manifest(path):
+    low = path.lower()
+    return low in MISE_CONFIG_PATHS or _basename(low) in {"mise.toml", ".mise.toml"}
+
+
+def tool_pin_order(spec):
+    """固定 semver pin の比較キー。range・alias・commit pin は判定不能。"""
+    m = TOOL_PIN_RE.fullmatch(spec) if isinstance(spec, str) else None
+    if not m:
+        return None
+    version = tuple(int(m[i]) for i in (1, 2, 3))
+    pre = m[4]
+    identifiers = tuple((0, int(x)) if x.isdigit() else (1, x)
+                        for x in pre.split(".")) if pre else ()
+    return version, pre is None, identifiers
+
+
+def mise_tool_updates(base_text, head_text):
+    """[tools] の pin 更新だけを devDependencies 相当として全件返す。"""
+    try:
+        base, head = tomllib.loads(base_text), tomllib.loads(head_text)
+    except (tomllib.TOMLDecodeError, TypeError):
+        return None
+    if any(base.get(k) != head.get(k)
+           for k in (set(base) | set(head)) - {"tools"}):
+        return None
+    b, h = base.get("tools"), head.get("tools")
+    if not isinstance(b, dict) or not isinstance(h, dict) or set(b) != set(h):
+        return None
+    updates = []
+    for name in sorted(b):
+        old, new = b[name], h[name]
+        if old == new:
+            continue
+        if isinstance(old, dict) and isinstance(new, dict):
+            old, new = dict(old), dict(new)
+            old_pin, new_pin = old.pop("version", None), new.pop("version", None)
+            if old != new:
+                return None
+            old, new = old_pin, new_pin
+        elif not isinstance(old, str) or not isinstance(new, str):
+            return None
+        o, n = tool_pin_order(old), tool_pin_order(new)
+        kind = "unknown"
+        if o is not None and n is not None and n > o:
+            kind = dep_bump_kind(".".join(map(str, o[0])),
+                                 ".".join(map(str, n[0]))) if n[0] != o[0] else "prerelease"
+        updates.append({"name": name, "section": "devDependencies",
+                        "from": old, "to": new, "kind": kind})
+    return updates
 
 
 def file_at_ref(repo, path, ref):
     """repo の ref 時点の file 内容を raw で取る。無ければ ApiError。"""
-    return gh(["api", "-H", "Accept: application/vnd.github.raw",
+    return gh(["api", "-X", "GET", "-H", "Accept: application/vnd.github.raw",
                f"repos/{repo}/contents/{path}",
                "-f", f"ref={ref}"], timeout=60).stdout
 
@@ -852,6 +907,7 @@ def dep_auto_ok(repo, facts):
     の更新・確定不能・依存以外の差分を含むものは
     eligible=False で従来の judge 経路に残す。grouped PR は manifest の
     直接更新を全件見る（1件でも対象外なら全体が対象外）。
+    mise の固定 tool pin 更新は devDependencies 相当として扱う。
 
     戻り値: {"eligible": bool, "updates": [...], "reasons": [...]}"""
     out = {"eligible": False, "updates": [], "reasons": []}
@@ -865,21 +921,23 @@ def dep_auto_ok(repo, facts):
     pkg_dirs = {path.rsplit("/", 1)[0] if "/" in path else ""
                 for path in files
                 if _basename(path.lower()) == "package.json"}
+    mise_dirs = {str(Path(path).parent) for path in files if is_mise_manifest(path)}
     # file 集合の静的チェックを先に済ませる — package.json 取得の API call
     # を挟んでから後続 file で弾くと結果が file 順に依存する
     manifests = []
     for path in files:
         fname = _basename(path.lower())
         if is_lockfile(path):
-            # npm 系 lockfile は同じ dir の package.json の写像として skip
-            # する。それ以外（go.sum 等・package.json の無い dir・
-            # lockfile のみの PR）は対応 manifest が無いので未マッピング
+            # npm/mise の lockfile は同じ dir の対応 manifest の写像として
+            # skip する。対応のない lockfile は未マッピング。
             pdir = path.rsplit("/", 1)[0] if "/" in path else ""
             if fname in NPM_LOCKFILE_BASENAMES and pdir in pkg_dirs:
                 continue
+            if fname == "mise.lock" and str(Path(path).parent) in mise_dirs:
+                continue
             out["reasons"].append(f"unmapped lockfile: {path}")
             return out
-        if fname != "package.json":
+        if fname != "package.json" and not is_mise_manifest(path):
             out["reasons"].append(f"unclassifiable manifest: {path}")
             return out
         manifests.append(path)
@@ -891,7 +949,8 @@ def dep_auto_ok(repo, facts):
         except ApiError as e:
             out["reasons"].append(f"manifest unreadable: {path} ({e})")
             return out
-        ups = package_json_updates(base_text, head_text)
+        ups = (mise_tool_updates(base_text, head_text) if is_mise_manifest(path)
+               else package_json_updates(base_text, head_text))
         if ups is None:
             out["reasons"].append(
                 f"non-dependency or unparsable change: {path}")
@@ -1809,10 +1868,18 @@ def local_session_audit(state, worktrees, terms_cache, record=True):
         repo = match.group(1)
         w["githubRepo"] = repo
         lp = w.get("linkedPR") or {}
+        v = None
         if lp.get("number"):
-            v = gh_json(["pr", "view", str(lp["number"]), "--repo", repo,
-                         "--json", "number,state,headRefName,headRefOid,mergedAt"])
-        else:
+            try:
+                v = gh_json(["pr", "view", str(lp["number"]), "--repo", repo,
+                             "--json", "number,state,headRefName,headRefOid,mergedAt"])
+            except ApiError as e:
+                # Orca の upstream PR 番号と origin fork が食い違う場合は
+                # branch から照合し直す。通信障害等は fail-closed のまま。
+                missing = f"Could not resolve to a PullRequest with the number of {lp['number']}."
+                if missing not in str(e):
+                    raise
+        if v is None:
             found = gh_json(["pr", "list", "--repo", repo, "--state", "merged",
                              "--head", branch, "--limit", "1", "--json",
                              "number,state,headRefName,headRefOid,mergedAt"])
