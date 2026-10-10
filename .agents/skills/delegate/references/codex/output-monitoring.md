@@ -11,7 +11,7 @@ Paths in commands are relative to the skill root (the directory containing `SKIL
 運用:
 
 - 答えは **stdout** から取る（または `-o <file>` の last-message file）
-- err.log は **初回だけ session id 行を確認**する（往復に備える。[未解決の反論を残さない](disagreement.md)）。
+- err.log は **初回だけ session id 行を確認**する（追加指示に備える）。
   それ以外は普段読まない。**exit≠0 / 出力が空・異常なときだけ** Read して ERROR を確認する
 - トレース（reasoning・実行ログ）を見たいときだけ err.log を `tail` する
 
