@@ -5,7 +5,7 @@ argument-hint: <project-name>
 ---
 # Project Setup
 
-新しいプロジェクトを初期化し、開発に必要な基盤ファイルを生成する。AI エージェントは Claude Code・Codex・pi・Devin を使う前提で構成する。
+新しいプロジェクトを初期化し、開発に必要な基盤ファイルを生成する。AI エージェントは Claude Code・Codex・pi を使う前提で構成する。
 
 ## 外部 OSS を fork する場合
 
@@ -73,7 +73,7 @@ git init
 
 既存 repo の監査・修正では、`orca.yaml` の scripts・Langfuse 設定が新規 worktree へ伝播するかも完了条件に含める。既存の設定値を不具合と断定する前に意図的な設定でないか確認する（`--setup skip` の免除条件は [telemetry 手順](references/telemetry.md) が正本）。
 
-ステップ 3 で収集を選んだ場合は、[導入手順](references/telemetry.md) を読み、4 agent の opt-in と Orca worktree への設定同期を行う。
+ステップ 3 で収集を選んだ場合は、[導入手順](references/telemetry.md) を読み、3 agent の opt-in と Orca worktree への設定同期を行う。
 
 ### 6. パッケージマネージャーピン留め
 
@@ -115,7 +115,7 @@ repo を public にするなら、手元のデータ（他 repo の中身・個�
 read @AGENTS.md
 ```
 
-この1行のみ。起動時 index は `AGENTS.md` が正本で、CLAUDE.md はそれを読まない agent（Claude Code 等）への転送役。Devin は AGENTS.md と CLAUDE.md を両方読むので内容の重複を避けるため転送1行に留める。
+この1行のみ。起動時 index は `AGENTS.md` が正本で、CLAUDE.md はそれを読まない agent（Claude Code 等）への転送役。転送1行に留め、規約の重複を避ける。
 
 ### 10. README.md 生成
 

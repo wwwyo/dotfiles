@@ -16,7 +16,7 @@ orca CLI に任せる (workspace/repo の解決・sourceContext の付与は orc
 manifest schema:
 
   name           automation 名 (upsert の照合 key)
-  provider       agent id (devin 等)
+  provider       agent id (pi 等)
   enabled        bool
   timezone       IANA tz
   workspace_path 既存 workspace の path (~ 可。repo に username を書かない
@@ -51,6 +51,9 @@ N 日おきは cron の DOM `*/N` で書くこと。
 短周期の probe automation を別名で登録して実際に nextRunAt が進むかを
 確認してから削除する。apply 後は `orca automations` で live の
 nextRunAt を見て閉じる — manifest の upsert 成功は発火の保証にならない。
+
+pi task の同期前には dev-env/references/orca.md の launcher 確認を行う。
+この script は GUI の model/thinking を検査・配備しない。
 
 usage: sync_automations.py [check|apply] [name]
   name を指定するとその automation だけを対象にする。
@@ -101,6 +104,8 @@ def orca_json(args):
 
 def load_manifest(p):
     m = tomllib.loads(p.read_text(encoding="utf-8"))
+    if not m.get("provider"):
+        raise RuntimeError(f"{p.parent.name}/{p.name}: provider が無い")
     wp = m.get("workspace_path")
     rp = m.get("repo_path")
     if wp and rp:
@@ -116,7 +121,7 @@ def load_manifest(p):
     prompt = prompt.replace("{{workspace_path}}", wp or "")
     prompt = prompt.replace("{{repo_path}}", rp or "")
     return {
-        "name": m["name"], "provider": m.get("provider", "devin"),
+        "name": m["name"], "provider": m["provider"],
         "enabled": bool(m.get("enabled", True)),
         "timezone": m.get("timezone"),
         "workspace_path": wp, "repo_path": rp,

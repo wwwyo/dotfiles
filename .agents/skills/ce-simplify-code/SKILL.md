@@ -23,7 +23,7 @@ When the platform's task-tracking capability is available, show the review, appl
 
 ## Step 2: Launch 3 review agents in parallel
 
-Dispatch three review agents — code-reuse, code-quality, and efficiency reviewers — via the platform's own subagent primitive (`Agent`/`Task` in Claude Code, `spawn_agent` in Codex, `run_subagent` in Devin). If the host exposes no subagent primitive, report that the review pass cannot run and stop; do not perform the reviews inline yourself. For each reviewer, read its prompt asset from this skill's directory and pass the **full file content** as the subagent's prompt, together with the resolved scope (the full diff or file set) so it has complete context:
+Dispatch three review agents — code-reuse, code-quality, and efficiency reviewers — via the platform's own subagent primitive (`Agent`/`Task` in Claude Code, `spawn_agent` in Codex, `subagent` from the installed `pi-subagents` extension in pi; load it with `subagents_enable` first). If the host exposes no subagent primitive, report that the review pass cannot run and stop; do not perform the reviews inline yourself. For each reviewer, read its prompt asset from this skill's directory and pass the **full file content** as the subagent's prompt, together with the resolved scope (the full diff or file set) so it has complete context:
 
 - `references/personas/code-reuse-reviewer.md`
 - `references/personas/code-quality-reviewer.md`

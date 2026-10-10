@@ -116,7 +116,7 @@ def ensure_env():
     if all(os.environ.get(k) for k in need):
         return
     # automation 経由の起動では shell 活性化を経ず mise env が乗らないことがある。
-    # そのときは devin-langfuse plugin の langfuse-export.sh と同じ経路で自分で解決する。
+    # そのときは mise の global env から自分で解決する。
     if sys.platform == "darwin" and not os.environ.get("MISE_AGE_KEY"):
         try:
             r = subprocess.run(
@@ -273,7 +273,7 @@ def _resolve_slug(slug):
 
 def resolve_workdir(md):
     """trace metadata → 起動 cwd の best-effort 復元。
-    devin は transcript_path = working_directory、pi plugin は metadata.cwd、
+    旧 devin trace は transcript_path = working_directory、pi plugin は metadata.cwd、
     claude/pi exporter は transcript file の親 dir が slug 化された cwd。
     Codex は手掛かりを持たない → None (呼び出し側が fallback する)。"""
     cwd = md.get("cwd")
@@ -586,7 +586,7 @@ def _cmd_targets(a):
 
 def _io_text(v):
     """root observation の io を text に正規化する。
-    devin/claude/pi は {"role":..,"content":..} の JSON string、
+    旧 devin trace と claude/pi は {"role":..,"content":..} の JSON string、
     codex は生の string で入る。"""
     if v is None:
         return ""

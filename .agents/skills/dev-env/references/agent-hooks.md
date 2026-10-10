@@ -1,13 +1,10 @@
 # agent hooks
 
-各 agent CLI（Claude Code / Codex / Devin / pi）の hook 機構に共通する知見。tool 個別の設定値は各 tool の reference を参照。
+各 agent CLI（Claude Code / Codex / pi）の hook 機構に共通する知見。tool 個別の設定値は各 tool の reference を参照。
 
-- **`matcher` は `tool_name` の regex で、tool 名は tool ごとに違う**。shell は Claude/Codex が
-  `Bash`、Devin が `exec`。file 系は `read`/`write`/`edit`、MCP は `mcp__<server>__<tool>`。
+- **`matcher` は `tool_name` の regex で、tool 名は tool ごとに違う**。shell は Claude が `Bash`、pi が `bash`。file 系は `read`/`write`/`edit`、MCP は `mcp__<server>__<tool>`。
   script が `tool_name` でゲートしていて名前を受理しないと payload は全件素通りして
-  静かに死ぬ。新しい tool は共有 script の `SHELL_TOOLS`（現 `{"Bash","exec"}`）に足し、
-  `echo '{"tool_name":"exec","tool_input":{"command":"git add -A"}}' | <script>` で
-  exit 2 を確認する
+  静かに死ぬ。共有 script に繋ぐときは受理する tool 名と payload 形式を実装で確認する。pi は extension の `tool_call` event を使うため、他 harness の hook command をそのまま転用しない
 - **置き場は「共有できるか」で決める**。tool 非依存なら `.agents/hooks/` に 1 本置き、
   各 tool の設定から `~/.agents/hooks/<name>` を指す。実装が違うなら各 tool の dir に別々に置く:
 

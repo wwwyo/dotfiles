@@ -89,7 +89,10 @@ MAX_PAGES = 20              # ページング暴走の止血帯
 PR_ENUM_LIMIT = 100         # search の page size。total > limit*pages は fail-closed
 JUDGE_POLICY_VERSION = 9   # bot 依存更新の minor/patch/devDep は script 自動 ok
 DISPATCH_MSG_MAX = 3500     # terminal send へ送る指摘一覧の上限 chars
-SEND_WAIT_S = 30            # --wait-submit の観測秒
+try:
+    SEND_WAIT_S = max(0, int(os.environ.get("PR_WATCH_SEND_WAIT_S", "30")))
+except ValueError:
+    SEND_WAIT_S = 30
 TUI_IDLE_TIMEOUT_MS = 300_000
 
 BOTS = ("dependabot[bot]", "renovate[bot]", "github-actions[bot]",
@@ -1267,7 +1270,8 @@ def route_dispatch(worktrees, terminals_by_wt, repo, pr):
         return {"route": "defer", "worktree": w, "handle": None,
                 "reason": "agent working"}
 
-    t = agent_terminal(terms)
+    t = agent_terminal([t for t in terms
+                        if t.get("agentIdentity") != "devin"])
     if t:
         return {"route": "send", "worktree": w, "handle": t["handle"],
                 "reason": f"matched via {how}; agent idle/done"}
@@ -1303,6 +1307,9 @@ def dispatch_allows(ds, head):
     解消しない」サインなので escalation で人間に回す。"""
     if ds.get("escalated"):
         return False, "escalated", False
+    pending = ds.get("delivery_pending") or {}
+    if pending.get("sha") == head:
+        return False, "delivery unverified; inspect terminal before retry", True
     same_head = [d for d in ds.get("dispatches", []) if d.get("sha") == head]
     if len(same_head) >= DISPATCH_MAX_PER_HEAD:
         return False, f"dispatch cap per head ({DISPATCH_MAX_PER_HEAD})", True
@@ -1369,61 +1376,115 @@ def build_dispatch_message(repo, pr, items):
 
 # ---------- send / spawn ----------
 
-def _find_request_id(detail):
-    """terminal send receipt から --retry-request 用の request id を探す。"""
-    if not isinstance(detail, dict):
-        return None
-    for k in ("requestId", "request_id", "id"):
-        if detail.get(k):
-            return detail[k]
-    for v in detail.values():
-        if isinstance(v, dict):
-            rid = _find_request_id(v)
-            if rid:
-                return rid
+def pi_delivery_evidence(cwd, text, since):
+    """対象 cwd の新しい user input と後続 generation だけを確認する。"""
+    safe_path = "--" + re.sub(r"[/\\:]", "-", re.sub(r"^[/\\]", "", cwd)) + "--"
+    agent_dir = Path(os.environ.get("PI_CODING_AGENT_DIR", Path.home() / ".pi/agent"))
+    for path in (agent_dir / "sessions" / safe_path).glob("*.jsonl"):
+        try:
+            if path.stat().st_mtime < since.timestamp():
+                continue
+            with path.open(encoding="utf-8") as f:
+                header = json.loads(next(f))
+                if header.get("type") != "session" or header.get("cwd") != cwd:
+                    continue
+                matched = False
+                for line in f:
+                    try:
+                        event = json.loads(line)
+                    except json.JSONDecodeError:
+                        continue  # 書き込み途中の末尾行は次回確認する
+                    message = event.get("message") or {}
+                    if event.get("type") != "message":
+                        continue
+                    if message.get("role") == "user":
+                        content = message.get("content") or []
+                        body = "".join(c.get("text", "") for c in content
+                                       if isinstance(c, dict) and c.get("type") == "text")
+                        ts = _ts(event.get("timestamp"))
+                        matched = body == text and ts is not None and ts >= since
+                    elif matched and message.get("role") == "assistant":
+                        if message.get("stopReason") in ("error", "aborted"):
+                            continue
+                        content = message.get("content") or []
+                        generated = any(isinstance(c, dict) and (
+                            (c.get("type") == "text" and c.get("text")) or
+                            (c.get("type") == "thinking" and c.get("thinking")) or
+                            (c.get("type") == "toolCall" and c.get("name")))
+                            for c in content)
+                        if not generated:
+                            continue
+                        return {"kind": "pi_session", "session_id": header.get("id"),
+                                "message_id": event.get("id"),
+                                "provider": message.get("provider"),
+                                "model": message.get("model")}
+        except (OSError, StopIteration, ValueError, TypeError):
+            continue
     return None
 
 
 def send_prompt(handle, text):
-    """terminal send --wait-submit で turn_started まで観測する。
-    既定 receipt は入力受理のみを示すので turn_started を見る。
-    timeout/受理止まりは未配信扱い（dispatch カウントを進めず次 tick で
-    再送対象になる）。輸送層が曖昧な失敗を返した場合は receipt の
-    --retry-request id で冪等に再送する。"""
-    res, err = None, None
+    """Orca の turn_started、または local pi の新しい generation で確認する。
+    未確認なら入力を再送しない。呼び出し側が pending を永続化している。"""
+    since = _now()
+    terminal = orca_json(["terminal", "show", "--terminal", handle]).get("terminal") or {}
+    local_pi = terminal.get("agentIdentity") == "pi" and terminal.get("executionHostId") == "local"
+    cwd = terminal.get("worktreePath") if local_pi else None
     try:
         res = orca_json(["terminal", "send", "--terminal", handle,
                          "--text", text, "--enter",
                          "--wait-submit", str(SEND_WAIT_S)], timeout=90)
     except ApiError as e:
-        err = str(e)
-    blob = json.dumps(res or {}, ensure_ascii=False)
-    if "turn_started" in blob:
+        return False, {"error": str(e)}
+    if "turn_started" in json.dumps(res or {}, ensure_ascii=False):
         return True, res
-    rid = _find_request_id(res or {})
-    if rid:
-        try:
-            res2 = orca_json(["terminal", "send", "--terminal", handle,
-                              "--text", text, "--enter",
-                              "--wait-submit", str(SEND_WAIT_S),
-                              "--retry-request", rid], timeout=90)
-            if "turn_started" in json.dumps(res2, ensure_ascii=False):
-                return True, res2
-            return False, res2
-        except ApiError as e2:
-            return False, {"error": str(e2), "retry_request": rid}
-    return False, res or {"error": err}
+    if cwd:
+        deadline = time.monotonic() + SEND_WAIT_S
+        while True:
+            evidence = pi_delivery_evidence(cwd, text, since)
+            if evidence:
+                return True, {"receipt": res, "evidence": evidence}
+            if time.monotonic() >= deadline:
+                break
+            time.sleep(1)
+    return False, res
+
+
+def pi_worker_command():
+    """個人 repo の repair worker は delegate の worker/personal を使う。"""
+    policy = Path(__file__).resolve().parents[2] / "delegate" / "SKILL.md"
+    try:
+        rows = policy.read_text(encoding="utf-8").splitlines()
+    except OSError as e:
+        raise ApiError(f"delegate policy unreadable: {e}") from e
+    # pi の catalog に無い UID は delegate の次候補へ進む。認証/API 障害は
+    # generation が確認できなければ escalate し、受理済みかもしれない入力を再送しない。
+    catalog = sh(["mise", "x", "--", "pi", "--offline", "--list-models"], timeout=30)
+    available = {f"{parts[0]}/{parts[1]}" for line in catalog.stdout.splitlines()
+                 if len(parts := line.split()) == 6}
+    for line in rows:
+        cells = [cell.strip() for cell in line.strip("|").split("|")]
+        if cells[0] == "worker" and len(cells) == 4:
+            for candidate in cells[2].split(","):
+                match = re.fullmatch(r"\d+\. pi:([\w./-]+):(off|minimal|low|medium|high|xhigh|max)", candidate.strip())
+                if match:
+                    model, thinking = match.groups()
+                    if model in available:
+                        return shlex.join(["mise", "x", "--", "pi", "--no-sandbox",
+                                           "--model", model, "--thinking", thinking])
+            break
+    raise ApiError("delegate worker/personal has no available pi candidate")
 
 
 def spawn_worktree(repo_name, number, head_ref):
-    """専用 worktree を立てて devin agent を起動し (handle, path, wtid) を
-    返す。devin は --prompt を TUI ready 前に送ると入力が消失するので
-    （--agent のみで起動 → wait tui-idle → send）の手順を取る。
-    head branch は作成した worktree 内で checkout する。"""
+    """専用 worktree に pi を起動し (handle, path, wtid) を返す。
+    pi は ready 前の prompt を保持しないので起動後に wait/send する。
+    head branch は agent 起動前に作成した worktree 内で checkout する。"""
+    command = pi_worker_command()
     name = f"pr{number}-review"
     try:
         res = orca_json(["worktree", "create", "--repo", f"name:{repo_name}",
-                         "--name", name, "--agent", "devin"], timeout=300)
+                         "--name", name, "--no-parent"], timeout=300)
     except ApiError as e:
         # repo 未登録 (repo_not_found) のときだけ登録して再試行する
         # （~/src/github.com/wwwyo/<name> が個人 repo の規約 path）。
@@ -1436,20 +1497,12 @@ def spawn_worktree(repo_name, number, head_ref):
         orca_json(["repo", "add", "--path", str(canonical)], timeout=60)
         res = orca_json(["worktree", "create", "--repo",
                          f"name:{repo_name}", "--name", name,
-                         "--agent", "devin"], timeout=300)
+                         "--no-parent"], timeout=300)
     wt = (res or {}).get("worktree") or {}
     wtid = wt.get("id") or wt.get("worktreeId")
     path = wt.get("path") or (wtid or "").split("::", 1)[-1]
-    handle = ((res or {}).get("startupTerminal") or {}).get("handle")
     if not wtid or not path:
         raise ApiError(f"worktree create returned no path: {res}")
-    if not handle:
-        for t in terminal_list(wtid):
-            if t.get("agentIdentity"):
-                handle = t["handle"]
-                break
-    if not handle:
-        raise ApiError("worktree created but no agent terminal handle")
 
     # head branch を checkout（他 worktree で checkout 済みでないことは
     # gate 側で確認済み。ここでの失敗は spawn 失敗として上位へ）
@@ -1468,6 +1521,12 @@ def spawn_worktree(repo_name, number, head_ref):
     # 作らない — local 実体が残っている場合の分岐は動かさない）
     subprocess.run(["git", "-C", path, "merge", "--ff-only", "FETCH_HEAD"],
                    capture_output=True, text=True, timeout=60)
+    res = orca_json(["terminal", "create", "--worktree", "id:" + wtid,
+                     "--command", command], timeout=120)
+    handle = ((res or {}).get("terminal") or {}).get("handle") or \
+        (res or {}).get("handle")
+    if not handle:
+        raise ApiError(f"terminal create returned no handle: {res}")
     return handle, path, wtid
 
 
@@ -1849,6 +1908,8 @@ def prune_state(st, days=30):
         if old(j.get("at")):
             st["judge"].pop(k)
     for k, d in list((st.get("prs") or {}).items()):
+        if d.get("delivery_pending"):
+            continue  # 未確認入力は日数・dispatch 実績によらず実査まで残す
         acts = [x.get("at") for x in d.get("dispatches", []) if x.get("at")]
         if not acts:
             # dispatch 実績が無い entry は read path で作られた空殻
@@ -1934,7 +1995,11 @@ def cmd_plan(a):
 
 def cmd_dispatch(a):
     try:
-        return _cmd_dispatch(a)
+        # 直接 CLI を並行実行しても、最新 state の確認から送信結果の保存まで直列化する。
+        STATE_DIR.mkdir(parents=True, exist_ok=True)
+        with (STATE_DIR / "dispatch.lock").open("w") as lock:
+            fcntl.flock(lock.fileno(), fcntl.LOCK_EX)
+            return _cmd_dispatch(a)
     except ApiError as e:
         append_event("dispatch_failed", repo=a.repo, pr=a.number,
                      error=str(e))
@@ -1984,7 +2049,7 @@ def _cmd_dispatch(a):
     elif route["route"] == "revive":
         res = orca_json(["terminal", "create", "--worktree",
                          route["worktree"]["worktreeId"],
-                         "--command", "devin"], timeout=120)
+                         "--command", pi_worker_command()], timeout=120)
         handle = ((res or {}).get("terminal") or {}).get("handle") or \
             (res or {}).get("handle")
         if not handle:
@@ -1999,14 +2064,22 @@ def _cmd_dispatch(a):
         if not ok:
             raise ApiError(f"tui-idle not satisfied: {detail}")
 
+    # 呼び出しが中断しても次 tick が同じ入力を再送しないよう、送信前に保存する。
+    pending = dispatch_state(st, a.repo, a.number)
+    pending["delivery_pending"] = {"sha": head, "sig": sig, "handle": handle,
+                                   "at": _iso(_now())}
+    save_state(st)
+    msg += "\n[pr-merge-lane delivery " + str(uuid.uuid4()) + "]"
     delivered, detail = send_prompt(handle, msg)
     if not delivered:
-        # 送信カウントを進めない — 次 tick で再送対象になる
+        # 入力が受理された可能性があるため、次 tick でも再送しない。
         append_event("dispatch_failed", repo=a.repo, pr=a.number,
                      error="turn_started not observed")
         emit({"ok": True, "dispatched": False,
-              "reason": "turn_started not observed", "detail": detail})
+              "reason": "turn_started not observed", "detail": detail,
+              "needs_escalate": True})
         return
+    pending.pop("delivery_pending", None)
     mark_dispatch_sent(st, a.repo, a.number, head, sig)
     save_state(st)
     append_event("dispatch", repo=a.repo, pr=a.number, sha=head,

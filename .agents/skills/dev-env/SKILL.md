@@ -1,6 +1,6 @@
 ---
 name: dev-env
-description: "dotfiles で管理する開発環境の tool 設定・hooks・telemetry・macOS アプリ管理の非自明な制約を調べる。Orca の keybindings・browser のフォーカス移動、Claude/Codex/Devin/pi の設定・認証・起動不調、hook の不調、Langfuse opt-in、Cloudflare AI Gateway の開発環境設定を触るときに参照する。"
+description: "dotfiles で管理する開発環境の tool 設定・hooks・telemetry・macOS アプリ管理の非自明な制約を調べる。Orca の keybindings・browser のフォーカス移動、Claude/Codex/pi の設定・認証・起動不調、hook の不調、Langfuse opt-in、Cloudflare AI Gateway の開発環境設定を触るときに参照する。"
 ---
 
 # dev-env
@@ -22,8 +22,6 @@ description: "dotfiles で管理する開発環境の tool 設定・hooks・tele
 | Claude Code の settings.json（env・sandbox）を触る | [references/claude-code.md](references/claude-code.md) |
 | Codex CLI の stdin・出力・起動不調を調べる | [Codex の実行・診断手順](../delegate/references/codex.md) |
 | Codex の config.toml の key 意味（features gate・memories 等）を調べる | [references/codex.md](references/codex.md) |
-| Devin CLI の設定（config.json・rules・hooks 配置・CLI 挙動）を触る | [references/devin-cli.md](references/devin-cli.md) |
-| Devin CLI の認証・起動・session 再開を調べる | [Devin の実行・診断手順](../delegate/references/devin.md) |
 | pi の設定・認証・モデル・sandbox・起動不調を調べる | [references/pi.md](references/pi.md) |
 | mise の pin・cooldown・trust・worktree での版ずれを調べる | [references/mise.md](references/mise.md) |
 | agent hook を書く・共有する・tool_name でゲートする | [references/agent-hooks.md](references/agent-hooks.md) |
@@ -34,7 +32,7 @@ description: "dotfiles で管理する開発環境の tool 設定・hooks・tele
 
 ## 関連 skill
 
-- `delegate` — Codex・Devin・pi の選択・起動・非対話実行・session 再開
+- `delegate` — Codex・pi の選択・起動・非対話実行・session 再開
 - `orca-cli` — Orca CLI 操作の version-matched guide（upstream lock 管理。local の知見は `references/orca.md` へ）
 - `skill-structure` — 学び skill の構造規約
 - `langfuse` — Langfuse の API・概念の upstream doc

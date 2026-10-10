@@ -393,7 +393,7 @@ route = lambda ws, ts, p=pr: pt.route_dispatch(ws, ts, R, p)
 # linkedPR 優先 → send
 w = wt(linkedPR={"number": 7, "state": "open"})
 w = dict(w, branch="refs/heads/other-branch")
-terms = {"r::w1": [{"handle": "wt_t1", "agentIdentity": "devin",
+terms = {"r::w1": [{"handle": "wt_t1", "agentIdentity": "pi",
                   "writable": True, "connected": True}]}
 r = route([w], terms)
 assert r["route"] == "send" and r["handle"] == "wt_t1"
@@ -407,9 +407,15 @@ assert r["route"] == "send" and r["reason"].startswith("matched via branch")
 w = wt(status="working")
 r = route([w], {"r::w1": []})
 assert r["route"] == "defer"
-w = wt(agents=[{"state": "working", "agent": "devin"}])
+w = wt(agents=[{"state": "working", "agent": "pi"}])
 r = route([w], {"r::w1": []})
 assert r["route"] == "defer"
+
+# Retired idle sessions receive no new work; an active legacy turn remains deferred.
+legacy_terms = {"r::w1": [{"handle": "legacy", "agentIdentity": "devin",
+                            "writable": True, "connected": True}]}
+assert route([wt()], legacy_terms)["route"] == "revive"
+assert route([wt(status="working")], legacy_terms)["route"] == "defer"
 
 # agent 無し → revive
 w = wt()
@@ -497,9 +503,9 @@ w = wt()
 c = pt.sweep_candidates(st, [w])
 assert len(c) == 1
 # 完了 agent は候補、作業中 agent は対象外
-w = wt(agents=[{"state": "done", "agent": "devin"}])
+w = wt(agents=[{"state": "done", "agent": "pi"}])
 assert len(pt.sweep_candidates(st, [w])) == 1
-w = wt(agents=[{"state": "working", "agent": "devin"}])
+w = wt(agents=[{"state": "working", "agent": "pi"}])
 assert pt.sweep_candidates(st, [w]) == []
 # routine が merge していない PR の worktree → 対象外
 # （linkedPR・branch とも merged PR7 と一致しない）
@@ -530,7 +536,7 @@ st = {}
 w = wt(linkedPR={"number": 7, "state": "open"})
 f = facts(threads=[thread()])
 # terms_cache に入れておかないと compute 内で本物の orca を呼びに行く
-terms = {"r::w1": [{"handle": "wt_t1", "agentIdentity": "devin",
+terms = {"r::w1": [{"handle": "wt_t1", "agentIdentity": "pi",
                   "writable": True, "connected": True}]}
 e = pt.compute_pr_decision({"repo": "wwwyo/me", "number": 7},
                            f, [w], terms, st)

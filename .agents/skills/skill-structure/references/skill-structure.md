@@ -45,7 +45,7 @@
 
 ## 配置と各ツール連携（初期構築時）
 
-- symlink を張る — skill 本体は `.agents/skills/<topic>/` に置き、`.claude/skills/<topic>` から symlink する（codex・pi・devin は `.agents/skills/` を直接読むので symlink 不要。他ツールを使うならそこにも）。SKILL.md を直接各ツール配下に置かず、`.agents/skills/` を単一の正本にする
+- symlink を張る — skill 本体は `.agents/skills/<topic>/` に置き、`.claude/skills/<topic>` から symlink する（codex・pi は `.agents/skills/` を直接読むので symlink 不要。他ツールを使うならそこにも）。SKILL.md を直接各ツール配下に置かず、`.agents/skills/` を単一の正本にする
 - team で管理している共有 repo の場合 — 個人の学び skill を team の repo に push しないよう、`_<topic>`（先頭 `_`）と命名し、共有 repo 側では gitignore する。正本は自分専用の dotagent repo に commit し、そこから共有 repo へ symlink（`_<topic>`）する — つまり「共有 repo では tracked にしない」だけで、個人 repo では version 管理される。自分専用 repo / ローカルなら通常名でよい。なお、チーム全体で共有すべき非自明な事実は、team 自身の guideline skill に PR で還元する（gitignored `_<topic>` は個人用の仮置き）
 
 ## governance（Review Loop）

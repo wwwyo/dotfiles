@@ -1,6 +1,6 @@
 ---
 name: media-generation
-description: "Generate or edit images and videos, and generate speech or narration. Routes image generation, single-image edits, and multi-image compositing to the running session's built-in image tool when a Codex session provides one, otherwise to OpenRouter's generate_image.py; speech and narration through Fish Audio; generative video (text-to-video, image-to-video from a real photo, reference-based generation, real-footage editing) through fal as the primary route with WaveSpeed and the Google Veo API as named alternatives; and demos, product launches, motion graphics, captions, numbers, and reproducible edits/compositions through HyperFrames. Use for 「画像を生成」「画像を編集」「音声を作って」「ナレーションを作って」「動画を作って」「プロモ動画」「demo動画」「モーショングラフィックス」などの依頼で."
+description: "Generate or edit images and videos, and generate speech or narration. Routes image generation, single-image edits, and multi-image compositing to the browser ChatGPT route first (uses the account's existing free quota — no extra purchase), then the running session's built-in image tool when available, otherwise OpenRouter's generate_image.py; speech and narration through Fish Audio; generative video (text-to-video, image-to-video from a real photo, reference-based generation, real-footage editing) through fal as the primary route with WaveSpeed and the Google Veo API as named alternatives; and demos, product launches, motion graphics, captions, numbers, and reproducible edits/compositions through HyperFrames. Use for 「画像を生成」「画像を編集」「音声を作って」「ナレーションを作って」「動画を作って」「プロモ動画」「demo動画」「モーショングラフィックス」などの依頼で."
 metadata:
   emoji: 🎬
 ---
@@ -11,7 +11,7 @@ metadata:
 
 | やりたいこと | 経路 |
 | --- | --- |
-| 画像の生成・1枚の編集・複数画像の合成 | **Image** — 実行環境で二択（Codex の組み込みツール / OpenRouter）（[references/image-generation.md](references/image-generation.md)） |
+| 画像の生成・1枚の編集・複数画像の合成 | **Image** — ブラウザ ChatGPT（無料枠・第一選択）→ 実行中 session の組み込みツール → OpenRouter（[references/image-generation.md](references/image-generation.md)） |
 | 読み上げ音声・ナレーションの生成 | **Audio** — Fish Audio（[references/audio-generation.md](references/audio-generation.md)） |
 | テキスト→動画、実写真を基準にした短いカット、必要時の実写編集 | **Video A** — 生成AI（[references/video-generation.md](references/video-generation.md)） |
 | demo / product launch / motion graphic、図・字幕・数値、再現できる編集・合成 | **Video B** — HyperFrames（下節） |
@@ -19,7 +19,7 @@ metadata:
 
 必要な key は経路ごとに異なる（値は表示しない。登録済みの key は global mise に age 暗号化で入っている）:
 
-- Image = **経路 A（Codex の組み込み画像生成ツール）は key 不要**、**経路 B（OpenRouter）のみ `OPENROUTER_API_KEY`**（登録済み）。`OPENROUTER_API_KEY` は全ルートの必須条件ではない
+- Image = **経路 A（ブラウザ ChatGPT）・経路 B（組み込み画像生成ツール）は key 不要**、**経路 C（OpenRouter）のみ `OPENROUTER_API_KEY`**（登録済み）。`OPENROUTER_API_KEY` は全ルートの必須条件ではない
 - Audio = [音声生成手順](references/audio-generation.md) の認証設定を使う
 - Video A / fal = `FAL_KEY`（登録済み）、Video A / Google Veo API = `GEMINI_API_KEY`（登録済み）
 - Video A / WaveSpeed = `WAVESPEED_API_KEY`（**未登録**。WaveSpeed を選んだときに [secret-env](../secret-env/SKILL.md) の手順で `mise set --age-encrypt` して登録する）
@@ -27,17 +27,20 @@ metadata:
 
 ## Image
 
-**実行環境による二択**（どちらも新規生成・1枚の編集・複数画像の合成に対応）。手順の詳細は [references/image-generation.md](references/image-generation.md)。
+**優先順位付きの3経路**（いずれも新規生成・1枚の編集・複数画像の合成に対応）。手順の詳細は [references/image-generation.md](references/image-generation.md)。
 
-1. **Codex + 組み込み画像生成ツールあり → 第一選択**
-   - **そのセッションに組み込みの画像生成ツールが実際に提供されている場合のみ**使う。ここで新規生成・実写真参照の編集・複数画像の合成・透過背景を行い、**`OPENAI_API_KEY` の新規設定は不要**
-   - 提供形態の例: この作業を行った Codex セッションでは `image_gen.imagegen` というツールとして提供されていた（**ツール ID はセッション・バージョンで変わりうるため固定しない**）
-   - **Codex という名前だけでツールの提供を断定しない** — 実際の tool availability を確認する。未提供ならその旨を説明し、経路 B（OpenRouter）に代替できることを示す
-   - **ツールが公開していない機能は断定しない**: モデル名を指定できる・無料/無制限・保存先を生成時の引数で指定できる、など。公式 docs は built-in を `gpt-image-2` と記載するが、このツールの schema は `model` 引数も backend API endpoint も公開していない。モデル名が必要なら実行環境の現行ドキュメントで確認する
+1. **ブラウザ ChatGPT → 第一選択**（無料枠を優先。追加購入しない）
+   - **Orca 内蔵ブラウザが使える session でのみ第一選択**。orca-cli skill の解決規則で選んだ executable（`ORCA`）で操作する — **素の `orca` を呼ばない**（非 Orca 管理の Linux 端末では GNOME screen reader に解決しうる）。`ORCA` が解決できない・Orca 未起動で起動もできない・`runtime_access_denied` なら経路 A を試さず B へ
+   - ログイン済みアカウントの**利用可能な無料枠**で生成する。「無料」はそのアカウントの既存契約・無料枠の範囲という意味で、**無制限・全アカウント利用可能とは断言しない**
+   - 編集・合成は**参照画像を chat に添付できる場合のみ**経路 A で行う。添付できなければ B/C へ
+   - 未ログイン・passkey/MFA が要る・利用上限に達した場合は次の経路へ fallback（認証は本人に引き継ぎ、credentials/tokens は扱わない）
+2. **実行中 session の組み込み画像生成ツール → ChatGPT が使えないときの次点**
+   - **そのセッションに組み込みの画像生成ツールが実際に提供されている場合のみ**使う（Codex の例: `image_gen.imagegen`。**ツール ID はセッション・バージョンで変わりうるため固定しない**）。**`OPENAI_API_KEY` の新規設定は不要**
+   - **Codex という名前だけでツールの提供を断定しない** — 実際の tool availability を確認する。未提供ならその旨を説明し、経路 C（OpenRouter）に代替できることを示す
+   - **ツールが公開していない機能は断定しない**: モデル名を指定できる・無料/無制限・保存先を生成時の引数で指定できる、など。モデル名が必要なら実行環境の現行ドキュメントで確認する
    - 編集対象がローカルなら、先に `view_image` で会話に読み込んでから、**当該セッションの tool schema に従って**参照画像を指定する
    - 指定保存先があれば、生成後に**出力の実ファイルを確認してコピー**する
-   - **ChatGPT UI（デスクトップ/ブラウザ）の自動操作は手順にしない** — Codex に組み込まれた画像生成ツールの呼び出しとして扱う
-2. **Codex 以外、または組み込みツールが未提供 → OpenRouter（既存）**
+3. **上記いずれも使えない → OpenRouter（既存）**
    - 既存の `generate_image.py`。`OPENROUTER_API_KEY` が必要（mise + age 管理、価格優先の既定モデル）
 
    ```
