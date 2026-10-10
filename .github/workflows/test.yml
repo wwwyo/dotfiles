@@ -68,7 +68,7 @@ jobs:
           MISE_GLOBAL_CONFIG_FILE: /tmp/gh-aw/skillctrl-cli/global.toml
           MISE_DATA_DIR: /tmp/gh-aw/skillctrl-cli/data
         with:
-          version: 2026.9.12
+          version: 2026.10.0
           working_directory: /tmp/gh-aw/skillctrl-cli
           env: false
           cache: false
