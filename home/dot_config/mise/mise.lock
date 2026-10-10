@@ -2042,7 +2042,7 @@ version = "2.1.296"
 backend = "npm:@anthropic-ai/claude-code"
 
 [[tools."npm:@earendil-works/pi-coding-agent"]]
-version = "1.0.0"
+version = "1.0.1"
 backend = "npm:@earendil-works/pi-coding-agent"
 
 [[tools."npm:@firecrawl/anydoc"]]
