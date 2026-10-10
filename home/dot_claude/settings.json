@@ -439,7 +439,7 @@
         "/tmp"
       ],
       "allowLocalBinding": true,
-      "allowMachLookup": true
+      "allowMachLookup": ["*"]
     },
     "filesystem": {
       "allowWrite": [

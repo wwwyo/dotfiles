@@ -5,7 +5,7 @@
   "lastChangelogVersion": "1.0.0",
   "theme": "light",
   "defaultProvider": "opencode-go",
-  "defaultModel": "mimo-v2.6-flash",
+  "defaultModel": "deepseek-v4.1-flash",
   "defaultThinkingLevel": "high",
   "enabledModels": [
     "opencode-go/deepseek-v4.1-flash",
