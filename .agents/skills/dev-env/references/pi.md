@@ -9,7 +9,7 @@
 | パス | 中身 |
 | --- | --- |
 | `.pi/agent/settings.json` | `home/.chezmoitemplates/pi-settings-base.json`（skills パス・`enabledModels`・`extensions`・`packages` の正本）を `private_settings.json.tmpl` が `~` 側の file と合成する。TUI が書き戻す `defaultProvider`/`defaultModel`/`defaultThinkingLevel`/`theme`/`lastChangelogVersion` は local の値を残す — それ以外を TUI や `pi install` から変えても apply で base 値に巻き戻るので、恒久的な変更は base を編集する |
-| `.pi/agent/models.json` | openrouter の `data_collection: "deny"` compat + pi catalog 未掲載モデルの先行定義（現 `opencode-go` の `claude-haiku-5-5`。built-in に merge されるだけで provider 定義は壊れない） |
+| `.pi/agent/models.json` | openrouter の `data_collection: "deny"` compat のみ。`claude-haiku-5-5` の先行定義は catalog に降りた＋使用停止したので削除済み（`compat` だけの部分定義は built-in と merge されて安全） |
 | `home/.chezmoitemplates/pi-sandbox-base.json` | sandbox の共通設定（後述「Orca socket」）。個別の読み取り許可は `~/.pi/agent/sandbox.json` だけで管理 |
 | `.pi/agent/extensions/` | TypeScript extension 置き場（現在は空） |
 | `~/.pi/agent/AGENTS.md` | `.codex/AGENTS.md` への symlink。global 指示として効く |
@@ -24,9 +24,9 @@ skill は `settings.json` の `"skills": ["~/.claude/skills"]` 一本で読ま�
 
 - `--no-tools` を付けると skill が読み込まれない。pi の skill は read tool で SKILL.md を開く仕組みなので、tools を切ると skill 機能ごと死ぬ。`--no-skills` と同じ結果になるため「skill が効いていない」と誤診しやすい。skill の検証は必ず tools を有効にして行う
 
-- `models.json` で組み込み provider を再定義しない。`api` は provider 単位の設定なので、`opencode-go` を `api: "openai-completions"` として定義し直すと、本来 `/messages` を使う `claude-haiku-5-5` まで巻き込んで壊れる。DeepSeek 系も tool calling が壊れ、独自トークン形式が生テキストで漏れる。組み込み provider は `OPENCODE_API_KEY` を読み、モデルごとに正しい `api` を持っているので自前定義は不要。一方、`api`/`baseUrl`/`models` を書かず `compat` だけ書く部分定義は built-in と merge されるので安全 — openrouter の `compat.openRouterRouting.data_collection: "deny"`（`.pi/agent/models.json`）はこの形で入っている
+- `models.json` で組み込み provider を再定義しない。`api` は provider 単位の設定なので、`opencode-go` を `api: "openai-completions"` として定義し直すと、本来 `/messages` を使う anthropic-messages 系 model まで巻き込んで壊れる。DeepSeek 系も tool calling が壊れ、独自トークン形式が生テキストで漏れる。組み込み provider は `OPENCODE_API_KEY` を読み、モデルごとに正しい `api` を持っているので自前定義は不要。一方、`api`/`baseUrl`/`models` を書かず `compat` だけ書く部分定義は built-in と merge されるので安全 — openrouter の `compat.openRouterRouting.data_collection: "deny"`（`.pi/agent/models.json`）はこの形で入っている
 
-- opencode の Zen と Go は別 catalog。運用は `opencode-go`（Go サブスク枠、`zen/go/v1`）のみ — Zen 側（`opencode` provider、`zen/v1`）は従量課金なので使わない。**pi の catalog は `zen/go/v1/models` の実態より遅れる** — Go endpoint で生きている model（`/responses`・`/chat/completions`・`/messages` で 200）が pi catalog 未掲載なら `models.json` の `models` で先行定義する（現在 `claude-haiku-5-5`）。catalog に降りたら消す — 残すと自前の推測値が公式定義を上書きし続ける。`enabledModels` だけの先行登録は no-match warning が出るだけで有効化されない。`zen/go/v1/models` に未掲載でも実際の endpoint では使える場合がある（Haiku 5.5 の `/messages` で確認済み）。Go catalog の model でも workspace の Privacy 設定で「train on request data」を許可しないと 400 になる（`muse-spark-1.3-contributor` 等）
+- opencode の Zen と Go は別 catalog。運用は `opencode-go`（Go サブスク枠、`zen/go/v1`）のみ — Zen 側（`opencode` provider、`zen/v1`）は従量課金なので使わない。**pi の catalog は `zen/go/v1/models` の実態より遅れる** — Go endpoint で生きている model（`/responses`・`/chat/completions`・`/messages` で 200）が pi catalog 未掲載なら `models.json` の `models` で先行定義する。catalog に降りたら消す — 残すと自前の推測値が公式定義を上書きし続ける（`claude-haiku-5-5` は catalog に降りた＋使用停止で削除済み）。`enabledModels` だけの先行登録は no-match warning が出るだけで有効化されない。`zen/go/v1/models` に未掲載でも実際の endpoint では使える場合がある（旧 `claude-haiku-5-5` の `/messages` で確認済み）。Go catalog の model でも workspace の Privacy 設定で「train on request data」を許可しないと 400 になる（`muse-spark-1.3-contributor` 等）
 
 - Go サブスクで使えるかは catalog 掲載ではなく endpoint が決める — 直上の Haiku 5.5 例のように catalog 未掲載でも生きている model がある一方、`claude-sonnet-*`/`claude-opus-*` 系は endpoint が `Model is unavailable` で拒否するので `enabledModels` に足しても動かない。`enabledModels` に Anthropic の上位 model が並ばないのは漏れではなくこの境界のため。upstream が枠から model を消す例は [delegate](../../delegate/SKILL.md) に集約する
 
@@ -38,7 +38,7 @@ skill は `settings.json` の `"skills": ["~/.claude/skills"]` 一本で読ま�
 
 - `settings.json` の `extensions` にある `-builtin:mcp` は、pi v1 の built-in `mcp` extension が package の `pi-mcp-adapter` と `/mcp` 登録で衝突するのを避けるための無効化指定 — adapter 側を使うので builtin は消している。extension 周りで衝突警告が出たらこの行が残っているかを確認する
 
-- Haiku 5.5 の先行定義は model 単位で `api: "anthropic-messages"` と `baseUrl: "https://opencode.ai/zen/go"` を指定する（SDK が `/v1/messages` を足すため `/v1` は付けない）。`compat.forceAdaptiveThinking: true` がないと pi は旧形式の thinking budget を送り 400 になる。`compat.supportsTemperature: false` で非対応の temperature を省く。組み込み provider が `x-opencode-session` を付けるため、provider 全体の再定義は不要。
+- anthropic-messages 系 model を先行定義する場合（旧 `claude-haiku-5-5` の実測）: model 単位で `api: "anthropic-messages"` と `baseUrl: "https://opencode.ai/zen/go"` を指定する（SDK が `/v1/messages` を足すため `/v1` は付けない）。`compat.forceAdaptiveThinking: true` がないと pi は旧形式の thinking budget を送り 400 になる。`compat.supportsTemperature: false` で非対応の temperature を省く。組み込み provider が `x-opencode-session` を付けるため、provider 全体の再定義は不要。
 
 - `models.json` の `models` は built-in provider に id 単位で upsert merge される（新規 id は追加、既存 id は自前定義で置換）。model-level の `api` が必須 — 迷ったら対象 endpoint の `/responses`・`/chat/completions`・`/messages` で 200 が返る形式を確認する
 
