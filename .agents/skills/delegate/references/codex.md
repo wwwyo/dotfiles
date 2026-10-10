@@ -26,10 +26,6 @@ codex resume <session_id> --dangerously-bypass-approvals-and-sandbox --cd <proje
 
 Orca の `terminal read` または監督下の報告経路で回答を確認する。送信受付と turn 開始を区別し、開始が未確認の prompt を重複送信しない。実行後は対象ディレクトリの `git status` / `git diff` で差分を確認し、依頼文で変更を許可した範囲外の変更がないことを確かめる。相談・調査ではあらゆる変更が範囲外になる。
 
-## 未解決の反論を残さない
-
-回答を主張ごとに分類する。最終結論・実装・リスク評価に影響する反論があれば、[反論への対応](codex/disagreement.md) を読んで同じ session に根拠を返し、その応答を受けてから終了を判断する。事実の対立は一次情報で検証し、LLM 同士の合意だけで解決しない。
-
 ## ネットワークアクセス
 
 外部URLの取得・取得不可の調査には [ネットワークアクセスの診断](codex/network.md) を読む。認証が要る資料は親が取得して prompt に渡す。
