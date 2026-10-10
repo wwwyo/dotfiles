@@ -72,6 +72,3 @@ CLAUDE.local.md
 # 模擬読者のローカル記録（global ignoreにも反映する）
 .first-reader/
 
-# Orca の worktree setup 設定。machine-local のパス（dotfiles 内 sync script）を含む
-# 個人設定なので、どの repo にも commit しない
-orca.yaml
