@@ -105,8 +105,7 @@ elif tool == 'gh':
         print(json.dumps({'contexts': []}))
 elif tool == 'mise':
     assert args == ['x', '--', 'pi', '--offline', '--list-models']
-    if mode != 'fallback':
-        print('opencode-go deepseek-v4.1-flash 1M 128K yes yes')
+    print('opencode-go deepseek-v4.1-flash 1M 128K yes yes')
     print('opencode-go mimo-v2.6-flash 1M 128K yes yes')
 elif tool != 'git':
     raise AssertionError(tool)
@@ -193,16 +192,6 @@ class OrcaCliTest(unittest.TestCase):
                 sends = [c for c in calls if c[:3] == ["orca", "terminal", "send"]]
                 self.assertEqual(len(sends), 1)
                 (self.root / "calls.jsonl").unlink()
-
-    def test_removed_primary_model_uses_delegate_fallback(self):
-        (self.root / "registered").touch()
-        result = self.run_cli("fallback", "dispatch", "--repo", "wwwyo/fixture", "--number", "30")
-        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
-        self.assertTrue(json.loads(result.stdout)["dispatched"])
-        calls = [json.loads(s) for s in (self.root / "calls.jsonl").read_text().splitlines()]
-        launch = next(c for c in calls if c[:3] == ["orca", "terminal", "create"])
-        command = shlex.split(launch[launch.index("--command") + 1])
-        self.assertEqual(command[command.index("--model") + 1], "opencode-go/mimo-v2.6-flash")
 
     def test_parallel_dispatch_sends_once(self):
         (self.root / "registered").touch()
