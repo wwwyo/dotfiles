@@ -86,12 +86,6 @@
       "skillPath": ".agents/skills/skillctrl/SKILL.md",
       "source": "wwwyo/skillctrl",
       "sourceType": "github"
-    },
-    "syokan": {
-      "skillPath": "skills/syokan/SKILL.md",
-      "source": "wwwyo/syokan",
-      "sourceType": "github",
-      "sourceUrl": "https://github.com/wwwyo/syokan.git"
     }
   },
   "version": 3

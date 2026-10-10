@@ -5,15 +5,14 @@
     "cloudflare": "07c2d45bc28729cf36a5fdcfbc3a21c7151a811c",
     "computer-use": "75e941f8fe7d317cfebcf46eaa0502a50cb27e62",
     "domain-modeling": "155128ae4f103a960b426d3ba38bd347985aec86",
-    "e2e": "ce970ee349d6455b9ea892084c8b71d247eef436",
+    "e2e": "d49ed283a2728025216bcf1417873b701d7b3ddd",
     "grill-with-docs": "8aa67ae654f28fb6a9098a3dd287536438fc2092",
     "langfuse": "04b8b0f965f57060e5dfac770361c94786406297",
-    "learn": "720726b23ec034b5f0fdcd33cd187590b77a797f",
+    "learn": "71c92ea9eabd2d344f1f9562d1c25949b130f429",
     "orca-cli": "bc02fffd55ef88b063adf30fee8140d86d951954",
     "orchestration": "a081a8cd8c678a7eb907756d13a469ae61329cec",
     "prototype": "fe50fc26cf7cbd499ed9154a79279e2dd5379b3a",
-    "skillctrl": "cdbfd9e4ba7c7c764fa313f2789d7a708661d218",
-    "syokan": "964b457e49aaae04c69952c1cbaf26e47dfa2dc2"
+    "skillctrl": "cdbfd9e4ba7c7c764fa313f2789d7a708661d218"
   },
   "upstreams": {
     "agent-browser": {
@@ -246,21 +245,6 @@
       "sourceType": "github",
       "sourceUrl": "https://github.com/wwwyo/skillctrl.git",
       "updatedAt": "2026-10-06T03:15:47.337Z"
-    },
-    "syokan": {
-      "installedAt": "2026-06-28T08:37:08.256Z",
-      "native": {
-        "skillPath": "skills/syokan/SKILL.md",
-        "source": "wwwyo/syokan",
-        "sourceType": "github",
-        "sourceUrl": "https://github.com/wwwyo/syokan.git"
-      },
-      "skillFolderHash": "804aa2c90b4080c4beb0e8176a50ad09c14cc579",
-      "skillPath": "skills/syokan/SKILL.md",
-      "source": "wwwyo/syokan",
-      "sourceType": "github",
-      "sourceUrl": "https://github.com/wwwyo/syokan.git",
-      "updatedAt": "2026-09-29T02:26:25.130Z"
     }
   },
   "version": 1

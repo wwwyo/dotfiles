@@ -69,6 +69,3 @@ CLAUDE.local.md
 **/.codex/langfuse.json
 **/.pi/settings.json
 
-# 模擬読者のローカル記録（global ignoreにも反映する）
-.first-reader/
-
