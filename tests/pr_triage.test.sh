@@ -1192,6 +1192,76 @@ with mock.patch.object(pt, "file_at_ref",
     r = pt.dep_auto_ok("wwwyo/me", dep_facts(files=files_pkg))
 assert not r["eligible"] and "unreadable" in r["reasons"][0]
 
+# mise の開発 tool pin は Renovate/Dependabot とも devDependencies 相当。
+# 0.x minor、major、beta pin の更新でも judge を挟まず merge 候補になる。
+mise_base = '''[tools]
+"aqua:openai/codex" = "0.159.2"
+"npm:vercel" = "60.1.3"
+"npm:cf" = "1.0.0-beta.6"
+python = "3.14.7"
+[settings]
+minimum_release_age = "7d"
+'''
+mise_head = mise_base.replace('0.159.2', '0.160.0').replace('60.1.3', '62.0.0') \
+    .replace('beta.6', 'beta.12').replace('3.14.7', '3.14.8')
+for manifest in ['home/dot_config/mise/config.toml', '.config/mise/config.toml',
+                 'mise.toml', '.mise.toml']:
+    lock = str(Path(manifest).with_name('mise.lock'))
+    for author in [{'login': 'app/renovate', 'is_bot': True},
+                   {'login': 'dependabot[bot]', 'is_bot': True}]:
+        f = dep_facts(files=[lock, manifest],
+                      view=dict(dep_view, author=author), required=['ci'])
+        with mock.patch.object(pt, 'file_at_ref',
+                               side_effect=refs({manifest: mise_base},
+                                                {manifest: mise_head})):
+            e = pt.compute_pr_decision({'repo': 'wwwyo/dotfiles', 'number': 49},
+                                       f, [], {}, {})
+            assert e['actions'][0]['type'] == 'merge', e
+            assert e['dep_auto_ok'] and len(e['actions'][0]['dep_updates']) == 4
+            assert pt.hard_gate(f, via='lane')[0]
+            f['view']['statusCheckRollup'] = [check('ci', conc='FAILURE')]
+            assert not pt.hard_gate(f, via='lane')[0]
+
+# tool 追加/削除・設定/installer option変更・未知pin・downgrade は自動 ok にしない。
+for head in [mise_head + '\n[env]\nFOO = "bar"\n',
+             mise_head.replace('7d', '0d'),
+             mise_head.replace('python = "3.14.8"', 'python = "3.14.8"\nrust = "1.99.0"'),
+             mise_head.replace('python = "3.14.8"\n', ''),
+             mise_head.replace('3.14.8', 'latest'),
+             mise_head.replace('3.14.8', '3.14'),
+             mise_head.replace('3.14.8', '3.14.6'),
+             mise_head.replace('beta.12', 'beta.5')]:
+    r = auto_ok(dep_facts(files=['mise.toml', 'mise.lock']),
+                {'mise.toml': mise_base}, {'mise.toml': head})
+    assert not r['eligible'], r
+table_base = '[tools]\n"ubi:dbt-labs/dbt-cli" = {version="0.40.24", exe="dbt"}\n'
+table_head = table_base.replace('0.40.24', '0.41.0')
+r = auto_ok(dep_facts(files=['mise.toml']),
+            {'mise.toml': table_base}, {'mise.toml': table_head})
+assert r['eligible'], r
+r = auto_ok(dep_facts(files=['mise.toml']), {'mise.toml': table_base},
+            {'mise.toml': table_head.replace('exe="dbt"', 'exe="other"')})
+assert not r['eligible'], r
+for files in [['mise.lock'], ['mise.toml', 'sub/mise.lock'],
+              ['config.toml'], ['mise.toml', 'src/app.py']]:
+    r = auto_ok(dep_facts(files=files),
+                {'mise.toml': mise_base}, {'mise.toml': mise_head})
+    assert not r['eligible'], r
+assert pt.mise_tool_updates('not toml [', mise_head) is None
+
+# ref の取得は GET。gh api の -f が既定 POST を選ばないようにする。
+with mock.patch.object(pt, 'gh', return_value=type('Response', (), {'stdout': mise_base})()) as api:
+    assert pt.file_at_ref('wwwyo/dotfiles', 'mise.toml', 'base') == mise_base
+    assert api.call_args.args[0][:3] == ['api', '-X', 'GET']
+    assert 'ref=base' in api.call_args.args[0]
+
+# automation prompt は skill の同実行 merge を打ち消さない。
+import tomllib
+repo_root = Path(sys.argv[1]).resolve().parents[4]
+automation = tomllib.loads((repo_root / '.agents/scheduled-tasks/pr-auto-merge/automation.toml').read_text())
+assert 'merge_ready: true' in automation['prompt']
+assert 'ok でも merge action は追加せず' not in automation['prompt']
+
 # 現行 head に紐付く ng/repair verdict は自動 ok を上書きしない（fail-closed）
 j_ng = {"sha": "sha1", "verdict": "ng",
         "policy_version": pt.JUDGE_POLICY_VERSION,
@@ -1207,6 +1277,9 @@ assert pt.dep_auto_ok_eligible(
     dict(j_ng, verdict="ok"), "sha1", dep_view) is True
 assert pt.dep_auto_ok_eligible({"eligible": False}, {}, "sha1", dep_view) is False
 assert pt.dep_auto_ok_eligible(None, {}, "sha1", dep_view) is False
+assert pt.dep_auto_ok_eligible(
+    {"eligible": True}, dict(j_ng, policy_version=pt.JUDGE_POLICY_VERSION - 1),
+    "sha1", dep_view) is True
 
 # gate: 自動 ok 対象は judge action を出さず merge action が出る
 with mock.patch.object(pt, "file_at_ref", side_effect=refs(minor_b, minor_h)):

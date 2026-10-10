@@ -43,6 +43,8 @@ python3 ~/.agents/skills/pr-auto-merge/tools/pr_triage.py judge-result \
   `tools/pr_triage.py` の `JUDGE_POLICY_VERSION` も更新する。旧 verdict は
   再利用せず、同じ head でも次 tick の plan で再判定する。head の変更時も再判定する。
 
+mise の `[tools]` は開発用依存（devDependencies 相当）として扱う。Renovate と Dependabot に同じ規則を適用し、`mise.toml`・`.mise.toml`・`.config/mise/config.toml`・`home/dot_config/mise/config.toml` の固定 semver pin 更新だけなら、major・0.x minor・prerelease の更新を含め script が自動 ok とする。同じ dir の `mise.lock` は対応 manifest の写像として除外する。tool の追加/削除・downgrade・range/alias・installer option・`[settings]`/`[env]` 等の変更が混ざるものは judge に残す。CI・review・always-hold・merge 直前の再検証は維持する。
+
 ## QA と Blast Radius
 
 PR の自己申告をそのまま採用せず、影響の深刻さ・検証状況・復旧可能性から
@@ -70,7 +72,7 @@ devDependencies（major 含む）と確定できなかった PR だけ — 確�
 script が judge を介さず自動 ok 済みで plan に judge action を出さない。
 つまりここに来る PR は **runtime dependency の major（0.x 台の minor・
 0.0.x 台の patch を含む）、peerDependencies の更新、種別を確定できない
-spec（range・タグ・downgrade・依存の追加削除・package.json 以外の manifest）、
+spec（range・タグ・downgrade・依存の追加削除・mise の固定 tool pin 更新以外の非 package.json manifest）、
 workflow 変更、rename を含むもの**のいずれかで、action の `reasons` に
 その理由が出ている。
 

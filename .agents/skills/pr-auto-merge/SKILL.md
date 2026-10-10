@@ -31,12 +31,14 @@ Orca automation `pr-auto-merge`（30分間隔・`workspace_path` = `wwwyo/me` �
 bot の依存更新のみの PR は、script が base/head の実 manifest 差分から全件の
 更新種別を判定し、**全更新が minor/patch または devDependencies（major 含む）なら
 LLM judge を介さず自動 ok** とする。runtime dependency の major、種別を確定
-できない更新（range・タグ・downgrade・依存の追加削除・package.json 以外の
+できない更新（range・タグ・downgrade・依存の追加削除・下記 mise を除く package.json 以外の
 manifest、workflow 変更、rename を含むもの）、0.x 台の minor・0.0.x 台の patch 更新
 （breaking の可能性があるため major 扱い）、peerDependencies の更新
 （consumer の依存解決に影響）、依存以外の差分を含む PR は
 従来どおり judge が判定する。判定の材料は PR タイトルの自己申告ではなく
 manifest の実差分。
+
+mise の `[tools]` は開発用依存（devDependencies 相当）として扱う。Renovate と Dependabot に同じ規則を適用し、`mise.toml`・`.mise.toml`・`.config/mise/config.toml`・`home/dot_config/mise/config.toml` の固定 semver pin 更新だけなら、major・0.x minor・prerelease の更新を含め script が自動 ok とする。同じ dir の `mise.lock` は対応 manifest の写像として除外する。tool の追加/削除・downgrade・range/alias・installer option・`[settings]`/`[env]` 等の変更が混ざるものは judge に残す。CI・review・always-hold・merge 直前の再検証は維持する。
 
 ## tick の手順（executor session）
 
