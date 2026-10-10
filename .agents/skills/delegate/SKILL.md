@@ -2,20 +2,23 @@
 name: delegate
 description: "別 agent への委譲・相談・レビューで harness・model・effort と fallback を選び、起動・再開する共通手順。「Codex に聞いて」「pi でやって」や、別 repo・独立したセッションへの Orca 経由の委譲で使う。通常の分担方法は agent の判断に任せる。"
 ---
-
 # 別 agent の選択と委譲
 
 ## Agent・モデルの共通設定
 
 別の agent session（harness）を起動するときは、役割とデータ区分から次の表で選ぶ。ユーザーが agent を指定した場合はその指定に従う。他の skill に個別のモデル選択ルールを持たせない。
 
-| 役割 | public | personal | work |
-|---|---|---|---|
-| Operator | 1. codex:gpt-6.1-sol:high, 2. pi:opencode-go/mimo-v2.6-flash:high | 同じ | 1. codex:gpt-6.1-sol:high, 2. pi:opencode-go/claude-haiku-5-5:high |
-| worker | 1. pi:opencode-go/mimo-v2.6-flash:high, 2. pi:opencode-go/muse-spark-1.3-contributor:high | 1. pi:opencode-go/mimo-v2.6-flash:high, 2. pi:opencode-go/deepseek-v4.1-flash:high | 1. pi:opencode-go/claude-haiku-5-5:high |
-| review | 1. codex:gpt-6.1-sol:high, 2. pi:opencode-go/muse-spark-1.3-contributor:high | 1. codex:gpt-6.1-sol:high, 2. pi:opencode-go/mimo-v2.6-flash:high | 同左 |
+
+| 役割       | public                                                                                        | personal                                                                           | work                                    |
+| -------- | --------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- | --------------------------------------- |
+| Operator | 1. codex:gpt-6.1-sol:high, 2. pi:opencode-go/claude-haiku-5-5:high                                                       | 同じ                                                                                 | 同じ                                      |
+| worker   | 1. pi:opencode-go/muse-spark-1.3-contributor:high, 2. pi:opencode-go/deepseek-v4.1-flash:high | 1. pi:opencode-go/mimo-v2.6-flash:high, 2. pi:opencode-go/deepseek-v4.1-flash:high | 1. pi:opencode-go/claude-haiku-5-5:high |
+| review   | 1. codex:gpt-6.1-sol:high, 2. pi:opencode-go/muse-spark-1.3-contributor:high                  | 1. codex:gpt-6.1-sol:high, 2. pi:opencode-go/mimo-v2.6-flash:high                  | 同左                                      |
+
 
 - personal / work: 個人の責任範囲で扱うデータ / 仕事として組織・案件の利用条件に従うデータ。
+- pi 本体の既定モデルは MiMo v2.6 Flash・high。役割ごとの選択値は起動時に明示し、既定モデルに任せない。
+- Operator はデータ区分を問わず Codex を優先し、pi を使う場合は常に Haiku 5.5・high を明示する。
 - 候補の順序: 先頭優先。使えない場合に次の候補へ fallback する。
 - 記法: `harness:model:effort`。選んだ値を起動時に指定する。
 - 例外: automation は固定せず task の要件に合わせて選ぶ（実値は各 `automation.toml` の `provider`）。Pullfrog は public なら `opencode-go/muse-spark-1.3-contributor:high`、private なら `opencode-go/mimo-v2.6-flash:high`。プロダクトの LLM モデル（opencode 等）も対象外
@@ -28,11 +31,13 @@ description: "別 agent への委譲・相談・レビューで harness・model�
 
 `terminal create --command` や CLI を直接呼ぶ場合は、モデル・effort とともに次の指定を付ける。
 
-| harness | bypass の指定 |
-|---|---|
-| Codex | `--dangerously-bypass-approvals-and-sandbox` |
-| pi | `--no-sandbox`（この環境の `pi-sandbox` extension が提供。読み込み確認は [pi の手順](references/pi.md)） |
-| Claude Code | `--dangerously-skip-permissions` |
+
+| harness     | bypass の指定                                                                          |
+| ----------- | ----------------------------------------------------------------------------------- |
+| Codex       | `--dangerously-bypass-approvals-and-sandbox`                                        |
+| pi          | `--no-sandbox`（この環境の `pi-sandbox` extension が提供。読み込み確認は [pi の手順](references/pi.md)） |
+| Claude Code | `--dangerously-skip-permissions`                                                    |
+
 
 `worktree create --agent` は Orca の設定済みランチャーを使う。Orca Settings の Agents 画面に保存された起動引数が bypass になっていることと、インストール済み CLI の `--help` に合うことを確認する。設定を参照できない場合や引数が合わない場合は、`orca-cli` のカスタム起動手順で `terminal create --command` に対応する引数を明示する。他の harness も `--help` で対応する指定を確認し、通常の権限モードへ黙って fallback しない。
 
@@ -46,10 +51,12 @@ description: "別 agent への委譲・相談・レビューで harness・model�
 
 共通設定で選んだ harness の reference を読む。ユーザーが harness を指定した場合も同じ入口を使い、モデル・effort・権限モードは本文の共通設定に従う。
 
-| やること | 読む reference |
-|---|---|
+
+| やること                                        | 読む reference                               |
+| ------------------------------------------- | ------------------------------------------ |
 | Codex へ相談・レビュー・調査を依頼する / 同じ session で対話を続ける | [references/codex.md](references/codex.md) |
-| pi の対話 session を起動する / 継続する | [references/pi.md](references/pi.md) |
+| pi の対話 session を起動する / 継続する                 | [references/pi.md](references/pi.md)       |
+
 
 設定・認証・起動不調の調査は [dev-env](../dev-env/SKILL.md) から対象の reference を読む。Orca の terminal 操作と handoff・監督の使い分けは後述の「起動・連携は Orca 経由」に従う。
 
@@ -61,12 +68,14 @@ description: "別 agent への委譲・相談・レビューで harness・model�
 
 委譲が壊れる原因は委譲先の判断ではなく、**渡す prompt に入っていない前提**にある。入っていないと、委譲先は自分で埋めようとして次のどれかをやる。
 
-| 欠けている前提 | 起きること |
-|---|---|
-| 作業ディレクトリが固定であること | 近くにある別の worktree / repo を見つけて、そこで作業を始める |
-| 触ってよい範囲 | ディレクトリの中は正しいが、指示していない周辺まで直す。テストだけ直せばよい場面で production コードを refactor する |
-| 親の会話は見えていないこと | エラー文・ファイル名・既に決まったことを探しに行く。見つからなければ推測で埋める |
-| 完了条件 | 実装せず調査して返す。あるいは「できました」で未検証のまま返す |
+
+| 欠けている前提          | 起きること                                                                 |
+| ---------------- | --------------------------------------------------------------------- |
+| 作業ディレクトリが固定であること | 近くにある別の worktree / repo を見つけて、そこで作業を始める                               |
+| 触ってよい範囲          | ディレクトリの中は正しいが、指示していない周辺まで直す。テストだけ直せばよい場面で production コードを refactor する |
+| 親の会話は見えていないこと    | エラー文・ファイル名・既に決まったことを探しに行く。見つからなければ推測で埋める                              |
+| 完了条件             | 実装せず調査して返す。あるいは「できました」で未検証のまま返す                                       |
+
 
 どれも差し戻せば直るが、差し戻しは毎回同じ文言になる。**同じ文言を毎回書いているなら、それは prompt の定型に落ちる。**
 
@@ -88,10 +97,9 @@ Orca を利用できない場合は、そのエラーを報告し、別経路へ
 **pi では `worktree create --prompt` を使わない**（Claude・Codex は可）。pi の TUI は入力 ready 前のキー入力を保持せず、prompt が滞留または消失して静かに失敗する。Orca の send 証明も `provider: "unsupported"` で未送信を検知できない（stablyai/orca#22580）。`orca-cli` の通常の handoff 手順に対し、次の順序を使う。
 
 1. `worktree create --agent pi` で起動する。`--prompt` は付けない。pi には Orca 既定の bypass 引数が無いため、sandbox extension を使う環境では次の 2 コマンドに替える（`--worktree` を省くと呼び出し元の worktree で pi が動く）。`--agent` 無しの create は fallback shell が残るので、`terminal list` で未使用を確認してから閉じる。sandbox の有効・無効の確認は [pi の手順](references/pi.md) に従う。
-
    ```text
-   ORCA worktree create --name <task-name> --no-parent --json
-   ORCA terminal create --worktree id:<repoId>::<worktreePath> --command 'pi --no-sandbox --model "$MODEL" --thinking "$EFFORT"' --json
+    ORCA worktree create --name <task-name> --no-parent --json
+    ORCA terminal create --worktree id:<repoId>::<worktreePath> --command 'pi --no-sandbox --model "$MODEL" --thinking "$EFFORT"' --json
    ```
 2. 起動した terminal に対して `terminal wait --for tui-idle --timeout-ms ...` を実行し、`satisfied: true` を確認する。pi は起動描画に数分かかるため、timeout は長めに取る。ready が確認できない間は送信しない。
 3. `terminal send --text ... --enter` で依頼文を送る。

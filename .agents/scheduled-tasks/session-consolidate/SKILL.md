@@ -32,19 +32,25 @@ SC=~/.agents/scheduled-tasks/session-consolidate/tools/session_consolidate.py
      - `特になし` や宛先を特定できない session だけ `wwwyo/me` の group に残す（workdir/repo 解決不能 session の fallback として me に解決するのは PRD の決定済み事項）
      - 誤判定は受け側 worker が `misrouted` として score 未 mark で報告するので致命的でない — 未 mark の session は次 run で再対象になる。**収束ルール**: 直近の `~/src/github.com/wwwyo/me/daily/*/session-consolidate.md`（新しいものから数件、閾値見送り・lock busy 等で report が無い日は飛ばす）に `misrouted <session_id>` と記録された session は、その報告先 repo を負の証拠として再割当しない（report が1件も無ければ通常どおり判定 — 欠測時は再割当を増やさない方向に倒す）。別の宛先も特定できなければ coordinator が `--comment 'unresolved destination'` で理由付き mark して終了させる — 決定的な coordinator が同じ誤割当を繰り返して 36h lookback で静かに落ちるのを防ぐ
    - group ごとに repo id を解決する: `orca repo list --json` で `path` と `repo_root` を突合する（`repo_root: null` からの割当分を含む解決済みの宛先 repo で照合する）。repo が Orca に未登録なら `orca repo add --path <repo_root> --json` で登録してから使う（targets の `repo_root` 由来の group のみ — learning 由来の宛先は上記どおり登録済みに限る）
-   - worker のモデル・thinking は [delegate](../../skills/delegate/SKILL.md) の worker/personal から選ぶ。記録 comment は非公開 session を含むため、還元先が public repo でも public 区分にはしない。`worker-start --agent pi` は Orca Settings → Agents の pi 起動引数を使うので、起動前に選択値との一致を確認する。
+   - worker のモデル・thinking は [delegate](../../skills/delegate/SKILL.md) の worker/personal から選ぶ。記録 comment は非公開 session を含むため、還元先が public repo でも public 区分にはしない。共通 pi launcher の既定モデルに任せず、worker は選んだモデル・thinking を明示したカスタム terminal を起動し、その terminal を `worker-start` に渡す。pi では `worker-start --model/--effort` は使えない。
    - worker 起動前に `git -C <repo_root> fetch origin` して remote ref を新鮮にし、`git -C <repo_root> symbolic-ref --short refs/remotes/origin/HEAD` で default branch を解決する — stale な base から worktree を切ると merge 済みの学びを重複還元する（Orca 登録の baseRef は古いことがあるので live の origin/HEAD を使う）
    - 各 group について、`references/consolidator-prompt.md` の `{REPO_ROOT}` をその group の宛先 repo root（targets の `repo_root`、または `repo_root: null` からの割当で解決したパス）に置換し、末尾にその group の sessions JSON を貼って spec を組み立てる。追加指示・書き換えはしない（sentinel 行が欠けると自己 consolidation ループになる — spec 全文が worker session の root turn input になるので sentinel が効く）。prompt はファイルに書いてから渡す:
      ```bash
      # --setup skip は仕様: consolidator worktree は repo の code を実行しないので setup は不要・監査対象外
+     orca worktree create --repo id:<repo_id> \
+       --name consolidate-<basename>-<YYYY-MM-DD> \
+       --base-branch <resolved origin/HEAD> --setup skip --no-parent --json
+     # create の result.worktree.id（<repo_id>::<worktree_path> 全体）を使う
+     # MODEL/EFFORT は選んだ実値へ置換する
+     orca terminal create --worktree id:<worktree_id> \
+       --command 'mise x -- pi --no-sandbox --model <MODEL> --thinking <EFFORT>' --json
+     # terminal create の handle を使う。ready を確認するまで spec を送らない
+     orca terminal wait --terminal <handle> --for tui-idle --timeout-ms 180000 --json
      orca orchestration worker-start \
        --spec "$(cat /tmp/consolidator-<basename>.md)" \
-       --worktree new-top-level --repo id:<repo_id> \
-       --name consolidate-<basename>-<YYYY-MM-DD> \
-       --base-branch <resolved origin/HEAD> \
-       --setup skip \
-       --agent pi --run <run_id> --json
+       --worktree id:<worktree_id> --terminal <handle> --run <run_id> --json
      ```
+   - `worktree create` が残す初期 shell は `terminal list` で未使用を確認してから個別に閉じる。カスタム pi terminal の ready が確認できなければ worker-start せず、残った worktree/terminal と失敗理由を報告する。
    - **同じ `{REPO_ROOT}` に解決される session 束は1つの spec に統合して worker を1つだけ起動する**。targets が保証するのは「同じ repo_root キーの group が複数ない」ことだけ — `repo_root: null` からの割当で同じ宛先 repo に入った session は、その repo の group の sessions と連結した1 spec にする（2026-10-07 に同一 repo へ2 worker 立った実例。10-04 run は統合していた）
    - `worker-start` が非0で返ったら再起動せず、receipt の `failedStage`・`residualResources`・`recovery` を読んで報告に残す（起動失敗は fail-open の対象 — repo_root と stage を記録して次の group へ）
 4. `orca orchestration check --wait --types "worker_done,escalation,question" --timeout-ms 900000 --json` を繰り返し、全 Dispatch が settle するまで待つ。各 `worker_done` の summary 末尾に `consolidated <repo_root>; pr=<url or none>; marked=<n>/<total>` と `outcomes: <session_id>=<done|misrouted|failed:<reason>>...` の2行がある。処理済みの delivery は次の `check --ack <delivery_id>` に付け、settle した dispatch は `worker-release --dispatch <dispatch_id> --json` で release する。question が来たら `reply --id <message_id> --body` で、人間には聞けない前提の自律判断を促して返す。wait・ack・release・liveness 判定の細部は `orca skills get orchestration` の supervised loop に従う。全件 settle 後に2つの後処理をしてから `worker-list --run <run_id> --terminal-state reclaimable --json` が空なのを確認し、`python3 "$SC" lock release`:
