@@ -176,6 +176,13 @@ class OrcaCliTest(unittest.TestCase):
                 # Separate state between scenarios; preserve state within each pair.
                 self.env["PR_WATCH_STATE_DIR"] = str(self.root / mode)
                 first = self.run_cli(mode, "dispatch", "--repo", "wwwyo/fixture", "--number", "30")
+                # 次 tick の gate が行う state 整理を挟んでも pending は残る。
+                prune = subprocess.run([sys.executable, "-c",
+                    "import importlib.util; s=importlib.util.spec_from_file_location('pt', " + repr(str(SCRIPT)) + "); "
+                    "m=importlib.util.module_from_spec(s); s.loader.exec_module(m); "
+                    "st=m.load_state(); m.prune_state(st); m.save_state(st)"],
+                    env=self.env, capture_output=True, text=True)
+                self.assertEqual(prune.returncode, 0, prune.stdout + prune.stderr)
                 second = self.run_cli(mode, "dispatch", "--repo", "wwwyo/fixture", "--number", "30")
                 for result in (first, second):
                     self.assertEqual(result.returncode, 0, result.stdout + result.stderr)

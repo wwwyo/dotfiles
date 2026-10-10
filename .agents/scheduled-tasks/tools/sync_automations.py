@@ -207,8 +207,6 @@ def field_drifts(m, live):
         d["prompt"] = ("<differs>", "<manifest>")
     if m.get("timezone") and live.get("timezone") != m["timezone"]:
         d["timezone"] = (live.get("timezone"), m["timezone"])
-    if not m.get("provider"):
-        raise RuntimeError(f"{p.parent.name}/{p.name}: provider が無い")
     wp = m.get("workspace_path")
     rp = m.get("repo_path")
     if wp:

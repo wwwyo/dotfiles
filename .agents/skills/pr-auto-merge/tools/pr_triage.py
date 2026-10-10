@@ -89,7 +89,10 @@ MAX_PAGES = 20              # ページング暴走の止血帯
 PR_ENUM_LIMIT = 100         # search の page size。total > limit*pages は fail-closed
 JUDGE_POLICY_VERSION = 9   # bot 依存更新の minor/patch/devDep は script 自動 ok
 DISPATCH_MSG_MAX = 3500     # terminal send へ送る指摘一覧の上限 chars
-SEND_WAIT_S = int(os.environ.get("PR_WATCH_SEND_WAIT_S", "30"))
+try:
+    SEND_WAIT_S = max(0, int(os.environ.get("PR_WATCH_SEND_WAIT_S", "30")))
+except ValueError:
+    SEND_WAIT_S = 30
 TUI_IDLE_TIMEOUT_MS = 300_000
 
 BOTS = ("dependabot[bot]", "renovate[bot]", "github-actions[bot]",
@@ -1905,6 +1908,8 @@ def prune_state(st, days=30):
         if old(j.get("at")):
             st["judge"].pop(k)
     for k, d in list((st.get("prs") or {}).items()):
+        if d.get("delivery_pending"):
+            continue  # 未確認入力は日数・dispatch 実績によらず実査まで残す
         acts = [x.get("at") for x in d.get("dispatches", []) if x.get("at")]
         if not acts:
             # dispatch 実績が無い entry は read path で作られた空殻
