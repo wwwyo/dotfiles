@@ -40,7 +40,8 @@ SC=~/.agents/scheduled-tasks/session-consolidate/tools/session_consolidate.py
      orca worktree create --repo id:<repo_id> \
        --name consolidate-<basename>-<YYYY-MM-DD> \
        --base-branch <resolved origin/HEAD> --setup skip --no-parent --json
-     # create の worktreeId を使い、MODEL/EFFORT は選んだ実値へ置換する
+     # create の result.worktree.id（<repo_id>::<worktree_path> 全体）を使う
+     # MODEL/EFFORT は選んだ実値へ置換する
      orca terminal create --worktree id:<worktree_id> \
        --command 'mise x -- pi --no-sandbox --model <MODEL> --thinking <EFFORT>' --json
      # terminal create の handle を使う。ready を確認するまで spec を送らない
