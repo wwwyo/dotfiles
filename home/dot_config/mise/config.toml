@@ -15,7 +15,7 @@
 "aqua:sharkdp/fd" = "10.5.0"
 go = "1.27.1"
 node = "24.21.0"
-"npm:@anthropic-ai/claude-code" = "2.1.288"
+"npm:@anthropic-ai/claude-code" = "2.1.296"
 "npm:@google/gemini-cli" = "0.62.0"
 "npm:@playwright/test" = "1.63.0"
 "npm:e2e" = "0.16.0"
