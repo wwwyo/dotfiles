@@ -8,7 +8,7 @@
   {"id":"cloudflare-positive","skill":"cloudflare","should_trigger":true,"query":"画像アップロードと非同期変換、検索APIを持つ小さなアプリを Cloudflare に置きたい。必要な製品の組合せと選び方を調べて。"},
   {"id":"cloudflare-near-miss","skill":"cloudflare","should_trigger":false,"query":"AWS Lambda と S3 で動いている画像変換の失敗リトライを直して。クラウド移行や別サービスの選定は不要です。"},
   {"id":"codex-positive","skill":"codex","should_trigger":true,"query":"この設計案について Codex CLI の別セッションに相談したい。反論が来たら同じセッションで議論を続けて、採否を決めて。"},
-  {"id":"codex-near-miss","skill":"codex","should_trigger":false,"query":"pi  のセッションを再開して前の調査を続けたい。起動方法を確認して。Codex CLI に切り替える依頼ではありません。"},
+  {"id":"codex-near-miss","skill":"codex","should_trigger":false,"query":"pi のセッションを再開して前の調査を続けたい。起動方法を確認して。Codex CLI に切り替える依頼ではありません。"},
   {"id":"computer-positive","skill":"computer-use","should_trigger":true,"query":"Mac の設定アプリのウィンドウで選択中の項目を確認してほしい。CLIやAPIでは取得できず、画面を実際に見て操作する必要がある。"},
   {"id":"computer-near-miss","skill":"computer-use","should_trigger":false,"query":"Orca 内蔵ブラウザの localhost タブでタイトルを取得して。orca の browser CLI で届くページです。"},
   {"id":"design-positive","skill":"design-md","should_trigger":true,"query":"この新規アプリの design.md を作りたい。色、文字、余白、部品、icon、motion を統一する視覚システムを定義して。"},

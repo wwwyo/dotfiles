@@ -53,7 +53,7 @@ manifest の実差分。
 
    | action | やること |
    |--------|---------|
-   | `dispatch` | `pr_triage.py dispatch --repo <r> --number <n>` を呼ぶ。send / revive / spawn の解決・上限・dedup・delivery 検証は script がやる。結果が `needs_escalate: true` なら続けて `escalate` を呼ぶ。`defer`/`none` なら何もしない |
+   | `dispatch` | `pr_triage.py dispatch --repo <r> --number <n>` を呼ぶ。send / revive / spawn の解決・上限・dedup・delivery 検証は script がやる。結果が `needs_escalate: true` なら、返された `reason` を `--reason` に渡して続けて `escalate` を呼ぶ。`defer`/`none` なら何もしない |
    | `escalate` | `pr_triage.py escalate --repo <r> --number <n>`（上限到達の旨を PR にコメントして打ち切り） |
    | `judge` | `judge-input` で diff・PR 本文・CI を取得し、**executor 自身が references/judge.md の基準で判定して** `judge-result --sha <sha> --context-hash <context_hash> --verdict ok\|ng\|repair --reason <理由>` に登録する。材料取得だけで終えない。判断不能なら理由付きで ng。**ok の登録結果が `merge_ready: true` なら、次 tick を待たず同じ実行内で続けて `merge` を呼ぶ**（`merge` が発行直前に hard gate を全件再検証する）。`merge_ready: false`（`blocked` の理由付き）なら merge せず、理由を report に残す。repair は次 tick の dispatch に渡す |
    | `merge` | `pr_triage.py merge --repo <r> --number <n>`。`blocked` が返ったら直前再検証で弾かれたので何もしない（状況が変わったサイン） |
@@ -222,14 +222,15 @@ pullfrog-approval を免除する。
   それ以外で review が届かない head は人手介入が要る
 - script の失敗（API エラー）は fail-closed: その tick では merge も
   worktree 削除もしない。再試行は次の tick に任せる
-- dispatch の delivery 検証で `turn_started not observed` は turn 未起動の
-  サイン。receipt に request ID があれば `--retry-request` で同 tick に一度
-  冪等再送し、無ければ送信カウントを進めず失敗を記録して終了（次 tick の
-  再送対象）。単発なら既知のノイズ、繰り返すなら dispatch 先側の問題として
-  escalate の判断材料にする
+- dispatch の delivery が未確認なら、入力が届いた可能性があるため pending を
+  残し、自動再送せず reason 付き escalate とする。terminal を確認してから復旧する
 - always-hold path の分類は bot の manifest bump にも効く。hold segment
   配下の manifest を更新する Dependabot PR は lane 上では必ず hold で、
   `pr_triage.py merge` の hard gate は解除しない — merge するなら明示指示に
   基づく `gh pr merge` で、規約どおり理由を PR に書く
 - 送信上限（同一 head 3回・往復 3 ラウンド）に達した PR は escalate 済み
   として扱い、routine はそれ以上 dispatch しない
+
+## pi の送信確認
+
+修復 worker の新規・復帰起動は delegate の worker/personal からモデル・thinking を読み、mise 経由の pi 対話 session に指定する。Orca が `turn_started` を返さない local pi では、対象 cwd の session JSONL に今回の固有 delivery marker を持つ新しい user input と、その後のエラー・中断ではない、内容のある assistant generation があることを script が確認する。本文は報告に出さない。入力受付だけを成功とせず、直接 CLI の dispatch も lock で直列化し、送信前に pending を保存するため、中断・未確認時も同じ head へ自動再送しない。remote host・独自 session dir などで確認できない場合は reason 付き escalate とし、terminal を実査してから復旧する。

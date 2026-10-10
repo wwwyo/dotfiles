@@ -52,6 +52,9 @@ N 日おきは cron の DOM `*/N` で書くこと。
 確認してから削除する。apply 後は `orca automations` で live の
 nextRunAt を見て閉じる — manifest の upsert 成功は発火の保証にならない。
 
+pi task の同期前には dev-env/references/orca.md の launcher 確認を行う。
+この script は GUI の model/thinking を検査・配備しない。
+
 usage: sync_automations.py [check|apply] [name]
   name を指定するとその automation だけを対象にする。
   apply は全ての create/edit が成功したとき exit 0、check は drift が
@@ -101,6 +104,8 @@ def orca_json(args):
 
 def load_manifest(p):
     m = tomllib.loads(p.read_text(encoding="utf-8"))
+    if not m.get("provider"):
+        raise RuntimeError(f"{p.parent.name}/{p.name}: provider が無い")
     wp = m.get("workspace_path")
     rp = m.get("repo_path")
     if wp and rp:
@@ -202,6 +207,8 @@ def field_drifts(m, live):
         d["prompt"] = ("<differs>", "<manifest>")
     if m.get("timezone") and live.get("timezone") != m["timezone"]:
         d["timezone"] = (live.get("timezone"), m["timezone"])
+    if not m.get("provider"):
+        raise RuntimeError(f"{p.parent.name}/{p.name}: provider が無い")
     wp = m.get("workspace_path")
     rp = m.get("repo_path")
     if wp:
