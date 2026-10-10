@@ -6,13 +6,15 @@
 
 設定は dotfiles の `home/dot_pi/agent/` から chezmoi で配置する。通常の設定は file 単位 symlink、settings.json・sandbox.json は local 側の状態を残す実ファイル（template 合成）。
 
-| パス | 中身 |
-| --- | --- |
-| `.pi/agent/settings.json` | `home/.chezmoitemplates/pi-settings-base.json`（skills パス・`enabledModels`・`extensions`・`packages` の正本）を `private_settings.json.tmpl` が `~` 側の file と合成する。TUI が書き戻す `defaultProvider`/`defaultModel`/`defaultThinkingLevel`/`theme`/`lastChangelogVersion` は local の値を残す — それ以外を TUI や `pi install` から変えても apply で base 値に巻き戻るので、恒久的な変更は base を編集する |
-| `.pi/agent/models.json` | openrouter の `data_collection: "deny"` compat のみ。`claude-haiku-5-5` の先行定義は catalog に降りた＋使用停止したので削除済み（`compat` だけの部分定義は built-in と merge されて安全） |
-| `home/.chezmoitemplates/pi-sandbox-base.json` | sandbox の共通設定（後述「Orca socket」）。個別の読み取り許可は `~/.pi/agent/sandbox.json` だけで管理 |
-| `.pi/agent/extensions/` | TypeScript extension 置き場（現在は空） |
-| `~/.pi/agent/AGENTS.md` | `.codex/AGENTS.md` への symlink。global 指示として効く |
+
+| パス                                            | 中身                                                                                                                                                                                                                                                                                                                                                |
+| --------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `.pi/agent/settings.json`                     | `home/.chezmoitemplates/pi-settings-base.json`（skills パス・`enabledModels`・`extensions`・`packages` の正本）を `private_settings.json.tmpl` が `~` 側の file と合成する。TUI が書き戻す `defaultProvider`/`defaultModel`/`defaultThinkingLevel`/`theme`/`lastChangelogVersion` は local の値を残す — それ以外を TUI や `pi install` から変えても apply で base 値に巻き戻るので、恒久的な変更は base を編集する |
+| `.pi/agent/models.json`                       | openrouter の `data_collection: "deny"` compat のみ。`claude-haiku-5-5` の先行定義は catalog に降りた＋使用停止したので削除済み（`compat` だけの部分定義は built-in と merge されて安全）                                                                                                                                                                                                    |
+| `home/.chezmoitemplates/pi-sandbox-base.json` | sandbox の共通設定（後述「Orca socket」）。個別の読み取り許可は `~/.pi/agent/sandbox.json` だけで管理                                                                                                                                                                                                                                                                        |
+| `.pi/agent/extensions/`                       | TypeScript extension 置き場（現在は空）                                                                                                                                                                                                                                                                                                                    |
+| `~/.pi/agent/AGENTS.md`                       | `.codex/AGENTS.md` への symlink。global 指示として効く                                                                                                                                                                                                                                                                                                      |
+
 
 skill は `settings.json` の `"skills": ["~/.claude/skills"]` 一本で読ませ、`~/.pi/agent/skills/` は置かない。個別 symlink 方式だと `.agents` 側で skill を消しても pi 側が残り、stale symlink が溜まる（実際に6個溜まっていた）。
 
@@ -21,33 +23,21 @@ skill は `settings.json` の `"skills": ["~/.claude/skills"]` 一本で読ま�
 ## 落とし穴
 
 - CI などで隔離起動するときは、`PI_CODING_AGENT_DIR` を新しい一時 directory に向ける。この変数は既定の `~/.pi/agent` を置き換えるため、user の settings・auth・model 定義も引き継がない。必要な `models.json` だけを信頼済み revision から置き、認証は env で渡す。`--no-session` は session 保存、`--no-context-files` は AGENTS/CLAUDE、`--no-skills`・`--no-extensions`・`--no-prompt-templates` は各自動 discovery を止める（extension の明示 `-e` 指定は別）。`--no-approve` は project-local file を無視する指定で、tool call の許可・拒否 gate ではない。これらは sandbox の代わりにはならず、出力の検査と書込み権限の分離は呼び出し側で行う。
-
 - `--no-tools` を付けると skill が読み込まれない。pi の skill は read tool で SKILL.md を開く仕組みなので、tools を切ると skill 機能ごと死ぬ。`--no-skills` と同じ結果になるため「skill が効いていない」と誤診しやすい。skill の検証は必ず tools を有効にして行う
-
-- `models.json` で組み込み provider を再定義しない。`api` は provider 単位の設定なので、`opencode-go` を `api: "openai-completions"` として定義し直すと、本来 `/messages` を使う anthropic-messages 系 model まで巻き込んで壊れる。組み込み provider は `OPENCODE_API_KEY` を読み、モデルごとに正しい `api` を持っているので自前定義は不要。一方、`api`/`baseUrl`/`models` を書かず `compat` だけ書く部分定義は built-in と merge されるので安全 — openrouter の `compat.openRouterRouting.data_collection: "deny"`（`.pi/agent/models.json`）はこの形で入っている
-
+- `models.json` で組み込み provider を再定義しない。`api` は provider 単位の設定なので、`opencode-go` を `api: "openai-completions"` として定義し直すと、本来 `/messages` を使う anthropic-messages 系 model まで巻き込んで壊れる。組み込み provider は `OPENCODE_API_KEY` を読み、モデルごとに正しい `api` を持っているので自前定義は不要。`opencode-go/deepseek-v4.1-flash` の tool calling は組み込み定義のまま動く実績がある（既定モデル・delegate 候補として使用済み）— tool call が素通しする・独自トークン形式が生テキストで漏れる症状が出たら、まず provider 側の `api` を上書きしていないかを見る。一方、`api`/`baseUrl`/`models` を書かず `compat` だけ書く部分定義は built-in と merge されるので安全 — openrouter の `compat.openRouterRouting.data_collection: "deny"`（`.pi/agent/models.json`）はこの形で入っている
 - opencode の Zen と Go は別 catalog。運用は `opencode-go`（Go サブスク枠、`zen/go/v1`）のみ — Zen 側（`opencode` provider、`zen/v1`）は従量課金なので使わない。**pi の catalog は `zen/go/v1/models` の実態より遅れる** — Go endpoint で生きている model（`/responses`・`/chat/completions`・`/messages` で 200）が pi catalog 未掲載なら `models.json` の `models` で先行定義する。catalog に降りたら消す — 残すと自前の推測値が公式定義を上書きし続ける（`claude-haiku-5-5` は catalog に降りた＋使用停止で削除済み）。`enabledModels` だけの先行登録は no-match warning が出るだけで有効化されない。`zen/go/v1/models` に未掲載でも実際の endpoint では使える場合がある（旧 `claude-haiku-5-5` の `/messages` で確認済み）。Go catalog の model でも workspace の Privacy 設定で「train on request data」を許可しないと 400 になる（`muse-spark-1.3-contributor` 等）
-
 - Go privacy 表は既定モデル選定の前提（2026-10-10 確認）。MiMo-V2.6-Flash は学習不使用・data retention 0 days、DeepSeek V4.1 Flash も同じ値だが ZDR は**月次更新の契約**（当時は 2026-10-31 まで）で、MiMo 側に期限は無い。既定モデルを deepseek にしたため [Go privacy 表](https://opencode.ai/docs/go/#privacy) は月次で確認する。どちらの 0 days でも Go 経由の実際の推論 provider・処理地域は非公開なので、非学習を中国外での処理の保証として扱わない
 
-- 既定・優先モデルにした `deepseek-v4.1-flash` の tool calling・画像入力は未実測（MiMo は 2026-10-03 に function call・JSON schema・画像入力を確認済み）。personal repo の修復 worker がこのモデルで回るので、Go の quota が戻りしだい1回目の tool call を確認して結果をここに追記する
+- **既定モデルの切替先は3経路**。`home/.chezmoitemplates/pi-settings-base.json` の `defaultModel`（新規マシン・apply 後の正本）、delegate の役割テーブル（起動時の明示指定。`pr_triage.py` はこの表を parse して worker の起動モデルを決めるので table が SSOT）、Orca Settings → Agents の launcher args（GUI 起動・手動更新）。**既存マシンは `private_settings.json.tmpl` の合成で local の `defaultModel` が base を上書きするため、`chezmoi apply` だけでは既定が切り替わらない** — TUI でモデルを選ぶ（settings.json に書き戻される）か `~/.pi/agent/settings.json` を直接更新する。launcher args・稼働中の reuse session も設定変更では切り替わらないので個別に確認する
 
 - Go サブスクで使えるかは catalog 掲載ではなく endpoint が決める — 直上の Haiku 5.5 例のように catalog 未掲載でも生きている model がある一方、`claude-sonnet-*`/`claude-opus-*` 系は endpoint が `Model is unavailable` で拒否するので `enabledModels` に足しても動かない。`enabledModels` に Anthropic の上位 model が並ばないのは漏れではなくこの境界のため。upstream が枠から model を消す例は [delegate](../../delegate/SKILL.md) に集約する
-
 - prompt editor の Vim mode は `pi-vim` package（base の `packages` に `npm:pi-vim@0.14.2` で exact pin）が提供する。設定 flag ではないので、vim モードが効かなくなったら `packages` 行が残っているかを見る。pin を緩めると upstream の後方互換のない更新がそのまま入る
-
 - `auth.json`（machine 固有、link 対象外）の credential は env の `OPENCODE_API_KEY` より優先される。平文ではなく `"key": "!..."` の command credential を置く（pi は `!` 始まりの値を shell 実行して stdout を key にする）。中身は `MISE_AGE_KEY` で `mise x -- printenv OPENCODE_API_KEY` を返す一行 — 解決値が mise の SSOT と同じなので rotate しても env と不整合にならず、env に key が無い非対話 spawn（Orca daemon・`env -i`・pi-acp）でも動く。`/login` で生 key が書き戻されたら同じコマンド形式に戻す
-
 - `~/.pi/agent` の管理ファイルは `home/dot_pi/agent/` 配下の chezmoi file 単位 symlink（`auth.json`・`sessions`・`models-store.json` 等は machine 固有の実ファイル）。settings.json は symlink だと pi の TUI 書き戻しが repo 正本を汚して PR diff に乗るため、合成する実ファイルにしている（上の表）。新しい設定ファイルは `home/dot_pi/agent/` に足して `chezmoi apply` しないと live に効かない
-
 - `settings.json` の `extensions` にある `-builtin:mcp` は、pi v1 の built-in `mcp` extension が package の `pi-mcp-adapter` と `/mcp` 登録で衝突するのを避けるための無効化指定 — adapter 側を使うので builtin は消している。extension 周りで衝突警告が出たらこの行が残っているかを確認する
-
 - anthropic-messages 系 model を先行定義する場合（旧 `claude-haiku-5-5` の実測）: model 単位で `api: "anthropic-messages"` と `baseUrl: "https://opencode.ai/zen/go"` を指定する（SDK が `/v1/messages` を足すため `/v1` は付けない）。`compat.forceAdaptiveThinking: true` がないと pi は旧形式の thinking budget を送り 400 になる。`compat.supportsTemperature: false` で非対応の temperature を省く。組み込み provider が `x-opencode-session` を付けるため、provider 全体の再定義は不要。
-
 - `models.json` の `models` は built-in provider に id 単位で upsert merge される（新規 id は追加、既存 id は自前定義で置換）。model-level の `api` が必須 — 迷ったら対象 endpoint の `/responses`・`/chat/completions`・`/messages` で 200 が返る形式を確認する
-
 - `enabledModels` には provider prefix を付ける。モデル ID だけ書くと部分一致で別 provider にまで広がる（`deepseek-v4.1-flash` が openrouter の `deepseek/deepseek-v4.1-flash` にもマッチする）。さらに pi は TUI での選択を `defaultProvider` ごと settings.json に書き戻すため、Ctrl+P で循環しただけで課金先が黙って変わる。`opencode-go/deepseek-v4.1-flash` のように書く
-
 - skill の取得・更新・削除は `skillctrl` で行う。正本は `.agents/skills/` で、pi は同じディレクトリを native discovery する。pi 専用のコピーや symlink は作らない
 
 ## `sandbox.json` の Orca socket 許可
