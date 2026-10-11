@@ -124,6 +124,13 @@ def load_manifest(p):
         raise RuntimeError(
             f"{p.name}: extra_agent_args は reuse_session と両立しない "
             "(orca 側制約) — model pin なら reuse を外す")
+    eaa = m.get("extra_agent_args")
+    if eaa is not None and not isinstance(eaa, str):
+        # check で素通りして apply の文字列結合で TypeError にならないよう
+        # 読み込み時に型を検証する
+        raise RuntimeError(
+            f"{p.name}: extra_agent_args は文字列 (例 \"--model ...\") "
+            f"でなければいけない (got {type(eaa).__name__})")
     prompt = m.get("prompt", "").strip()
     for key, val in (("workspace_path", wp), ("repo_path", rp)):
         if "{{" + key + "}}" in prompt and not val:
