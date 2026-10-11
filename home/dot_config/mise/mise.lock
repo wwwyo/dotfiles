@@ -1880,55 +1880,6 @@ url = "https://github.com/github/gh-aw/releases/download/v0.89.21/windows-amd64.
 url_api = "https://api.github.com/repos/github/gh-aw/releases/assets/584531736"
 provenance = "github-attestations"
 
-[[tools."github:wwwyo/syokan"]]
-version = "0.5.0"
-backend = "github:wwwyo/syokan"
-
-[tools."github:wwwyo/syokan"."platforms.linux-arm64"]
-checksum = "sha256:a2a81536cf3942bb08b6ccc1b7c3a63427487e0d219e9b56a59dc91883a4853d"
-url = "https://github.com/wwwyo/syokan/releases/download/v0.5.0/syokan-linux-arm64"
-url_api = "https://api.github.com/repos/wwwyo/syokan/releases/assets/596945045"
-
-[tools."github:wwwyo/syokan"."platforms.linux-arm64-musl"]
-checksum = "sha256:a2a81536cf3942bb08b6ccc1b7c3a63427487e0d219e9b56a59dc91883a4853d"
-url = "https://github.com/wwwyo/syokan/releases/download/v0.5.0/syokan-linux-arm64"
-url_api = "https://api.github.com/repos/wwwyo/syokan/releases/assets/596945045"
-
-[tools."github:wwwyo/syokan"."platforms.linux-x64"]
-checksum = "sha256:51cea7407707cc950eee5c4427cb5baf0c62a7aab63adec184410ede0708d629"
-url = "https://github.com/wwwyo/syokan/releases/download/v0.5.0/syokan-linux-x64"
-url_api = "https://api.github.com/repos/wwwyo/syokan/releases/assets/596945047"
-
-[tools."github:wwwyo/syokan"."platforms.linux-x64-baseline"]
-checksum = "sha256:51cea7407707cc950eee5c4427cb5baf0c62a7aab63adec184410ede0708d629"
-url = "https://github.com/wwwyo/syokan/releases/download/v0.5.0/syokan-linux-x64"
-url_api = "https://api.github.com/repos/wwwyo/syokan/releases/assets/596945047"
-
-[tools."github:wwwyo/syokan"."platforms.linux-x64-musl"]
-checksum = "sha256:51cea7407707cc950eee5c4427cb5baf0c62a7aab63adec184410ede0708d629"
-url = "https://github.com/wwwyo/syokan/releases/download/v0.5.0/syokan-linux-x64"
-url_api = "https://api.github.com/repos/wwwyo/syokan/releases/assets/596945047"
-
-[tools."github:wwwyo/syokan"."platforms.linux-x64-musl-baseline"]
-checksum = "sha256:51cea7407707cc950eee5c4427cb5baf0c62a7aab63adec184410ede0708d629"
-url = "https://github.com/wwwyo/syokan/releases/download/v0.5.0/syokan-linux-x64"
-url_api = "https://api.github.com/repos/wwwyo/syokan/releases/assets/596945047"
-
-[tools."github:wwwyo/syokan"."platforms.macos-arm64"]
-checksum = "sha256:a6924fe2a1828800aedef1ebae761b8d3e9fd04b8e810ab7aa5feca09308b8ce"
-url = "https://github.com/wwwyo/syokan/releases/download/v0.5.0/syokan-darwin-arm64"
-url_api = "https://api.github.com/repos/wwwyo/syokan/releases/assets/596945048"
-
-[tools."github:wwwyo/syokan"."platforms.macos-x64"]
-checksum = "sha256:dd5ecde2267015ed045fe0e5cb6da778bbb45a3d5739d00abd11ec07eabe597c"
-url = "https://github.com/wwwyo/syokan/releases/download/v0.5.0/syokan-darwin-x64"
-url_api = "https://api.github.com/repos/wwwyo/syokan/releases/assets/596945046"
-
-[tools."github:wwwyo/syokan"."platforms.macos-x64-baseline"]
-checksum = "sha256:dd5ecde2267015ed045fe0e5cb6da778bbb45a3d5739d00abd11ec07eabe597c"
-url = "https://github.com/wwwyo/syokan/releases/download/v0.5.0/syokan-darwin-x64"
-url_api = "https://api.github.com/repos/wwwyo/syokan/releases/assets/596945046"
-
 [[tools.go]]
 version = "1.27.1"
 backend = "core:go"

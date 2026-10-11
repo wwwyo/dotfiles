@@ -1,6 +1,6 @@
 ---
 name: media-generation
-description: "Generate or edit images and videos, and generate speech or narration. Routes image generation, single-image edits, and multi-image compositing to the browser ChatGPT route first (uses the account's existing free quota — no extra purchase), then the running session's built-in image tool when available, otherwise OpenRouter's generate_image.py; speech and narration through Fish Audio; generative video (text-to-video, image-to-video from a real photo, reference-based generation, real-footage editing) through fal as the primary route with WaveSpeed and the Google Veo API as named alternatives; and demos, product launches, motion graphics, captions, numbers, and reproducible edits/compositions through HyperFrames. Use for 「画像を生成」「画像を編集」「音声を作って」「ナレーションを作って」「動画を作って」「プロモ動画」「demo動画」「モーショングラフィックス」などの依頼で."
+description: "画像・動画・音声を生成・編集する。画像の生成・編集・合成、ナレーション・TTS、生成AI動画、demo・product launch・motion graphics の動画依頼で使い、経路は本文で選ぶ。既存ファイルの変換・トリムだけの依頼には使わない。"
 metadata:
   emoji: 🎬
 ---

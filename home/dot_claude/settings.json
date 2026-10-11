@@ -326,6 +326,16 @@
     "rust-analyzer-lsp@claude-plugins-official": false,
     "firecrawl@claude-plugins-official": true
   },
+  "skillOverrides": {
+    "anthropic-skills:built-in-browser": "off",
+    "anthropic-skills:chrome-browser": "off",
+    "anthropic-skills:computer-use": "off",
+    "anthropic-skills:docs": "off",
+    "anthropic-skills:skill-creator": "off",
+    "anthropic-skills:morning": "off",
+    "anthropic-skills:import-memory": "off",
+    "anthropic-skills:google-workspace": "off"
+  },
   "language": "Japanese",
   "sandbox": {
     "enabled": true,
@@ -443,7 +453,6 @@
     },
     "filesystem": {
       "allowWrite": [
-        "~/.syokan",
         "~/.sf",
         "~/.npm/_cacache",
         "~/.cache",
