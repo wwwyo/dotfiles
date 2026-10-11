@@ -26,7 +26,7 @@ SE=~/.agents/scheduled-tasks/session-eval/tools/session_eval.py
    - 固定窓に頼らない理由: `_cmd_targets` は窓内の observation からしか session を発見せず eval 側に score backfill も無いので、48h 固定では run が 2 回連続で止まるとその間の session が `evaluated_until` 無しのまま窓外に出て二度と現れず、consolidate にも拾われず無音で失われる。tool 既定の 168h は「定時 batch が数日止まっても拾い切れる下限」という設計で、`--since` を前回 run 起点にすると止まった分だけ窓が自動で伸びるためその意図を保てる
    - marker 起点でも obs 量で MAX_PAGES に当たりうる。fail-loud に止まる（無音喪失ではない）。ただし `--until` は無く窓の終端は常に now なので、`--since` を動かして「区切る」と古い側が窓外に出て静かに落ちる — 追いつくには `MAX_PAGES` を上げて 1 回で取り切る
 3. targets ごとに evaluator subagent を spawn する
-   - prompt は `references/evaluator-prompt.md` を読み、`{SESSION_ID}` を置換したものをそのまま渡す。追加指示・書き換えはしない（sentinel 行が欠けると自己評価ループになる）
+   - prompt は `python3 "$SE" prompt --session-id <sid>` の `prompt` をそのまま渡す。tool が `{SESSION_ID}` を全置換し sentinel を検証する。親側で読んで手置換しない — 文字列置換は先頭 1 箇所だけになり、実行例の `{SESSION_ID}` が未置換のまま evaluator に渡る事故が起きている（2026-10）。追加指示・書き換えはしない（sentinel 行が欠けると自己評価ループになる）
    - pi では `pi-subagents` extension の `subagents_enable` で tool を読み込み、`subagent` の `delegate` agent に依頼する。モデル・thinking は [delegate](../../skills/delegate/SKILL.md) の worker/personal を `subagent` の `model`（`provider/model:effort`）に明示し、profile の既定モデルに任せない。10 件超のときは 5 件ずつの wave に分ける
 4. 全 subagent の完了を待ち、`next_since` を更新してから `python3 "$SE" lock release`:
    `python3 -c 'from datetime import datetime, timedelta, timezone; print((datetime.now(timezone.utc) - timedelta(hours=24)).strftime("%Y-%m-%dT%H:%M:%SZ"))' > ~/.local/state/session-eval/next_since`

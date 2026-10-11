@@ -118,5 +118,35 @@ class TranscriptTest(unittest.TestCase):
         self.assertIn('subagent failed', result['transcript'])
 
 
+class PromptRenderTest(unittest.TestCase):
+    """`prompt` must replace every {SESSION_ID} and keep the sentinel."""
+
+    def run_prompt(self, sid):
+        # `prompt` は API を呼ばないので env 無しでも動く
+        env = dict(os.environ)
+        for key in ('LANGFUSE_PUBLIC_KEY', 'LANGFUSE_SECRET_KEY',
+                    'LANGFUSE_BASE_URL'):
+            env.pop(key, None)
+        return subprocess.run([sys.executable, str(SCRIPT), 'prompt',
+                               '--session-id', sid],
+                              env=env, capture_output=True, text=True,
+                              timeout=15)
+
+    def test_all_placeholders_replaced(self):
+        result = self.run_prompt('coffee-robin')
+        self.assertEqual(result.returncode, 0, result.stderr)
+        out = json.loads(result.stdout)
+        self.assertTrue(out['ok'], out)
+        self.assertGreaterEqual(out['placeholders'], 3)
+        self.assertNotIn('{SESSION_ID}', out['prompt'])
+        self.assertIn('session-eval-batch:9f3a2c7e', out['prompt'])
+        self.assertIn('coffee-robin', out['prompt'])
+
+    def test_unsafe_sid_rejected(self):
+        result = self.run_prompt('a;rm -rf /')
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn('unsafe session_id', result.stdout)
+
+
 if __name__ == '__main__':
     unittest.main()

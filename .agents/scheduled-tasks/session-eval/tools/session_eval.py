@@ -9,6 +9,7 @@
 
   targets      未評価 session を列挙する (親 agent が対象を決める唯一の経路)
   transcript   1 session の judge 用 transcript を組み立てる
+  prompt       evaluator prompt を session_id 展開して出力する
   score        session に score を書き戻す (POST /api/public/scores)
   comment      session に comment を書き戻す (POST /api/public/comments)
   lock         mkdir lock で batch を single-writer にする
@@ -613,6 +614,34 @@ def _check_sid(sid):
         fail(f"unsafe session_id: {sid!r}")
 
 
+# evaluator subagent へ渡す prompt の正本。親 agent (LLM) がファイルを読んで
+# 手置換すると先頭 1 箇所だけになり、実行例の `{SESSION_ID}` が未置換のまま
+# evaluator に渡る事故が起きる (2026-10 観測)。置換と sentinel 検証を tool 側で
+# 行い、親はこの subcommand の出力をそのまま渡す。
+PROMPT_TEMPLATE = (Path(__file__).resolve().parent.parent /
+                   "references" / "evaluator-prompt.md")
+SID_PLACEHOLDER = "{SESSION_ID}"
+
+
+def _cmd_prompt(a):
+    _check_sid(a.session_id)
+    try:
+        tmpl = PROMPT_TEMPLATE.read_text(encoding="utf-8")
+    except OSError as e:
+        fail(f"cannot read {PROMPT_TEMPLATE}: {e}")
+    # sentinel が欠けると evaluator 自身の session が翌日の評価対象になる
+    if SENTINEL not in tmpl:
+        fail(f"sentinel {SENTINEL!r} missing from {PROMPT_TEMPLATE}")
+    n = tmpl.count(SID_PLACEHOLDER)
+    if n == 0:
+        fail(f"placeholder {SID_PLACEHOLDER} missing from {PROMPT_TEMPLATE}")
+    prompt = tmpl.replace(SID_PLACEHOLDER, a.session_id)
+    if SID_PLACEHOLDER in prompt:
+        fail("placeholder remained after replacement")
+    emit({"ok": True, "session_id": a.session_id,
+          "placeholders": n, "prompt": prompt})
+
+
 def cmd_transcript(a):
     _check_sid(a.session_id)
     ensure_env()
@@ -1056,6 +1085,10 @@ def main():
     tr.add_argument("session_id")
     tr.add_argument("--max-bytes", type=int, default=MAX_TRANSCRIPT_BYTES)
     tr.set_defaults(fn=cmd_transcript)
+
+    pp = sub.add_parser("prompt", help="evaluator prompt を sid 展開して出力")
+    pp.add_argument("--session-id", required=True)
+    pp.set_defaults(fn=_cmd_prompt)
 
     s = sub.add_parser("score", help="session に score を書き戻す")
     s.add_argument("--session-id", required=True)

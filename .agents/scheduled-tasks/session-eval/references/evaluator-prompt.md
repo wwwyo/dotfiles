@@ -1,5 +1,7 @@
-<!-- evaluator subagent へ渡す prompt テンプレート。親 agent は {SESSION_ID} を
-     置換してそのまま渡す（加筆しない）。先頭の sentinel 行は自己評価ループ防止に
+<!-- evaluator subagent へ渡す prompt テンプレート。親 agent は
+     `session_eval.py prompt --session-id <sid>` の `prompt` をそのまま渡す
+     （手置換・加筆はしない — 手置換は先頭 1 箇所だけになり実行例の
+     `{SESSION_ID}` を残す）。先頭の sentinel 行は自己評価ループ防止に
      必須 — 消すと evaluator 自身の session が翌日の評価対象になる。
      sentinel は session_eval.py の SENTINEL と session-eval/automation.toml にも
      同一 literal がある。変えるときは 3 箇所同時に変える。 -->
@@ -43,7 +45,8 @@ transcript を読み、以下のフォーマットで記録を temp file に書�
 - **事実は transcript を読み返さずに関連性を判断できる粒度で書く**。消費側はこの記録だけで transcript への drill down が要るか決める — 回数などの集計値より、具体的な名前（ファイル名・API 名・エラー文言・却下した手順）と判断の根拠を優先する。内容の薄い session で項目を水増しする必要はない（`特になし` は正当な記録）
 - **解釈は所見として明記する**。あなたの判断は `## 解釈` 側にだけ書く。それが学習価値があるかの採否は消費側（consolidate 等）が決める
 - transcript の `[ERROR]` 行は tool の level/statusMessage だけを拾ったもの。tool の個別の入出力は transcript に含まれない — 観察できないもの（tool の引数・出力の良し悪し）を事実として書かない。同一 turn_number の重複は exporter が途中経過を再 emit したもので、ユーザーの繰り返し発言ではない — 重複それ自体を摩擦の証拠にしない
-- pi / `unknown_service` source の session は turn obs の `output` が空で、`[assistant]` が全 turn 空になりうる。header の `generations`（GENERATION type の obs 数）が 0 でなければ会話自体は存在する — 空本文を「signal なし」と読まず、事実側に「assistant 本文は exporter の emit 形で観測できない」と書く
+- exporter の emit 形は source ごとに違い、**assistant 本文が空でも会話は存在する** — `generations > 0` でも `[assistant]` が全 turn 空になりうる（pi / `unknown_service` / 旧 devin）。codex は複数 turn を 1 つの root obs に集約し最終要約だけを返すので `turns` が小さくても作業量が小さいとは限らない。空本文を「signal なし」と読まず、事実側に「assistant 本文は exporter の emit 形で観測できない」と書く
+- tool の入出力も transcript に載らない。成果の有無・検証可能性は `tools:` の集計と、記録に残った artifact path（report・supplement・commit の SHA 等）で判断する — path が無い source では drill down しても作業の妥当性は確認できない
 - compaction の要約 prompt（`summarize the conversation … in <summary> tags` 形式）も user turn として現れ、対応する assistant turn は action なしの要約だけを返す（旧 Devin source で観測）。ユーザーの指示・agent の無応答として扱わない
 - auth・sandbox・network 等のインフラ失敗が繰り返されただけの session なら、それを `エラー・摩擦の観測` に事実として書き、`学び・発見` は `特になし` でよい
 

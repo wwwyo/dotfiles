@@ -60,6 +60,11 @@ version-matched guide は coordinator 視点の記述が中心。worker 側の�
 - 待機は `check --wait`（stderr に keepalive が流れる）。呼び出し側の tool 実行には blocking 上限（1分程度）があるので、長い待機は繰り返し呼ぶ
 - sibling worker との連絡は group address で届く。`@all` 等の Run group は sender の属する Run の live Dispatch 群を指す（worker からは sibling、coordinator は含まれない）。worker が coordinator へ blocker を上げる宛先は group ではなく `run:<id>`。`worker_done` 等の lifecycle message は group 宛にしない
 
+## worker の成果物と報告
+
+- 独立検査・後続 batch に回す成果物（candidate・report 等）を揮発 worktree や gitignore 済み dir だけに置かない — run 後に cleanup / pr-auto-merge が worktree を消すと参照できなくなる。耐久パス（追跡される場所）に置き、置けないなら消えることを前提に扱う
+- `worker_done` の body に path・件数/行数・再現 command などの定量 receipt を載せる。worktree 削除後は body が唯一の検証経路になり、リンクだけの body や 3 文要約だけでは受けた側が検証できない（coordinator が `worker_done` の body を最初に読む前提で設計されている）
+
 ## 自分のいる worktree を消すとき
 
 `orca worktree rm` は対象を cwd にしている process の足元も消す — cwd が消えた後は相対 path・`getcwd` 依存のコマンドが元の意味をなさないエラーで落ちる。自分が中にいる worktree（pr-auto-merge sweep 等で自分の worktree が対象に含まれうるケース含む）を消す操作の前に、実行側 shell の `pwd` が対象外であることを確認する。確認せず消して後続コマンドが不可解な `ENOENT` / deleted-path エラーで落ちたときの原因はこれ。
