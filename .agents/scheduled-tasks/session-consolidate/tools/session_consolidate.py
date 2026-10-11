@@ -60,6 +60,7 @@ ApiError = se.ApiError
 _iso = se._iso
 _ts = se._ts
 paged = se.paged
+paged_windowed = se.paged_windowed
 api_post = se.api_post
 ensure_env = se.ensure_env
 
@@ -217,10 +218,10 @@ def _cmd_targets(a):
     # ここで拾う)
     sessions = {}
     unsafe_sids = set()
-    for o in paged("/api/public/v2/observations",
-                   {"fields": "basic,metadata",
-                    "expandMetadata": se.EXPAND_METADATA,
-                    "fromStartTime": _iso(since), "toStartTime": _iso(now)}):
+    for o in paged_windowed("/api/public/v2/observations",
+                            {"fields": "basic,metadata",
+                             "expandMetadata": se.EXPAND_METADATA,
+                             "fromStartTime": _iso(since), "toStartTime": _iso(now)}):
         sid = o.get("sessionId")
         if not sid:
             continue

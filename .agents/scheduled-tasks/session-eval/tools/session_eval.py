@@ -76,6 +76,10 @@ SENTINEL_WORKERS = 8             # sentinel/workdir 判定の並列度 (API + st
 RECOVER_STALL_S = 5              # mkdir→owner 書き込みの自己停止検知 (sec)。超えたら世代を疑い abort
 RECOVER_MARKER_TTL_S = 60        # 回収 marker が残ったまま回収可能になるまでの秒数
 MAX_PAGES = 20                   # ページング暴走の止血帯
+# observation 集約 (窓内の全 obs を client 側で sessionId 集約) は 1 窓の
+# 行数が MAX_PAGES×API_PAGE_LIMIT を超えると fail する。paged_windowed が
+# 窓をこの幅 (h) のスライスに分けて読む。現在 ~600 obs/h なので 6h ≈ 4 ページ
+WINDOW_SLICE_HOURS = 6.0
 SESSION_ID_RE = re.compile(r"^[A-Za-z0-9._~:+-]{1,200}$")
 
 ROOT_FILTER = json.dumps([{"type": "boolean", "column": "isRootObservation",
@@ -242,6 +246,37 @@ def paged(path, params):
         prev = cur
         params["cursor"] = cur
     raise ApiError(f"GET {path}: exceeded MAX_PAGES={MAX_PAGES}")
+
+
+def paged_windowed(path, params, slice_hours=WINDOW_SLICE_HOURS):
+    """fromStartTime/toStartTime を持つ time-window query を時間スライスに
+    分けて paged する。observation 集約は「窓内の全 obs を client 側で
+    sessionId 集約」するので 1 窓の行数が MAX_PAGES を超えうる — 窓を
+    スライスして 1 回の paged を上限内に収める (上限は止血帯として残す。
+    1 スライスでも超えたら従来どおり ApiError で fail-loud)。
+
+    隣接スライスの境界行 (API の toStartTime が inclusive な実装で二重に
+    返る行) は observation id で除く。"""
+    try:
+        t_from = _ts(params["fromStartTime"])
+        t_to = _ts(params["toStartTime"])
+    except (KeyError, ValueError) as e:
+        raise ApiError(f"paged_windowed: bad window params: {e}")
+    seen = set()
+    cur = t_from
+    while cur < t_to:
+        nxt = min(cur + timedelta(hours=slice_hours), t_to)
+        p = dict(params)
+        p["fromStartTime"] = _iso(cur)
+        p["toStartTime"] = _iso(nxt)
+        for o in paged(path, p):
+            oid = o.get("id")
+            if oid is not None:
+                if oid in seen:
+                    continue
+                seen.add(oid)
+            yield o
+        cur = nxt
 
 
 # ---------- repo 識別 ----------
@@ -460,9 +495,9 @@ def _cmd_targets(a):
     # sessionId を持たない agent (codex, pi) がいる
     sessions = {}
     unsafe_sids = set()
-    for o in paged("/api/public/v2/observations",
-                   {"fields": "basic,metadata", "expandMetadata": EXPAND_METADATA,
-                    "fromStartTime": _iso(since), "toStartTime": _iso(now)}):
+    for o in paged_windowed("/api/public/v2/observations",
+                            {"fields": "basic,metadata", "expandMetadata": EXPAND_METADATA,
+                             "fromStartTime": _iso(since), "toStartTime": _iso(now)}):
         sid = o.get("sessionId")
         if not sid:
             continue

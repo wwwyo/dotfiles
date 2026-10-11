@@ -205,6 +205,49 @@ assert se.skip_marker_kind("mid-quote") is None
 assert se.skip_marker_kind("boom") is None
 se.paged = real_paged
 
+# paged_windowed: time-window query を時間スライスに分けて paged し、
+# 隣接スライス境界の重複行を observation id で除く。1 窓の行数が
+# MAX_PAGES を超えてもスライスが上限内なら成功する（この helper の目的）。
+from datetime import datetime as _dt, timedelta as _td, timezone as _tz
+real_api_get = se.api_get
+slice_calls = []
+
+def fake_window_get(path, params):
+    f = se._ts(params["fromStartTime"])
+    t = se._ts(params["toStartTime"])
+    slice_calls.append((params["fromStartTime"], params["toStartTime"]))
+    rows, cur = [], f
+    # 1 分毎の obs。境界 t の行を両スライスに含めて重複を仕込む
+    while cur <= t:
+        rows.append({"id": cur.isoformat(), "startTime": se._iso(cur),
+                     "sessionId": "s", "name": "LLM Call"})
+        cur += _td(minutes=1)
+    return {"data": rows, "meta": {}}
+
+se.api_get = fake_window_get
+try:
+    since = _dt(2026, 10, 11, 0, 0, tzinfo=_tz.utc)
+    until = since + _td(hours=6)
+    win = {"fromStartTime": se._iso(since), "toStartTime": se._iso(until)}
+    got = list(se.paged_windowed("/api/public/v2/observations", win,
+                                 slice_hours=2.0))
+finally:
+    se.api_get = real_api_get
+ids = [o["id"] for o in got]
+assert len(slice_calls) == 3, slice_calls          # 6h / 2h = 3 スライス
+assert len(ids) == len(set(ids)), "boundary dupes not removed"
+assert len(ids) == 361, len(ids)                   # [since, until] を 1 分毎
+# slice_hours が窓以上なら 1 回で読む
+slice_calls.clear()
+se.api_get = fake_window_get
+try:
+    got = list(se.paged_windowed("/api/public/v2/observations", win,
+                                 slice_hours=48.0))
+finally:
+    se.api_get = real_api_get
+assert len(slice_calls) == 1, slice_calls
+assert len(got) == 361, len(got)
+
 # _request: 429 の retry。urlopen/sleep を stub して試行回数と wait を pin。
 # _auth() は env の LANGFUSE_* を直接読む — 無い環境 (CI) では KeyError が
 # GET retry に落ちて stub に届かないので、dummy を立てておく

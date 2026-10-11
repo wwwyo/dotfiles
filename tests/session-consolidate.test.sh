@@ -60,6 +60,10 @@ assert sc.se._sentinel_hit({"input": "x session-consolidate-batch:5d1e8b4a y"})
 assert not sc.se._sentinel_hit({"input": "session-eval-batch:9f3a2c7e"})
 assert not sc.se._sentinel_hit({"input": "plain"})
 
+# observation 集約の時間スライスは session_eval の共有 helper を再利用する
+# (窓が MAX_PAGES を超えても読み切るための実装。片側だけ直すと drift する)
+assert sc.paged_windowed is sc.se.paged_windowed
+
 # sentinel は automation.toml / consolidator-prompt.md にも同一 literal が
 # 要る (消えると自己 consolidation ループが復活)。加えて両方に eval
 # sentinel の併記が要る — 無いとこの batch の session が日次 eval に
