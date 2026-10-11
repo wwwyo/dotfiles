@@ -22,9 +22,9 @@ SE=~/.agents/scheduled-tasks/session-eval/tools/session_eval.py
 1. `python3 "$SE" lock acquire` — `acquired: false` なら別 run が稼働中。そのまま報告して終了する（強制解除しない。stale lock は TTL=4h で自然回復する）
 2. 窓の起点を決めて `targets` を呼び、`targets[]`（session_id / reason / repo_root / sources 入り）を得る。0 件なら step 4 の `next_since` 更新と lock release をして「対象なし」で終了
    - `~/.local/state/session-eval/next_since` があれば `python3 "$SE" targets --since "$(cat ~/.local/state/session-eval/next_since)"`（`--since` は `--lookback-hours` より優先）。前回 run の完走時に step 4 が書く
-   - 無ければ `python3 "$SE" targets --lookback-hours 48`。固定窓は初回・marker 消失時のフォールバック専用 — tool 既定の 7d は現在の trace 量だと API の MAX_PAGES=20（≈2 万 obs）を超えて `targets` 自体が fail する（2026-10 観測: 7d で 6 万 obs、36h で ~4 千。48h fallback はバースト日に cap を超えうる — 超えたら下記の `--since` 区切り手順に従う）
+   - 無ければ `python3 "$SE" targets --lookback-hours 48`。固定窓は初回・marker 消失時のフォールバック専用。`MAX_PAGES=80`（≈8 万 obs）は tool 既定の 168h 窓を 1 回で取り切れる値 — 2026-10 実測で 3d ≈ 2.3 万 obs / 23 ページ、7d ≈ 5 万 obs（旧 20 では 2 万 obs で `targets` 自体が fail していた）。バーストは日単位で偏る（同実測で 1 日 1.4 万 obs の山）ので、48h 窓でも将来は超えうる
    - 固定窓に頼らない理由: `_cmd_targets` は窓内の observation からしか session を発見せず eval 側に score backfill も無いので、48h 固定では run が 2 回連続で止まるとその間の session が `evaluated_until` 無しのまま窓外に出て二度と現れず、consolidate にも拾われず無音で失われる。tool 既定の 168h は「定時 batch が数日止まっても拾い切れる下限」という設計で、`--since` を前回 run 起点にすると止まった分だけ窓が自動で伸びるためその意図を保てる
-   - marker 起点でも長期停止後は obs 量で MAX_PAGES に当たりうる。その場合は fail-loud に止まる（無音喪失ではない）ので、手動で `--since` を区切って追いつき、終わったら `next_since` をその時刻に更新する
+   - marker 起点でも obs 量で MAX_PAGES に当たりうる。fail-loud に止まる（無音喪失ではない）。ただし `--until` は無く窓の終端は常に now なので、`--since` を動かして「区切る」と古い側が窓外に出て静かに落ちる — 追いつくには `MAX_PAGES` を上げて 1 回で取り切る
 3. targets ごとに evaluator subagent を spawn する
    - prompt は `references/evaluator-prompt.md` を読み、`{SESSION_ID}` を置換したものをそのまま渡す。追加指示・書き換えはしない（sentinel 行が欠けると自己評価ループになる）
    - pi では `pi-subagents` extension の `subagents_enable` で tool を読み込み、`subagent` の `delegate` agent に依頼する。モデル・thinking は [delegate](../../skills/delegate/SKILL.md) の worker/personal を `subagent` の `model`（`provider/model:effort`）に明示し、profile の既定モデルに任せない。10 件超のときは 5 件ずつの wave に分ける
