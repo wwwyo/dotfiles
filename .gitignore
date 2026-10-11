@@ -62,6 +62,8 @@ CLAUDE.local.md
 **/.pi/agent/models-store.json
 # project-scope の package install 先（machine-local）
 **/.pi/npm/
+# git source の clone 先（machine-local）
+**/.pi/git/
 
 # Langfuse telemetry の repo opt-in file。収集は個人設定なので project repo に
 # commit させない（dotfiles 自身は tracked で持つが gitignore は tracked file に効かない）
