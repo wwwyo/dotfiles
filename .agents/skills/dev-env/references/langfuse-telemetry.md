@@ -10,10 +10,11 @@ Langfuse の OTLP endpoint は traces しか受けないため hook/plugin 経�
 | --- | --- | --- |
 | Claude Code | 公式 plugin `langfuse-observability@langfuse-observability` | repo の `.claude/settings.local.json` で `enabledPlugins` を `true`（user settings で default off。local > user の precedence で反転） |
 | Codex | wwwyo fork の plugin `tracing@codex-observability-plugin`（`home/.chezmoitemplates/codex-base.toml.tmpl`） | repo の `.codex/langfuse.json` に `{"enabled": true}`（`process.cwd()` 解決。git root ではないので subdir 起動では拾わない — root から起動する） |
-| pi | 公式 extension `@langfuse/pi-observability-plugin` | repo の `.pi/settings.json` に `packages` 宣言（install 先 `.pi/npm/` は gitignore） |
+| pi | wwwyo fork の extension `@wwwyo/pi-observability-plugin`（`git:github.com/wwwyo/pi-observability-plugin`。codex fork と同じ `detail: turn` を持つ） | repo の `.pi/settings.json` に `packages` 宣言（install 先 `.pi/npm/` は gitignore） |
 
 - **opt-in file は global gitignore 済み**（`**/.claude/settings.local.json`・
-  `**/.codex/langfuse.json`・`**/.pi/settings.json`・`**/mise.local.toml` —
+  `**/.codex/langfuse.json`・`**/.pi/settings.json`・`**/.pi/langfuse.json`・
+  `**/mise.local.toml` —
   `~/.gitignore`）。収集は個人の設定なので project repo には commit させない。
   dotfiles 自身は tracked で持つ（gitignore は tracked file に効かない）
 - **worktree（Orca workspaces 含む）には gitignore 済み file が
@@ -38,7 +39,7 @@ Langfuse の OTLP endpoint は traces しか受けないため hook/plugin 経�
   no-op にする env でもあり Claude plugin・無関係な SDK 利用まで
   道連れにする。project `.pi/settings.json` 宣言なら trust 済み project でしか
   load されないので kill switch 自体が要らない。各 repo・各マシンで1回
-  `pi install -l --approve "npm:@langfuse/pi-observability-plugin@0.1.2"` が要る
+  `pi install -l --approve "git:github.com/wwwyo/pi-observability-plugin@v0.2.0"` が要る（git source は tag/commit で pin される）
 
 - **secrets は mise+age の global env**（`LANGFUSE_PUBLIC_KEY`/`SECRET_KEY`/`BASE_URL`）。
   Claude plugin は plain env を keychain の plugin config より優先して読むので
@@ -67,6 +68,12 @@ Langfuse の OTLP endpoint は traces しか受けないため hook/plugin 経�
   bounded なエラー概要と時刻・model 別 token 使用量を保持し、session-eval が読む。
   tool 入出力全文と途中のモデル応答は送らず、個別 generation の cost/latency
   表示は full mode が必要。subagent の turn は残す。
+- **pi も turn 単位の compact 記録が既定**。`home/dot_pi/agent/langfuse.json` の
+  `detail=turn` を global default として読む（keys は mise の env から取るので
+  この file に secret は置かない）。詳細記録へ戻すには repo の `.pi/langfuse.json`
+  に `detail=full`、run 単位なら `LANGFUSE_PI_DETAIL=full`。metadata の
+  `telemetry_summary`（JSON、version=1）の形は Codex と同一で、session-eval が読む。
+  observation 量の削減が目的（pi は 6h 窓で観測の~6 割を占めていた）。
   mode 切替だけでは過去 turn を replay しない。変更された tail に以前の詳細
   observation が残る場合、評価側は集約値を優先して二重計上を防ぐ。
 - **Codex fork の配布**: marketplace は npm の公式 package ではなく Git 内の

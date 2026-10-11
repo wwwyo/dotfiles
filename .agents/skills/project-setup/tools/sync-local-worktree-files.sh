@@ -30,7 +30,7 @@ if [ -z "$main_root" ] || [ "$wt" = "$main_root" ]; then
   exit 0
 fi
 
-for rel in mise.local.toml .claude/settings.local.json .codex/langfuse.json .pi/settings.json; do
+for rel in mise.local.toml .claude/settings.local.json .codex/langfuse.json .pi/settings.json .pi/langfuse.json; do
   src="$main_root/$rel"
   [ -f "$src" ] || continue
   if [ "$missing_only" = 1 ] && { [ -e "$wt/$rel" ] || [ -L "$wt/$rel" ]; }; then

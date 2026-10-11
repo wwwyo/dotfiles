@@ -11,10 +11,10 @@
   }
   ```
 - **Codex**: `.codex/langfuse.json` に `{"enabled": true}` を書く（plugin が `process.cwd()` で解決する repo opt-in。env 変数は使わない — 子プロセス経由で未 opt-in repo に漏れるため。global gitignore 済みなので commit されない）。**git root ではなく session の cwd を見る**ので、subdir から `codex` を起動すると root の opt-in を拾わず無効のまま。codex は repo root から起動する運用を前提にする（subdir 起動が常態ならその dir にもファイルを置く）
-- **pi**: `pi install -l --approve "npm:@langfuse/pi-observability-plugin@0.1.2"` を実行（project trust が要る）。`.pi/settings.json` に package が宣言され `.pi/npm/` に install される — 両方 global gitignore 済みなので commit されない。新しいマシン・checkout では同コマンドを再実行する:
+- **pi**: `pi install -l --approve "git:github.com/wwwyo/pi-observability-plugin@v0.2.0"` を実行（project trust が要る）。`.pi/settings.json` に package が宣言され `.pi/npm/` に install される — 両方 global gitignore 済みなので commit されない。新しいマシン・checkout では同コマンドを再実行する。upstream の `npm:@langfuse/...` ではなく wwwyo fork を使う（codex と同じ `detail: turn` の compact 記録を持ち、tag で pin される）:
   ```json
   {
-    "packages": ["npm:@langfuse/pi-observability-plugin@0.1.2"]
+    "packages": ["git:github.com/wwwyo/pi-observability-plugin@v0.2.0"]
   }
   ```
 このステップが置く file は全部 gitignore 済みなので worktree には載らない。repo ルートに `orca.yaml` を生成して push する（worktree 側 checkout から読まれる）:
