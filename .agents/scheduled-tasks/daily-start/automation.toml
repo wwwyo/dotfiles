@@ -15,6 +15,10 @@ time = "08:00"
 # username 非依存にするため ~ 形式。sync 側で展開して path:<abs> を渡す
 workspace_path = "~/src/github.com/wwwyo/me"
 
+# terminal を残す目的で reuse する。automation の terminal は reuse しないと
+# run 終了時に Orca が回収する。reuse する run は同じ session に prompt が入る
+reuse_session = true
+
 prompt = """
 daily-start skill を実行する。今日の todo.md がすでに作成済みなら skip する。作業ディレクトリは {{workspace_path}}。
 """

@@ -17,6 +17,10 @@ time = "19:00"
 # username 非依存にするため ~ 形式。sync 側で展開して path:<abs> を渡す
 workspace_path = "~/src/github.com/wwwyo/me"
 
+# terminal を残す目的で reuse する。automation の terminal は reuse しないと
+# run 終了時に Orca が回収する。reuse する run は同じ session に prompt が入る
+reuse_session = true
+
 # sentinel は自己評価ループ防止に必須 — 削らない。session_eval.py の
 # SENTINEL と evaluator-prompt.md にも同一 literal がある（3 箇所同時に変える）
 prompt = """
