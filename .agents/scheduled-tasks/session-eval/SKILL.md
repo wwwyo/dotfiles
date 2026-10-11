@@ -27,7 +27,7 @@ SE=~/.agents/scheduled-tasks/session-eval/tools/session_eval.py
    - marker 起点でも obs 量で MAX_PAGES に当たりうる。fail-loud に止まる（無音喪失ではない）。ただし `--until` は無く窓の終端は常に now なので、`--since` を動かして「区切る」と古い側が窓外に出て静かに落ちる — 追いつくには `MAX_PAGES` を上げて 1 回で取り切る
 3. targets ごとに evaluator subagent を spawn する
    - prompt は `references/evaluator-prompt.md` を読み、`{SESSION_ID}` を置換したものをそのまま渡す。追加指示・書き換えはしない（sentinel 行が欠けると自己評価ループになる）
-   - pi では `pi-subagents` extension の `subagents_enable` で tool を読み込み、`subagent` の `delegate` agent に依頼する。モデル・thinking は [delegate](../../skills/delegate/SKILL.md) の worker/personal を `subagent` の `model`（`provider/model:effort`）に明示し、profile の既定モデルに任せない。10 件超のときは 5 件ずつの wave に分ける
+   - pi では `subagent` の `delegate` agent に依頼する（既定モデル DeepSeek V4.1 Flash では `subagent` が最初から使える。tool が見えないモデルでは `subagents_enable` で有効化する）。モデル・thinking は [delegate](../../skills/delegate/SKILL.md) の worker/personal を `subagent` の `model`（`provider/model:effort`）に明示し、profile の既定モデルに任せない。10 件超のときは 5 件ずつの wave に分ける
 4. 全 subagent の完了を待ち、`next_since` を更新してから `python3 "$SE" lock release`:
    `python3 -c 'from datetime import datetime, timedelta, timezone; print((datetime.now(timezone.utc) - timedelta(hours=24)).strftime("%Y-%m-%dT%H:%M:%SZ"))' > ~/.local/state/session-eval/next_since`
    - `next_since` = 次回 run が `--since` に渡す値。24h 引くのは、turn の startTime が user message 時刻へ backdate されるので、前回 run の fetch 後に完了した長い turn が窓から漏れないようマージンを取るため
