@@ -68,4 +68,6 @@ CLAUDE.local.md
 **/.claude/settings.local.json
 **/.codex/langfuse.json
 **/.pi/settings.json
+# repo 単位の detail override（global default は home/dot_pi/agent/langfuse.json）
+**/.pi/langfuse.json
 

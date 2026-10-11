@@ -17,7 +17,7 @@ with tempfile.TemporaryDirectory(prefix='worktree local files ') as directory:
     worktree = root / 'custom location' / 'repo'
     nested = worktree / 'nested'
     nested.mkdir(parents=True)
-    files = ['mise.local.toml', '.claude/settings.local.json', '.codex/langfuse.json', '.pi/settings.json', '.pi/npm/plugin.txt']
+    files = ['mise.local.toml', '.claude/settings.local.json', '.codex/langfuse.json', '.pi/settings.json', '.pi/langfuse.json', '.pi/npm/plugin.txt']
     for relative in files:
         source = main / relative
         source.parent.mkdir(parents=True, exist_ok=True)
