@@ -73,8 +73,8 @@ mise の `[tools]` は開発用依存（devDependencies 相当）として扱う
    `gate` が保持したまま渡した run lock を executor session が引き継ぐ
    形なので、正常終了・中断・エラーのどれでも release する。run_id で
    所有者を照合するため、TTL 超で stale 回収された後に release しても
-   別 run の lock は消えない（残った lock は TTL 超で自動回収されるが、
-   release しない間は次の tick が全部 skip される）
+   別 run の lock は消えない。TTL は tick 間隔より短いので、release せずに
+   死んだ lock は次の tick で stale 回収され、止まるのは死んだ tick の分だけになる
 
 途中で script がエラーを返したら、その action を自分で代替実装せず
 report に記録して次へ進む。

@@ -29,6 +29,33 @@ out=$(python3 "$PT" lock acquire)
 printf '%s' "$out" | grep -q '"acquired": false' || fail "re-acquire: $out"
 python3 "$PT" lock release >/dev/null
 
+# --- lock: TTL は tick 間隔（30分）より短く、死んだ lock は次 tick で回収される ---
+# executor が release せずに死んだ lock を次 tick で回収できることを TTL で保証する。
+python3 - "$PT" "$PR_WATCH_STATE_DIR" <<'PY' || fail "lock TTL: a lock older than the TTL must be reclaimed"
+import importlib.util, json, pathlib, subprocess, sys, time
+
+pt_path, state_dir = sys.argv[1], sys.argv[2]
+spec = importlib.util.spec_from_file_location("pt", pt_path)
+pt = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(pt)
+assert 0 < pt.LOCK_TTL_S < 30 * 60, pt.LOCK_TTL_S
+
+
+def acquire():
+    out = subprocess.run([sys.executable, pt_path, "lock", "acquire"],
+                         capture_output=True, text=True, check=True).stdout
+    return json.loads(out)["acquired"]
+
+
+assert acquire() is True, "first acquire"
+info = pathlib.Path(state_dir) / "run.lockdir" / "info.json"
+info.write_text(json.dumps({**json.loads(info.read_text()),
+                             "ts": time.time() - pt.LOCK_TTL_S - 1}))
+assert acquire() is True, "dead lock (older than TTL) must be reclaimed"
+assert acquire() is False, "fresh lock must be kept"
+PY
+python3 "$PT" lock release >/dev/null
+
 python3 - "$PT" <<'EOF'
 import importlib.util, json, sys
 from pathlib import Path
