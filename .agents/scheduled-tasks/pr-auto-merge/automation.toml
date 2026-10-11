@@ -6,8 +6,16 @@
 
 name = "pr-auto-merge"
 workspace_path = "~/src/github.com/wwwyo/me"
-# executor は codex。provider/model はユーザーの明示指示なしに変更しない。
-provider = "codex"
+# executor は claude + Sonnet 5.5。judge（QA・Blast Radius）は executor 自身の
+# LLM が担当する。model は automation-local の extra_agent_args で pin し、
+# Orca の claude global default（手動起動の claude）には影響を及ぼさない。
+# extra_agent_args は orca 側の制約で --reuse-session と両立しない。
+# だが reuse 外しによる terminal 堆積は起きない — Orca は fresh-session run の
+# 終了後に前 run の automation terminal を自動回収する（daily-end 18 run で
+# live terminal が1つの実測）。旧「executor は codex。明示指示なしに変更しない」
+# はユーザーの明示指示（claude sonnet 5.5 へ）に基づき改めた。
+provider = "claude"
+extra_agent_args = "--model sonnet"
 enabled = true
 timezone = "Asia/Tokyo"
 
@@ -19,10 +27,6 @@ timezone = "Asia/Tokyo"
 # gate は全 open PR の事実収集を行うので timeout は orca 側上限の 600s を
 # 明示する
 trigger = "*/30 9-23 * * *"
-
-# 前回の live session を使い回し、tick ごとの executor session 堆積を防ぐ。
-# 前回 terminal がなくなった場合は Orca が fresh session に fallback する。
-reuse_session = true
 
 precheck = "python3 ~/.agents/skills/pr-auto-merge/tools/pr_triage.py gate"
 precheck_timeout = 600
