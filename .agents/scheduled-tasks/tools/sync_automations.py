@@ -29,7 +29,13 @@ manifest schema:
   reuse_session  existing workspace の前回 live session を使い回す
                  (orca --reuse-session。false は --fresh-session を明示)。
                  run ごとに新しい agent session が履歴に積まれるのを防ぐ。
-                 repo_path 指定の new-per-run では無意味なので送らない
+                 repo_path 指定の new-per-run では無意味なので送らない。
+                 extra_agent_args とは両立しない (orca 側制約) — 同時に指定
+                 すると load_manifest で error にする
+  extra_agent_args  fresh run の agent 起動引数に追加する文字列
+                 (例 "--model sonnet")。automation-local で model pin する
+                 経路。host の default args (bypass 等) の後に付く。空文字
+                 "" で clear (live 残存を消す)。reuse_session とは両立不可
   prompt         {{workspace_path}} / {{repo_path}} を使うと展開後の
                  path に置換される
   trigger        "daily"|"weekdays"|"weekly"|"hourly" → time/day も使う。
@@ -113,6 +119,18 @@ def load_manifest(p):
             f"{p.name}: workspace_path と repo_path は両立しない")
     wp = os.path.expanduser(wp) if wp else None
     rp = os.path.expanduser(rp) if rp else None
+    reuse = bool(m.get("reuse_session", False))
+    if reuse and m.get("extra_agent_args"):
+        raise RuntimeError(
+            f"{p.name}: extra_agent_args は reuse_session と両立しない "
+            "(orca 側制約) — model pin なら reuse を外す")
+    eaa = m.get("extra_agent_args")
+    if eaa is not None and not isinstance(eaa, str):
+        # check で素通りして apply の文字列結合で TypeError にならないよう
+        # 読み込み時に型を検証する
+        raise RuntimeError(
+            f"{p.name}: extra_agent_args は文字列 (例 \"--model ...\") "
+            f"でなければいけない (got {type(eaa).__name__})")
     prompt = m.get("prompt", "").strip()
     for key, val in (("workspace_path", wp), ("repo_path", rp)):
         if "{{" + key + "}}" in prompt and not val:
@@ -131,6 +149,7 @@ def load_manifest(p):
         "precheck": m.get("precheck"),
         "precheck_timeout": m.get("precheck_timeout"),
         "reuse_session": bool(m.get("reuse_session", False)),
+        "extra_agent_args": m.get("extra_agent_args"),
     }
 
 
@@ -158,6 +177,12 @@ def expected_flags(m, live=None):
         # manifest から precheck を外した = 無いのが正解。edit は送った
         # field しか変えないので、live 残存を消すには空文字を明示する
         f += ["--precheck", ""]
+    if m.get("extra_agent_args"):
+        f += ["--extra-agent-args=" + m["extra_agent_args"]]
+    elif live and (live.get("extraAgentArgs") or ""):
+        # manifest から外した = 無いのが正解。edit は送った field しか
+        # 変えないので、live 残存を消すには空文字を明示する
+        f += ["--extra-agent-args="]
     f += ["--provider", m["provider"],
           "--enabled" if m["enabled"] else "--disabled",
           "--prompt", m["prompt"]]
@@ -238,6 +263,10 @@ def field_drifts(m, live):
             pc.get("timeoutSeconds") != m["precheck_timeout"]:
         d["precheck_timeout"] = (pc.get("timeoutSeconds"),
                                  m["precheck_timeout"])
+    if (live.get("extraAgentArgs") or "") != (m.get("extra_agent_args") or ""):
+        # manifest が無い = 無いのが正解。live 残存も drift として検出する
+        d["extra_agent_args"] = (live.get("extraAgentArgs"),
+                                 m.get("extra_agent_args"))
     sd = schedule_drift(m, live)
     if sd:
         d["schedule"] = (live.get("rrule"), f"{m['trigger']} {m.get('time') or ''}")
