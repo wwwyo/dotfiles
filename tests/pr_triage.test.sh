@@ -38,6 +38,8 @@ pt_path, state_dir = sys.argv[1], sys.argv[2]
 spec = importlib.util.spec_from_file_location("pt", pt_path)
 pt = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(pt)
+# tick 間隔（30分）の正本は
+# .agents/scheduled-tasks/pr-auto-merge/automation.toml の trigger
 assert 0 < pt.LOCK_TTL_S < 30 * 60, pt.LOCK_TTL_S
 
 
