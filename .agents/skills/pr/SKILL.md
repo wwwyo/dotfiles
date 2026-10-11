@@ -98,9 +98,13 @@ QA担当は関連実装を読まず、要件と実際のUI/APIの振る舞いか
 
 ### 5. CI・レビューコメント監視
 
-PR作成後、CI の完了とレビューコメントの到着を監視する。**差分検知ではなく状態評価**: 5分ごとに終了条件を満たしたかを評価し、満たしたら監視終了。評価の単位はagentに備わった確認機構か `gh pr checks --required` + `gh pr view --json statusCheckRollup,reviews,comments,mergeable,reviewDecision`（未 resolve の thread は `gh api graphql`）で、変化検知スクリプトに頼らない。
+PR作成後、CI の完了とレビューコメントの到着を監視する。**待機は CI 完了で起き、判定は起きた後の状態評価で行う**:
 
-**監視は「完了で自分を起こせる」機構で回す。** 素の background 実行は終了を通知しない環境があり、終了に気づけず監視が死ぬ。subagent に載せる等、終了時に呼び出し側へ通知が来る経路で実行する。subagent 内部では、監視 script を background で起動してその出力を **blocking read**（出力 or 終了 or timeout まで返らない read）で受け取る繰り返しにする — sleep やポーリング間隔を LLM 側で自前管理すると受動的に凍りうる。
+1. `gh pr checks <PRのURL> --watch --fail-fast` で check の完了（または最初の fail）まで待つ。CI 待ちが監視時間の大半なので、固定間隔の polling より早く起きられ、check として走る review bot（pullfrog 等）もここで待てる。待機を `--required` に絞らないのは、required 未設定の repo では `--required` だと待たずに即終了するため（合否の判定は step 2 の `--required` で行う）。push 直後は check が未登録で `no checks reported` を返して即終了することがあるので、そのときは少し置いて再実行する
+2. 起きたら `gh pr checks <PRのURL> --required` + `gh pr view <PRのURL> --json statusCheckRollup,reviews,comments,mergeable,reviewDecision`（未 resolve の thread は `gh api graphql`）を取り直し、下の終了条件を評価する。待機コマンドの出力や exit code は起きる合図に使い、終了判定の根拠にしない
+3. 対応が必要なら対応して push し、1 に戻る。check にならないレビュー（Copilot review 等）だけが待機中・進行中なら、数分おきに 2 を評価する短い polling で待つ
+
+**待機は「完了で自分を起こせる」機構で回す。** 素の background 実行は終了を通知しない環境があり、終了に気づけず監視が死ぬ。harness に「background コマンドの終了で agent を再起動する」機構があればそれで待機コマンドを回す（Claude Code は Bash の `run_in_background` — その案内上も、1 回の完了待ちはこれ、出力の継続監視は `Monitor` と使い分ける）。background タスクは起動元の session と運命を共にするので、同期 subagent ではなく PR を所有する session で起動する。無ければ待機コマンドを foreground の blocking 呼び出しとして実行し、timeout で打ち切られたら旧 command が background に残っていないか確認してから再実行する（Claude Code は foreground の timeout を kill せず background へ移す）— 戻り値が返ること自体が起きる合図になる。sleep やポーリング間隔を LLM 側で自前管理すると受動的に凍りうる。session が閉じれば監視も止まる。`wwwyo/*` の長引く PR は merge 可否の triage だけを [pr-auto-merge](../pr-auto-merge/SKILL.md) の定期 lane が拾い、session 固有の報告・QA 再検証・完了通知は引き継がれない — 監視を止めるときは repo を問わず、その時点の PR の状態をユーザーに報告する。
 
 新しいコメント・CI fail・コンフリクトを見つけたら対応してループ継続、終了条件を満たしたら監視を終えてユーザーにPRの状態を報告する。製品やテストの修正はimplementの流れで自身が行う。修正・追加commit・rebaseでheadが変わった場合はQA対象の判断を見直す。QA対象ならstep 4で新しいheadを再検証し、PR bodyの検証項目を更新する。過去headの成功はreadyの根拠にしない。
 
