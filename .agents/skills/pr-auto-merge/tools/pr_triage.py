@@ -74,7 +74,12 @@ STATE_DIR = Path(os.environ.get("PR_WATCH_STATE_DIR",
 STATE_FILE = STATE_DIR / "state.json"
 LOCK_DIR = STATE_DIR / "run.lockdir"
 PLAN_FILE = STATE_DIR / "current-plan.json"
-LOCK_TTL_S = int(os.environ.get("PR_WATCH_LOCK_TTL_S", 2 * 3600))
+# tick 間隔（30分）より短くする。live な run は数分で release するので、
+# 残っている lock は「executor が release せずに死んだ」を意味する
+# （provider の usage limit で prompt 直後に終了した実例あり。旧値 2h では
+# 死んだ lock が 3 tick 連続で次の run を skip させた）。30分ちょうどだと
+# 次 tick の age が TTL を僅かに下回って skip しうるので余裕を持たせる。
+LOCK_TTL_S = int(os.environ.get("PR_WATCH_LOCK_TTL_S", 25 * 60))
 ME_REPO = Path(os.environ.get(
     "PR_WATCH_ME_REPO", Path.home() / "src" / "github.com" / "wwwyo" / "me"))
 
