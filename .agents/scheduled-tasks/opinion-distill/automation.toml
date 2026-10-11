@@ -5,6 +5,9 @@
 
 name = "opinion-distill"
 repo_path = "~/src/github.com/wwwyo/me"
+# run ごとに新 worktree が立つ new-per-run なので reuse は指定できない
+# （引き継ぐ既存 workspace がない。sync は workspace_path のときだけ送る）
+# 他の task と違い terminal は run 終了時に回収される
 # personal データを扱う task。モデル・thinking は delegate の worker/personal に従い
 # Orca Settings → Agents の pi 起動引数に指定する（automation CLI に model flag は無い）。
 provider = "pi"

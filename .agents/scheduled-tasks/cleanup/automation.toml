@@ -13,6 +13,10 @@ trigger = "0 3 */3 * *"
 
 workspace_path = "~/src/github.com/wwwyo/me"
 
+# terminal を残す目的で reuse する。automation の terminal は reuse しないと
+# run 終了時に Orca が回収する。reuse する run は同じ session に prompt が入る
+reuse_session = true
+
 prompt = """
 dotfiles の ~/.agents/scheduled-tasks/cleanup/SKILL.md に記載された手順でローカル環境を掃除する。対象は個人 repo のみ。閾値ゲートを守り、強制クリーンや閾値変更はしない。何も消さず freed 0MB で終わるのも正常。作業ディレクトリは {{workspace_path}}。
 """
