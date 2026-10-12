@@ -23,7 +23,7 @@ reuse_session = true
 
 # sentinel は自己ループ防止に必須 — 削らない。
 # session_consolidate.py の SENTINEL と consolidator-prompt.md にも
-# 同一 literal がある（3 箇所同時に変える）。eval sentinel の併記は
+# 同一 literal がある（変えるときは rg --hidden で全ヒットを列挙して同時に変える）。eval sentinel の併記は
 # この batch の session が日次 eval に評価されないためのもの — 無いと
 # 記録 comment が付いて翌週の対象に戻る
 prompt = """

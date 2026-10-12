@@ -39,6 +39,8 @@ GitHub issue forms 管理 — `[Feature]:` 接頭辞と enhancement label は fo
 
 ## automation の非自明な挙動
 
+- **run の status `completed` は executor の成功を意味しない**。executor が prompt 直後に即死しても run は completed になり、保持した run lock が TTL まで残って以降の tick が `locked` で skip する（provider の usage limit で 2h TTL が 3 tick 連鎖した実例）。`locked` の連鎖は run 一覧の status ではなく、lock を保持した run の executor が実際に仕事をしたかを executor 側の session log で確認して切り分ける — Orca の API は agent レベルの error を run status に出さない
+- **live 設定の正本は `~/Library/Application Support/orca/profiles/local-default/profile-state.db`（SQLite）**。launcher コマンドは `agentCmdOverrides`、起動引数は `agentDefaultArgs` にここで入る。`orca-data.json` は export/cache で agent エントリを持たず、これだけ見ると「そんな設定は無い」と誤診する（dotfiles の既定モデル変更が GUI の launcher args に届かず drift した実例）。アプリ設定起因の調査は live ストアを先に検索する
 - **reuse の成立条件は前回 run の pane + PTY が live なこと**。`run.workspaceId` が一致し、pane に agent status `done` が乗り、PTY が生きているときだけ既存 PTY へ prompt が貼られる。`workspaceMode: new_per_run`・pane の `done` 不在・PTY 終了では新規 session が立つ。
 - **automation の terminal は `reuse_session` が false だと run 終了時に Orca が回収する**（daemon log の `session-exited` と `session-killed` が run 終了の秒に並ぶ。pi の task でも同じ）。**残す手段は `reuse_session = true` だけで、「残すが次 run は fresh」は選べない** — automation record で terminal の寿命に関わる field は `reuseSession` のみで、グローバル設定にも保持系の key は無い。reuse の run は同じ session に prompt が入るので、launcher 引数（model 等）の変更は既存 session に届かず、context も run をまたいで積み上がる（`extra_agent_args` とも両立しない — pr-auto-merge が fresh なのは `--model claude-sonnet-5-5` を pin しているため）。`repo_path`（new-per-run）では reuse を指定できない。
 - **入力受付と turn/model の証明を区別する**。`provider: "unsupported"` や `turn_started not observed` だけで未送信と断定して再送しない。対象 terminal の描画と pi session の新しい user/assistant message を確認し、二重送信を避ける。
