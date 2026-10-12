@@ -137,7 +137,10 @@ class PromptRenderTest(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         out = json.loads(result.stdout)
         self.assertTrue(out['ok'], out)
-        self.assertGreaterEqual(out['placeholders'], 3)
+        # placeholder 数を template の実数で pin する — prose の literal も
+        # 数えるので、コメントに `{SESSION_ID}` を書くとここが落ちる。
+        # template の placeholder を増減したときはこの値も更新する
+        self.assertEqual(out['placeholders'], 4)
         self.assertNotIn('{SESSION_ID}', out['prompt'])
         self.assertIn('session-eval-batch:9f3a2c7e', out['prompt'])
         self.assertIn('coffee-robin', out['prompt'])
