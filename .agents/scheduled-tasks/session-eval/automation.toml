@@ -22,7 +22,9 @@ workspace_path = "~/src/github.com/wwwyo/me"
 reuse_session = true
 
 # sentinel は自己評価ループ防止に必須 — 削らない。session_eval.py の
-# SENTINEL と evaluator-prompt.md にも同一 literal がある（3 箇所同時に変える）
+# SENTINEL と evaluator-prompt.md にも同一 literal がある。変えるときは
+# `rg --hidden 'session-eval-batch:9f3a2c7e'` の全ヒット（consolidate lane の
+# 併記・テスト fixture 含む）を同時に変える
 prompt = """
 dotfiles の ~/.agents/scheduled-tasks/session-eval/SKILL.md に従って session eval batch を実行する。sentinel: session-eval-batch:9f3a2c7e。対象 0 件・lock 取得失敗は正常終了。
 """

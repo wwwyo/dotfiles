@@ -6,8 +6,9 @@
      全文が worker session の root turn input になるので、消すとこの
      batch の session が翌回の対象になる。sentinel は
      session_consolidate.py の SENTINEL と session-consolidate/
-     automation.toml にも同一 literal がある。変えるときは 3 箇所
-     同時に変える。
+     automation.toml にも同一 literal がある。変えるときは
+     `rg --hidden 'session-consolidate-batch:5d1e8b4a'` の全ヒット
+     （テスト fixture 含む）を同時に変える。
      eval sentinel の併記は必須 — これが無いとこの session が毎日の
      eval batch に評価され、記録 comment が付いて翌週の consolidate
      対象に戻る。 -->

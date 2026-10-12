@@ -1,8 +1,10 @@
 """Exercise the transcript CLI through a paged local Observations API."""
 import json
 import os
+import shutil
 import subprocess
 import sys
+import tempfile
 import threading
 import unittest
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -144,6 +146,23 @@ class PromptRenderTest(unittest.TestCase):
         self.assertNotIn('{SESSION_ID}', out['prompt'])
         self.assertIn('session-eval-batch:9f3a2c7e', out['prompt'])
         self.assertIn('coffee-robin', out['prompt'])
+
+    def test_sentinel_line_required(self):
+        # 先頭コメントに literal が出るだけでは本文の sentinel 行の代わりに
+        # ならない — `prompt` は行単位で検証する
+        with tempfile.TemporaryDirectory() as tmp:
+            (Path(tmp) / 'tools').mkdir()
+            (Path(tmp) / 'references').mkdir()
+            shutil.copy(SCRIPT, Path(tmp) / 'tools' / 'session_eval.py')
+            (Path(tmp) / 'references' / 'evaluator-prompt.md').write_text(
+                '<!-- literal は session-eval-batch:9f3a2c7e -->\n本文\n',
+                encoding='utf-8')
+            result = subprocess.run(
+                [sys.executable, str(Path(tmp) / 'tools' / 'session_eval.py'),
+                 'prompt', '--session-id', 'coffee-robin'],
+                capture_output=True, text=True, timeout=15)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn('sentinel line', result.stdout)
 
     def test_unsafe_sid_rejected(self):
         result = self.run_prompt('a;rm -rf /')

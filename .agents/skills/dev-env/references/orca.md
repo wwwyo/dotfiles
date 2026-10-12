@@ -62,7 +62,7 @@ version-matched guide は coordinator 視点の記述が中心。worker 側の�
 
 ## worker の成果物と報告
 
-- 独立検査・後続 batch に回す成果物（candidate・report 等）を揮発 worktree や gitignore 済み dir だけに置かない — run 後に cleanup / pr-auto-merge が worktree を消すと参照できなくなる。耐久パス（追跡される場所）に置き、置けないなら消えることを前提に扱う
+- 独立検査・後続 batch に回す成果物（candidate・report 等）を揮発 worktree や gitignore 済み dir だけに置かない — run 後に cleanup / pr-auto-merge が worktree を消すと参照できなくなる。cleanup 後も参照できる耐久パス（保持される branch に commit/push する、または worktree 外に保存する）に置き、置けないなら消えることを前提に扱う
 - `worker_done` の body に path・件数/行数・再現 command などの定量 receipt を載せる。worktree 削除後は body が唯一の検証経路になり、リンクだけの body や 3 文要約だけでは受けた側が検証できない（coordinator が `worker_done` の body を最初に読む前提で設計されている）
 
 ## 自分のいる worktree を消すとき

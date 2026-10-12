@@ -631,9 +631,12 @@ def _cmd_prompt(a):
         tmpl = PROMPT_TEMPLATE.read_text(encoding="utf-8")
     except OSError as e:
         fail(f"cannot read {PROMPT_TEMPLATE}: {e}")
-    # sentinel が欠けると evaluator 自身の session が翌日の評価対象になる
-    if SENTINEL not in tmpl:
-        fail(f"sentinel {SENTINEL!r} missing from {PROMPT_TEMPLATE}")
+    # sentinel 行が欠けると evaluator 自身の session が翌日の評価対象になる。
+    # 行単位で照合する — 本文以外 (先頭コメント等) に literal が出るだけでは
+    # sentinel 行の代わりにならない
+    if not any(line.strip() == f"sentinel: {SENTINEL}"
+               for line in tmpl.splitlines()):
+        fail(f"sentinel line 'sentinel: {SENTINEL}' missing from {PROMPT_TEMPLATE}")
     n = tmpl.count(SID_PLACEHOLDER)
     if n == 0:
         fail(f"placeholder {SID_PLACEHOLDER} missing from {PROMPT_TEMPLATE}")
