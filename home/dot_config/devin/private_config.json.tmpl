@@ -1,5 +1,5 @@
 {{- $orcaHook := joinPath .chezmoi.homeDir ".orca" "agent-hooks" "devin-hook.sh" | shellQuote -}}
-{{- $orcaCommand := printf "if [ -f %s ] && [ -r %s ] && [ -x %s ]; then /bin/sh %s; else { command -p cat 2>/dev/null || cat; } >/dev/null 2>&1 || :; fi" $orcaHook $orcaHook $orcaHook $orcaHook -}}
+{{- $orcaCommand := printf "if [ -f '%s' ] && [ -r '%s' ] && [ -x '%s' ]; then /bin/sh '%s'; else { command -p cat 2>/dev/null || cat; } >/dev/null 2>&1 || :; fi" $orcaHook $orcaHook $orcaHook $orcaHook -}}
 {{- /* CLI/TUI が書き戻す項目 (model・トグル・machine state) はローカル file の現行値を引き継ぐ。
       allow/allowed_domains は local ∪ template の union (承認済みを消さず、repo 追加分は伝播)。
       repo が完全に管理するのは version/read_config_from/hooks/permissions.{deny,ask}/sandbox.excluded */ -}}
@@ -329,7 +329,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": {{ $orcaCommand | toJson }},
+            "command": {{ $orcaCommand | toJson | replace "\\u0026" "&" | replace "\\u003c" "<" | replace "\\u003e" ">" }},
             "timeout": 10
           }
         ]
@@ -340,7 +340,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": {{ $orcaCommand | toJson }},
+            "command": {{ $orcaCommand | toJson | replace "\\u0026" "&" | replace "\\u003c" "<" | replace "\\u003e" ">" }},
             "timeout": 10
           }
         ]
@@ -351,7 +351,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": {{ $orcaCommand | toJson }},
+            "command": {{ $orcaCommand | toJson | replace "\\u0026" "&" | replace "\\u003c" "<" | replace "\\u003e" ">" }},
             "timeout": 10
           }
         ]
@@ -362,7 +362,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": {{ $orcaCommand | toJson }},
+            "command": {{ $orcaCommand | toJson | replace "\\u0026" "&" | replace "\\u003c" "<" | replace "\\u003e" ">" }},
             "timeout": 10
           }
         ]
@@ -373,7 +373,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": {{ $orcaCommand | toJson }},
+            "command": {{ $orcaCommand | toJson | replace "\\u0026" "&" | replace "\\u003c" "<" | replace "\\u003e" ">" }},
             "timeout": 10
           }
         ]
@@ -384,7 +384,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": {{ $orcaCommand | toJson }},
+            "command": {{ $orcaCommand | toJson | replace "\\u0026" "&" | replace "\\u003c" "<" | replace "\\u003e" ">" }},
             "timeout": 10
           }
         ]
@@ -395,7 +395,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": {{ $orcaCommand | toJson }},
+            "command": {{ $orcaCommand | toJson | replace "\\u0026" "&" | replace "\\u003c" "<" | replace "\\u003e" ">" }},
             "timeout": 10
           }
         ]
@@ -406,7 +406,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": {{ $orcaCommand | toJson }},
+            "command": {{ $orcaCommand | toJson | replace "\\u0026" "&" | replace "\\u003c" "<" | replace "\\u003e" ">" }},
             "timeout": 10
           }
         ]
