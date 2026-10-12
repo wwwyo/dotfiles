@@ -63,9 +63,9 @@ paged = se.paged
 api_post = se.api_post
 ensure_env = se.ensure_env
 
-# sentinel は 3 箇所に同一 literal — consolidator-prompt.md と
-# session-consolidate/automation.toml にも書かれている。変えるときは
-# 3 箇所同時に変えないと自己 consolidation ループが復活する。
+# sentinel は consolidate/eval 両 lane の複数ファイルに同一 literal が散っている。
+# 変えるときは箇所数を数えず rg --hidden '<literal>' で全ヒットを列挙し、
+# 同時に変えないと自己 consolidation ループが復活する。
 # eval の sentinel とは別 literal — eval batch の session は eval 側の
 # sentinel で既に弾かれている。consolidate の prompt には eval の
 # sentinel も併記してあるので、この batch の session は eval にも

@@ -51,9 +51,9 @@ from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
-# sentinel は 3 箇所に同一 literal がある — evaluator-prompt.md と
-# session-eval/automation.toml の prompt にも書かれている。変えるときは
-# 3 箇所同時に変えないと自己評価ループが復活する
+# sentinel は評価・consolidate 両 lane の複数ファイルに同一 literal が散っている。
+# 変えるときは箇所数を数えず rg --hidden '<literal>' で全ヒットを列挙し、
+# 同時に変えないと自己評価ループが復活する
 SENTINEL = "session-eval-batch:9f3a2c7e"
 # 合成 fixture session (telemetry QA 等) は評価・consolidate 対象から外す。
 # sid prefix は API を呼ばずに弾け、root input の marker は sentinel と同じ

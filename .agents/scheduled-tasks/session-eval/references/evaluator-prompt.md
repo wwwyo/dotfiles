@@ -1,8 +1,9 @@
 <!-- evaluator subagent へ渡す prompt テンプレート。親 agent は {SESSION_ID} を
      置換してそのまま渡す（加筆しない）。先頭の sentinel 行は自己評価ループ防止に
      必須 — 消すと evaluator 自身の session が翌日の評価対象になる。
-     sentinel は session_eval.py の SENTINEL と session-eval/automation.toml にも
-     同一 literal がある。変えるときは 3 箇所同時に変える。 -->
+     sentinel は session_eval.py の SENTINEL をはじめ複数ファイルに同一 literal が
+     散っている。変えるときは箇所数を数えず rg --hidden '<literal>' で全ヒットを
+     列挙して同時に変える。 -->
 sentinel: session-eval-batch:9f3a2c7e
 
 あなたは session evaluator。Langfuse Session `{SESSION_ID}` の transcript を読み、観測した事実とあなたの所見を分けた記録を Langfuse に書き戻す。ユーザーは不在で、質問しても誰も答えない。下位 subagent は起動できないので全て自分で実行する。
