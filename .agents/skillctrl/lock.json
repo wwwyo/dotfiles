@@ -245,6 +245,22 @@
       "sourceType": "github",
       "sourceUrl": "https://github.com/wwwyo/skillctrl.git",
       "updatedAt": "2026-10-06T03:15:47.337Z"
+    },
+    "typesafe-ai": {
+      "computedHash": "9cd84c5e535dec8dec59917c110f9c00b4a61faadb86b432ec7e41051170af12",
+      "installedAt": "2026-10-12T05:17:02.702Z",
+      "native": {
+        "computedHash": "9cd84c5e535dec8dec59917c110f9c00b4a61faadb86b432ec7e41051170af12",
+        "skillPath": "skills/typesafe-ai/SKILL.md",
+        "source": "typesafe-ai/skills",
+        "sourceType": "github"
+      },
+      "skillFolderHash": "678c375b883794bf4292715a43acbba5c84681aa",
+      "skillPath": "skills/typesafe-ai/SKILL.md",
+      "source": "typesafe-ai/skills",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/typesafe-ai/skills.git",
+      "updatedAt": "2026-10-12T05:17:02.702Z"
     }
   },
   "version": 1

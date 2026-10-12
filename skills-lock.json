@@ -86,6 +86,12 @@
       "skillPath": ".agents/skills/skillctrl/SKILL.md",
       "source": "wwwyo/skillctrl",
       "sourceType": "github"
+    },
+    "typesafe-ai": {
+      "computedHash": "9cd84c5e535dec8dec59917c110f9c00b4a61faadb86b432ec7e41051170af12",
+      "skillPath": "skills/typesafe-ai/SKILL.md",
+      "source": "typesafe-ai/skills",
+      "sourceType": "github"
     }
   },
   "version": 3
