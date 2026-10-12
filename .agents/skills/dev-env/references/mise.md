@@ -44,8 +44,9 @@ repo 編集が即反映）。supply chain 対策として `pin = true` + `minimu
 - npm backend の optional platform dependency が取りこぼされると本体コマンドが stub に
   なり `--version` が通らない（claude-code 2.1.288 で darwin-arm64 が落ちた実例）。mise の
   install dir に対象 platform package を手動展開し `node install.cjs` を実行して復旧する。
-  exact pin では `mise outdated` が「up to date」と沈黙するので、最新確認は npm 側で行い、
-  bump は `mise outdated --bump` か config の直接編集で行う
+  exact pin では `mise outdated` が「up to date」と沈黙するので、最新確認は npm 側で行う。
+  更新候補の確認は `mise outdated --bump`（read-only）、実際の更新は `mise upgrade --bump`
+  （config の要求を書き換えるので exact pin 運用では更新後に pin を確認）か config の直接編集で行う
 - agent session 内の `mise doctor` の警告は harness が PATH 先頭に注入する実在しない dir
   （pi なら `~/.pi/agent/bin`）や、config 無参照で残った孤児 install を拾って偽陽性になる。
-  dotfiles を触る前に実 login shell（`zsh -i -c 'mise doctor'`）で再現するかを確認して切り分ける
+  dotfiles を触る前に実 shell（`zsh -l -i -c 'mise doctor'`）で再現するかを確認して切り分ける
