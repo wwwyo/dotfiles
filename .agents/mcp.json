@@ -1,8 +1,1 @@
-{
-  "mcpServers": {
-    "context7": {
-      "command": "context7-mcp",
-      "args": []
-    }
-  }
-}
+../home/dot_pi/agent/mcp.json
