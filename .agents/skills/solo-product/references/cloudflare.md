@@ -12,6 +12,7 @@ Cloudflare 固有の設定・制約はこの reference に集約する。公開�
 - **Bot Fight Mode は API client にも challenge を出し得る**。機械的アクセスを受け付ける zone では有効化しない — bot 対策は一律排除ではなく cache + rate limit で受ける（こちらも custom domain 必須）
 - **Workers Builds の結果は GitHub Actions の check には出ない**。build の成否・ログは `cf builds` か Cloudflare ダッシュボードで確認する（Actions 側を待っても来ない）。`watch_paths` には worker のエントリだけでなく共有依存ファイル（shared packages・共通設定）も含める — 含まれない変更では build が skip される
 - **Workers AI binding のキャンセルは伝播しない** — 呼び出し側を abort・timeout しても binding 側の推論は走り切る（課金と log に残る）
+- **`cf`（beta）では on/off・文字列などの scalar の `value` を取る zone 設定を変更できない** — `cf zones settings get always_use_https -z <zone>` で参照はできるが、`cf zones settings edit` に scalar の `value` を渡す専用 flag が無い（`cf schema zones settings edit` の requestBodyFields は `enabled`・`value-enabled`・`value-pool-id` 等の個別項目だけで `value` が無い。`cf` v1.0.0-beta.12 で確認 2026-10-13）。Always Use HTTPS（`always_use_https`）・min TLS version（`min_tls_version`）等を変えるにはダッシュボードか、認証付きの `PATCH /zones/{zone_id}/settings/{setting_id}` が要る（`cf` でやるなら `--body '{"value":"on"}'` に raw JSON を渡す形 — `--dry-run` で送出内容を確認済み）
 
 手元の AI Gateway 利用設定は [dev-env の AI Gateway 設定](../../dev-env/references/cloudflare.md)を参照する。
 
@@ -90,6 +91,7 @@ Cloudflare 固有の設定・制約はこの reference に集約する。公開�
 
 発生源の把握: Workers（request・CPU time・Workers Logs の書込）、外部 AI API（provider 側課金、Cloudflare 外）、KV/D1/R2（read/write/storage）、Queues、Logpush、ビルド分。Workers Paid は $5/月 minimum で request・CPU が月次 included + 従量。無料枠は request 100k/日・CPU 10ms/回。**Workers 自体の egress・bandwidth は課金なし**（2026-10-04 時点の Workers 料金ページ）— ただし Containers の network egress や R2 Infrequent Access の data retrieval など製品ごとの例外がある。使う製品の pricing を個別に確認する。
 
+- **静的サイトは entrypoint を持たない assets だけの Worker にする** — `assets`（`htmlHandling`・`notFoundHandling`）だけを書き `entrypoint` を省くと、Worker のコードなしで静的ファイルを配信できる（assets-only Worker。`cf` では asset source は build 由来で `assets.directory` は書かない）。静的アセットへの要求は無料・無制限で、課金されるのは Worker script が実行された要求だけ。`entrypoint`（Wrangler では `main`）を置くと、assets に一致しない非 navigation 要求（存在しない URL への curl・bot の無作為アクセス等）がすべて Worker 実行になり課金される。不一致時は `notFoundHandling: '404-page'` で Worker なしに 404 を返す。公開入口は custom domain だけにし、`workersDev: false`・`previewUrls: false` を明示する（§2・§3）。
 - Free プランは日次 100k request 制限（UTC 0 時 reset）。超過時の挙動は route の fail mode 次第: **fail closed は `1027` を返し、fail open は Worker を bypass**（Worker が無いものとして扱う）— fail open だと請求は止まっても Worker 内の認証・quota・CPU 上限も同時に止まるため、security-critical な Worker は公式も fail closed を推奨。fail mode は route ごとに設定する。Paid は request 無制限・CPU 5 分/回（default 30s）なので **暴走はそのまま請求になる**。denial-of-wallet 対策として `limits.cpu_ms`（Wrangler/`cloudflare.config.ts` または Settings > CPU Limits）で 1 呼出あたり CPU を絞る — 1 リクエストの最大消費は絞れるが、リクエスト総量は別に抑える（§4）。
 - 通知と強制の区別:
   - **Budget alerts**（Billing > Billable Usage）— アカウント横断の usage-based 支出が閾値を超えたらメール。**informational only で、サービスを止めない・上限でもない**。請求確定は invoice。
@@ -99,7 +101,7 @@ Cloudflare 固有の設定・制約はこの reference に集約する。公開�
 - 観測: Billable Usage dashboard（invoice と同じ系統の日次内訳）、Workers Analytics、Workers Logs/Logpush。通知は Budget alerts + 製品別 usage notification を併用し、閾値は「月予算の 50%/80%」のように段階化する。
 - ロールバック: Versions/Deployments から前の version へ戻せる。version にはコード・binding・その時点の secret 値が含まれるため、rotate 後に巻き戻すと旧 secret が復活し得る（[共通の運用・復旧](cost.md#運用復旧)）。version 外の state（routes・workers.dev・custom domain・Access・保存データ）は戻らない — 入口の desired state は config 側で管理する。
 
-出典: https://developers.cloudflare.com/workers/platform/pricing/、https://developers.cloudflare.com/workers/platform/limits/、https://developers.cloudflare.com/billing/manage/budget-alerts/、https://developers.cloudflare.com/billing/manage/billable-usage/ （確認 2026-10-04）。rollback の secret・設定範囲は [Workers rollbacks](https://developers.cloudflare.com/workers/versions-and-deployments/rollbacks/)（確認 2026-10-08）。
+出典: https://developers.cloudflare.com/workers/platform/pricing/、https://developers.cloudflare.com/workers/platform/limits/、https://developers.cloudflare.com/billing/manage/budget-alerts/、https://developers.cloudflare.com/billing/manage/billable-usage/ （確認 2026-10-04）。assets-only Worker と静的配信の課金は https://developers.cloudflare.com/workers/static-assets/billing-and-limitations/ （"Requests to static assets are free and unlimited"）、https://developers.cloudflare.com/workers/static-assets/routing/worker-script/ （asset 不一致時は Worker script を呼ぶ）、https://developers.cloudflare.com/workers/static-assets/routing/static-site-generation/ （assets のみの設定例・"Requests are only billable if a Worker script is invoked"）、https://developers.cloudflare.com/cf/projects/cloudflare-config/ （"An assets-only Worker can omit `entrypoint`"、`assets`/`workersDev`/`previewUrls`）（確認 2026-10-13）。rollback の secret・設定範囲は [Workers rollbacks](https://developers.cloudflare.com/workers/versions-and-deployments/rollbacks/)（確認 2026-10-08）。
 
 ## 7. config/IaC と dashboard state の境界
 
@@ -107,7 +109,11 @@ Cloudflare 固有の設定・制約はこの reference に集約する。公開�
 - config で管理できない・別管理の state: Access application・service token・WAF custom rule・Turnstile widget・Zero Trust 設定・Budget alerts・deploy された secret 値。これらは API/dashboard の操作対象。`cloudflare.config.ts` に書けないからと宣言できるとは限らない — 「管理対象外であること」をプロジェクトの docs に明記する。
 - Wrangler にだけある設定と cf にだけある設定があるので、プロジェクトがどちらで deploy するかを確認してから config を書く。未移行 Wrangler プロジェクトに cf 前提の記述を足さない。
 - secret の値そのものは config に書かない（`wrangler secret put` 相当の API / cf の secret 操作で入れる）。
-- 公開サービスは https のみで配信する。セキュリティの前提として、zone 設定の Always Use HTTPS（`always_use_https`）を on にして http を 301 → https にする（確認: `curl -sI http://<domain>/`）。off のままだと http/https 両方で 200 配信され、平文アクセスを許すうえ重複コンテンツにもなり得る。
+- 公開サービスは https のみで配信する。セキュリティの前提として、zone 設定の Always Use HTTPS（`always_use_https`）を on にして http を 301 → https にする（確認: `curl -sI http://<domain>/`）。off のままだと http/https 両方で 200 配信され（暗号化モード Flexible 以上の場合。Off では https が http へ倒され AUH 自体出ない）、平文アクセスを許すうえ重複コンテンツにもなり得る。zone 単位の設定なので、その zone で最初のホスト名を公開するときに一度確認する。SSL/TLS 暗号化モード（Off/Flexible/Full/Full (strict)）は Cloudflare→origin の接続の暗号化方式で、訪問者→Cloudflare を https に寄せる Always Use HTTPS とは別物。
+- HSTS は Always Use HTTPS の後に有効化する — https で配信できることを確かめてから入れる（公式の要件も「HSTS より先に HTTPS を有効化」）。zone 設定 `security_header`（ダッシュボードは SSL/TLS > Edge Certificates > HTTP Strict Transport Security）で設定し、Workers の custom domain にも zone 設定で付く（fudoki.dev の docs・api 両ホストの https 応答に `strict-transport-security: max-age=15552000; includeSubDomains; preload` と `x-content-type-options: nosniff` が付くことを `curl -sI https://<host>/` で確認 2026-10-13）。`includeSubDomains` は zone 配下の全サブドメインを https 必須にする。`preload` はヘッダを付けただけでは登録されず、hstspreload.org への登録でブラウザに組み込まれる — 取り消しの反映には数か月かかる。max-age を長くするほど取り消しが遅れる。
+- HSTS の変更に `cf` の専用 flag は使えない — schema に `value-strict-transport-security-*` はあるが、現 beta（v1.0.0-beta.12）では implications の検証で弾かれる。ダッシュボードか、認証付きの `PATCH /zones/{zone_id}/settings/security_header`（`cf` でやるなら `--body '{"value":{"strict_transport_security":{...}}}'` に raw JSON を渡す形 — `--dry-run` で送出内容を確認済み、実変更は未実施）が要る。
+
+出典: https://developers.cloudflare.com/ssl/edge-certificates/additional-options/always-use-https/ （訪問者の全 http 要求を https へ redirect、API は `always_use_https` への PATCH、確認 2026-10-13）、https://developers.cloudflare.com/ssl/origin-configuration/ssl-modes/ （暗号化モードは訪問者↔Cloudflare と Cloudflare↔origin の2接続の管理、確認 2026-10-13）、https://developers.cloudflare.com/ssl/edge-certificates/additional-options/http-strict-transport-security/ （HTTPS 先行の要件・`security_header` への PATCH・設定項目、確認 2026-10-13）、https://hstspreload.org/ （ヘッダだけでは登録されず申請が必要・取り消しは遅い、確認 2026-10-13）。
 
 ## 8. Workers の入力上限と AI Gateway の支出制御
 

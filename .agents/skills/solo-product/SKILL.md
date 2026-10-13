@@ -33,7 +33,7 @@ description: "個人開発のサービスを公開・運用・緊急停止する
 
 フェーズ別の読み方:
 
-- **公開前** — 上の「判断の順序」を実行し、利用する provider reference の該当節（公開する入口だけ読めばよい）と security.md の「公開前に必須」へ進む。
+- **公開前** — 上の「判断の順序」を実行し、利用する provider reference の該当節（公開する入口だけ読めばよい）と security.md の「公開前に必須」へ進む。zone で最初のホスト名を公開するときは [Always Use HTTPS と HSTS の確認](references/cloudflare.md#7-configiac-と-dashboard-state-の境界) を必須項目にする — どちらも zone 単位の設定で、AUH が off のままだと http でも 200 が返る。HSTS は https 配信の確認後に有効化する。
 - **運用中** — cost.md の観測・通知を設定済みか定期的に確認し、security.md のローテーション・依存更新を回す。
 - **緊急時（abuse・請求異常・secret 漏洩）** — cost.md の kill switch / 停止操作と security.md の漏洩時対応から先に実行し、事後に恒久対策へ戻る。
 
