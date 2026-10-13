@@ -1,5 +1,6 @@
 """Exercise CLI error handling and dispatch recovery without live services."""
 
+import importlib.util
 import json
 import os
 import shlex
@@ -219,6 +220,58 @@ class OrcaCliTest(unittest.TestCase):
                 self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
                 self.assertIn(expected, json.loads(result.stdout)["error"])
                 self.assertFalse((self.root / "registered").exists())
+
+
+class MergeableSettleTest(unittest.TestCase):
+    """GitHub の mergeable は非同期計算のため、UNKNOWN の間だけ取り直す。"""
+
+    def _load(self):
+        spec = importlib.util.spec_from_file_location("pr_triage_under_test", SCRIPT)
+        mod = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(mod)
+        mod.MERGEABLE_RETRY_WAIT_S = 0  # テストでは sleep しない
+        return mod
+
+    def test_transient_unknown_is_refetched_until_settled(self):
+        mod = self._load()
+        seq = [{"mergeable": "UNKNOWN", "number": 1},
+               {"mergeable": "MERGEABLE", "number": 1}]
+        calls = []
+
+        def fake_gh_json(args, **kwargs):
+            calls.append(args)
+            return dict(seq[min(len(calls) - 1, len(seq) - 1)])
+
+        mod.gh_json = fake_gh_json
+        view = mod.pr_view("wwwyo/fixture", 1)
+        self.assertEqual(view["mergeable"], "MERGEABLE")
+        self.assertEqual(len(calls), 2)
+
+    def test_settled_mergeable_is_fetched_once(self):
+        mod = self._load()
+        calls = []
+
+        def fake_gh_json(args, **kwargs):
+            calls.append(args)
+            return {"mergeable": "CONFLICTING", "number": 1}
+
+        mod.gh_json = fake_gh_json
+        view = mod.pr_view("wwwyo/fixture", 1)
+        self.assertEqual(view["mergeable"], "CONFLICTING")
+        self.assertEqual(len(calls), 1)
+
+    def test_persistent_unknown_returns_after_bounded_retries(self):
+        mod = self._load()
+        calls = []
+
+        def fake_gh_json(args, **kwargs):
+            calls.append(args)
+            return {"mergeable": "UNKNOWN", "number": 1}
+
+        mod.gh_json = fake_gh_json
+        view = mod.pr_view("wwwyo/fixture", 1)
+        self.assertEqual(view["mergeable"], "UNKNOWN")
+        self.assertEqual(len(calls), mod.MERGEABLE_RETRY)
 
 
 if __name__ == "__main__":

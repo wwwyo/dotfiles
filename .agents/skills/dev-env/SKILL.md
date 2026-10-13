@@ -19,7 +19,7 @@ description: "dotfiles で管理する開発環境の tool 設定・hooks・tele
 | --- | --- |
 | Orca の keybindings・ショートカット可否・browser のフォーカス移動・CLI 補足・issue 起票 | [references/orca.md](references/orca.md) |
 | macOS アプリを brew/cask/run_once で code 管理する判断 | [references/macos-app-install.md](references/macos-app-install.md) |
-| Claude Code の settings.json（env・sandbox）を触る | [references/claude-code.md](references/claude-code.md) |
+| Claude Code の settings.json（env・sandbox）や project memory を触る | [references/claude-code.md](references/claude-code.md) |
 | Codex CLI の stdin・出力・起動不調を調べる | [Codex の実行・診断手順](../delegate/references/codex.md) |
 | Codex の config.toml の key 意味（features gate・memories 等）を調べる | [references/codex.md](references/codex.md) |
 | pi の設定・認証・モデル・sandbox・起動不調を調べる | [references/pi.md](references/pi.md) |
