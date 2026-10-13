@@ -10,11 +10,16 @@ GO_MOD_MB="${GO_MOD_MB:-5000}"
 GO_BUILD_MB="${GO_BUILD_MB:-5000}"
 BUN_MB="${BUN_MB:-2000}"
 NPM_MB="${NPM_MB:-2000}"
+UV_MB="${UV_MB:-5000}"
+CONTAINER_IMAGE_MB="${CONTAINER_IMAGE_MB:-3000}"
 
 GO_MOD_DIR="$(go env GOMODCACHE 2>/dev/null || echo "$HOME/go/pkg/mod")"
 GO_BUILD_DIR="$(go env GOCACHE 2>/dev/null || echo "$HOME/Library/Caches/go-build")"
 BUN_DIR="$HOME/.bun/install/cache"
 NPM_DIR="$HOME/.npm/_cacache"
+UV_DIR="$(uv cache dir 2>/dev/null || echo "$HOME/.cache/uv")"
+# image の実体（layer blob）。snapshots/containers は build・実行中 container の分なので測らない
+CONTAINER_CONTENT_DIR="$HOME/Library/Application Support/com.apple.container/content"
 
 failed=""
 freed_mb=0
@@ -43,6 +48,22 @@ gated_step() {
   fi
 }
 
+# 他の uv process（長時間の uv run 等）が cache lock を持つ間は clean が待ち続ける。
+# --force で奪うと実行中の環境を壊すので、lock 待ちが timeout したら skip 扱いにする
+uv_cache_clean() {
+  local out
+  if out="$(UV_LOCK_TIMEOUT=60 uv cache clean 2>&1)"; then
+    return 0
+  fi
+  if grep -q 'waiting for lock' <<<"$out"; then
+    echo "    uv cache in use by another uv process; skipped"
+    freed_mb=$((freed_mb - $(size_mb "$UV_DIR")))
+    return 0
+  fi
+  echo "$out" >&2
+  return 1
+}
+
 # 未参照分のみを回収するため再取得コストが無い。閾値を置かず毎回実行する
 always_step() {
   local label="$1"
@@ -56,8 +77,17 @@ gated_step "go buildcache" "$GO_BUILD_DIR" "$GO_BUILD_MB" go clean -cache
 gated_step "bun cache" "$BUN_DIR" "$BUN_MB" \
   bash -c 'find "$HOME/.bun/install/cache" -mindepth 1 -delete 2>/dev/null'
 gated_step "npm cacache" "$NPM_DIR" "$NPM_MB" npm cache clean --force
+gated_step "uv cache" "$UV_DIR" "$UV_MB" uv_cache_clean
+if command -v container >/dev/null 2>&1 && container system status >/dev/null 2>&1; then
+  # -a は未使用の tagged image も消す（再 pull・再 build のコストを閾値で受ける）
+  gated_step "container images" "$CONTAINER_CONTENT_DIR" "$CONTAINER_IMAGE_MB" container image prune -a
+else
+  printf '==> %-24s skip  (container system not running)\n' "container images"
+fi
 
 always_step "go testcache" go clean -testcache
+# どの tracked config からも要求されない古い tool version だけを消す
+always_step "mise prune" mise prune -y
 always_step "pnpm store prune" pnpm store prune
 # simctl は full Xcode（simulator runtime）が無いマシンでは `xcrun: unable to
 # find utility "simctl"` で必ず失敗する。Xcode 不在は閾値判定と無関係な
@@ -72,7 +102,7 @@ else
 fi
 
 echo
-echo "freed: ${freed_mb}MB (閾値超過分のみ。pnpm/simctl の回収量は含まない)"
+echo "freed: ${freed_mb}MB (閾値超過分のみ。pnpm/simctl/mise prune の回収量は含まない)"
 if [ -n "$failed" ]; then
   echo "failed:$failed"
   exit 1
