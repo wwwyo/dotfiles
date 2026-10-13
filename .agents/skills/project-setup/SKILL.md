@@ -180,7 +180,7 @@ lockfile を commit する JS/TS の package manager（bun / npm / pnpm / yarn�
 
 - `~/src/github.com/wwwyo/me/wiki/<pj>/` に dir + `index.md` + hub ページ `<pj>.md` を作る。OKF frontmatter は **hub ページだけ**に付ける（`tags` 先頭は PJ domain 名。`index.md` は予約 meta で frontmatter を持たず、付けても無視される）。`<pj>/index.md` には `* [title](<pj>.md) - description` 形式で hub のエントリを置き、hub ページには repo リンク・Phase・「何であるか」の1段落を書く
 - `~/src/github.com/wwwyo/me/.agents/skills/wiki-lint/tools/okf_check.py` の `ALLOWED_DOMAINS` に PJ domain を追記
-- `wiki/index.md` の Map に domain index への link を足し、`wiki/log.md` に Creation エントリを追記
+- `wiki/index.md` の Map に domain index への link を足す
 - `wiki/life/project-focus.md` の PJ 一覧・フォーカスに反映する
 - `wiki` skill に従って検証し、`wwwyo/me` の `AGENTS.md` の checkout 規約に従って、この PJ 登録で変更したファイルだけを stage・commit・push する。push の成功までをステップ 14 の完了条件とする
 
