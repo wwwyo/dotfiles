@@ -536,6 +536,7 @@
       "allowWrite": [
         "~/.sf",
         "~/.npm/_cacache",
+        "~/.bun",
         "~/.cache",
         "~/.docker",
         "~/.local/share",
