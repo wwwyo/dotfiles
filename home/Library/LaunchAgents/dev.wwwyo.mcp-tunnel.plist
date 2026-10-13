@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  MCP Server Portal（mcp.wwwyo.dev）から、この Mac の loopback 上の MCP へ届ける Cloudflare Tunnel。
+  Tunnel はリモート管理（ingress・warp-routing・route は Cloudflare 側）なので、手元は token だけで動く。
+
+  なぜ /bin/zsh -c で包むか: ai.devin.worker.plist と同じ。plist は ~ や $HOME を展開しない。
+
+  token の扱い:
+    MCP_PORTAL_TUNNEL_TOKEN は ~/.config/mise/config.mcp-tunnel.toml に age 暗号文で置き、
+    MISE_ENV=mcp-tunnel のときだけ復号される。復号鍵は Keychain（mise-age-key）から起動時に読む。
+    cloudflared には TUNNEL_TOKEN として env でだけ渡し、argv に載せない。
+    MISE_AGE_KEY と元の変数は exec 前に unset し、cloudflared の env に残さない。
+-->
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>Label</key>
+	<string>dev.wwwyo.mcp-tunnel</string>
+	<key>ProgramArguments</key>
+	<array>
+		<string>/bin/zsh</string>
+		<string>-c</string>
+		<string>export PATH="$HOME/.local/bin:$HOME/.local/share/mise/shims:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin"; [ -f "$HOME/.config/mise/config.mcp-tunnel.toml" ] || exit 0; cd "$HOME" || exit 1; MISE_AGE_KEY="$(security find-generic-password -a "$(id -un)" -s mise-age-key -w)" || exit 1; export MISE_AGE_KEY MISE_ENV=mcp-tunnel; exec mise exec -- /bin/sh -c '[ -n "$MCP_PORTAL_TUNNEL_TOKEN" ] || { echo "MCP_PORTAL_TUNNEL_TOKEN is empty" &gt;&amp;2; exit 1; }; export TUNNEL_TOKEN="$MCP_PORTAL_TUNNEL_TOKEN"; unset MCP_PORTAL_TUNNEL_TOKEN MISE_AGE_KEY; exec cloudflared tunnel --config /dev/null --no-autoupdate --loglevel warn run' &gt;&gt; "$HOME/Library/Logs/mcp-tunnel.log" 2&gt;&amp;1</string>
+	</array>
+	<key>EnvironmentVariables</key>
+	<dict>
+		<key>LANG</key>
+		<string>ja_JP.UTF-8</string>
+	</dict>
+	<key>RunAtLoad</key>
+	<true/>
+	<!-- 設定ファイルが無い Mac では guard が exit 0 し、再起動しない。異常終了時だけ 30s 間隔で再起動する -->
+	<key>KeepAlive</key>
+	<dict>
+		<key>SuccessfulExit</key>
+		<false/>
+	</dict>
+	<key>ThrottleInterval</key>
+	<integer>30</integer>
+</dict>
+</plist>
