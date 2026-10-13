@@ -96,6 +96,8 @@ MAX_PAGES = 20              # ページング暴走の止血帯
 PR_ENUM_LIMIT = 100         # search の page size。total > limit*pages は fail-closed
 JUDGE_POLICY_VERSION = 10  # mise tool pin は devDependencies 相当で自動 ok
 DISPATCH_MSG_MAX = 3500     # terminal send へ送る指摘一覧の上限 chars
+MERGEABLE_RETRY = 3         # GitHub の mergeable は非同期計算。UNKNOWN のとき取り直す回数
+MERGEABLE_RETRY_WAIT_S = 2  # 取り直しの間隔（秒）
 try:
     SEND_WAIT_S = max(0, int(os.environ.get("PR_WATCH_SEND_WAIT_S", "30")))
 except ValueError:
@@ -292,11 +294,24 @@ def pr_view(repo, number):
     # reviews は gh 内蔵の件数上限で切られ得るので --json からは外し、
     # 必要な経路では pr_reviews() で取り直す（古い CHANGES_REQUESTED が
     # 落ちると unaddressed が消えて fail-open になるため暗黙の上限を使わない）
-    return gh_json(["pr", "view", str(number), "--repo", repo, "--json",
-                    "number,title,body,author,isDraft,state,mergeable,"
-                    "reviewDecision,headRefOid,headRefName,"
-                    "baseRefName,baseRefOid,url,comments,commits,"
-                    "statusCheckRollup"])
+    fields = ("number,title,body,author,isDraft,state,mergeable,"
+              "reviewDecision,headRefOid,headRefName,"
+              "baseRefName,baseRefOid,url,comments,commits,"
+              "statusCheckRollup")
+    v = gh_json(["pr", "view", str(number), "--repo", repo,
+                 "--json", fields])
+    # GitHub の mergeable は非同期計算で、push 直後の PR は一時的に UNKNOWN を
+    # 返す。UNKNOWN は「merge 不可」ではなく「未計算」— これを確定値として
+    # 扱うと、plan が hold を出し、judge-result の merge_ready も false に
+    # なって次 tick（30分後）まで手戻りする。数秒待てば MERGEABLE /
+    # CONFLICTING に確定するので、ここで取り直してから返す。
+    for _ in range(MERGEABLE_RETRY - 1):
+        if (v.get("mergeable") or "").upper() not in ("", "UNKNOWN"):
+            break
+        time.sleep(MERGEABLE_RETRY_WAIT_S)
+        v = gh_json(["pr", "view", str(number), "--repo", repo,
+                     "--json", fields])
+    return v
 
 
 def pr_reviews(repo, number):

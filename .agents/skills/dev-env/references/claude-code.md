@@ -12,7 +12,17 @@ subagent の入れ子を禁止する。`1` は「main conversation の下に sub
 
 個別の agent だけ止めたいときは、その定義の `tools` から `Agent` を外すか `disallowedTools` に入れる。
 
+## project memory
+
+Claude Code の「project memory」は repo 内の `AGENTS.md`/`CLAUDE.md` とは別で、`~/.claude/projects/<path-slug>/memory/` に `MEMORY.md`（索引）と `memory/<slug>.md`（本体）として置かれる。slug は workdir の `/` を `-` に置換したもの。ユーザーが「その方針 AGENTS.md に書いたっけ」と聞いても実体がここにあることがあるので、repo 内 docs を探す前に候補に入れる — `rg` は `$HOME` の `.claude` を repo 内検索では見ないため、repo を grep しても見つからない。
+
+方針の削除依頼では本体と `MEMORY.md` の索引行を両方消す — 索引が残ると方針が生き続ける。削除後は対象 repo の docs・`.agents/skills`・他 repo を横断 grep して消し漏れを確認する。`~/.claude/state/langfuse_state.json` と session ログ（`.claude`/`.pi` の jsonl）は設定・方針の正本ではなく会話履歴・telemetry の生ログなので削除対象にしない。
+
 ## `sandbox`
+
+### `filesystem.allowWrite`
+
+- `excludedCommands` に入れたコマンドは sandbox 外で走るので、`allowWrite` を足してもそのコマンド自身の読み書きは変わらない。`allowWrite` が効くのは sandbox 内で動くコマンドが間接的にその path を読み書きする経路 — 例: `bun` を `excludedCommands` に入れていても、`bunx` 経由で起動するツールや cache を直読み書きする script は sandbox 内なので `~/.bun` の書込み許可が要る。許可を足すときはどの経路に効くのかを切り分けて説明する
 
 ### `network.allowUnixSockets`
 

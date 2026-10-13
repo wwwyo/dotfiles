@@ -9,7 +9,7 @@ description: 3日ごと、閾値を超えたキャッシュと不要になった
 
 ## 1. キャッシュ
 
-`mise clean-cache` を実行する。各キャッシュが閾値（go modcache / buildcache 5GB、bun / npm 2GB）を超えたときだけ削除し、未満なら skip する。
+`mise clean-cache` を実行する。各キャッシュが閾値（go modcache / buildcache 5GB、bun / npm 2GB）を超えたときだけ削除し、未満なら skip する。`simctl unavailable`（未参照 simulator の削除）は full Xcode＋simulator runtime が無い環境では `skip (simctl なし…)` 表示になり、`failed:` や exit 1 にはならない — Xcode 不在は閾値判定と無関係な恒常的な環境要因なので異常に数えない。
 
 ## 2. git worktree / branch
 

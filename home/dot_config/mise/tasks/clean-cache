@@ -59,7 +59,17 @@ gated_step "npm cacache" "$NPM_DIR" "$NPM_MB" npm cache clean --force
 
 always_step "go testcache" go clean -testcache
 always_step "pnpm store prune" pnpm store prune
-always_step "simctl unavailable" xcrun simctl delete unavailable
+# simctl は full Xcode（simulator runtime）が無いマシンでは `xcrun: unable to
+# find utility "simctl"` で必ず失敗する。Xcode 不在は閾値判定と無関係な
+# 恒常的な環境要因なので、異常として exit 1 にすると毎回 failed 表示になる。
+# utility の有無を先に確認し、無い環境では skip として報告する
+# （Xcode があって実際に失敗した場合は従来どおり failed に載る）。
+if xcrun --find simctl >/dev/null 2>&1; then
+  always_step "simctl unavailable" xcrun simctl delete unavailable
+else
+  printf '==> %-24s skip  (simctl なし: Xcode / simulator runtime 未導入)\n' \
+    "simctl unavailable"
+fi
 
 echo
 echo "freed: ${freed_mb}MB (閾値超過分のみ。pnpm/simctl の回収量は含まない)"
