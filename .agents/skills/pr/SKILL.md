@@ -121,7 +121,7 @@ CI・レビューが既に完了し、以下の終了条件を全て満たして
 
 - QA対象ならstep 4で対象要件の検証が現在のPR headで成功している。QA対象外なら現在のdiffにもその判断が適用でき、理由がPR bodyに記録されている
 - required な check が全て pass している（`gh pr checks --required` が exit 0）。required checkが設定されていない場合の`no required checks reported`は失敗として扱わず、`statusCheckRollup`で実際のCI結果を確認する。レビュー以外のnon-requiredなadvisory checkは終了をブロックしない
-- 開始されたレビューが全て終了している。required / non-requiredを問わず、レビューが待機中・進行中ならdraftを維持する。外部レビュアーが rate limit・利用上限で途中終了した場合は「終了」と見なさない — rollup が全部 pass に見えても未カバー範囲が残るので pass 扱いにせず、未確認としてユーザーに報告する
+- 開始されたレビューが全て終了している。required / non-requiredを問わず、レビューが待機中・進行中ならdraftを維持する。ただしCodeRabbitは例外とし、未実施・待機中・進行中・rate limitや利用上限による途中終了のいずれもreadyの必須条件にしない。CodeRabbitの結果待ちを理由にユーザー確認を追加しない
 - コンフリクトしていない（`mergeable` が CONFLICTING でない）
 - 未対応のレビューコメントがない（AIボットのコメントは対応済み、人間のコメントはユーザーに報告済み）
 - 上記を全て満たした場合、監視を終えてユーザーにPRの状態を報告する
