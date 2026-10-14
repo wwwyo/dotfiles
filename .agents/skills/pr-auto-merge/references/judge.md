@@ -45,6 +45,26 @@ python3 ~/.agents/skills/pr-auto-merge/tools/pr_triage.py judge-result \
 
 mise の `[tools]` は開発用依存（devDependencies 相当）として扱う。Renovate と Dependabot に同じ規則を適用し、`mise.toml`・`.mise.toml`・`.config/mise/config.toml`・`home/dot_config/mise/config.toml` の固定 semver pin 更新だけなら、major・0.x minor・prerelease の更新を含め script が自動 ok とする。同じ dir の `mise.lock` は対応 manifest の写像として除外する。tool の追加/削除・downgrade・range/alias・installer option・`[settings]`/`[env]` 等の変更が混ざるものは judge に残す。CI・review・always-hold・merge 直前の再検証は維持する。
 
+## merge_ready が false のとき（blocked の読み方）
+
+`ok` を登録しても `merge_ready: false` が返るのは正常経路（judge の ok は
+lane への推薦で、merge の発行は script が hard gate の再検証後に行う）。
+`blocked` の理由で次 tick の扱いが変わる:
+
+- `judge ok stale: ...` — 記録済み verdict はあるが、live の head/本文/base/
+  check rollup が判定時と一致しない。`judge-input` の後に CI check や
+  pullfrog-approval が進むと起きる。次 tick に新しい材料で再判定する
+  （エラーや手順ミスではない）。head が動いたなら新しい差分を判定する。
+- `no judge ok ...` — 現在 head に紐付く ok verdict が無い。judge action を
+  まだ処理していないか、ng/repair が記録されている。
+- `pullfrog-approval not success (...)` — review の承認が現在 head に無い。
+  bot 依存更新・確認済み追従の whitelist 経路以外は merge できない。
+- `draft (author ready 待ち)` — draft は author が未完成と明示した PR で、
+  lane の judge/merge 対象外。draft のまま pullfrog が承認を保留すると
+  pullfrog-approval が FAILURE になり、`gh pr ready` は hard gate 通過後
+  （merge 実行時）にしか走らないため lane の順序では解けない — judge を
+  回さず hold にし、author の ready 化を待つ。
+
 ## QA と Blast Radius
 
 PR の自己申告をそのまま採用せず、影響の深刻さ・検証状況・復旧可能性から

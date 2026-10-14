@@ -82,6 +82,12 @@ Langfuse の OTLP endpoint は traces しか受けないため hook/plugin 経�
   公式 package が引き続き動く。新しい hook の trust は `/hooks` で確認する。
 - **trace の確認は v2 API**: `GET /api/public/v2/observations?fields=core,basic,model,usage,metadata`
   （legacy `/api/public/traces` は 410。fields 指定しないと model/usage が返らない）
+- **telemetry 配線の疎通確認は最小 probe**: 検証対象の worktree で agent を
+  起動し、session 名を `langfuse-live-check-<source>-<YYYYMMDD>` にして
+  「ツールを使わず『ok』とだけ返答して」の 1 turn を投げる。tool を使わせない
+  ので observation の形（turn 集約 vs full）に依存せず、日付 suffix で同種
+  probe や batch の他 session と区別できる。到達は上の v2 API で session 名を
+  引いて確認する（probe しただけでは配線の成否は分からない）
 - **units 課金は取り込み件数ベースで保存量ではない** — cloud 上の trace を消しても
   units は戻らないので export→削除は節約にならない。削る手段は送信する observation
   数を減らすことだけ（turn/full 集約の動機）。SDK の sampling は trace 単位なので

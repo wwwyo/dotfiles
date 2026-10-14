@@ -386,6 +386,14 @@ assert ok, reasons
 ok, _ = pt.hard_gate(f, judge={"sha": "sha1", "verdict": "ng", "policy_version": pt.JUDGE_POLICY_VERSION, "context_hash": pt.pr_context_hash(v)}, via="lane")
 assert not ok
 
+# judge ok でも head が動いたら stale の理由を出す（次 tick の再判定対象）
+ok, reasons = pt.hard_gate(f, judge={"sha": "oldsha", "verdict": "ok", "policy_version": pt.JUDGE_POLICY_VERSION, "context_hash": pt.pr_context_hash(v)}, via="lane")
+assert not ok and any("judge ok stale" in r and "head moved" in r for r in reasons), reasons
+# body が変わったら stale（context_hash 不一致）
+vb = view(body="changed", statusCheckRollup=[check("ci"), check("pullfrog-approval")])
+ok, reasons = pt.hard_gate(facts(view=vb, files=["package.json"], required=["ci"]), judge={"sha": "sha1", "verdict": "ok", "policy_version": pt.JUDGE_POLICY_VERSION, "context_hash": pt.pr_context_hash(v)}, via="lane")
+assert not ok and any("judge ok stale" in r and "re-judge" in r for r in reasons), reasons
+
 # bot_dep whitelist: judge-ok@head なら approval 無しで pass
 vbot = view(author={"login": "dependabot[bot]", "is_bot": True},
             statusCheckRollup=[check("ci")])
@@ -407,6 +415,14 @@ ok, reasons = pt.hard_gate(facts(view=v2, files=[".github/workflows/x"],
                                  required=["ci"]),
                            via="deep", expect_sha="sha1")
 assert not ok and "unsupported merge route" in reasons[0], reasons
+
+# ============================ draft は lane 対象外 ============================
+# draft は judge/merge に進まず hold（pullfrog が draft を承認保留して
+# hard gate が解けなくなるデッドロックを避ける）
+dec = pt.compute_pr_decision({"repo": "wwwyo/me", "number": 9},
+                             facts(view=view(isDraft=True)), [], {}, {})
+assert [a["type"] for a in dec["actions"]] == ["hold"], dec
+assert "draft" in dec["actions"][0]["reason"], dec
 
 # ============================ dispatch routing ============================
 wt = lambda **kw: dict({"worktreeId": "r::w1", "repo": "me",
@@ -1390,7 +1406,7 @@ with mock.patch.object(pt, "file_at_ref",
     assert not ok and any("head moved" in r for r in reasons)
     # 同じ head で再評価しても runtime major は自動 ok にならない
     ok, reasons = pt.hard_gate(f, via="lane")
-    assert not ok and any("judge ok or dependency auto-ok" in r for r in reasons)
+    assert not ok and any("no judge ok" in r for r in reasons)
 # 自動 ok でも残る hard gate（required CI・unaddressed・always-hold）は緩めない
 with mock.patch.object(pt, "file_at_ref", side_effect=refs(minor_b, minor_h)):
     f = dep_facts(files=files_pkg, required=["ci"],

@@ -1248,8 +1248,23 @@ def hard_gate(facts, judge=None, via="lane", expect_sha=None):
         facts["dep_auto_ok"] = dep_auto  # merge の event 記録が再利用する
         auto_ok = dep_auto_ok_eligible(dep_auto, j, head, pr)
         if not (jok or auto_ok):
-            r.append("no QA/Blast Radius judge ok or dependency auto-ok "
-                     "bound to current head and evidence")
+            # verdict はあるが current head/材料に束縛されていないのか、ok 自体が
+            # 無いのかを分けて出す — 前者は「次 tick で再判定」、後者は「まだ
+            # judge action を処理していない」で executor/report の扱いが変わる。
+            jj = judge or {}
+            if jj.get("verdict") == "ok":
+                if jj.get("sha") and head and jj.get("sha") != head:
+                    r.append(f"judge ok stale: head moved "
+                             f"{str(jj['sha'])[:8]} -> {head[:8]}")
+                elif jj.get("policy_version") != JUDGE_POLICY_VERSION:
+                    r.append(f"judge ok stale: policy_version "
+                             f"{jj.get('policy_version')} != "
+                             f"{JUDGE_POLICY_VERSION}")
+                else:
+                    r.append("judge ok stale: body/base/check evidence "
+                             "changed since judge-input (re-judge required)")
+            else:
+                r.append("no judge ok bound to current head and evidence")
         # bot 依存更新・確認済み追従の whitelist 経路は pullfrog-approval を要求しない
         # （pullfrog は非 collaborator の bot PR を review しないため check が
         # 付かない）。script 自動 ok と有効な judge ok の両方で免除が効く。
@@ -1728,6 +1743,16 @@ def compute_pr_decision(pr, facts, worktrees, terms_cache, state):
         else:
             entry["actions"].append({"type": "hold", "reason": why})
         # 対応すべき障害がある限り lane 判定に進まない
+        return entry
+
+    # draft は author が「未完成」と明示した PR。lane は merge 可否を見る
+    # 場所なので、ready 化されるまで judge/merge の対象にしない。draft の
+    # まま pullfrog が承認を保留すると pullfrog-approval が FAILURE になり、
+    # `gh pr ready` は hard gate 通過後（merge 実行時）にしか走らないため
+    # lane の順序では解けない — judge しては blocked を繰り返すだけになる。
+    if v.get("isDraft"):
+        entry["actions"].append({"type": "hold",
+                                 "reason": "draft (author ready 待ち)"})
         return entry
 
     # --- lane merge 候補判定 ---
@@ -2215,6 +2240,7 @@ def _cmd_judge_input(a):
     diff = review_diff(pr_diff(a.repo, a.number))
     emit({"ok": True, "repo": a.repo, "number": a.number,
           "sha": v.get("headRefOid"), "title": v.get("title"),
+          "draft": bool(v.get("isDraft")),
           "body": v.get("body") or "", "context_hash": pr_context_hash(v),
           "base": v.get("baseRefName"), "base_sha": v.get("baseRefOid"),
           "author": (v.get("author") or {}).get("login"),

@@ -117,6 +117,8 @@ Edge が `.svg` を奪っていくので、宣言して奪い返す運用にし�
 
 org 共通の defaults（日本語出力・重要度ラベルの instructions 等）は [`.github/pullfrog.org.config.sh`](.github/pullfrog.org.config.sh)（`--org wwwyo` scope）が正本で、repo 側で unset した key は org の値を継承する。`pullfrog config list --repo` は継承値を見せないので、実効値の監査は `--repo` と `--org` の両方を引く。`review.approve=false` でも `review.approval-check=true` が `pullfrog-approval` status check を出す — merge lane はこちらを見る。
 
+Pullfrog の GitHub Actions 課金上限は private repo の Actions 分にのみ効く。上限到達時に pullfrog が起動しないのは private repo だけで、public repo では起動する — 未起動を見たら visibility を先に切り分け、「全 repo で停止」と一般化しない。
+
 ## Story
 
 wwwyo は複数の coding agent を日々の開発に回し、その日の振り返りと学びの還元で開発環境を育て続けている。

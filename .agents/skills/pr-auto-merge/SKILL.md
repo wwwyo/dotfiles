@@ -143,7 +143,7 @@ merge N 件 / hold K 件 / error E 件
 
 ## Hold
 （merge されなかった open PR を 時刻（JST）|repo|PR|理由 の表で。always-hold path・
-judge ng・CI 待ち・dispatch 済みで author 対応待ちなど。judge ok 登録済みだが
+judge ng・draft（author ready 待ち）・CI 待ち・dispatch 済みで author 対応待ちなど。judge ok 登録済みだが
 残りの機械的条件（approval・CI・mergeable 等）を待っている PR は
 「judge ok 登録済み・<条件>待ち」と書き、「script判定待ち」のような曖昧な
 説明にしない。judge verdict は

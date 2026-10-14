@@ -11,6 +11,8 @@ description: 3日ごと、閾値を超えたキャッシュと不要になった
 
 `mise clean-cache` を実行する。各キャッシュが閾値（go modcache / buildcache / uv 5GB、bun / npm 2GB、container image 3GB）を超えたときだけ削除し、未満なら skip する。どの config からも要求されない古い mise tool version は `mise prune` で毎回消す。uv cache は他の uv process が lock を持っていれば skip する（`--force` で奪わない）。`simctl unavailable`（未参照 simulator の削除）は full Xcode＋simulator runtime が無い環境では `skip (simctl なし…)` 表示になり、`failed:` や exit 1 にはならない — Xcode 不在は閾値判定と無関係な恒常的な環境要因なので異常に数えない。
 
+cleanup の対象外だが、手動で「storage を空けて」と頼まれて消すときは次を消さない。`~/.rustup` は mise 管理 rust の本体を兼ねる — 丸ごと削除すると cargo/rustc が動かなくなる。古い版は `rustup toolchain uninstall <版>` で版単位に消し、残した版の `cargo --version` を確認する。`~/.codex` は `auth.json`・`config.toml` を含み、消すとログイン・設定が飛ぶ — 容量の大半は `sessions/` なのでそこだけを消す。
+
 ## 2. git worktree / branch
 
 対象は `~/src/github.com/wwwyo/` 配下の個人 repo のみ。**GitHub で archived 済みの repo は対象外** — 新しい merge も fetch 成功も起きないので、走査すると毎回 fetch 失敗のノイズになる。`gh repo view <name> --json isArchived -q .isArchived` で確認する。
