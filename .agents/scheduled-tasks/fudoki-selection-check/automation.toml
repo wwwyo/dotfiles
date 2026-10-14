@@ -1,0 +1,26 @@
+# fudoki-selection-check の orca automation desired state。
+# 風土記（wwwyo/fudoki）で、2025年度決算（令和7年度）を未選定の団体について、決算書が公表されたかを週1回確かめ、
+# 公表済みなら原典を選定・R2 へ保存して draft PR にする。取り込み（ingestion）はしない。
+# repo_path で run ごとに新しい worktree を立てる（選定の PR は run ごとに独立させる）。
+# 選定の R2 保存（archive.ts）はユーザーの許可済み。merge は pr-auto-merge かユーザー。
+
+name = "fudoki-selection-check"
+repo_path = "~/src/github.com/wwwyo/fudoki"
+provider = "claude"
+extra_agent_args = "--model claude-sonnet-5-5"
+enabled = true
+timezone = "Asia/Tokyo"
+
+# 毎週月曜 10:00。議会の決算認定は例年9〜11月で、公表は週単位で十分に追える。
+trigger = "0 10 * * 1"
+
+prompt = """
+この worktree（wwwyo/fudoki）で原典の選定の週次確認をする。まず repo root の AGENTS.md と `.agents/skills/pipeline/references/source-selection.md` を読む。
+1. `pipeline/source_selection/*.json` で、2025 settlement の `selected_candidate_id` が null の団体を一覧にする。
+2. 各団体の公式サイトの決算の頁で、令和7年度の歳入歳出決算書（事項別明細書を含むもの）が公表されたかを確かめる。ネットワークはサンドボックスの外で、User-Agent を付ける。主要施策の成果・決算概要だけの公表は選定しない（理由に存在を書く）。
+3. 公表済みなら、`.agents/skills/pipeline/references/source-selection.md` の選定の手順どおり候補を足して選定し、一般会計の歳出の scope を印字の頁で確かめて入れる（同じ資料の特別会計も）。`mise x -- bun pipeline/source_selection/archive.ts --write --jurisdiction <団体>` で保存する。この実行が出力する `objects[].keys[]` を `cf r2 objects get <key> --bucket-name fudoki-inputs` で読み戻し、台帳に記録した `files[].sha256` と突き合わせる。一致しなければ選定を確定せず、その団体を PR に含めず、不一致の頁・key を報告して止める（R2 の削除はしない）。
+4. 未公表の団体は台帳を変更しない。new-per-run の worktree では commit しない変更は次週に残らず、日時の更新だけでは PR の条件も満たさない。確認した頁・日時は run の記録に残す。
+5. `mise x -- bun pipeline/source_selection/check.ts` と `mise x -- bun run --cwd pipeline ingestion:check` を通す。
+6. 新しく選定した団体があれば draft PR を作る（本文に団体ごとの結果の表）。無ければ PR は作らず、変更も commit しない。
+取り込み・共通のコードの変更・R2 の削除はしない。
+"""
