@@ -100,9 +100,9 @@ QA担当は関連実装を読まず、要件と実際のUI/APIの振る舞いか
 
 PR作成後、CI の完了とレビューコメントの到着を監視する。**待機は CI 完了で起き、判定は起きた後の状態評価で行う**:
 
-1. `gh pr checks <PRのURL> --watch --fail-fast` で check の完了（または最初の fail）まで待つ。CI 待ちが監視時間の大半なので、固定間隔の polling より早く起きられ、check として走る review bot（pullfrog 等）もここで待てる。待機を `--required` に絞らないのは、required 未設定の repo では `--required` だと待たずに即終了するため（合否の判定は step 2 の `--required` で行う）。push 直後は check が未登録で `no checks reported` を返して即終了することがあるので、そのときは少し置いて再実行する
+1. `gh pr checks <PRのURL> --watch --fail-fast` で check の完了（または最初の fail）まで待つ。CI 待ちが監視時間の大半なので、固定間隔の polling より早く起きられ、check として走る review bot（pullfrog 等）もここで待てる。待機を `--required` に絞らないのは、required 未設定の repo では `--required` だと待たずに即終了するため（合否の判定は step 2 の `--required` で行う）。push 直後は check が未登録で `no checks reported` を返して即終了することがあるので、そのときは少し置いて再実行する。CodeRabbit の check だけが pending で他の check が揃ったら、その時点で 2 の評価へ進む（CodeRabbit の完了は待たない）
 2. 起きたら `gh pr checks <PRのURL> --required` + `gh pr view <PRのURL> --json statusCheckRollup,reviews,comments,mergeable,reviewDecision`（未 resolve の thread は `gh api graphql`）を取り直し、下の終了条件を評価する。待機コマンドの出力や exit code は起きる合図に使い、終了判定の根拠にしない
-3. 対応が必要なら対応して push し、1 に戻る。check にならないレビュー（Copilot review 等）だけが待機中・進行中なら、数分おきに 2 を評価する短い polling で待つ
+3. 対応が必要なら対応して push し、1 に戻る。check にならないレビュー（Copilot review 等。CodeRabbit は polling 対象から除く）だけが待機中・進行中なら、数分おきに 2 を評価する短い polling で待つ
 
 **待機は「完了で自分を起こせる」機構で回す。** 素の background 実行は終了を通知しない環境があり、終了に気づけず監視が死ぬ。harness に「background コマンドの終了で agent を再起動する」機構があればそれで待機コマンドを回す（Claude Code は Bash の `run_in_background` — その案内上も、1 回の完了待ちはこれ、出力の継続監視は `Monitor` と使い分ける）。background タスクは起動元の session と運命を共にするので、同期 subagent ではなく PR を所有する session で起動する。無ければ待機コマンドを foreground の blocking 呼び出しとして実行し、timeout で打ち切られたら旧 command が background に残っていないか確認してから再実行する（Claude Code は foreground の timeout を kill せず background へ移す）— 戻り値が返ること自体が起きる合図になる。sleep やポーリング間隔を LLM 側で自前管理すると受動的に凍りうる。session が閉じれば監視も止まる。`wwwyo/*` の長引く PR は merge 可否の triage だけを [pr-auto-merge](../pr-auto-merge/SKILL.md) の定期 lane が拾い、session 固有の報告・QA 再検証・完了通知は引き継がれない — 監視を止めるときは repo を問わず、その時点の PR の状態をユーザーに報告する。
 
@@ -121,7 +121,7 @@ CI・レビューが既に完了し、以下の終了条件を全て満たして
 
 - QA対象ならstep 4で対象要件の検証が現在のPR headで成功している。QA対象外なら現在のdiffにもその判断が適用でき、理由がPR bodyに記録されている
 - required な check が全て pass している（`gh pr checks --required` が exit 0）。required checkが設定されていない場合の`no required checks reported`は失敗として扱わず、`statusCheckRollup`で実際のCI結果を確認する。レビュー以外のnon-requiredなadvisory checkは終了をブロックしない
-- 開始されたレビューが全て終了している。required / non-requiredを問わず、レビューが待機中・進行中ならdraftを維持する。ただしCodeRabbitは例外とし、未実施・待機中・進行中・rate limitや利用上限による途中終了のいずれもreadyの必須条件にしない。CodeRabbitの結果待ちを理由にユーザー確認を追加しない
+- 開始されたレビューが全て終了している。required / non-requiredを問わず、レビューが待機中・進行中ならdraftを維持する。ただしCodeRabbitは例外とし、未実施・待機中・進行中・rate limitや利用上限による途中終了のいずれもreadyの必須条件にしない（required check に設定された CodeRabbit の check は前項の required 判定の対象のまま）。CodeRabbitの結果待ちを理由にユーザー確認を追加しない。CodeRabbit以外の外部レビュアーが rate limit・利用上限で途中終了した場合は「終了」と見なさない — rollup が全部 pass に見えても未カバー範囲が残るので pass 扱いにせず、未確認としてユーザーに報告する
 - コンフリクトしていない（`mergeable` が CONFLICTING でない）
 - 未対応のレビューコメントがない（AIボットのコメントは対応済み、人間のコメントはユーザーに報告済み）
 - 上記を全て満たした場合、監視を終えてユーザーにPRの状態を報告する
