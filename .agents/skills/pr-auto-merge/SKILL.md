@@ -170,6 +170,11 @@ head SHA ごとに記録されるため同じ PR は1行に集約し、当日の
   Hold は最後に状態・理由を確認した時刻、Merge は GitHub の `mergedAt`、
   Error はイベントの発生時刻、修正は修正を確認した時刻を使う。
   日付が当日と異なる時刻は日付も併記する。確認できない時刻は「未確認」として末尾に置く。
+- **PR は必ずリンクで書く**。repo 列がある表（Hold・修正・Merge）は PR 列を
+  `[#<n>](https://github.com/<repo>/pull/<n>)`、repo 列が無い本文（Error の内容など）は
+  `[<repo>#<n>](https://github.com/<repo>/pull/<n>)` にする。URL は repo と番号から
+  常に組み立てられるので、裸の `#<n>`・リンクでない `<repo>#<n>` を残さない。PR 列は
+  リンクだけにし、PR タイトルは理由・内容の列の先頭に置く。
 - head SHA は `pr-watch.md` に載せない。列・理由・内容への埋め込みも避け、
   判定と head の対応・長い根拠・引き継ぎは jsonl に残す。
 - session・worktree の確認・片付け状況は日次レポートに載せず、`## Session` 節も作らない。
