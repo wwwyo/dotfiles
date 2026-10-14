@@ -423,6 +423,18 @@ dec = pt.compute_pr_decision({"repo": "wwwyo/me", "number": 9},
                              facts(view=view(isDraft=True)), [], {}, {})
 assert [a["type"] for a in dec["actions"]] == ["hold"], dec
 assert "draft" in dec["actions"][0]["reason"], dec
+# draft は hard_gate でも弾く（plan 後に author が draft 化した場合や
+# judge-result の同一実行 merge の race でも merge しない。approval 免除の
+# bot 依存経路も draft は通さない）
+vd = view(isDraft=True,
+          statusCheckRollup=[check("ci"), check("pullfrog-approval")])
+ok, reasons = pt.hard_gate(facts(view=vd, files=["package.json"],
+                                 required=["ci"]),
+                           judge={"sha": "sha1", "verdict": "ok",
+                                  "policy_version": pt.JUDGE_POLICY_VERSION,
+                                  "context_hash": pt.pr_context_hash(vd)},
+                           via="lane")
+assert not ok and any("draft" in r for r in reasons), reasons
 
 # ============================ dispatch routing ============================
 wt = lambda **kw: dict({"worktreeId": "r::w1", "repo": "me",

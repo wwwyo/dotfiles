@@ -60,10 +60,10 @@ lane への推薦で、merge の発行は script が hard gate の再検証後�
 - `pullfrog-approval not success (...)` — review の承認が現在 head に無い。
   bot 依存更新・確認済み追従の whitelist 経路以外は merge できない。
 - `draft (author ready 待ち)` — draft は author が未完成と明示した PR で、
-  lane の judge/merge 対象外。draft のまま pullfrog が承認を保留すると
-  pullfrog-approval が FAILURE になり、`gh pr ready` は hard gate 通過後
-  （merge 実行時）にしか走らないため lane の順序では解けない — judge を
-  回さず hold にし、author の ready 化を待つ。
+  plan の hold と hard gate の両方が弾く。draft のまま pullfrog が承認を
+  保留すると pullfrog-approval が FAILURE になり、lane は author に代わって
+  ready 化しないため judge を回しても解けない — 判定せず hold にし、author の
+  ready 化を待つ。
 
 ## QA と Blast Radius
 

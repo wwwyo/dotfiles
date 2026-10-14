@@ -1202,6 +1202,12 @@ def hard_gate(facts, judge=None, via="lane", expect_sha=None):
     r = []
     if (pr.get("state") or "").upper() != "OPEN":
         return False, [f"state is {pr.get('state')}"]
+    # draft は author が未完成と明示した PR。plan の hold だけに頼らず、
+    # merge 直前のこの gate でも弾く — plan 後に author が draft 化した場合や
+    # judge-result の同一実行 merge の race でも merge しない。bot 依存の
+    # approval 免除経路（pullfrog-approval が防波堤にならない）も draft は通さない。
+    if pr.get("isDraft"):
+        return False, ["draft (author ready 待ち)"]
     head = pr.get("headRefOid")
     if expect_sha and head and head != expect_sha:
         return False, [f"head moved: expected {expect_sha[:8]}, "
@@ -1748,8 +1754,8 @@ def compute_pr_decision(pr, facts, worktrees, terms_cache, state):
     # draft は author が「未完成」と明示した PR。lane は merge 可否を見る
     # 場所なので、ready 化されるまで judge/merge の対象にしない。draft の
     # まま pullfrog が承認を保留すると pullfrog-approval が FAILURE になり、
-    # `gh pr ready` は hard gate 通過後（merge 実行時）にしか走らないため
-    # lane の順序では解けない — judge しては blocked を繰り返すだけになる。
+    # lane は author に代わって ready 化しないため judge しては blocked を
+    # 繰り返すだけになる。hard_gate も同じ draft を弾く（race 対策）。
     if v.get("isDraft"):
         entry["actions"].append({"type": "hold",
                                  "reason": "draft (author ready 待ち)"})
@@ -2352,8 +2358,8 @@ def _cmd_merge(a):
         "via": a.via, "at": _iso(_now())}
     save_state(st)
 
-    if v.get("isDraft"):
-        gh(["pr", "ready", str(a.number), "--repo", a.repo])
+    # draft は hard_gate が弾くので、ここに来る PR は ready 済み。lane が
+    # author に代わって `gh pr ready` することはない。
     # --match-head-commit: gate 検証と発行の間に head が動いたら GitHub 側
     # で拒否される（判定した head 以外が merge されないことを API レベルで
     # 保証する — expect_sha のアプリ側照合だけでは race 窓が残る）
@@ -2662,7 +2668,7 @@ SCHEMA = {
     "escalate": {"args": "--repo R --number N [--reason T]",
                  "out": "{escalated}"},
     "judge-input": {"args": "--repo R --number N",
-                    "out": "{sha, body, base, base_sha, context_hash, files, renamed_from, checks, ignored_files, diff, policy_version, truncated:false}"},
+                    "out": "{sha, draft, body, base, base_sha, context_hash, files, renamed_from, checks, ignored_files, diff, policy_version, truncated:false}"},
     "judge-result": {"args": "--repo R --number N --sha S "
                      "--context-hash H --verdict ok|ng|repair [--reason T]",
                      "out": "{verdict, merge_ready, blocked?} — ok で "
