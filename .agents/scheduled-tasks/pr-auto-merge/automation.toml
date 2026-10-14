@@ -6,13 +6,14 @@
 
 name = "pr-auto-merge"
 workspace_path = "~/src/github.com/wwwyo/me"
-# executor は claude + Sonnet 5.5。model は automation-local の extra_agent_args で
-# pin し Orca の claude global default には影響しない。alias（`sonnet`）は将来の
-# Sonnet へ自動で移るので 5.5 固定には full name を使う。
+# executor は codex。model は automation-local の extra_agent_args で pin し Orca の
+# codex global default には影響しない。gpt-6.1-sol high は delegate の operator/review
+# 第一候補（~/.codex/config.toml の既定とも一致）。codex の extra args は orca 検証で
+# `--model` と `-c model_reasoning_effort=…` のみ許可される（`--effort` は弾かれる）。
 # extra_agent_args は orca 制約で --reuse-session と両立しない — だが reuse 外しで
 # terminal は堆積しない（Orca が前 run の automation terminal を自動回収）。
-provider = "claude"
-extra_agent_args = "--model claude-sonnet-5-5"
+provider = "codex"
+extra_agent_args = "--model gpt-6.1-sol -c model_reasoning_effort=high"
 enabled = true
 timezone = "Asia/Tokyo"
 
