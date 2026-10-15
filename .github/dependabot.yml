@@ -1,0 +1,19 @@
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: saturday
+      time: "09:00"
+      timezone: Asia/Tokyo
+    cooldown:
+      default-days: 7
+    # gh-aw の生成物は `gh aw compile` が uses を書き直すので、gh-aw 本体の版上げで更新する
+    exclude-paths:
+      - ".github/workflows/*.lock.yml"
+    groups:
+      actions:
+        applies-to: version-updates
+        patterns:
+          - "*"
