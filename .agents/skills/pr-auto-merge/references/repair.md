@@ -80,9 +80,7 @@ CI の frozen install を含む同じコマンドで検証する。CI 自体の 
 `Incompatible React versions` が import 時に投げられる。`react` と `react-dom`
 は lockfile で同じ版に揃え（`@types/*` は peer が React major に合う版でよい）、
 遅れている側を更新して lockfile を再生成する。この揃え直しは
-`### version への追従` 手順 3「依存 version を変えない」の例外。manifest が
-hold segment 配下なら揃えても lane 上は hold のまま — 規約外 merge の要否は
-[SKILL.md](../SKILL.md) の always-hold path の注記に従う。
+`### version への追従` 手順 3「依存 version を変えない」の例外。
 
 ### version への追従
 

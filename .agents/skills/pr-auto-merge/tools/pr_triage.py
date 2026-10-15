@@ -640,6 +640,14 @@ def classify_path(path):
     if is_lockfile(low):
         return "other"
 
+    # 依存 manifest は置き場所（apps/api/・.agents/ 等の hold path 配下）では
+    # なく file 種別で判定する。中身は judge か bot 依存の自動 ok が manifest
+    # の実差分で見るため、path で hold すると Dependabot の minor/patch が
+    # 置き場所だけで永久に止まる。renovate.json は依存ではなく bot 設定なので
+    # path の hold を外さない
+    if is_dependency_file(low) and base != "renovate.json":
+        return "judge"
+
     # 常に hold
     # .github/workflows/ 直下（*.lock.yml を除く）は `.github` セグメントの
     # hold からだけ外して judge に回す — workflow の中身は judge が見る。

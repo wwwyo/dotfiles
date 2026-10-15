@@ -987,7 +987,7 @@ for fresh_view, files, reason in [
         (dict(vbot, state='MERGED'), ['package.json'], 'migration'),
         (view(), ['package.json'], 'migration'),
         (vbot, ['package.json', 'src/a.py'], 'migration'),
-        (vbot, ['.github/package.json'], 'migration'),
+        (vbot, ['.github/renovate.json'], 'migration'),
         (vbot, ['package.json'], '')]:
     with mock.patch.object(pt, 'load_state', return_value={}), \
             mock.patch.object(pt, 'save_state') as saved, \
@@ -1128,6 +1128,16 @@ assert any(i['kind'] == 'dependency_ci' for i in
            pt.dispatch_items('wwwyo/me', 7, dict(f, view=bad_ci), {}))
 for manifest in ['home/dot_config/mise/config.toml', '.config/mise/config.toml']:
     assert pt.classify_path(manifest) == 'judge'
+# 依存 manifest は hold path 配下でも置き場所で hold しない（Dependabot の
+# apps/api/package.json bump が always-hold で止まっていた）
+for manifest in ['apps/api/package.json', 'packages/auth/package.json',
+                 '.agents/skills/x/package.json', 'apps/api/go.mod']:
+    assert pt.classify_path(manifest) == 'judge', manifest
+api_cls = pt.classify_pr(['apps/api/package.json', 'pnpm-lock.yaml'], v, '')
+assert api_cls['lane'] == 'judge' and api_cls['bot_dep_only']
+assert pt.classify_pr(['apps/api/package.json', 'apps/api/src/x.ts'],
+                      v, '')['lane'] == 'hold'
+assert pt.classify_path('.github/renovate.json') == 'hold'
 for files in [['config.toml'], ['config/app.toml'], mise_files + ['config/app.toml']]:
     cls = pt.classify_pr(files, v, '')
     assert not cls['bot_dep_only']

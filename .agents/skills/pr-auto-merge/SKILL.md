@@ -240,10 +240,10 @@ pullfrog-approval を免除する。
   worktree 削除もしない。再試行は次の tick に任せる
 - dispatch の delivery が未確認なら、入力が届いた可能性があるため pending を
   残し、自動再送せず reason 付き escalate とする。terminal を確認してから復旧する
-- always-hold path の分類は bot の manifest bump にも効く。hold segment
-  配下の manifest を更新する Dependabot PR は lane 上では必ず hold で、
-  `pr_triage.py merge` の hard gate は解除しない — merge するなら明示指示に
-  基づく `gh pr merge` で、規約どおり理由を PR に書く
+- 依存 manifest・lockfile は置き場所ではなく file 種別で分類する。
+  `apps/api/package.json` のように hold path 配下にあっても always-hold には
+  ならず、bot の依存更新のみなら自動 ok 判定、それ以外は judge に進む。
+  manifest と同じ PR で hold path の非依存 file を触る場合は従来どおり hold
 - 送信上限（同一 head 3回・往復 3 ラウンド）に達した PR は escalate 済み
   として扱い、routine はそれ以上 dispatch しない
 
