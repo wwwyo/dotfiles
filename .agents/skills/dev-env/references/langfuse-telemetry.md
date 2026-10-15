@@ -10,7 +10,7 @@ Langfuse の OTLP endpoint は traces しか受けないため hook/plugin 経�
 | --- | --- | --- |
 | Claude Code | 公式 plugin `langfuse-observability@langfuse-observability` | repo の `.claude/settings.local.json` で `enabledPlugins` を `true`（user settings で default off。local > user の precedence で反転） |
 | Codex | wwwyo fork の plugin `tracing@codex-observability-plugin`（`home/.chezmoitemplates/codex-base.toml.tmpl`） | repo の `.codex/langfuse.json` に `{"enabled": true}`（`process.cwd()` 解決。git root ではないので subdir 起動では拾わない — root から起動する） |
-| pi | wwwyo fork の extension `@wwwyo/pi-observability-plugin`（`git:github.com/wwwyo/pi-observability-plugin`。codex fork と同じ `detail: turn` を持つ） | repo の `.pi/settings.json` に `packages` 宣言（install 先 `.pi/npm/` は gitignore） |
+| pi | wwwyo fork の extension `@wwwyo/pi-observability-plugin`（`git:github.com/wwwyo/pi-observability-plugin`。codex fork と同じ `detail: turn` を持つ） | repo の `.pi/settings.json` に `packages` 宣言（install 先 `.pi/git/` は gitignore） |
 
 - **opt-in file は global gitignore 済み**（`**/.claude/settings.local.json`・
   `**/.codex/langfuse.json`・`**/.pi/settings.json`・`**/.pi/langfuse.json`・
