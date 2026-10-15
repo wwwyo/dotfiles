@@ -91,3 +91,37 @@ jobs:
             echo "=== $t ==="
             bash "$t"
           done
+
+  actions-lock:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+      # mise.lock の linux-x64 entry から公式 release の binary だけを取り、checksum を照合する。
+      # PR 側の lock を読むが URL を公式 release に限るので、差し替えられても公式の別版にしかならない
+      - name: Install gh-actions-lock
+        run: |
+          python3 - <<'PYTHON' > /tmp/gh-actions-lock.env
+          import re, tomllib
+          from pathlib import Path
+          lock = tomllib.loads(Path('home/dot_config/mise/mise.lock').read_text())
+          entry = lock['tools']['github:github/gh-actions-lock'][0]['platforms.linux-x64']
+          if not entry['url'].startswith('https://github.com/github/gh-actions-lock/releases/download/'):
+              raise ValueError('gh-actions-lock must come from the official release')
+          if not re.fullmatch(r'sha256:[0-9a-f]{64}', entry['checksum']):
+              raise ValueError('gh-actions-lock checksum must be sha256')
+          print('URL=' + entry['url'])
+          print('SHA256=' + entry['checksum'].removeprefix('sha256:'))
+          PYTHON
+          source /tmp/gh-actions-lock.env
+          curl -fsSL -o /tmp/gh-actions-lock "$URL"
+          echo "$SHA256  /tmp/gh-actions-lock" | sha256sum -c -
+          chmod +x /tmp/gh-actions-lock
+      # onboard 済み workflow の uses と actions.lock の一致、lock した commit の正当性を確かめる。
+      # workflow_dispatch だけの pullfrog.yml は PR で実行されないので、ここが唯一の事前検出になる
+      - name: Verify workflow lockfile
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: /tmp/gh-actions-lock --verify
