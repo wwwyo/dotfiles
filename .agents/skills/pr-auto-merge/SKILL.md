@@ -142,9 +142,13 @@ python3 ~/.agents/skills/pr-auto-merge/tools/pr_triage.py events --event note --
   tick-summary: date=<YYYY-MM-DD> run_id=<plan.run_id> dispatch=<n> escalate=<n> judge=<n> merge=<n> hold=<n> sweep=<n> error=<n> judge_ok=<n> judge_ng=<n> judge_repair=<n> blocked=[<理由>:<n>,...]
   ```
 
-  `hold` は plan の hold action 件数、`blocked` は judge ok 後の blocked 理由ごとの件数
-  （`pullfrog-approval not success`・`judge ok stale`・`draft` など）。該当の無い field は
-  0・`[]` とし、行自体は省略しない。長い根拠は従来どおり jsonl の `note` に残す。
+  `hold` は plan の hold action 件数。`judge_ok`・`judge_ng`・`judge_repair` は
+  `event == "judge"` かつ `ts >= plan.generated_at` の event だけを数える — 当日の
+  jsonl には前 tick の judge event も入るため、時刻で絞らないと件数が膨らむ。
+  `blocked` は同じ絞り込んだ judge event の `blocked`（judge-result が ok でも hard
+  gate が通らず `merge_ready: false` のときに残る理由の配列）を理由ごとに数える
+  （`pullfrog-approval not success`・`judge ok stale`・`draft` など）。該当の無い
+  field は 0・`[]` とし、行自体は省略しない。長い根拠は従来どおり jsonl の `note` に残す。
 
 dispatch は修正依頼を送った中間状態で、PR の決着ではない。dispatch の
 見出し・件数・成果一覧は md と最終返信に載せず、送信履歴は jsonl に残す。

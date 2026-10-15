@@ -1510,6 +1510,43 @@ with mock.patch.object(pt, "load_state", return_value={}), \
 out = emit.call_args.args[0]
 assert out["ok"] and out["merge_ready"] is False and out["blocked"]
 
+# blocked 理由は judge event に永続化する。merge_ready=false のとき executor は
+# merge を呼ばず merge_blocked event が出ないため、report・tick-summary の
+# blocked 集計はこの event の blocked を読む。
+judge_events = []
+with mock.patch.object(pt, "load_state", return_value={}), \
+        mock.patch.object(pt, "save_state"), \
+        mock.patch.object(pt, "append_event",
+                          side_effect=lambda *a, **kw: judge_events.append((a, kw))), \
+        mock.patch.object(pt, "pr_facts", return_value=facts(
+            view=dict(ok_view, statusCheckRollup=[
+                check("ci", conc="FAILURE"), check("pullfrog-approval")]),
+            files=["src/a.py"], required=["ci"])), \
+        mock.patch.object(pt, "emit") as emit:
+    pt.cmd_judge_result(SimpleNamespace(
+        repo="wwwyo/me", number=7, sha="sha1",
+        context_hash=pt.pr_context_hash(ok_view),
+        verdict="ok", reason="r"))
+out = emit.call_args.args[0]
+assert out["merge_ready"] is False and out["blocked"], out
+args, kw = judge_events[-1]
+assert args and args[0] == "judge", judge_events
+assert kw.get("blocked") == out["blocked"], judge_events
+# merge_ready のときは blocked を残さない（空リストは None に落とす）
+judge_events.clear()
+with mock.patch.object(pt, "load_state", return_value={}), \
+        mock.patch.object(pt, "save_state"), \
+        mock.patch.object(pt, "append_event",
+                          side_effect=lambda *a, **kw: judge_events.append((a, kw))), \
+        mock.patch.object(pt, "pr_facts", return_value=ok_facts), \
+        mock.patch.object(pt, "emit") as emit:
+    pt.cmd_judge_result(SimpleNamespace(
+        repo="wwwyo/me", number=7, sha="sha1",
+        context_hash=pt.pr_context_hash(ok_view),
+        verdict="ok", reason="ok"))
+assert emit.call_args.args[0]["merge_ready"] is True
+assert judge_events[-1][1].get("blocked") is None, judge_events
+
 # 補足ログは長文・改行を保持し、実績や判定 state を変更しない。
 import subprocess
 note_file = pt.STATE_DIR / "note.json"

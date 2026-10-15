@@ -2308,10 +2308,8 @@ def _cmd_judge_result(a):
         "reason": a.reason or "", "at": _iso(_now()),
         "policy_version": JUDGE_POLICY_VERSION, "dependency_repair": repairing}
     save_state(st)
-    append_event("judge", repo=a.repo, pr=a.number, sha=a.sha, context_hash=a.context_hash,
-                 verdict=a.verdict, reason=a.reason or "",
-                 policy_version=JUDGE_POLICY_VERSION, dependency_repair=repairing)
     out = {"ok": True, "verdict": a.verdict, "merge_ready": False}
+    blocked = None
     if a.verdict == "ok":
         # ok 登録後に残りの hard gate が現在 head で全て通るなら、次 tick を
         # 待たず同じ executor 実行内で merge を呼んでよい。merge 自体が
@@ -2328,6 +2326,14 @@ def _cmd_judge_result(a):
         out["merge_ready"] = ready
         if not ready:
             out["blocked"] = blocked
+    # gate の blocked 理由を judge event に残す。merge_ready=false のとき
+    # executor は merge を呼ばないので merge_blocked event は出ず、ここに
+    # 残さないと report・tick-summary が理由を再構成できない。gate 評価は
+    # state 保存後なので、gate 自体が失敗しても verdict 登録は失われない。
+    append_event("judge", repo=a.repo, pr=a.number, sha=a.sha, context_hash=a.context_hash,
+                 verdict=a.verdict, reason=a.reason or "",
+                 policy_version=JUDGE_POLICY_VERSION, dependency_repair=repairing,
+                 blocked=blocked or None)
     emit(out)
 
 
