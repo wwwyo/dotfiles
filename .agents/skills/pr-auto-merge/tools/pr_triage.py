@@ -627,7 +627,9 @@ def _suffix(base):
 
 
 def classify_path(path):
-    """1 file path の3分類。戻り値は "hold" | "judge" | "other"。
+    """1 file path の3分類。戻り値は "hold" | "judge" | "standard"。
+    standard は path による追加制限がなく、通常のゲート（CI・review・
+    approval）だけで merge される分類。
     未知の拡張子・basename は "judge"（分類不能は安全側）。"""
     if not path or "\x00" in path:
         return "judge"
@@ -638,7 +640,7 @@ def classify_path(path):
     test_path = is_test_path(low)
 
     if is_lockfile(low):
-        return "other"
+        return "standard"
 
     # 依存 manifest は置き場所（apps/api/・.agents/ 等の hold path 配下）では
     # なく file 種別で判定する。中身は judge か bot 依存の自動 ok が manifest
@@ -685,12 +687,12 @@ def classify_path(path):
 
     # それ以外（既知の良性 path）
     if test_path:
-        return "other"
+        return "standard"
     if suffix in OTHER_SUFFIXES or base in OTHER_BASENAMES:
-        return "other"
+        return "standard"
     if not suffix and (low.endswith("rc") or base.startswith(".")):
         # 拡張子なし dotfile（.zshrc 等の rc / .* file）は repo config 側
-        return "other"
+        return "standard"
 
     # 分類不能 → judge
     return "judge"
@@ -739,7 +741,7 @@ def classify_pr(files, meta, diff, renamed_from=()):
     は両方の union に掛ける — rename 元の hold path を見ないと rename で
     ポリシー領域を抜ける PR を通す。
 
-    戻り値: {"lane": "hold"|"judge"|"lane", "reasons": [...],
+    戻り値: {"lane": "hold"|"judge"|"standard", "reasons": [...],
              "classes": {path: class}, "bot_dep_only": bool}
     """
     touched = list(files) + list(renamed_from)
@@ -773,7 +775,7 @@ def classify_pr(files, meta, diff, renamed_from=()):
         return {"lane": "judge", "reasons": reasons, "classes": classes,
                 "bot_dep_only": bot_dep_only}
 
-    return {"lane": "lane", "reasons": [], "classes": classes,
+    return {"lane": "standard", "reasons": [], "classes": classes,
             "bot_dep_only": False}
 
 

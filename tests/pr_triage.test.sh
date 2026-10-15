@@ -116,31 +116,31 @@ assert c("proto/v1/svc.proto") == "hold"
 assert c("src/graphql/query.gql") == "hold"
 assert c(".changeset/wild-donuts.md") == "hold" # release/publish 面
 # 要判定
-assert c("package.json") == "judge" and c("pnpm-lock.yaml") == "other"
+assert c("package.json") == "judge" and c("pnpm-lock.yaml") == "standard"
 assert c("mise.toml") == "judge" and c(".tool-versions") == "judge"
 assert c("Dockerfile") == "judge" and c("docker-compose.yml") == "judge"
 assert c("db/migrations/001.sql") == "judge" and c("schema.sql") == "judge"
 assert c("flake.nix") == "judge" and c("nix/shell.nix") == "judge"
-assert c("go.mod") == "judge" and c("Cargo.lock") == "other"
+assert c("go.mod") == "judge" and c("Cargo.lock") == "standard"
 assert c("fly.toml") == "judge" and c("notebooks/x.ipynb") == "judge"
 assert c("foo.wasm") == "judge"                 # 分類不能 → judge
 assert c("assets/logo.svg") == "judge"          # 分類不能 → judge
 # それ以外
-assert c("src/foo.ts") == "other" and c("pkg/bar.go") == "other"
-assert c("tests/test_foo.sh") == "other" and c("docs/guide.md") == "other"
-assert c("wiki/page.md") == "other"
+assert c("src/foo.ts") == "standard" and c("pkg/bar.go") == "standard"
+assert c("tests/test_foo.sh") == "standard" and c("docs/guide.md") == "standard"
+assert c("wiki/page.md") == "standard"
 assert c("wiki/AGENTS.md") == "hold"
-assert c("home/dot_zshrc") == "other" and c("home/Brewfile") == "other"
-assert c("src/util.test.ts") == "other"
-assert c("config/app.yaml") == "other"          # .github 外の yaml
+assert c("home/dot_zshrc") == "standard" and c("home/Brewfile") == "standard"
+assert c("src/util.test.ts") == "standard"
+assert c("config/app.yaml") == "standard"          # .github 外の yaml
 assert c("scripts/tool") == "judge"             # 拡張子なし basename → 分類不能
-assert c(".zshrc") == "other"
-assert c("api/src/index.test.ts") == "other"
-assert c("apps/api/src/index.test.ts") == "other"
-assert c("src/auth/login.test.ts") == "other"
-assert c("src/payment/checkout.spec.ts") == "other"
-assert c("routes/__tests__/test_route.py") == "other"
-assert c("graphql/tests/test_query.py") == "other"
+assert c(".zshrc") == "standard"
+assert c("api/src/index.test.ts") == "standard"
+assert c("apps/api/src/index.test.ts") == "standard"
+assert c("src/auth/login.test.ts") == "standard"
+assert c("src/payment/checkout.spec.ts") == "standard"
+assert c("routes/__tests__/test_route.py") == "standard"
+assert c("graphql/tests/test_query.py") == "standard"
 assert c("apps/api/src/contract/shared.ts") == "hold"
 assert c("routes/index.ts") == "hold" and c("graphql/query.ts") == "hold"
 assert c(".github/workflows/test_ci.py") == "judge"
@@ -161,8 +161,8 @@ assert c("api/latest_token.py") == "hold"
 assert c("api/contest_handler.py") == "hold"
 assert c("src/auth/latest_token.py") == "hold"
 assert c("src/auth/contest_handler.py") == "hold"
-assert c("src/test_utils.py") == "other" and c("src/x_test.py") == "other"
-assert c("src/v1.test/handler.py") == "other"   # dir 名の .test は test でない
+assert c("src/test_utils.py") == "standard" and c("src/x_test.py") == "standard"
+assert c("src/v1.test/handler.py") == "standard"   # dir 名の .test は test でない
 
 # ============================ classify_pr ============================
 meta_w = {"author": {"login": "wwwyo", "is_bot": False}}
@@ -193,25 +193,25 @@ assert ".github/workflows/build.lock.yml" in r["classes"]
 
 # 既存テストの実行でも QA できるため、test ファイルの追加だけでは判定しない
 r = pt.classify_pr(["src/a.py"], meta_w, "")
-assert r["lane"] == "lane"
+assert r["lane"] == "standard"
 # test → prod の rename も実施した QA を judge が確認する
 r = pt.classify_pr(["src/a.py"], meta_w, "",
                    renamed_from=["tests/test_a.py"])
-assert r["lane"] == "lane"
+assert r["lane"] == "standard"
 # 逆方向（prod → test の rename）は prod が残らない → lane
 r = pt.classify_pr(["tests/test_a.py"], meta_w, "",
                    renamed_from=["src/a.py"])
-assert r["lane"] == "lane"
+assert r["lane"] == "standard"
 # test 付きなら lane
 r = pt.classify_pr(["src/a.py", "tests/test_a.py"], meta_w, "")
-assert r["lane"] == "lane"
+assert r["lane"] == "standard"
 # docs/config のみは production code 扱いしない → lane
 r = pt.classify_pr(["docs/x.md", "config/y.yaml"], meta_w, "")
-assert r["lane"] == "lane"
+assert r["lane"] == "standard"
 # wiki の通常ページ・index・log と rename も docs と同じ lane 候補
 r = pt.classify_pr(["wiki/tech/page.md", "wiki/index.md", "wiki/log.md"],
                    meta_w, "", renamed_from=["wiki/tech/old.md"])
-assert r["lane"] == "lane"
+assert r["lane"] == "standard"
 r = pt.classify_pr(["wiki/tech/page.md", "wiki/AGENTS.md"], meta_w, "")
 assert r["lane"] == "hold"
 
@@ -245,9 +245,9 @@ r = pt.classify_pr(["src/a.py", "tests/test_a.py"], meta_w, diff)
 assert r["lane"] == "judge"
 diff = '-  "version": "2.1.0"\n+  "version": "2.2.0"\n'
 r = pt.classify_pr(["src/a.py", "tests/test_a.py"], meta_w, diff)
-assert r["lane"] == "lane"
+assert r["lane"] == "standard"
 r = pt.classify_pr(["api/src/index.test.ts"], meta_w, "")
-assert r["lane"] == "lane"
+assert r["lane"] == "standard"
 r = pt.classify_pr(["apps/api/src/contract/shared.ts",
                     "apps/api/src/index.test.ts"], meta_w, "")
 assert r["lane"] == "hold" and \
@@ -614,7 +614,7 @@ v = view(statusCheckRollup=[check("ci"), check("pullfrog-approval")])
 f = facts(view=v, required=["ci"])
 e = pt.compute_pr_decision({"repo": "wwwyo/me", "number": 7},
                            f, [], {}, {})
-assert e["actions"][0]["type"] == "judge" and e["lane"] == "lane"
+assert e["actions"][0]["type"] == "judge" and e["lane"] == "standard"
 
 # wiki は一律 hold を外しても、current judge・approval・required CI を通る
 f = facts(view=v, files=["wiki/tech/page.md", "wiki/index.md", "wiki/log.md"],
@@ -721,7 +721,7 @@ assert e["actions"][0]["type"] == "judge", e["actions"]
 f = facts(view=v, files=["api/src/index.test.ts"], required=["ci"])
 e = pt.compute_pr_decision({"repo": "wwwyo/me", "number": 7},
                            f, [], {}, {})
-assert e["actions"][0]["type"] == "judge" and e["lane"] == "lane"
+assert e["actions"][0]["type"] == "judge" and e["lane"] == "standard"
 f = facts(view=v, files=["apps/api/src/contract/shared.ts",
                          "apps/api/src/index.test.ts"], required=["ci"])
 e = pt.compute_pr_decision({"repo": "wwwyo/me", "number": 7},
@@ -819,7 +819,7 @@ rec = saved["judge"]["wwwyo/me#7"]
 assert rec["verdict"] == "ok" and rec["dependency_repair"] is True
 assert rec["policy_version"] == pt.JUDGE_POLICY_VERSION
 cls = pt.dependency_repair_classification(
-    {"lane": "lane", "reasons": [], "classes": {}},
+    {"lane": "standard", "reasons": [], "classes": {}},
     view(author={"login": "dependabot[bot]", "is_bot": True}), rec)
 assert cls["dependency_repair"] is True and cls["lane"] == "judge"
 
@@ -910,14 +910,14 @@ manifest_diff = 'diff --git a/package.json b/package.json\n+"x": "2.0.0"\n'
 assert pt.review_diff(lock_diff + manifest_diff) == manifest_diff
 assert pt.review_diff(manifest_diff * 3000) == manifest_diff * 3000
 for name in pt.LOCKFILE_BASENAMES:
-    assert pt.classify_path('apps/api/' + name) == 'other', name
+    assert pt.classify_path('apps/api/' + name) == 'standard', name
 assert pt.classify_path('.github/workflows/skillctrl.lock.yml') == 'hold'
 assert pt.review_diff('diff --git a/a.py b/bun.lock\n-removed code\n')
 assert pt.review_diff('diff --git "a/space dir/bun.lock" "b/space dir/bun.lock"\n+x\n') == ''
 assert pt.classify_pr(['package.json', 'mise.lock'], meta_bot, '')['bot_dep_only']
 assert pt.classify_pr(['bun.lock'], meta_bot, '')['lane'] == 'judge'
 lock_major = 'diff --git a/mise.lock b/mise.lock\n-version = "1.0"\n+version = "2.0"\n'
-assert pt.classify_pr(['docs/readme.md', 'mise.lock'], meta_w, lock_major)['lane'] == 'lane'
+assert pt.classify_pr(['docs/readme.md', 'mise.lock'], meta_w, lock_major)['lane'] == 'standard'
 
 # 旧規則の verdict は同じ head でも再判定し、merge gate も通さない。
 old = {'sha': 'sha1', 'verdict': 'ng', 'reason': 'truncated=true'}
