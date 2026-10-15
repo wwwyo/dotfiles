@@ -30,6 +30,7 @@ description: "dotfiles で管理する開発環境の tool 設定・hooks・tele
 | Cloudflare AI Gateway の tool・Access 認証・環境設定を触る | [Cloudflare AI Gateway の開発環境設定](references/cloudflare.md) |
 | ローカル MCP を MCP Server Portal・Tunnel で外部 agent へ出す・MCP を追加する | [references/mcp-portal.md](references/mcp-portal.md) |
 | gh-aw の生成 workflow（`.github/workflows/*.md` + `*.lock.yml`）を触る | [references/gh-aw.md](references/gh-aw.md) |
+| workflow の `uses:` を変える・`actions.lock` を更新する | [references/actions-lock.md](references/actions-lock.md) |
 
 ## 関連 skill
 

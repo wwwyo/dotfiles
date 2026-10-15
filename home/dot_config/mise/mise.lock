@@ -1810,6 +1810,46 @@ checksum = "sha256:ebc52099ea2fb9dbf5a4a5f58b3a486c92d290a1e83ac2556a6bd5d7b6bd6
 url = "https://github.com/ggml-org/llama.cpp/releases/download/b9616/llama-b9616-bin-win-cpu-x64.zip"
 url_api = "https://api.github.com/repos/ggml-org/llama.cpp/releases/assets/446093876"
 
+[[tools."github:github/gh-actions-lock"]]
+version = "0.2.0"
+backend = "github:github/gh-actions-lock"
+
+[tools."github:github/gh-actions-lock"."platforms.linux-arm64"]
+checksum = "sha256:c79a279d6b0b635dc89ab6d38d0ecf98ff83abcee7bb483cd53353b74cd4f6df"
+url = "https://github.com/github/gh-actions-lock/releases/download/v0.2.0/linux-arm64"
+url_api = "https://api.github.com/repos/github/gh-actions-lock/releases/assets/634768083"
+provenance = "github-attestations"
+
+[tools."github:github/gh-actions-lock"."platforms.linux-arm64-musl"]
+checksum = "sha256:c79a279d6b0b635dc89ab6d38d0ecf98ff83abcee7bb483cd53353b74cd4f6df"
+url = "https://github.com/github/gh-actions-lock/releases/download/v0.2.0/linux-arm64"
+url_api = "https://api.github.com/repos/github/gh-actions-lock/releases/assets/634768083"
+provenance = "github-attestations"
+
+[tools."github:github/gh-actions-lock"."platforms.linux-x64"]
+checksum = "sha256:79ec84c191667fd935a277e6fd3662cf5d3669cccc9e99998731d8f306f373b6"
+url = "https://github.com/github/gh-actions-lock/releases/download/v0.2.0/linux-amd64"
+url_api = "https://api.github.com/repos/github/gh-actions-lock/releases/assets/634768078"
+provenance = "github-attestations"
+
+[tools."github:github/gh-actions-lock"."platforms.linux-x64-baseline"]
+checksum = "sha256:79ec84c191667fd935a277e6fd3662cf5d3669cccc9e99998731d8f306f373b6"
+url = "https://github.com/github/gh-actions-lock/releases/download/v0.2.0/linux-amd64"
+url_api = "https://api.github.com/repos/github/gh-actions-lock/releases/assets/634768078"
+provenance = "github-attestations"
+
+[tools."github:github/gh-actions-lock"."platforms.linux-x64-musl-baseline"]
+checksum = "sha256:79ec84c191667fd935a277e6fd3662cf5d3669cccc9e99998731d8f306f373b6"
+url = "https://github.com/github/gh-actions-lock/releases/download/v0.2.0/linux-amd64"
+url_api = "https://api.github.com/repos/github/gh-actions-lock/releases/assets/634768078"
+provenance = "github-attestations"
+
+[tools."github:github/gh-actions-lock"."platforms.macos-arm64"]
+checksum = "sha256:eef4de166006eeec7d2d1bbb780371f6f34a397a18f0b3638547eb7c8432b512"
+url = "https://github.com/github/gh-actions-lock/releases/download/v0.2.0/darwin-arm64"
+url_api = "https://api.github.com/repos/github/gh-actions-lock/releases/assets/634768051"
+provenance = "github-attestations"
+
 [[tools."github:github/gh-aw"]]
 version = "0.89.21"
 backend = "github:github/gh-aw"

@@ -4,3 +4,4 @@
 
 - **private repo を checkout する job は permissions に `contents: read` の明示が要る**。書かないと `actions/checkout` が `repository not found` で失敗する（生成物が default permission を前提にするため、job が権限を絞ると checkout に権限が残らない）
 - **変更の検証は CI 再実行まで完了とみなさない**。ローカルの compile 成功は生成物の整合だけを示し、workflow が実際に動くかは Actions 上でしか分からない
+- **compile で `*.lock.yml` の `uses:` が変わったら `actions.lock` も同じ変更で再生成する**（[actions-lock.md](actions-lock.md)）。gh-aw の版上げで action の SHA が変わると、`--verify` と runner の lockfile 検証が落ちる
