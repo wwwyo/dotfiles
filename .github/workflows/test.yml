@@ -99,26 +99,36 @@ jobs:
         with:
           fetch-depth: 1
           persist-credentials: false
-      # mise.lock の linux-x64 entry から公式 release の binary だけを取り、checksum を照合する。
-      # PR 側の lock を読むが URL を公式 release に限るので、差し替えられても公式の別版にしかならない
+      # config.toml の pin と一致する mise.lock の linux-x64 entry から公式 release の binary を取り、
+      # checksum を照合する。PR 側の値は shell に渡さず Python 内で検証から配置まで完結させる
       - name: Install gh-actions-lock
         run: |
-          python3 - <<'PYTHON' > /tmp/gh-actions-lock.env
-          import re, tomllib
+          python3 - <<'PYTHON'
+          import hashlib, re, tomllib, urllib.request
           from pathlib import Path
-          lock = tomllib.loads(Path('home/dot_config/mise/mise.lock').read_text())
-          entry = lock['tools']['github:github/gh-actions-lock'][0]['platforms.linux-x64']
-          if not entry['url'].startswith('https://github.com/github/gh-actions-lock/releases/download/'):
-              raise ValueError('gh-actions-lock must come from the official release')
+          tool = 'github:github/gh-actions-lock'
+          pin = tomllib.loads(Path('home/dot_config/mise/config.toml').read_text())['tools'][tool]
+          version = pin['version'] if isinstance(pin, dict) else pin
+          if not re.fullmatch(r'[0-9]+\.[0-9]+\.[0-9]+', version):
+              raise ValueError('gh-actions-lock must be an exact semver pin')
+          locked = tomllib.loads(Path('home/dot_config/mise/mise.lock').read_text())['tools'][tool]
+          matching = [block for block in locked if block['version'] == version]
+          if len(matching) != 1:
+              raise ValueError('gh-actions-lock lock must match the config pin')
+          entry = matching[0]['platforms.linux-x64']
+          url = f'https://github.com/github/gh-actions-lock/releases/download/v{version}/linux-amd64'
+          if entry['url'] != url:
+              raise ValueError('gh-actions-lock must come from the official release of the pinned version')
           if not re.fullmatch(r'sha256:[0-9a-f]{64}', entry['checksum']):
               raise ValueError('gh-actions-lock checksum must be sha256')
-          print('URL=' + entry['url'])
-          print('SHA256=' + entry['checksum'].removeprefix('sha256:'))
+          with urllib.request.urlopen(url) as response:
+              binary = response.read()
+          if 'sha256:' + hashlib.sha256(binary).hexdigest() != entry['checksum']:
+              raise ValueError('gh-actions-lock checksum mismatch')
+          target = Path('/tmp/gh-actions-lock')
+          target.write_bytes(binary)
+          target.chmod(0o755)
           PYTHON
-          source /tmp/gh-actions-lock.env
-          curl -fsSL -o /tmp/gh-actions-lock "$URL"
-          echo "$SHA256  /tmp/gh-actions-lock" | sha256sum -c -
-          chmod +x /tmp/gh-actions-lock
       # onboard 済み workflow の uses と actions.lock の一致、lock した commit の正当性を確かめる。
       # workflow_dispatch だけの pullfrog.yml は PR で実行されないので、ここが唯一の事前検出になる
       - name: Verify workflow lockfile
