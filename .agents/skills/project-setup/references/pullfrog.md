@@ -1,6 +1,6 @@
 # Pullfrog の導入
 
-ステップ 3 で Pullfrog 導入 yes と答えた場合のみ実施。**repo 作成と visibility 確定後に行う**。
+ステップ 2 で Pullfrog 導入 yes と答えた場合のみ実施。**repo 作成と visibility 確定後に行う**。
 
 1. **Install + workflow**: CLI は dotfiles のグローバル mise 設定（`home/dot_config/mise/config.toml` の `npm:pullfrog`）でバージョン管理する。未導入なら `mise install npm:pullfrog`、repo dir で `mise exec -- pullfrog init`。GitHub App を repo に install し dashboard が開く。`.github/workflows/pullfrog.yml` は Pullfrog 側から届く PR（or console の指示）をそのまま取り込む — **手で書いたり `with:` を足したりしない**。managed file なので全 repo byte 同一を保ち、model 等を書くと console の repo 設定に負けて dead config になる
 2. **`.github/pullfrog.config.sh` を生成**: repo-level 設定（model・effort・review/issue/label mode・hooks…）は backend にしか無く git から見えないため、`pf config set/unset` を並べたこの script を SSOT として置く。既存 repo の同名ファイルをコピーして `REPO=` を書き換え、CLI 呼び出しは `PF=(mise exec -- pullfrog)` に揃える。repo ごとに以下を調整する:

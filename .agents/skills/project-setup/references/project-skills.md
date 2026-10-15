@@ -1,6 +1,6 @@
 # Project-local skill の導入
 
-ステップ3で合意した技術スタックに紐づくskillを [skillctrl](../../skillctrl/SKILL.md) の手順で探索・追加する。プロジェクト固有のskillをローカルにインストールし、使う予定の agent 全部（claude / codex / pi）から使えるようにする。
+ステップ2で合意した技術スタックに紐づくskillを [skillctrl](../../skillctrl/SKILL.md) の手順で探索・追加する。プロジェクト固有のskillをローカルにインストールし、使う予定の agent 全部（claude / codex / pi）から使えるようにする。
 
 #### 11.1. 候補探索（find）
 

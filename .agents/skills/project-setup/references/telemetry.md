@@ -1,28 +1,17 @@
 # Langfuse telemetry opt-in
 
-ステップ 3 で Langfuse 収集 yes と答えた場合のみ実施。3 agent 全部をこの repo で有効化する。前提: `LANGFUSE_PUBLIC_KEY` / `SECRET_KEY` / `BASE_URL` が mise の global env に登録済み、かつ各マシンで `claude plugin install langfuse-observability@langfuse-observability`・`codex plugin marketplace add langfuse/codex-observability-plugin && codex plugin add tracing@codex-observability-plugin` 済みであること（詳細は `~/src/github.com/wwwyo/dotfiles/.agents/skills/dev-env/references/langfuse-telemetry.md` — この skill は新規 repo 内で実行されるため絶対 path で書く）。
+ステップ 2 で Langfuse 収集 yes と答えた場合のみ実施。3 agent 全部をこの repo で有効化する。前提: `LANGFUSE_PUBLIC_KEY` / `SECRET_KEY` / `BASE_URL` が mise の global env に登録済み、かつ各マシンで `claude plugin install langfuse-observability@langfuse-observability`・`codex plugin marketplace add langfuse/codex-observability-plugin && codex plugin add tracing@codex-observability-plugin` 済みであること（詳細は `~/src/github.com/wwwyo/dotfiles/.agents/skills/dev-env/references/langfuse-telemetry.md` — この skill は新規 repo 内で実行されるため絶対 path で書く）。
 
-- **Claude Code**: `.claude/settings.local.json` を生成し local scope で plugin を有効化（user settings で default off にしてあるので local が優先して反転する。収集は個人設定なので tracked な `settings.json` ではなく gitignored な local に書く）:
-  ```json
-  {
-    "enabledPlugins": {
-      "langfuse-observability@langfuse-observability": true
-    }
-  }
-  ```
-- **Codex**: `.codex/langfuse.json` に `{"enabled": true}` を書く（plugin が `process.cwd()` で解決する repo opt-in。env 変数は使わない — 子プロセス経由で未 opt-in repo に漏れるため。global gitignore 済みなので commit されない）。**git root ではなく session の cwd を見る**ので、subdir から `codex` を起動すると root の opt-in を拾わず無効のまま。codex は repo root から起動する運用を前提にする（subdir 起動が常態ならその dir にもファイルを置く）
-- **pi**: `pi install -l --approve "git:github.com/wwwyo/pi-observability-plugin@v0.2.0"` を実行（project trust が要る）。`.pi/settings.json` に package が宣言され `.pi/npm/` に install される — 両方 global gitignore 済みなので commit されない。新しいマシン・checkout では同コマンドを再実行する。upstream の `npm:@langfuse/...` ではなく wwwyo fork を使う（codex と同じ `detail: turn` の compact 記録を持ち、tag で pin される）:
-  ```json
-  {
-    "packages": ["git:github.com/wwwyo/pi-observability-plugin@v0.2.0"]
-  }
-  ```
-このステップが置く file は全部 gitignore 済みなので worktree には載らない。repo ルートに `orca.yaml` を生成して push する（worktree 側 checkout から読まれる）:
+repo root で次を実行する。script は以下を置く。
 
-```yaml
-scripts:
-  setup: '[ ! -x "$HOME/src/github.com/wwwyo/dotfiles/.agents/skills/project-setup/tools/sync-local-worktree-files.sh" ] || "$HOME/src/github.com/wwwyo/dotfiles/.agents/skills/project-setup/tools/sync-local-worktree-files.sh"'
+```bash
+~/.agents/skills/project-setup/tools/setup.sh telemetry
 ```
+
+- **Claude Code**: `.claude/settings.local.json` で `langfuse-observability@langfuse-observability` を local scope で有効化する（user settings で default off にしてあるので local が優先して反転する。収集は個人設定なので tracked な `settings.json` ではなく gitignored な local に書く）
+- **Codex**: `.codex/langfuse.json` に `{"enabled": true}` を書く（plugin が `process.cwd()` で解決する repo opt-in。env 変数は使わない — 子プロセス経由で未 opt-in repo に漏れるため。global gitignore 済みなので commit されない）。**git root ではなく session の cwd を見る**ので、subdir から `codex` を起動すると root の opt-in を拾わず無効のまま。codex は repo root から起動する運用を前提にする（subdir 起動が常態ならその dir にもファイルを置く）
+- **pi**: `pi install -l --approve "git:github.com/wwwyo/pi-observability-plugin@v0.2.0"` を実行する（project trust が要る）。`.pi/settings.json` に package が宣言され `.pi/npm/` に install される — 両方 global gitignore 済みなので commit されない。新しいマシン・checkout では同コマンドを再実行する。upstream の `npm:@langfuse/...` ではなく wwwyo fork を使う（codex と同じ `detail: turn` の compact 記録を持ち、tag で pin される）
+- **orca.yaml**: 上記の file は全部 gitignore 済みなので worktree には載らない。`scripts.setup` から [sync-local-worktree-files.sh](../tools/sync-local-worktree-files.sh) を呼ぶ `orca.yaml` を repo root に置き、push する（worktree 側 checkout から読まれる）。既に `orca.yaml` があれば script は書かず `orca_yaml: "skipped"` を返すので、既存の `scripts.setup` に手で組み込む
 
 既存 setup コマンドがある repo は `{ [ ! -x ... ] || ...; }; bun install` のように、local 設定のコピーを install より前に置く。コピーに失敗しても依存 install は継続し、同期結果はログとファイルの存在で別途確認する。`setupAgentStartupPolicy=start-immediately` では setup と Agent が並行に起動するため、この順序だけでは Agent 起動前のコピー完了は保証しない。setup 全体の完了待ち（`wait-for-setup`）は必須にしない。
 
