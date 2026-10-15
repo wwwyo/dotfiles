@@ -13,6 +13,7 @@ permissions:
 strict: true
 runs-on: ubuntu-latest
 runs-on-slim: ubuntu-latest
+timeout-minutes: 30
 concurrency:
   group: skillctrl-update
   cancel-in-progress: true
