@@ -30,6 +30,7 @@ PRDは、なぜ作るかと、利用者が何をできるようになるかを�
 
 - 既存の置き場と言語に合わせる。新設時は共有文書なら `docs`、個人の下書きならgitignoreされた `.agent` を使う。共有範囲が不明な場合だけ確認する。
 - PRDは `<base>/prd/<topic>/prd.md`、必要なDDは同じ場所の `dd.md`、ADRは `<base>/adr/` に置く。topicは短いkebab-caseにする。
+- `<base>/prd/` や `<base>/adr/` を新設するときは、その dir の `README.md` に構造（tree と各ファイルの役割）を数行で書く。構造の説明は AGENTS.md に重複させず、README を参照させる。
 - 英語を標準とするPJでは `prd.md` を英語、`prd.ja.md` を日本語で書き、相互リンクと要件・状態を揃える。
 - 機能固有の語はPRDのGlossaryに置く。複数機能で使う実体の名詞だけ、repo root `AGENTS.md` のGlossaryにも置く。Storyはプロダクトに一つ。
 - 判断に使った試作品は `<base>/prd/<topic>/prototype/` に残す。容量や権利のため除外したものはREADMEに再現方法を書く。本番コードへの移植は行わない。

@@ -1,4 +1,4 @@
-#### 12.2 の補足: Dependabot PR の lockfile 未追従を自動修復する CI
+#### 10.1 の補足: Dependabot PR の lockfile 未追従を自動修復する CI
 
 Dependabot は workspace 配下の `package.json` だけを更新し、workspace 共有の root lockfile（`bun.lock` 等）を追従させない PR を作ることがある（security update で特に観測。dependabot-core issue [#11602](https://github.com/dependabot/dependabot-core/issues/11602)）。そのままだと CI の `--frozen-lockfile` install が必ず落ちる。
 

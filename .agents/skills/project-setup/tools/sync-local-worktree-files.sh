@@ -40,15 +40,19 @@ for rel in mise.local.toml .claude/settings.local.json .codex/langfuse.json .pi/
   cp "$src" "$wt/$rel"
 done
 
-# pi の install 先。settings.json だけ複製しても plugin は load されない
-if [ -f "$wt/.pi/settings.json" ] && [ -d "$main_root/.pi/npm" ]; then
-  # SessionStart は繰り返し発火するので、使用中の install 先を置き換えない。
-  if [ "$missing_only" = 1 ] && { [ -e "$wt/.pi/npm" ] || [ -L "$wt/.pi/npm" ]; }; then
-    exit 0
-  fi
-  tmp="$wt/.pi/.npm.sync-tmp"
-  rm -rf "$tmp"
-  cp -R "$main_root/.pi/npm" "$tmp"
-  rm -rf "$wt/.pi/npm"
-  mv "$tmp" "$wt/.pi/npm"
+# pi の install 先（npm: package は .pi/npm、git: package は .pi/git）。
+# settings.json だけ複製すると、trust 後の初回起動で install し直すまで plugin が load されない
+if [ -f "$wt/.pi/settings.json" ]; then
+  for dir in npm git; do
+    [ -d "$main_root/.pi/$dir" ] || continue
+    # SessionStart は繰り返し発火するので、使用中の install 先を置き換えない。
+    if [ "$missing_only" = 1 ] && { [ -e "$wt/.pi/$dir" ] || [ -L "$wt/.pi/$dir" ]; }; then
+      continue
+    fi
+    tmp="$wt/.pi/.$dir.sync-tmp"
+    rm -rf "$tmp"
+    cp -R "$main_root/.pi/$dir" "$tmp"
+    rm -rf "$wt/.pi/$dir"
+    mv "$tmp" "$wt/.pi/$dir"
+  done
 fi
