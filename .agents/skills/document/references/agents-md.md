@@ -14,9 +14,9 @@ AGENTS.md は、agent が起動時に読む repo の案内である。
 - 技術スタック — 言語・フレームワーク・主要ライブラリ
 - Skills — `.agents/skills/` や `docs/` への参照を「いつ load するか」の trigger として 1 行ずつ
 
-文書の配置は `{docs|.agent}/prd/<topic>/{prd|dd}.md` で示す。
+文書の配置は `{docs|.agent}/prd/`・`{docs|.agent}/adr/` までを示す。
 `docs/` は共有文書として Git で管理する。`.agent/` は個人メモとして Git の管理対象から外す。
-選んだ方を描き、PRD と必要な DD を同じ topic 配下にまとめる。
+選んだ方を描く。dir 内の構造（topic・連番などの命名）は各 dir の `README.md` に書き、AGENTS.md には重複させない。
 
 ## index としての規約
 

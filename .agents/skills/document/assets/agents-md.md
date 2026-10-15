@@ -13,14 +13,14 @@ Core actions:
 
 ```
 <repo>/
-└── {docs|.agent}/prd/<topic>/{prd|dd}.md
+└── {docs|.agent}/
+    ├── prd/    機能ごとの要件・設計書（構造は prd/README.md）
+    └── adr/    戻すのが難しい判断（構造は adr/README.md）
 ```
 
 <docs/ は共有文書として Git で管理する。.agent/ は個人メモとして Git の管理対象から外す。選んだ方を描く>
 
-<topic は機能ごとのディレクトリ名。prd.md は要件、dd.md は必要な場合の設計書を示す。同じ topic 配下にまとめる>
-
-<置き場の規約は prd skill を参照する>
+<各 dir 内の構造は README.md に書き、ここには重複させない>
 
 ## セットアップ
 
