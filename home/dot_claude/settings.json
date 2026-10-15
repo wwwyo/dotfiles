@@ -219,6 +219,16 @@
     "defaultMode": "auto"
   },
   "fallbackModel": [],
+  "skillOverrides": {
+    "anthropic-skills:built-in-browser": "off",
+    "anthropic-skills:chrome-browser": "off",
+    "anthropic-skills:computer-use": "off",
+    "anthropic-skills:docs": "off",
+    "anthropic-skills:skill-creator": "off",
+    "anthropic-skills:morning": "off",
+    "anthropic-skills:import-memory": "off",
+    "anthropic-skills:google-workspace": "off"
+  },
   "hooks": {
     "SessionStart": [
       {
@@ -390,14 +400,6 @@
     "type": "command",
     "command": "~/.local/share/mise/shims/node ~/.claude/hooks/status-line.js"
   },
-  "extraKnownMarketplaces": {
-    "langfuse-observability": {
-      "source": {
-        "source": "github",
-        "repo": "langfuse/Claude-Observability-Plugin"
-      }
-    }
-  },
   "enabledPlugins": {
     "langfuse-observability@langfuse-observability": false,
     "gopls-lsp@claude-plugins-official": false,
@@ -405,15 +407,13 @@
     "rust-analyzer-lsp@claude-plugins-official": false,
     "firecrawl@claude-plugins-official": true
   },
-  "skillOverrides": {
-    "anthropic-skills:built-in-browser": "off",
-    "anthropic-skills:chrome-browser": "off",
-    "anthropic-skills:computer-use": "off",
-    "anthropic-skills:docs": "off",
-    "anthropic-skills:skill-creator": "off",
-    "anthropic-skills:morning": "off",
-    "anthropic-skills:import-memory": "off",
-    "anthropic-skills:google-workspace": "off"
+  "extraKnownMarketplaces": {
+    "langfuse-observability": {
+      "source": {
+        "source": "github",
+        "repo": "langfuse/Claude-Observability-Plugin"
+      }
+    }
   },
   "language": "Japanese",
   "sandbox": {
@@ -583,6 +583,7 @@
   "tui": "fullscreen",
   "skipDangerousModePermissionPrompt": true,
   "skipWorkflowUsageWarning": true,
+  "theme": "light",
   "editorMode": "vim",
   "preferredNotifChannel": "terminal_bell",
   "switchModelsOnFlag": false,
@@ -600,5 +601,5 @@
   "feedbackSurveyState": {
     "lastShownTime": 1755224963756
   },
-  "theme": "light"
+  "model": "opus"
 }
