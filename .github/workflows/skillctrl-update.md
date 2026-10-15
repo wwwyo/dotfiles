@@ -13,6 +13,7 @@ permissions:
 strict: true
 runs-on: ubuntu-latest
 runs-on-slim: ubuntu-latest
+timeout-minutes: 30
 concurrency:
   group: skillctrl-update
   cancel-in-progress: true
@@ -24,7 +25,7 @@ network:
   allowed: [defaults, opencode.ai]
 tools:
   cli-proxy: true
-model: opencode-go/mimo-v2.6-flash
+model: opencode-go/deepseek-v4.1-flash
 runtimes:
   node:
     version: ${{ needs.select.outputs.node }}
