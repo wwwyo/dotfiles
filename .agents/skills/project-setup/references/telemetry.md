@@ -1,6 +1,6 @@
 # Langfuse telemetry opt-in
 
-ステップ 2 で Langfuse 収集 yes と答えた場合のみ実施。3 agent 全部をこの repo で有効化する。前提: `LANGFUSE_PUBLIC_KEY` / `SECRET_KEY` / `BASE_URL` が mise の global env に登録済み、かつ各マシンで `claude plugin install langfuse-observability@langfuse-observability`・`codex plugin marketplace add langfuse/codex-observability-plugin && codex plugin add tracing@codex-observability-plugin` 済みであること（詳細は `~/src/github.com/wwwyo/dotfiles/.agents/skills/dev-env/references/langfuse-telemetry.md` — この skill は新規 repo 内で実行されるため絶対 path で書く）。
+ステップ 2 で Langfuse 収集 yes と答えた場合のみ実施。3 agent 全部をこの repo で有効化する。前提: `LANGFUSE_PUBLIC_KEY` / `SECRET_KEY` / `BASE_URL` が mise の global env に登録済み、かつ各マシンで `claude plugin install langfuse-observability@langfuse-observability`・`codex plugin marketplace add wwwyo/codex-observability-plugin && codex plugin add tracing@codex-observability-plugin` 済みであること（詳細は `~/src/github.com/wwwyo/dotfiles/.agents/skills/dev-env/references/langfuse-telemetry.md` — この skill は新規 repo 内で実行されるため絶対 path で書く）。
 
 repo root で次を実行する。script は以下を置く。
 

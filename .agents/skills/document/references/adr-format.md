@@ -2,7 +2,7 @@
 
 ADRs live in `docs/adr/` and use sequential numbering: `0001-slug.md`, `0002-slug.md`, etc.
 
-Create the `docs/adr/` directory lazily: only when the first ADR is needed. When creating it, add `docs/adr/README.md` that briefly describes the structure (naming, numbering, status values) and points to this format.
+Create the `docs/adr/` directory lazily: only when the first ADR is needed. When creating it, add `docs/adr/README.md` that briefly describes the structure (naming, numbering, status values) and points to this format. For personal drafts kept in the git-ignored `.agent/` (see the `prd` skill's placement rules), use `.agent/adr/` in place of `docs/adr/` throughout.
 
 ## Template
 
