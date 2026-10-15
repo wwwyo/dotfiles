@@ -80,8 +80,9 @@ Langfuse の OTLP endpoint は traces しか受けないため hook/plugin 経�
   `plugins/tracing` を読む。生成 bundle を source と同じ commit に含め、
   plugin version も上げる。fork URL に変えるだけで npm source を残すと
   公式 package が引き続き動く。新しい hook の trust は `/hooks` で確認する。
-- **trace の確認は v2 API**: `GET /api/public/v2/observations?fields=core,basic,model,usage,metadata`
-  （legacy `/api/public/traces` は 410。fields 指定しないと model/usage が返らない）
+- **trace の確認は v2 API**: `GET /api/public/v2/observations?fields=core,basic,model,usage,metadata,trace_context`
+  （legacy `/api/public/traces` は 410。fields 指定しないと model/usage が返らない。
+  `sessionId`/`traceName` は `trace_context` に入るため照合時は指定が要る）
 - **telemetry 配線の疎通確認は最小 probe**: 検証対象の worktree で agent を
   起動し、session 名を `langfuse-live-check-<source>-<YYYYMMDD>` にして
   「ツールを使わず『ok』とだけ返答して」の 1 turn を投げる。tool を使わせない
