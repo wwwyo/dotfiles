@@ -100,8 +100,10 @@ pullfrog-approval・path 分類・judge verdict@head/判定材料 または scri
 全件引き直すので、`gh pr merge` 直叩きはこの再検証を迂回することになる。
 
 `gh pr merge` の直接使用は禁止ではないが規約外として扱う — 緊急時だけ、
-理由を PR に書く。draft PR は script が内部で `gh pr ready` してから merge
-する（squash 固定・branch 削除付き）。
+理由を PR に書く。**draft PR は lane では merge しない** — plan が draft を
+hold し、hard gate も `isDraft` を弾く（plan 後に author が draft 化した
+場合や judge-result の同一実行 merge の race も含む）。author の ready 化後に
+通常の判定へ回る。merge は squash 固定・branch 削除付き。
 
 ## report
 
@@ -143,7 +145,7 @@ merge N 件 / hold K 件 / error E 件
 
 ## Hold
 （merge されなかった open PR を 時刻（JST）|repo|PR|理由 の表で。always-hold path・
-judge ng・CI 待ち・dispatch 済みで author 対応待ちなど。judge ok 登録済みだが
+judge ng・draft（author ready 待ち）・CI 待ち・dispatch 済みで author 対応待ちなど。judge ok 登録済みだが
 残りの機械的条件（approval・CI・mergeable 等）を待っている PR は
 「judge ok 登録済み・<条件>待ち」と書き、「script判定待ち」のような曖昧な
 説明にしない。judge verdict は
