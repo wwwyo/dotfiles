@@ -29,7 +29,7 @@ transcript を読み、以下のフォーマットで記録を temp file に書�
 <!-- session-eval evaluated_at=<現在時刻の ISO8601 UTC> -->
 ## 事実
 - **概要**: <依頼内容・実行されたこと・到達した成果を淡々と>
-- **エラー・摩擦の観測**: <ユーザーの修正・舵取り直し・不満の発言、発生したエラー、同じ tool 呼び出しの反復（header の `tools:` 集計を証拠に）、使えたはずの tool を使わなかった形跡>
+- **エラー・摩擦の観測**: <ユーザーの修正・舵取り直し・不満の発言、発生したエラー、同じ tool 呼び出しの反復（header の `tools:` 集計を証拠に）、使えたはずの tool を使わなかった形跡。`subagent` の fanout が workflow/extension 側で起きると個別 spawn が `tools:` 集計に現れない — 報告上の起動数と集計が一致しないこと自体は摩擦の証拠にしない>
 - **agent の判断と根拠**: <transcript 内で agent が述べた判断とその理由>
 - **残課題**: <未完・未検証のもの>
 
@@ -48,6 +48,7 @@ transcript を読み、以下のフォーマットで記録を temp file に書�
 - compaction の要約 prompt（`summarize the conversation … in <summary> tags` 形式）も user turn として現れ、対応する assistant turn は action なしの要約だけを返す（旧 Devin source で観測）。ユーザーの指示・agent の無応答として扱わない
 - auth・sandbox・network 等のインフラ失敗が繰り返されただけの session なら、それを `エラー・摩擦の観測` に事実として書き、`学び・発見` は `特になし` でよい
 - automation 型 session や外部 path の handoff で依頼された session は、依頼本文が root turn に残らないことがある（automation の prompt がテンプレートのまま、handoff file が `/tmp` 等の一時領域で消えている等）。復元できない依頼本文を推測で補わず、観測できる範囲（概要・工具集計・assistant 出力）だけで評価し、不明点は残課題に書く。判断や成果物が transcript の外（例: pr-auto-merge の `daily/<date>/pr-watch.md`）にある型は、transcript が薄いこと自体を失敗と読まず、生成物の path を特定して読む。外部 artifact から読んだ観測も `事実` に書き、読んだ artifact の path を添える — artifact の内容に対する評価は `解釈` 側に分ける
+- Orca dispatch worker 型 session は work の実体が transcript に残らない（worker の最終出力は orchestration の `worker_done` message にあり、観測できる assistant turn は着手・進捗の宣言だけになりうる）。transcript が薄いだけで失敗と読まない — 成果は Orca の `~/Library/Application Support/orca/orchestration.db` の messages を taskId/dispatchId で引く。codex worker は rollout jsonl（`~/.codex/sessions/<date>/rollout-*<session_id>.jsonl`）に完全な tool call が残り、索引は `~/Library/Application Support/orca/ai-vault/session-parse-cache.json` の session_id→filePath で引ける（orca dir 全体の grep は巨大で避ける）
 
 ## 3. 書き戻し（順序固定: comment → evaluated_until）
 

@@ -37,6 +37,8 @@ chezmoi diff                                           # apply 前に差分確�
 
 wwwyo/me 等、別 repo で立ったセッションからこの repo に変更を加えるときは、main から worktree を切って作業する。checkout 中のブランチに直接 commit しない — dotfiles は他のセッション・作業からも常時触られており、任意のタイミングで何が checkout されているかを前提にできない。
 
+dotfiles 自身の session から skill 本体・hook・`AGENTS.md` のような恒久資産を編集するときも worktree + PR を既定にする。他 repo・他 session と同じ file を同時に読み書きする共有物で、canonical main へ直 push すると後続の修正・rebase で履歴書き換え（force push）の手戻りになる。main 直 commit の可否が曖昧なときは worktree を選ぶ。
+
 ## 開発フロー
 
 動画（demo・product launch・motion graphic）は `~/src/github.com/wwwyo/hyperframes`（HyperFrames の fork）を cwd にして `/hyperframes` skill から入る。

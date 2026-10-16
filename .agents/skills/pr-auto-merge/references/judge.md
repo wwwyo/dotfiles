@@ -107,6 +107,15 @@ workflow を判定する:
 - workflow の変更は manifest と同じ軸で見る — action の version bump なら
   release note・breaking・利用箇所を照合し、workflow 定義そのものの
   意味変更（トリガー・権限・手順の差し替え）が紛れていたら ng
+- **action の version bump を ok にするときの確認手順**（release note を総当たり
+  しないために固定）:
+  1. release note / migration guide で、bump した action の outputs・後続 step への
+     注入（token の永続化、cache/artifact 名 等）が変わりうる箇所を洗う
+  2. その機能を使っている workflow / 後続 step が実際にどれかを workflow tree で
+     突き合わせる（使っていなければ非該当）
+  3. 実行を伴わない judge でも、対象 action を使う job の current head の CI run URL を
+     根拠に挙げる
+  4. 非該当と判断した outputs/token のどれが非該当かと revert 可能性を `--reason` に書く
 - **major という理由・release note の breaking 記述だけで ng にしない**。
   公式 release/migration guide と PR head の設定・利用箇所を照合し、runtime・peer
   dependency の条件も確認する。利用していない削除 API/option は対応不要とする。
