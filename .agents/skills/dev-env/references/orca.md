@@ -62,7 +62,7 @@ version-matched guide は coordinator 視点の記述が中心。worker 側の�
 - `send` 成功は durable enqueue、nudge は best-effort であり worker の受領/理解を証明しない。worker は `check` の全 message を処理し、変更に影響する指示は受領と現在の到達点を status で返す。delivery が replay される版では処理済み `deliveryId` を version-matched guide に従って `check --ack` する。ack の返り値にも次の FIFO batch が含まれるため、本文の処理・status 応答・ack を deliveryId が null になるまで繰り返す。`replayed: true` は未 ack の旧 delivery であり新規0件ではない。本文を時刻で絞り込んで古い未処理指示を捨てない
 - 待機は `check --wait`（stderr に keepalive が流れる）。呼び出し側の tool 実行には blocking 上限（1分程度）があるので、長い待機は繰り返し呼ぶ
 - sibling worker との連絡は group address で届く。`@all` 等の Run group は sender の属する Run の live Dispatch 群を指す（worker からは sibling、coordinator は含まれない）。worker が coordinator へ blocker を上げる宛先は group ではなく `run:<id>`。`worker_done` 等の lifecycle message は group 宛にしない
-- **dispatch worker の sandbox から `orca` CLI が届かない**。worker の pi/Claude sandbox 内では `orca terminal create`・`orca orchestration send/check` 等が `EPERM` / `runtime_access_denied` で拒否されることがある — Orca socket の許可（[pi.md の「`sandbox.json` の Orca socket 許可」](pi.md)）を確認し、直らなければ sandbox 外（escalated）で実行する。`gh` と同じ sandbox 除外の扱いで、`orca` の他コマンドが通っていても orchestration だけ届かないことがある
+- **dispatch worker の sandbox から `orca` CLI が届かない**。worker の sandbox 内では `orca terminal create`・`orca orchestration send/check` 等が `EPERM` / `runtime_access_denied` で拒否されることがある。pi は [pi.md の「`sandbox.json` の Orca socket 許可」](pi.md) に従い `network.allowUnixSockets` に Orca socket の親 dir（`~/Library/Application Support/orca`）を許可する。Claude Code は別 key で、`sandbox.network.allowUnixSockets` に同じ dir を足す必要がある — チェックイン済みの `~/.claude/settings.json` は Orca の dir を許可していないため、Claude worker はローカル許可か escalated 実行が要る。どちらも直らなければ sandbox 外（escalated）で実行する — `gh` と同じ sandbox 除外の扱い。
 
 ## 自分のいる worktree を消すとき
 

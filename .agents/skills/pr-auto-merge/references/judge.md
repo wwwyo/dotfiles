@@ -113,8 +113,8 @@ workflow を判定する:
      注入（token の永続化、cache/artifact 名 等）が変わりうる箇所を洗う
   2. その機能を使っている workflow / 後続 step が実際にどれかを workflow tree で
      突き合わせる（使っていなければ非該当）
-  3. 実行を伴わない judge でも、対象 action を使う job の current head の CI run URL を
-     根拠に挙げる
+  3. current head に対象 workflow/job の CI run があれば、その run URL を根拠に挙げる
+     （run が無い・未実行・skip の場合はその旨を書き、それだけで ng にはしない — 下の基準どおり）
   4. 非該当と判断した outputs/token のどれが非該当かと revert 可能性を `--reason` に書く
 - **major という理由・release note の breaking 記述だけで ng にしない**。
   公式 release/migration guide と PR head の設定・利用箇所を照合し、runtime・peer
