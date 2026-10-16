@@ -55,10 +55,11 @@
   "radius": "8px", "scheme": "light", "spacing": { "unit": "4px", "maxWidth": "1128px" } }
 ```
 
-`design.md` の `## Tokens` へ:
+`design.md` の `## Tokens` へ。抜粋ではなく**この節だけで形が成立する block** として書く — 素材に無いロールを抜いたままでも check は error 0 で通るので、抜粋を置くと読者がそれを完成形として写す。
 
 ```css
 :root {
+  /* 素材由来 */
   --background: #fbfaf7;  --foreground: #1b1a17;
   --card: #f1efe9;        --card-foreground: #1b1a17;
   --primary: #2f6f4e;     --primary-foreground: #ffffff;
@@ -68,10 +69,20 @@
   --font-display: "Manrope", system-ui, sans-serif;
   --font-body: "Inter", system-ui, sans-serif;
   --dur-base: 200ms;  --ease-out: cubic-bezier(.22, 1, .36, 1);
+
+  /* 素材に対応物が無いので設計した値 */
+  --popover: #ffffff;      --popover-foreground: #1b1a17;
+  --secondary: #f1efe9;    --secondary-foreground: #1b1a17;
+  --accent: #efece5;       --accent-foreground: #1b1a17;
+  --destructive: #a3342f;  --destructive-foreground: #ffffff;
+  --font-mono: ui-monospace, monospace;
+  --text-sm: 0.875rem;  --text-base: 1rem;  --text-lg: 1.25rem;
+  --space-2: 0.5rem;    --space-4: 1rem;    --space-8: 2rem;
+  --dur-fast: 180ms;    --dur-slow: 320ms;
 }
 ```
 
-`--muted` / `--input` / `--ring` と `--dur-fast` / `--dur-slow`、type・space scale は素材に無いので設計した値。素材名・URL・日付と、素材由来 / 設計の別を `## Notes` に書く。
+`--muted-foreground` は素材の `fgMuted` 由来、`--card-foreground` は素材の `fg` を流用した導出値。`--muted` / `--input` / `--ring` と下段のロール・scale は素材に無いので設計した値（type・space scale は必要な段を名前付きで持つ最小構成で、段はプロジェクトごとに増やす）。素材名・URL・日付と、素材由来 / 導出 / 設計の別を `## Notes` に書く。
 
 ## 検証
 
