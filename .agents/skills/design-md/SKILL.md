@@ -61,6 +61,10 @@ logomark と wordmark をセットで設計しても、同じ文字でも用途�
 - `## Notes` に出所（URL / ファイル / Figma node・日付）を記録する
 - font・icons・logo も拾う: font stack は computed style から、icon library は `package.json` の依存から、logo は header markup / 既存 asset から。抽出では logomark / wordmark / Usage を項目ごとに確認し、確認できない項目は「未制定」、参照範囲で不在・不使用を確認できた項目は「なし」と根拠・確認範囲を書く。抽出のために新しい logo を作らない
 
+## 外部の design system を素材にする場合
+
+第三者が配布する design system（配布された DESIGN.md / `theme.css` / token JSON / shadcn kit 等）を素材にするときは [references/token-mapping.md](references/token-mapping.md) に従う。配布物を repo root の `design.md` として置かない — 取るのは**値だけ**で、語彙・format・check は本文書が正本のまま。欠損ロールの設計と出所の記録も同じ reference が定める。
+
 ## design.md のフォーマット
 
 [references/format.md](references/format.md) を両モードで必ず読み、節と CSS block の形式を揃える。format と check の正本はこの skill。
