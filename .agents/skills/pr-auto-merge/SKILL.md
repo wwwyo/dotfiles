@@ -134,6 +134,22 @@ python3 ~/.agents/skills/pr-auto-merge/tools/pr_triage.py events --event note --
 既存 `pr-watch-log.md` の移行時は、原文と元ファイルの日付・path を `note` に
 保持して読み戻しを確認してから旧ファイルを削除する。過去の実績 event として再生成しない。
 
+- **executor の最終 assistant 出力の末尾に、tick の結果を1行に要約した固定行を必ず置く**。
+  jsonl の代替ではない — Langfuse の transcript だけを見る評価・監視が md・jsonl を
+  開かずに tick の判断を再構成するための要約。`plan` と当日の jsonl から作り、次の形を守る:
+
+  ```text
+  tick-summary: date=<YYYY-MM-DD> run_id=<plan.run_id> dispatch=<n> escalate=<n> judge=<n> merge=<n> hold=<n> sweep=<n> error=<n> judge_ok=<n> judge_ng=<n> judge_repair=<n> blocked=[<理由>:<n>,...]
+  ```
+
+  `hold` は plan の hold action 件数。`judge_ok`・`judge_ng`・`judge_repair` は
+  `event == "judge"` かつ `ts >= plan.generated_at` の event だけを数える — 当日の
+  jsonl には前 tick の judge event も入るため、時刻で絞らないと件数が膨らむ。
+  `blocked` は同じ絞り込んだ judge event の `blocked`（judge-result が ok でも hard
+  gate が通らず `merge_ready: false` のときに残る理由の配列）を理由ごとに数える
+  （`pullfrog-approval not success`・`judge ok stale`・`draft` など）。該当の無い
+  field は 0・`[]` とし、行自体は省略しない。長い根拠は従来どおり jsonl の `note` に残す。
+
 dispatch は修正依頼を送った中間状態で、PR の決着ではない。dispatch の
 見出し・件数・成果一覧は md と最終返信に載せず、送信履歴は jsonl に残す。
 修正待ちの open PR は Hold にまとめ、待っている理由を書く。

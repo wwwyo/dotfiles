@@ -16,6 +16,8 @@ subagent の入れ子を禁止する。`1` は「main conversation の下に sub
 
 Claude Code の「project memory」は repo 内の `AGENTS.md`/`CLAUDE.md` とは別で、既定では `~/.claude/projects/<project>/memory/` の**直下**に `MEMORY.md`（索引）と topic ごとの `<topic>.md` が並ぶ（`memory/<topic>.md` と書くと `memory/memory/...` の二重 nest に読めるが、その階層は無い）。`<project>` は **git repository 由来**で、同一 repo の worktree・subdir は1つの `memory/` を共有する — `/` を `-` に置換した現在の作業ディレクトリの slug から組み立てると別 dir を取り違える。保存先は settings の `autoMemoryDirectory` で変えられる。ユーザーが「その方針 AGENTS.md に書いたっけ」と聞いても実体がここにあることがあるので、repo 内 docs を探す前に候補に入れる（`/memory` で閲覧・編集でき、別 repo の session で作られたメモはその repo の `<project>` 配下にある — `~/.claude/projects/*/memory/` を横断検索する）。`rg` は repo 内検索で `$HOME/.claude` を見ないため、repo を grep しても見つからない。
 
+sandbox 有効時は `~/.claude/projects/<project>/memory/` 配下を Bash から書こうとすると `operation not permitted` で失敗しうる — file tool（Write/Edit）で書く。Bash 経由で「メモリに残しました」と述べたのに実際は書けていない実例があるので、メモ書き込みの完了は file tool の成否で確認する。
+
 方針の削除依頼では本体と `MEMORY.md` の索引行を両方消す — 索引が残ると方針が生き続ける。削除後は対象 repo の docs・`.agents/skills`・他 repo を横断 grep して消し漏れを確認する。`~/.claude/state/langfuse_state.json` と session ログ（`.claude`/`.pi` の jsonl）は設定・方針の正本ではなく会話履歴・telemetry の生ログなので削除対象にしない。
 
 ## `sandbox`

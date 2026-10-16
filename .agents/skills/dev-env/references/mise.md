@@ -41,6 +41,14 @@ repo 編集が即反映）。supply chain 対策として `pin = true` + `minimu
   mise.lock entry は checksum を持たないため commit pin 自体が integrity anchor — CI で
   検査するなら 40-hex commit と lock entry の一致を見る。backend 切替時は旧 backend の
   install を残さない（別 format の install state を誤読しうる）
+- `github:<owner>/<repo>` backend は release asset 名から platform 部分を落として配置するため、
+  asset が単体 binary の tool（例: `gh-actions-lock`）では `bin = "<tool 名>"` を明示しないと
+  shim が `darwin` のような platform 名になる。asset 名の platform 表記（`*_darwin_arm64` 等）を
+  lockfile・`gh release view` で確認してから `bin` を決める
+- CI で `mise.lock` の値（URL・checksum 等）を shell の `source` に渡すと、その lockfile を
+  書き換えられる PR 作成者が任意コマンドを実行できる。値の検証・配置は Python 等の内部で
+  完結させ、lockfile の値を shell に渡さない（gh-actions-lock の verify job で実際に
+  レビュー指摘された型）
 - npm backend の optional platform dependency が取りこぼされると本体コマンドが stub に
   なり `--version` が通らない（claude-code 2.1.288 で darwin-arm64 が落ちた実例）。mise の
   install dir に対象 platform package を手動展開し `node install.cjs` を実行して復旧する。

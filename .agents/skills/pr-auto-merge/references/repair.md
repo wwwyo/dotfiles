@@ -101,3 +101,15 @@ CI の frozen install を含む同じコマンドで検証する。CI 自体の 
 
 課金・利用上限・外部サービス障害等の根拠があれば、人間対応の理由を
 PR に書いて hold。失敗ログだけで根拠なく billing と断定しない。
+
+### preview deploy のみ失敗（beta snapshot の env rename）
+
+`@cloudflare/vite-plugin` 等の beta snapshot bump で、preview build の判定 env 名が
+変わりうる（例: `CLOUDFLARE_VITE_PREVIEW_BUILD` → `CLOUDFLARE_PREVIEW_BUILD`）。
+症状は build・test が green で deploy のみ失敗し、ログに
+`Build Output was not created by a Preview build.` が出る。`.cloudflare/output/v0/config.json`
+の `buildContext.isPreview` を新旧 env で比較すると再現できる。修正は Cloudflare
+ダッシュボード（repo 外・共有インフラ）での env 設定変更になり、`cf builds workers get`
+は 404 を返して Workers Builds の deploy command を CLI からは直せない。repo 内で
+完結しないので、原因・再現・選択肢（新旧両 env の併記、`--prebuilt` を外す経路など）を
+PR にコメントして push せず hold にする。

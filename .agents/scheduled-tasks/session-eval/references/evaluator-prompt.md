@@ -47,6 +47,7 @@ transcript を読み、以下のフォーマットで記録を temp file に書�
 - pi / `unknown_service` source の session は turn obs の `output` が空で、`[assistant]` が全 turn 空になりうる。header の `generations`（GENERATION type の obs 数）が 0 でなければ会話自体は存在する — 空本文を「signal なし」と読まず、事実側に「assistant 本文は exporter の emit 形で観測できない」と書く
 - compaction の要約 prompt（`summarize the conversation … in <summary> tags` 形式）も user turn として現れ、対応する assistant turn は action なしの要約だけを返す（旧 Devin source で観測）。ユーザーの指示・agent の無応答として扱わない
 - auth・sandbox・network 等のインフラ失敗が繰り返されただけの session なら、それを `エラー・摩擦の観測` に事実として書き、`学び・発見` は `特になし` でよい
+- automation 型 session や外部 path の handoff で依頼された session は、依頼本文が root turn に残らないことがある（automation の prompt がテンプレートのまま、handoff file が `/tmp` 等の一時領域で消えている等）。復元できない依頼本文を推測で補わず、観測できる範囲（概要・工具集計・assistant 出力）だけで評価し、不明点は残課題に書く。判断や成果物が transcript の外（例: pr-auto-merge の `daily/<date>/pr-watch.md`）にある型は、transcript が薄いこと自体を失敗と読まず、生成物の path を特定して読む。外部 artifact から読んだ観測も `事実` に書き、読んだ artifact の path を添える — artifact の内容に対する評価は `解釈` 側に分ける
 
 ## 3. 書き戻し（順序固定: comment → evaluated_until）
 
