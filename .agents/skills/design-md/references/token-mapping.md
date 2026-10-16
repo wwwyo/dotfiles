@@ -61,20 +61,25 @@
 :root {
   /* 素材由来 */
   --background: #fbfaf7;  --foreground: #1b1a17;
-  --card: #f1efe9;        --card-foreground: #1b1a17;
+  --card: #f1efe9;
   --primary: #2f6f4e;     --primary-foreground: #ffffff;
-  --muted: #efece5;       --muted-foreground: #6b6a63;
-  --border: #e2ded4;      --input: #e2ded4;  --ring: #2f6f4e;
+  --muted-foreground: #6b6a63;
+  --border: #e2ded4;
   --radius: 8px;
   --font-display: "Manrope", system-ui, sans-serif;
   --font-body: "Inter", system-ui, sans-serif;
   --dur-base: 200ms;  --ease-out: cubic-bezier(.22, 1, .36, 1);
 
+  /* 素材から導出 */
+  --card-foreground: #1b1a17;
+
   /* 素材に対応物が無いので設計した値 */
-  --popover: #ffffff;      --popover-foreground: #1b1a17;
-  --secondary: #f1efe9;    --secondary-foreground: #1b1a17;
-  --accent: #efece5;       --accent-foreground: #1b1a17;
-  --destructive: #a3342f;  --destructive-foreground: #ffffff;
+  --muted: #efece5;
+  --input: #e2ded4;       --ring: #2f6f4e;
+  --popover: #ffffff;     --popover-foreground: #1b1a17;
+  --secondary: #f1efe9;   --secondary-foreground: #1b1a17;
+  --accent: #efece5;      --accent-foreground: #1b1a17;
+  --destructive: #a3342f; --destructive-foreground: #ffffff;
   --font-mono: ui-monospace, monospace;
   --text-sm: 0.875rem;  --text-base: 1rem;  --text-lg: 1.25rem;
   --space-2: 0.5rem;    --space-4: 1rem;    --space-8: 2rem;
