@@ -11,7 +11,7 @@
 "aqua:x-motemen/ghq" = "1.11.2"
 "aqua:tmux/tmux-builds" = "3.6a"
 "cargo:eza" = "0.23.5"
-"core:bun" = "1.4.2"
+"core:bun" = "1.4.3"
 "aqua:pnpm/pnpm" = "12.11.2"
 "aqua:sharkdp/fd" = "10.5.0"
 go = "1.27.2"
