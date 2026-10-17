@@ -2115,7 +2115,7 @@ version = "4.0.1"
 backend = "npm:pptxgenjs"
 
 [[tools."npm:prettier"]]
-version = "3.9.9"
+version = "3.9.10"
 backend = "npm:prettier"
 
 [[tools."npm:pullfrog"]]
