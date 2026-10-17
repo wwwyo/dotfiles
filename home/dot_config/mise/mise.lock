@@ -2131,7 +2131,7 @@ version = "2.11.7"
 backend = "npm:turbo"
 
 [[tools."npm:vercel"]]
-version = "62.0.0"
+version = "63.1.2"
 backend = "npm:vercel"
 
 [[tools."npm:wrangler"]]
