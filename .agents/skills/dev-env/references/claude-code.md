@@ -25,6 +25,7 @@ sandbox 有効時は `~/.claude/projects/<project>/memory/` 配下を Bash か�
 ### `filesystem.allowWrite`
 
 - `excludedCommands` に入れたコマンドは sandbox 外で走るので、`allowWrite` を足してもそのコマンド自身の読み書きは変わらない。`allowWrite` が効くのは sandbox 内で動くコマンドが間接的にその path を読み書きする経路 — 例: `bun` を `excludedCommands` に入れていても、`bunx` 経由で起動するツールや cache を直読み書きする script は sandbox 内なので `~/.bun` の書込み許可が要る。許可を足すときはどの経路に効くのかを切り分けて説明する
+- `allowWrite` が広げるのは sandbox 内の shell command の書き込み可否だけで、Claude Code 自身が保護する `~/.claude` 配下（`settings.json`・`hooks`・`projects`・`plugins`・`agents`・`commands`・`shell-snapshots`）は開かない — 「親 dir を許可すれば配下全部が書ける」は成り立たない。これらを変えるときは Claude Code の UI / 機能経由になる
 
 ### `network.allowUnixSockets`
 
