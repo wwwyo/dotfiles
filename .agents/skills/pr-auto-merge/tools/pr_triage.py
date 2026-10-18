@@ -1434,10 +1434,13 @@ def dispatch_already_sent(ds, head, sig):
                for d in ds.get("dispatches", []))
 
 
-def mark_dispatch_sent(state, repo, number, head, sig):
+def mark_dispatch_sent(state, repo, number, head, sig, handle=None):
     ds = dispatch_state(state, repo, number)
+    # handle も残す — escalate 時に「どの terminal を実査するか」を
+    # report へ出せるようにする（delivery_pending は成功時に消えるため、
+    # 上限到達による escalate ではここが唯一の手掛かりになる）。
     ds.setdefault("dispatches", []).append(
-        {"sha": head, "sig": sig, "at": _iso(_now())})
+        {"sha": head, "sig": sig, "at": _iso(_now()), "handle": handle})
     ds["stale_ticks"] = 0  # 新しい指摘へ送ったので滞留カウントは戻す
     rounds = ds.setdefault("rounds", [])
     if head and head not in rounds:
@@ -1533,13 +1536,22 @@ def pi_delivery_evidence(cwd, text, since):
     return None
 
 
-def send_prompt(handle, text):
+def send_prompt(handle, text, fallback_cwds=()):
     """Orca の turn_started、または local pi の新しい generation で確認する。
-    未確認なら入力を再送しない。呼び出し側が pending を永続化している。"""
+    未確認なら入力を再送しない。呼び出し側が pending を永続化している。
+
+    terminal の worktreePath が欠落・不一致でも、呼び出し元が知っている
+    対象 worktree の path を fallback_cwds に渡すと session JSONL を探せる —
+    metadata 欠落だけで「未確認→escalate」に倒れるのを避ける。
+    """
     since = _now()
     terminal = orca_json(["terminal", "show", "--terminal", handle]).get("terminal") or {}
     local_pi = terminal.get("agentIdentity") == "pi" and terminal.get("executionHostId") == "local"
-    cwd = terminal.get("worktreePath") if local_pi else None
+    cwds = []
+    if local_pi:
+        for cwd in [terminal.get("worktreePath"), *fallback_cwds]:
+            if cwd and cwd not in cwds:
+                cwds.append(cwd)
     try:
         res = orca_json(["terminal", "send", "--terminal", handle,
                          "--text", text, "--enter",
@@ -1548,12 +1560,13 @@ def send_prompt(handle, text):
         return False, {"error": str(e)}
     if "turn_started" in json.dumps(res or {}, ensure_ascii=False):
         return True, res
-    if cwd:
+    if cwds:
         deadline = time.monotonic() + SEND_WAIT_S
         while True:
-            evidence = pi_delivery_evidence(cwd, text, since)
-            if evidence:
-                return True, {"receipt": res, "evidence": evidence}
+            for cwd in cwds:
+                evidence = pi_delivery_evidence(cwd, text, since)
+                if evidence:
+                    return True, {"receipt": res, "evidence": evidence}
             if time.monotonic() >= deadline:
                 break
             time.sleep(1)
@@ -2172,8 +2185,10 @@ def _cmd_dispatch(a):
               "defer": route["route"] == "defer"})
         return
 
+    fallback_cwds = []
     if route["route"] == "send":
         handle = route["handle"]
+        fallback_cwds = [(route.get("worktree") or {}).get("path")]
     elif route["route"] == "revive":
         res = orca_json(["terminal", "create", "--worktree",
                          route["worktree"]["worktreeId"],
@@ -2182,12 +2197,14 @@ def _cmd_dispatch(a):
             (res or {}).get("handle")
         if not handle:
             raise ApiError(f"terminal create returned no handle: {res}")
+        fallback_cwds = [(route.get("worktree") or {}).get("path")]
         ok, detail = wait_tui_idle(handle)
         if not ok:
             raise ApiError(f"tui-idle not satisfied: {detail}")
     else:  # spawn
-        handle, _wpath, _wtid = spawn_worktree(
+        handle, wpath, _wtid = spawn_worktree(
             a.repo.split("/")[-1], a.number, v.get("headRefName"))
+        fallback_cwds = [wpath]
         ok, detail = wait_tui_idle(handle)
         if not ok:
             raise ApiError(f"tui-idle not satisfied: {detail}")
@@ -2198,7 +2215,7 @@ def _cmd_dispatch(a):
                                    "at": _iso(_now())}
     save_state(st)
     msg += "\n[pr-merge-lane delivery " + str(uuid.uuid4()) + "]"
-    delivered, detail = send_prompt(handle, msg)
+    delivered, detail = send_prompt(handle, msg, fallback_cwds)
     if not delivered:
         # 入力が受理された可能性があるため、次 tick でも再送しない。
         append_event("dispatch_failed", repo=a.repo, pr=a.number,
@@ -2208,7 +2225,7 @@ def _cmd_dispatch(a):
               "needs_escalate": True})
         return
     pending.pop("delivery_pending", None)
-    mark_dispatch_sent(st, a.repo, a.number, head, sig)
+    mark_dispatch_sent(st, a.repo, a.number, head, sig, handle)
     save_state(st)
     append_event("dispatch", repo=a.repo, pr=a.number, sha=head,
                  route=route["route"], items=len(items),
@@ -2230,6 +2247,12 @@ def _cmd_escalate(a):
     if ds.get("escalated"):
         emit({"ok": True, "escalated": False, "reason": "already"})
         return
+    # 実査する terminal を report へ出せるようにする。dispatch_failed 直後は
+    # delivery_pending に、成功済み dispatch では最後の dispatch 記録に handle が残る。
+    handle = (ds.get("delivery_pending") or {}).get("handle")
+    if not handle:
+        dispatches = ds.get("dispatches") or []
+        handle = dispatches[-1].get("handle") if dispatches else None
     body = (a.reason or "") or \
         "レビュー指摘・PR 修正の対応が上限に達したため、自動応答を打ち切りました。" \
         "以降は人間の判断が必要です（pr-merge-lane）。"
@@ -2237,8 +2260,10 @@ def _cmd_escalate(a):
         "--body", body])
     ds["escalated"] = True
     save_state(st)
-    append_event("escalate", repo=a.repo, pr=a.number, reason=body[:200])
-    emit({"ok": True, "escalated": True})
+    append_event("escalate", repo=a.repo, pr=a.number, reason=body[:200],
+                 handle=handle)
+    emit({"ok": True, "escalated": True, "handle": handle,
+          "state_file": str(STATE_FILE)})
 
 
 # ---------- judge ----------

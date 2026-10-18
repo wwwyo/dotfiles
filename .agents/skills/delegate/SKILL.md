@@ -137,3 +137,4 @@ commit / push / PR 作成 / merge / branch 削除は <委譲する操作を列�
 - **モデルは親が決める。** この skill の「Agent・モデルの共通設定」から役割・データ区分で harness・model・effort と fallback 順を選び、起動時に指定する。委譲先に選ばせない
 - **委譲元側の setup は委譲前に委譲元が完了する。** repo 作成・初回 push・wiki 登録のような SSOT 登録は「指示に含める」だけでは完了とみなさない — 未完了のまま委譲先が作業を始めると、後で漏れに気づいても差分の切り分けが付かない
 - **personal データ区分の委譲は境界を明記する。** 認証操作（ログイン・窓口・署名）は人間に残し、生成物は `.local.` 命名で git 管理外に置くことを brief に書く。login・署名を tool として公開する harness では tool/permission 設定でも閉じる
+- **委譲 brief を一時領域（`/private/tmp` 等）だけに置かない。** 事後評価・監査で原文が消える — `daily/<date>/` 等の耐久 path に置くか、渡した本文を report に残す

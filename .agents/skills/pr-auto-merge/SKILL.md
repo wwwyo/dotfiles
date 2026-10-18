@@ -56,7 +56,7 @@ mise の `[tools]` は開発用依存（devDependencies 相当）として扱う
    | action | やること |
    |--------|---------|
    | `dispatch` | `pr_triage.py dispatch --repo <r> --number <n>` を呼ぶ。send / revive / spawn の解決・上限・dedup・delivery 検証は script がやる。結果が `needs_escalate: true` なら、返された `reason` を `--reason` に渡して続けて `escalate` を呼ぶ。`defer`/`none` なら何もしない。`dispatched: false` の `reason` が stale plan（plan 取得後に指摘が解消された）でも失敗ではない — 再送・独自回復せず次 tick に委ねる |
-   | `escalate` | `pr_triage.py escalate --repo <r> --number <n>`（上限到達の旨を PR にコメントして打ち切り） |
+   | `escalate` | `pr_triage.py escalate --repo <r> --number <n>`（上限到達の旨を PR にコメントして打ち切り）。戻り値の `handle`（実査する terminal）を report の該当行に書く |
    | `judge` | `judge-input` で diff・PR 本文・CI を取得し、**executor 自身が references/judge.md の基準で判定して** `judge-result --sha <sha> --context-hash <context_hash> --verdict ok\|ng\|repair --reason <理由>` に登録する。材料取得だけで終えない。判断不能なら理由付きで ng。**ok の登録結果が `merge_ready: true` なら、次 tick を待たず同じ実行内で続けて `merge` を呼ぶ**（`merge` が発行直前に hard gate を全件再検証する）。`merge_ready: false`（`blocked` の理由付き）なら merge せず、理由を report に残す。repair は次 tick の dispatch に渡す |
    | `merge` | `pr_triage.py merge --repo <r> --number <n>`。`blocked` が返ったら直前再検証で弾かれたので何もしない（状況が変わったサイン） |
    | `hold` | 何もしない。理由は report に載せる |
@@ -152,7 +152,7 @@ python3 ~/.agents/skills/pr-auto-merge/tools/pr_triage.py events --event note --
 
 dispatch は修正依頼を送った中間状態で、PR の決着ではない。dispatch の
 見出し・件数・成果一覧は md と最終返信に載せず、送信履歴は jsonl に残す。
-修正待ちの open PR は Hold にまとめ、待っている理由を書く。
+修正待ちの open PR は Hold にまとめ、待っている理由を書く。Hold 表の行数が plan の hold 件数より多いのは正常（dispatch 済みで author 対応待ちの PR も Hold に載る）— tick-summary の `hold=` と突き合わせて不整合と読まない。
 
 ```markdown
 # PR Watch — YYYY-MM-DD
@@ -265,4 +265,4 @@ pullfrog-approval を免除する。
 
 ## pi の送信確認
 
-修復 worker の新規・復帰起動は delegate の worker/personal からモデル・thinking を読み、mise 経由の pi 対話 session に指定する。Orca が `turn_started` を返さない local pi では、対象 cwd の session JSONL に今回の固有 delivery marker を持つ新しい user input と、その後のエラー・中断ではない、内容のある assistant generation があることを script が確認する。本文は報告に出さない。入力受付だけを成功とせず、直接 CLI の dispatch も lock で直列化し、送信前に pending を保存するため、中断・未確認時も同じ head へ自動再送しない。remote host・独自 session dir などで確認できない場合は reason 付き escalate とし、terminal を実査してから復旧する。
+修復 worker の新規・復帰起動は delegate の worker/personal からモデル・thinking を読み、mise 経由の pi 対話 session に指定する。Orca が `turn_started` を返さない local pi では、対象 cwd の session JSONL に今回の固有 delivery marker を持つ新しい user input と、その後のエラー・中断ではない、内容のある assistant generation があることを script が確認する。本文は報告に出さない。入力受付だけを成功とせず、直接 CLI の dispatch も lock で直列化し、送信前に pending を保存するため、中断・未確認時も同じ head へ自動再送しない。remote host・独自 session dir などで確認できない場合は reason 付き escalate とし、terminal を実査してから復旧する。`dispatch_failed`（名目 turn_started not observed）は未送信の確定ではない — `worktreePath` 欠落や観測窓より遅い generation でも起こる。escalate した PR の実査は、report の `handle` から terminal の `agentIdentity` / `worktreePath` と、対象 worktree の session JSONL に delivery marker 付き user input と後続 generation があるかを先に見る。
