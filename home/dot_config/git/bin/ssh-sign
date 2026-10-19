@@ -5,6 +5,8 @@
 # socket を持つことがあり、そのまま ssh-keygen を呼ぶと passphrase を対話で
 # 要求されて署名が失敗する（agent に鍵が載っていても到達しない）。
 # launchd が持つ稼働中の socket から復帰して ssh-keygen へ exec する。
+# socket は正しくても agent に identity が載っていないことがあり、その場合も
+# 同じ理由で署名が失敗するので、macOS では keychain から読み直す。
 # git は署名だけでなく verify（-Y find-principals / -Y verify）にも同じ
 # program を使うが、どちらも透過するので害はない。
 # 引数・stdin・終了 status は ssh-keygen のものをそのまま通す。
@@ -23,9 +25,23 @@ agent_reachable() {
   [ "$rc" -eq 0 ] || [ "$rc" -eq 1 ]
 }
 
+# agent は生きているが identity が空（rc=1）なら、macOS の keychain
+# （ssh-add -K / --apple-use-keychain で登録済みの鍵）から読み直す。
+# identity が空の agent のまま ssh-keygen へ渡すと、暗号化鍵では passphrase を
+# 対話要求して署名が失敗する — 端末の無い automation / agent tool からは答えられない。
+# socket は差し替えない（外部の固定 agent 設定は尊重し、identity だけ補充する）。
+# `--apple-load-keychain` は macOS の ssh-add 拡張なので launchctl の有無で分岐する。
+load_keychain_identities() {
+  [ -x "$LAUNCHCTL" ] || return 0
+  SSH_AUTH_SOCK=$1 "$SSH_ADD" -l >/dev/null 2>&1
+  [ "$?" -eq 1 ] || return 0
+  SSH_AUTH_SOCK=$1 "$SSH_ADD" --apple-load-keychain >/dev/null 2>&1 || :
+}
+
 recover_sock() {
   # 既に使える agent があれば何もしない（外部の固定 agent 設定を尊重する）
   if [ -n "${SSH_AUTH_SOCK:-}" ] && [ -S "$SSH_AUTH_SOCK" ] && agent_reachable "$SSH_AUTH_SOCK"; then
+    load_keychain_identities "$SSH_AUTH_SOCK"
     return 0
   fi
   # launchctl は macOS（launchd user domain）のみ。非 macOS ではそのまま
@@ -36,6 +52,7 @@ recover_sock() {
   # launchd の値は socket として live とは限らない（agent 停止後も残る）。
   # 接続確認できないものを export すると署名失敗が再現するので probe する
   agent_reachable "$sock" || return 0
+  load_keychain_identities "$sock"
   SSH_AUTH_SOCK=$sock
   export SSH_AUTH_SOCK
 }

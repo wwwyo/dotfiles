@@ -1434,10 +1434,13 @@ def dispatch_already_sent(ds, head, sig):
                for d in ds.get("dispatches", []))
 
 
-def mark_dispatch_sent(state, repo, number, head, sig):
+def mark_dispatch_sent(state, repo, number, head, sig, handle=None):
     ds = dispatch_state(state, repo, number)
+    # handle も残す — escalate 時に「どの terminal を実査するか」を
+    # report へ出せるようにする（delivery_pending は成功時に消えるため、
+    # 上限到達による escalate ではここが唯一の手掛かりになる）。
     ds.setdefault("dispatches", []).append(
-        {"sha": head, "sig": sig, "at": _iso(_now())})
+        {"sha": head, "sig": sig, "at": _iso(_now()), "handle": handle})
     ds["stale_ticks"] = 0  # 新しい指摘へ送ったので滞留カウントは戻す
     rounds = ds.setdefault("rounds", [])
     if head and head not in rounds:
@@ -1533,13 +1536,22 @@ def pi_delivery_evidence(cwd, text, since):
     return None
 
 
-def send_prompt(handle, text):
+def send_prompt(handle, text, fallback_cwds=()):
     """Orca の turn_started、または local pi の新しい generation で確認する。
-    未確認なら入力を再送しない。呼び出し側が pending を永続化している。"""
+    未確認なら入力を再送しない。呼び出し側が pending を永続化している。
+
+    terminal の worktreePath が欠落・不一致でも、呼び出し元が知っている
+    対象 worktree の path を fallback_cwds に渡すと session JSONL を探せる —
+    metadata 欠落だけで「未確認→escalate」に倒れるのを避ける。
+    """
     since = _now()
     terminal = orca_json(["terminal", "show", "--terminal", handle]).get("terminal") or {}
     local_pi = terminal.get("agentIdentity") == "pi" and terminal.get("executionHostId") == "local"
-    cwd = terminal.get("worktreePath") if local_pi else None
+    cwds = []
+    if local_pi:
+        for cwd in [terminal.get("worktreePath"), *fallback_cwds]:
+            if cwd and cwd not in cwds:
+                cwds.append(cwd)
     try:
         res = orca_json(["terminal", "send", "--terminal", handle,
                          "--text", text, "--enter",
@@ -1548,12 +1560,13 @@ def send_prompt(handle, text):
         return False, {"error": str(e)}
     if "turn_started" in json.dumps(res or {}, ensure_ascii=False):
         return True, res
-    if cwd:
+    if cwds:
         deadline = time.monotonic() + SEND_WAIT_S
         while True:
-            evidence = pi_delivery_evidence(cwd, text, since)
-            if evidence:
-                return True, {"receipt": res, "evidence": evidence}
+            for cwd in cwds:
+                evidence = pi_delivery_evidence(cwd, text, since)
+                if evidence:
+                    return True, {"receipt": res, "evidence": evidence}
             if time.monotonic() >= deadline:
                 break
             time.sleep(1)
@@ -2172,8 +2185,10 @@ def _cmd_dispatch(a):
               "defer": route["route"] == "defer"})
         return
 
+    fallback_cwds = []
     if route["route"] == "send":
         handle = route["handle"]
+        fallback_cwds = [(route.get("worktree") or {}).get("path")]
     elif route["route"] == "revive":
         res = orca_json(["terminal", "create", "--worktree",
                          route["worktree"]["worktreeId"],
@@ -2182,12 +2197,14 @@ def _cmd_dispatch(a):
             (res or {}).get("handle")
         if not handle:
             raise ApiError(f"terminal create returned no handle: {res}")
+        fallback_cwds = [(route.get("worktree") or {}).get("path")]
         ok, detail = wait_tui_idle(handle)
         if not ok:
             raise ApiError(f"tui-idle not satisfied: {detail}")
     else:  # spawn
-        handle, _wpath, _wtid = spawn_worktree(
+        handle, wpath, _wtid = spawn_worktree(
             a.repo.split("/")[-1], a.number, v.get("headRefName"))
+        fallback_cwds = [wpath]
         ok, detail = wait_tui_idle(handle)
         if not ok:
             raise ApiError(f"tui-idle not satisfied: {detail}")
@@ -2198,7 +2215,7 @@ def _cmd_dispatch(a):
                                    "at": _iso(_now())}
     save_state(st)
     msg += "\n[pr-merge-lane delivery " + str(uuid.uuid4()) + "]"
-    delivered, detail = send_prompt(handle, msg)
+    delivered, detail = send_prompt(handle, msg, fallback_cwds)
     if not delivered:
         # 入力が受理された可能性があるため、次 tick でも再送しない。
         append_event("dispatch_failed", repo=a.repo, pr=a.number,
@@ -2208,7 +2225,7 @@ def _cmd_dispatch(a):
               "needs_escalate": True})
         return
     pending.pop("delivery_pending", None)
-    mark_dispatch_sent(st, a.repo, a.number, head, sig)
+    mark_dispatch_sent(st, a.repo, a.number, head, sig, handle)
     save_state(st)
     append_event("dispatch", repo=a.repo, pr=a.number, sha=head,
                  route=route["route"], items=len(items),
@@ -2230,6 +2247,12 @@ def _cmd_escalate(a):
     if ds.get("escalated"):
         emit({"ok": True, "escalated": False, "reason": "already"})
         return
+    # 実査する terminal を report へ出せるようにする。dispatch_failed 直後は
+    # delivery_pending に、成功済み dispatch では最後の dispatch 記録に handle が残る。
+    handle = (ds.get("delivery_pending") or {}).get("handle")
+    if not handle:
+        dispatches = ds.get("dispatches") or []
+        handle = dispatches[-1].get("handle") if dispatches else None
     body = (a.reason or "") or \
         "レビュー指摘・PR 修正の対応が上限に達したため、自動応答を打ち切りました。" \
         "以降は人間の判断が必要です（pr-merge-lane）。"
@@ -2237,8 +2260,10 @@ def _cmd_escalate(a):
         "--body", body])
     ds["escalated"] = True
     save_state(st)
-    append_event("escalate", repo=a.repo, pr=a.number, reason=body[:200])
-    emit({"ok": True, "escalated": True})
+    append_event("escalate", repo=a.repo, pr=a.number, reason=body[:200],
+                 handle=handle)
+    emit({"ok": True, "escalated": True, "handle": handle,
+          "state_file": str(STATE_FILE)})
 
 
 # ---------- judge ----------
@@ -2635,11 +2660,37 @@ def cmd_lock(a):
 
 
 def cmd_log(a):
-    """JSON の補足記録を note event として日次ログへ追記する。"""
-    try:
-        note = json.loads(Path(a.input).read_text(encoding="utf-8"))
-    except (OSError, ValueError) as e:
-        fail(f"invalid log input: {e}")
+    """補足記録を note event として日次ログへ追記する。
+
+    短い補足は --message 等の個別指定で渡す（JSON を組む独自 helper を書かない）。
+    長文・改行・URL が多い補足は --input の JSON ファイルで渡す。
+    """
+    fields = (a.message, a.repo, a.pr, a.sha, a.source, a.details)
+    if a.input and any(f is not None for f in fields):
+        fail("log takes either --input or --message/--repo/--pr/--sha/"
+             "--source/--details, not both")
+    if a.input:
+        try:
+            note = json.loads(Path(a.input).read_text(encoding="utf-8"))
+        except (OSError, ValueError) as e:
+            fail(f"invalid log input: {e}")
+    else:
+        if not a.message:
+            fail("log requires --input or --message")
+        note = {"message": a.message}
+        for key in ("repo", "sha"):
+            value = getattr(a, key)
+            if value is not None:
+                note[key] = value
+        if a.pr is not None:
+            note["pr"] = a.pr
+        if a.source:
+            note["sources"] = a.source
+        if a.details:
+            try:
+                note["details"] = json.loads(a.details)
+            except ValueError as e:
+                fail(f"log --details must be JSON: {e}")
     allowed = {"message", "repo", "pr", "sha", "sources", "details"}
     if not isinstance(note, dict) or set(note) - allowed:
         fail("log input must be an object with message, repo, pr, sha, sources, details only")
@@ -2695,7 +2746,8 @@ SCHEMA = {
               "out": "{removed[], skipped[]}"},
     "lock": {"args": "acquire|release [--run-id S]|status",
              "out": "{acquired, run_id?} | {released}"},
-    "log": {"args": "--input JSON_FILE",
+    "log": {"args": "--input JSON_FILE | --message S [--repo R] [--pr N] "
+                    "[--sha S] [--source URL ...] [--details JSON]",
             "input": {"message": "required non-empty string",
                       "repo": "optional string", "pr": "optional positive integer",
                       "sha": "optional string", "sources": "optional string[]",
@@ -2772,7 +2824,14 @@ def main():
     lk.set_defaults(fn=cmd_lock)
 
     lg = sub.add_parser("log", help="根拠・確認・引き継ぎを jsonl に追記")
-    lg.add_argument("--input", required=True, help="note の JSON ファイル（schema 参照）")
+    lg.add_argument("--input", help="note の JSON ファイル（schema 参照。個別指定とは排他）")
+    lg.add_argument("--message", help="補足本文（--input の代わりに個別指定する）")
+    lg.add_argument("--repo", help="対象 repo（owner/name）")
+    lg.add_argument("--pr", type=int, help="対象 PR 番号")
+    lg.add_argument("--sha", help="確認した head")
+    lg.add_argument("--source", action="append",
+                    help="根拠 URL（複数指定可）")
+    lg.add_argument("--details", help="追加情報の JSON object")
     lg.set_defaults(fn=cmd_log)
 
     ev = sub.add_parser("events", help="jsonl イベントを返す")

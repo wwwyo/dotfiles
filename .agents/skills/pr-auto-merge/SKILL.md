@@ -56,7 +56,7 @@ mise の `[tools]` は開発用依存（devDependencies 相当）として扱う
    | action | やること |
    |--------|---------|
    | `dispatch` | `pr_triage.py dispatch --repo <r> --number <n>` を呼ぶ。send / revive / spawn の解決・上限・dedup・delivery 検証は script がやる。結果が `needs_escalate: true` なら、返された `reason` を `--reason` に渡して続けて `escalate` を呼ぶ。`defer`/`none` なら何もしない。`dispatched: false` の `reason` が stale plan（plan 取得後に指摘が解消された）でも失敗ではない — 再送・独自回復せず次 tick に委ねる |
-   | `escalate` | `pr_triage.py escalate --repo <r> --number <n>`（上限到達の旨を PR にコメントして打ち切り） |
+   | `escalate` | `pr_triage.py escalate --repo <r> --number <n>`（上限到達の旨を PR にコメントして打ち切り）。戻り値の `handle`（実査する terminal）を report の該当行に書く |
    | `judge` | `judge-input` で diff・PR 本文・CI を取得し、**executor 自身が references/judge.md の基準で判定して** `judge-result --sha <sha> --context-hash <context_hash> --verdict ok\|ng\|repair --reason <理由>` に登録する。材料取得だけで終えない。判断不能なら理由付きで ng。**ok の登録結果が `merge_ready: true` なら、次 tick を待たず同じ実行内で続けて `merge` を呼ぶ**（`merge` が発行直前に hard gate を全件再検証する）。`merge_ready: false`（`blocked` の理由付き）なら merge せず、理由を report に残す。repair は次 tick の dispatch に渡す |
    | `merge` | `pr_triage.py merge --repo <r> --number <n>`。`blocked` が返ったら直前再検証で弾かれたので何もしない（状況が変わったサイン） |
    | `hold` | 何もしない。理由は report に載せる |
@@ -119,8 +119,12 @@ script の action・judge・エラー実績と executor の長い判定根拠・
 script の実績 event を手書き・編集せず、補足は `note` event で残す:
 
 ```bash
-# JSON: message は必須。repo/pr/sha/sources/details は任意（schema 参照）。
-# 長文・改行・URL を省略せず JSON ファイルに書く。
+# 短い補足は flag で直接流す（JSON を組み立てる helper を書かない）
+python3 ~/.agents/skills/pr-auto-merge/tools/pr_triage.py log \
+  --message '再取得で head の変更を確認。次回は新しい head で再判定する。' \
+  --repo wwwyo/example --pr 1 --sha '確認した head' \
+  --source https://github.com/wwwyo/example/pull/1
+# 長文・改行・URL を多く含む補足は JSON ファイル（message 必須）
 python3 ~/.agents/skills/pr-auto-merge/tools/pr_triage.py log --input /tmp/pr-watch-note.json
 # 必要な補足だけを読む。--event は複数指定可、--limit は絞り込み後の最新件数。
 python3 ~/.agents/skills/pr-auto-merge/tools/pr_triage.py events --event note --limit 10
@@ -133,6 +137,10 @@ python3 ~/.agents/skills/pr-auto-merge/tools/pr_triage.py events --event note --
 空振りや tick ごとの件数を重複記録せず、次回に必要な情報だけ補足する。
 既存 `pr-watch-log.md` の移行時は、原文と元ファイルの日付・path を `note` に
 保持して読み戻しを確認してから旧ファイルを削除する。過去の実績 event として再生成しない。
+**note の JSON を組む独自 helper を書かない** — キーを取り違えた helper は
+executor 自身の例外になり、tick の作業を巻き戻す（実例: `KeyError` を直して再実行）。
+`--message` 等の flag か `--input` のファイルのどちらかで渡す — 余剰キー・型不正は
+script が構造化エラーで弾く。
 
 - **executor の最終 assistant 出力の末尾に、tick の結果を1行に要約した固定行を必ず置く**。
   jsonl の代替ではない — Langfuse の transcript だけを見る評価・監視が md・jsonl を
@@ -149,15 +157,17 @@ python3 ~/.agents/skills/pr-auto-merge/tools/pr_triage.py events --event note --
   gate が通らず `merge_ready: false` のときに残る理由の配列）を理由ごとに数える
   （`pullfrog-approval not success`・`judge ok stale`・`draft` など）。該当の無い
   field は 0・`[]` とし、行自体は省略しない。長い根拠は従来どおり jsonl の `note` に残す。
+  `pr-watch.md` の件数見出しは**当日累計**（当日 jsonl 全体）、tick-summary は
+  **per-tick** — 両者が一致しなくても不整合と読まない（後続 tick が同じ日次 file に追記する）。
 
 dispatch は修正依頼を送った中間状態で、PR の決着ではない。dispatch の
 見出し・件数・成果一覧は md と最終返信に載せず、送信履歴は jsonl に残す。
-修正待ちの open PR は Hold にまとめ、待っている理由を書く。
+修正待ちの open PR は Hold にまとめ、待っている理由を書く。Hold 表の行数が plan の hold 件数より多いのは正常（dispatch 済みで author 対応待ちの PR も Hold に載る）— tick-summary の `hold=` と突き合わせて不整合と読まない。
 
 ```markdown
 # PR Watch — YYYY-MM-DD
 
-merge N 件 / hold K 件 / error E 件
+当日累計: merge N 件 / hold K 件 / error E 件
 
 ## Hold
 （merge されなかった open PR を 時刻（JST）|repo|PR|理由 の表で。always-hold path・
@@ -265,4 +275,4 @@ pullfrog-approval を免除する。
 
 ## pi の送信確認
 
-修復 worker の新規・復帰起動は delegate の worker/personal からモデル・thinking を読み、mise 経由の pi 対話 session に指定する。Orca が `turn_started` を返さない local pi では、対象 cwd の session JSONL に今回の固有 delivery marker を持つ新しい user input と、その後のエラー・中断ではない、内容のある assistant generation があることを script が確認する。本文は報告に出さない。入力受付だけを成功とせず、直接 CLI の dispatch も lock で直列化し、送信前に pending を保存するため、中断・未確認時も同じ head へ自動再送しない。remote host・独自 session dir などで確認できない場合は reason 付き escalate とし、terminal を実査してから復旧する。
+修復 worker の新規・復帰起動は delegate の worker/personal からモデル・thinking を読み、mise 経由の pi 対話 session に指定する。Orca が `turn_started` を返さない local pi では、対象 cwd の session JSONL に今回の固有 delivery marker を持つ新しい user input と、その後のエラー・中断ではない、内容のある assistant generation があることを script が確認する。本文は報告に出さない。入力受付だけを成功とせず、直接 CLI の dispatch も lock で直列化し、送信前に pending を保存するため、中断・未確認時も同じ head へ自動再送しない。remote host・独自 session dir などで確認できない場合は reason 付き escalate とし、terminal を実査してから復旧する。`dispatch_failed`（名目 turn_started not observed）は未送信の確定ではない — `worktreePath` 欠落や観測窓より遅い generation でも起こる。escalate した PR の実査は、report の `handle` から terminal の `agentIdentity` / `worktreePath` と、対象 worktree の session JSONL に delivery marker 付き user input と後続 generation があるかを先に見る。

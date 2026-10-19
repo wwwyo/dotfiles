@@ -57,13 +57,15 @@ if tool == 'orca':
     elif args[:2] == ['terminal', 'create']:
         reply({'terminal': {'handle': 'fixture-agent'}})
     elif args[:2] == ['terminal', 'show']:
-        reply({'terminal': {'agentIdentity': 'pi', 'executionHostId': 'local',
-                            'worktreePath': str(root / 'checkout')}})
+        term = {'agentIdentity': 'pi', 'executionHostId': 'local'}
+        if mode != 'unsupported-no-worktreepath':
+            term['worktreePath'] = str(root / 'checkout')
+        reply({'terminal': term})
     elif args[:2] == ['terminal', 'wait']:
         reply({'wait': {'satisfied': True}})
     elif args[:2] == ['terminal', 'send']:
         if mode.startswith('unsupported'):
-            if mode in ('unsupported-evidence', 'unsupported-stale', 'unsupported-user-only', 'unsupported-error'):
+            if mode in ('unsupported-evidence', 'unsupported-stale', 'unsupported-user-only', 'unsupported-error', 'unsupported-no-worktreepath'):
                 cwd = str(root / 'checkout')
                 folder = '--' + re.sub(r'[/\\:]', '-', cwd.lstrip('/')) + '--'
                 target = Path(os.environ['PI_CODING_AGENT_DIR']) / 'sessions' / folder
@@ -168,6 +170,35 @@ class OrcaCliTest(unittest.TestCase):
         state = json.loads((self.root / "state/state.json").read_text())
         self.assertNotIn("delivery_pending", state["prs"]["wwwyo/fixture#30"])
         self.assertEqual(len(state["prs"]["wwwyo/fixture#30"]["dispatches"]), 1)
+
+    def test_missing_worktree_path_uses_dispatch_worktree_evidence(self):
+        # terminal の worktreePath が無くても、dispatch が知っている
+        # 対象 worktree の path で session JSONL を探して送達を確認する。
+        (self.root / "registered").touch()
+        result = self.run_cli("unsupported-no-worktreepath", "dispatch",
+                              "--repo", "wwwyo/fixture", "--number", "30")
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertTrue(json.loads(result.stdout)["dispatched"])
+        state = json.loads((self.root / "state/state.json").read_text())
+        self.assertNotIn("delivery_pending", state["prs"]["wwwyo/fixture#30"])
+
+    def test_escalate_reports_terminal_handle(self):
+        # dispatch_failed で残った delivery_pending の handle を escalate が
+        # 引き継ぎ、jsonl と戻り値に残す（人間の実査先）。
+        (self.root / "registered").touch()
+        self.run_cli("unsupported-error", "dispatch",
+                     "--repo", "wwwyo/fixture", "--number", "30")
+        result = self.run_cli("unsupported-error", "escalate",
+                              "--repo", "wwwyo/fixture", "--number", "30",
+                              "--reason", "unverified input")
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        out = json.loads(result.stdout)
+        self.assertTrue(out["escalated"])
+        self.assertEqual(out["handle"], "fixture-agent")
+        events = json.loads(self.run_cli(
+            "unsupported-error", "events", "--event", "escalate").stdout)["events"]
+        self.assertEqual(events[-1]["handle"], "fixture-agent")
+        self.assertEqual(events[-1]["reason"], "unverified input")
 
     def test_unverified_input_is_not_resent_on_next_dispatch(self):
         (self.root / "registered").touch()

@@ -7,6 +7,8 @@ description: "API key / token / 環境変数を mise+age で管理する（追�
 
 秘密情報・環境変数管理で、次回同じ調査や失敗を避けるための学び skill。どの repo で作業していても参照できる汎用知見。
 
+**`mise env` を素で実行しない** — age 復号済みの値がすべて平文で出力され、session log に残る。credential の有無確認は個別の key を見る。
+
 ## Routing
 
 | やること | 読む reference |
