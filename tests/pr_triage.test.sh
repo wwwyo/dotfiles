@@ -1581,6 +1581,34 @@ for bad in [{"message": message, "event": "merge"}, {"message": message, "ts": "
 assert pt.read_events() == records_before
 assert pt.load_state() == state_before
 
+# 短い補足は flag から組み立てられる（JSON を組む独自 helper が不要）。
+# 長文（改行含む）も flag で渡り、--input と同じ event になる。
+result = subprocess.run([sys.executable, sys.argv[1], "log", "--message", message,
+                         "--repo", "wwwyo/me", "--pr", "7", "--sha", "sha2",
+                         "--source", "https://github.com/wwwyo/me/pull/7",
+                         "--source", "https://github.com/wwwyo/me/pull/7#issuecomment-1",
+                         "--details", '{"command": "build", "exit_code": 0}'],
+                        text=True, capture_output=True)
+assert result.returncode == 0, result.stdout + result.stderr
+flag_record = json.loads(result.stdout)["record"]
+assert flag_record["event"] == "note" and flag_record["message"] == message
+assert flag_record["sha"] == "sha2" and flag_record["pr"] == 7
+assert flag_record["sources"] == ["https://github.com/wwwyo/me/pull/7",
+                                  "https://github.com/wwwyo/me/pull/7#issuecomment-1"]
+assert flag_record["details"] == {"command": "build", "exit_code": 0}
+records_after_flag = pt.read_events()
+
+# flag と --input の併用は拒否する（どちらが優先かを推測させない）。
+result = subprocess.run([sys.executable, sys.argv[1], "log",
+                         "--message", "x", "--input", str(note_file)],
+                        text=True, capture_output=True)
+assert result.returncode != 0
+assert pt.read_events() == records_after_flag
+# --input / --message のどちらも無い呼び出しはエラー。
+result = subprocess.run([sys.executable, sys.argv[1], "log"], text=True, capture_output=True)
+assert result.returncode != 0
+assert pt.read_events() == records_after_flag
+
 # 判定の長い理由も jsonl で切り捨てず読み戻せる。
 pt.cmd_judge_result(SimpleNamespace(repo="wwwyo/me", number=7, sha="sha1",
                                    context_hash=pt.pr_context_hash(view()),

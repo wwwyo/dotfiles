@@ -2660,11 +2660,37 @@ def cmd_lock(a):
 
 
 def cmd_log(a):
-    """JSON の補足記録を note event として日次ログへ追記する。"""
-    try:
-        note = json.loads(Path(a.input).read_text(encoding="utf-8"))
-    except (OSError, ValueError) as e:
-        fail(f"invalid log input: {e}")
+    """補足記録を note event として日次ログへ追記する。
+
+    短い補足は --message 等の個別指定で渡す（JSON を組む独自 helper を書かない）。
+    長文・改行・URL が多い補足は --input の JSON ファイルで渡す。
+    """
+    fields = (a.message, a.repo, a.pr, a.sha, a.source, a.details)
+    if a.input and any(f is not None for f in fields):
+        fail("log takes either --input or --message/--repo/--pr/--sha/"
+             "--source/--details, not both")
+    if a.input:
+        try:
+            note = json.loads(Path(a.input).read_text(encoding="utf-8"))
+        except (OSError, ValueError) as e:
+            fail(f"invalid log input: {e}")
+    else:
+        if not a.message:
+            fail("log requires --input or --message")
+        note = {"message": a.message}
+        for key in ("repo", "sha"):
+            value = getattr(a, key)
+            if value is not None:
+                note[key] = value
+        if a.pr is not None:
+            note["pr"] = a.pr
+        if a.source:
+            note["sources"] = a.source
+        if a.details:
+            try:
+                note["details"] = json.loads(a.details)
+            except ValueError as e:
+                fail(f"log --details must be JSON: {e}")
     allowed = {"message", "repo", "pr", "sha", "sources", "details"}
     if not isinstance(note, dict) or set(note) - allowed:
         fail("log input must be an object with message, repo, pr, sha, sources, details only")
@@ -2720,7 +2746,8 @@ SCHEMA = {
               "out": "{removed[], skipped[]}"},
     "lock": {"args": "acquire|release [--run-id S]|status",
              "out": "{acquired, run_id?} | {released}"},
-    "log": {"args": "--input JSON_FILE",
+    "log": {"args": "--input JSON_FILE | --message S [--repo R] [--pr N] "
+                    "[--sha S] [--source URL ...] [--details JSON]",
             "input": {"message": "required non-empty string",
                       "repo": "optional string", "pr": "optional positive integer",
                       "sha": "optional string", "sources": "optional string[]",
@@ -2797,7 +2824,14 @@ def main():
     lk.set_defaults(fn=cmd_lock)
 
     lg = sub.add_parser("log", help="根拠・確認・引き継ぎを jsonl に追記")
-    lg.add_argument("--input", required=True, help="note の JSON ファイル（schema 参照）")
+    lg.add_argument("--input", help="note の JSON ファイル（schema 参照。個別指定とは排他）")
+    lg.add_argument("--message", help="補足本文（--input の代わりに個別指定する）")
+    lg.add_argument("--repo", help="対象 repo（owner/name）")
+    lg.add_argument("--pr", type=int, help="対象 PR 番号")
+    lg.add_argument("--sha", help="確認した head")
+    lg.add_argument("--source", action="append",
+                    help="根拠 URL（複数指定可）")
+    lg.add_argument("--details", help="追加情報の JSON object")
     lg.set_defaults(fn=cmd_log)
 
     ev = sub.add_parser("events", help="jsonl イベントを返す")

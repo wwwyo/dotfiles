@@ -119,8 +119,12 @@ script の action・judge・エラー実績と executor の長い判定根拠・
 script の実績 event を手書き・編集せず、補足は `note` event で残す:
 
 ```bash
-# JSON: message は必須。repo/pr/sha/sources/details は任意（schema 参照）。
-# 長文・改行・URL を省略せず JSON ファイルに書く。
+# 短い補足は flag で直接流す（JSON を組み立てる helper を書かない）
+python3 ~/.agents/skills/pr-auto-merge/tools/pr_triage.py log \
+  --message '再取得で head の変更を確認。次回は新しい head で再判定する。' \
+  --repo wwwyo/example --pr 1 --sha '確認した head' \
+  --source https://github.com/wwwyo/example/pull/1
+# 長文・改行・URL を多く含む補足は JSON ファイル（message 必須）
 python3 ~/.agents/skills/pr-auto-merge/tools/pr_triage.py log --input /tmp/pr-watch-note.json
 # 必要な補足だけを読む。--event は複数指定可、--limit は絞り込み後の最新件数。
 python3 ~/.agents/skills/pr-auto-merge/tools/pr_triage.py events --event note --limit 10
@@ -133,6 +137,10 @@ python3 ~/.agents/skills/pr-auto-merge/tools/pr_triage.py events --event note --
 空振りや tick ごとの件数を重複記録せず、次回に必要な情報だけ補足する。
 既存 `pr-watch-log.md` の移行時は、原文と元ファイルの日付・path を `note` に
 保持して読み戻しを確認してから旧ファイルを削除する。過去の実績 event として再生成しない。
+**note の JSON を組む独自 helper を書かない** — キーを取り違えた helper は
+executor 自身の例外になり、tick の作業を巻き戻す（実例: `KeyError` を直して再実行）。
+`--message` 等の flag か `--input` のファイルのどちらかで渡す — 余剰キー・型不正は
+script が構造化エラーで弾く。
 
 - **executor の最終 assistant 出力の末尾に、tick の結果を1行に要約した固定行を必ず置く**。
   jsonl の代替ではない — Langfuse の transcript だけを見る評価・監視が md・jsonl を
@@ -149,6 +157,8 @@ python3 ~/.agents/skills/pr-auto-merge/tools/pr_triage.py events --event note --
   gate が通らず `merge_ready: false` のときに残る理由の配列）を理由ごとに数える
   （`pullfrog-approval not success`・`judge ok stale`・`draft` など）。該当の無い
   field は 0・`[]` とし、行自体は省略しない。長い根拠は従来どおり jsonl の `note` に残す。
+  `pr-watch.md` の件数見出しは**当日累計**（当日 jsonl 全体）、tick-summary は
+  **per-tick** — 両者が一致しなくても不整合と読まない（後続 tick が同じ日次 file に追記する）。
 
 dispatch は修正依頼を送った中間状態で、PR の決着ではない。dispatch の
 見出し・件数・成果一覧は md と最終返信に載せず、送信履歴は jsonl に残す。
@@ -157,7 +167,7 @@ dispatch は修正依頼を送った中間状態で、PR の決着ではない�
 ```markdown
 # PR Watch — YYYY-MM-DD
 
-merge N 件 / hold K 件 / error E 件
+当日累計: merge N 件 / hold K 件 / error E 件
 
 ## Hold
 （merge されなかった open PR を 時刻（JST）|repo|PR|理由 の表で。always-hold path・

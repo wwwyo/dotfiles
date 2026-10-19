@@ -6,8 +6,9 @@
 # What を固定する:
 # - SSH_AUTH_SOCK 未設定 / socket 不在 / agent 到達不可(ssh-add -l rc=2) →
 #   launchctl の socket で復帰
-# - 有効な agent（rc 0 or 1）が既にある → 上書きしない
-# - launchctl が無い（非macOS）→ 素通し
+# - 有効な agent（rc 0 or 1）が既にある → socket を上書きしない
+# - agent 生存だが identity 無し（rc=1）→ keychain から読み直す（macOS のみ）
+# - launchctl が無い（非macOS）→ 素通し（keychain 読み直しもしない）
 # - 引数・stdin・exit status が ssh-keygen のものに一致
 set -euo pipefail
 
@@ -41,8 +42,13 @@ EOF
 # fake ssh-add: `-l` の exit code を socket ごとに注入する。
 # rc2=agent 到達不可は OpenSSH の規約。DEAD_SOCK に向いた呼び出しだけ 2 を返し、
 # それ以外は FAKE_SSH_ADD_RC（既定 0 = identity あり）
+# `--apple-load-keychain` は「どこに向けて実行したか」を LOAD_LOG に残す
 cat > "$fakebin/ssh-add" <<'EOF'
 #!/bin/sh
+if [ "${1:-}" = "--apple-load-keychain" ]; then
+  printf '%s\n' "${SSH_AUTH_SOCK:-<unset>}" >> "${LOAD_LOG:-/dev/null}"
+  exit "${FAKE_LOAD_RC:-0}"
+fi
 [ -n "${DEAD_SOCK:-}" ] && [ "${SSH_AUTH_SOCK:-}" = "$DEAD_SOCK" ] && exit 2
 exit "${FAKE_SSH_ADD_RC:-0}"
 EOF
@@ -66,13 +72,23 @@ make_sock "$recovered_sock"
 run_wrapper() {
   # stdin に固定データ、環境は引数で注入
   local path="$1"; shift
-  env -i PATH="$path" OUT="$tmp/out" \
+  env -i PATH="$path" OUT="$tmp/out" LOAD_LOG="$tmp/load.log" \
     SSH_SIGN_SSH_ADD="$fakebin/ssh-add" SSH_SIGN_LAUNCHCTL="${LAUNCHCTL_FAKE:-$fakebin/launchctl}" \
     "$@" /bin/sh -c 'printf "payload" | "$0" -Y sign -f key' "$wrapper"
 }
 
 assert_sock() {
   grep -q "^SOCK=$1$" "$tmp/out" || { cat "$tmp/out"; fail "expected SOCK=$1"; }
+}
+
+# keychain からの identity 読み直しが「どの socket に向けて」実行されたか
+assert_keychain_load() {
+  grep -qx "$1" "$tmp/load.log" 2>/dev/null || {
+    echo "load.log: $(cat "$tmp/load.log" 2>/dev/null)"; fail "expected keychain load for $1"; }
+}
+
+assert_no_keychain_load() {
+  [ ! -s "$tmp/load.log" ] || { echo "load.log: $(cat "$tmp/load.log")"; fail "unexpected keychain load"; }
 }
 
 # --- 1. SSH_AUTH_SOCK 未設定 → launchctl の socket で復帰 ---
@@ -97,22 +113,39 @@ rm -f "$tmp/out"*
 run_wrapper "$fakebin" FAKE_SOCK="$recovered_sock" DEAD_SOCK="$recovered_sock"
 assert_sock "<unset>"
 
-# --- 4. 有効な agent（rc=0）→ 上書きしない ---
-rm -f "$tmp/out"*
+# --- 4. 有効な agent（rc=0）→ socket を上書きせず、keychain も触らない ---
+rm -f "$tmp/out"* "$tmp/load.log"
 run_wrapper "$fakebin" SSH_AUTH_SOCK="$live_sock" FAKE_SOCK="$recovered_sock" FAKE_SSH_ADD_RC=0
 assert_sock "$live_sock"
+assert_no_keychain_load
 
-# --- 4b. agent 生存だが identity 無し（rc=1）→ 上書きしない ---
-rm -f "$tmp/out"*
+# --- 4b. agent 生存だが identity 無し（rc=1）→ socket は保ったまま keychain から読み直す ---
+# 端末の無い署名では passphrase を聞けないので、ここで載せないと署名が失敗する。
+rm -f "$tmp/out"* "$tmp/load.log"
 run_wrapper "$fakebin" SSH_AUTH_SOCK="$live_sock" FAKE_SOCK="$recovered_sock" FAKE_SSH_ADD_RC=1
 assert_sock "$live_sock"
+assert_keychain_load "$live_sock"
 
-# --- 5. launchctl 不在（非macOS 相当）→ 素通し ---
-rm -f "$tmp/out"*
+# --- 4c. launchd から復帰した socket でも identity が空なら keychain から読み直す ---
+rm -f "$tmp/out"* "$tmp/load.log"
+run_wrapper "$fakebin" FAKE_SOCK="$recovered_sock" FAKE_SSH_ADD_RC=1
+assert_sock "$recovered_sock"
+assert_keychain_load "$recovered_sock"
+
+# --- 4d. keychain 読み直しが失敗しても署名 program としては素通しする ---
+rm -f "$tmp/out"* "$tmp/load.log"
+run_wrapper "$fakebin" SSH_AUTH_SOCK="$live_sock" FAKE_SSH_ADD_RC=1 FAKE_LOAD_RC=1
+assert_sock "$live_sock"
+assert_keychain_load "$live_sock"
+
+# --- 5. launchctl 不在（非macOS 相当）→ 素通しし、keychain 読み直しも行わない ---
+# `--apple-load-keychain` は macOS の ssh-add 拡張なので、他 OS では呼ばない。
+rm -f "$tmp/out"* "$tmp/load.log"
 mkdir -p "$tmp/nolaunch"
 ln -s "$fakebin/ssh-keygen" "$tmp/nolaunch/ssh-keygen"
-LAUNCHCTL_FAKE=/nonexistent run_wrapper "$tmp/nolaunch" SSH_AUTH_SOCK="$live_sock"
+LAUNCHCTL_FAKE=/nonexistent run_wrapper "$tmp/nolaunch" SSH_AUTH_SOCK="$live_sock" FAKE_SSH_ADD_RC=1
 assert_sock "$live_sock"
+assert_no_keychain_load
 
 # --- 6. exit status 透過 ---
 rm -f "$tmp/out"*
