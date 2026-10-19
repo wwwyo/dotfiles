@@ -161,12 +161,29 @@ def jsonl_path(date=None):
     return ME_REPO / "daily" / (date or _today_jst()) / "pr-watch.jsonl"
 
 
+def _live_run_id():
+    """run lock が生きている間だけその run_id を返す (TTL 超は None)。
+    イベントを tick へ対応付けるための付帯情報 — 値が無くても記録は続ける。"""
+    info = _lock_info()
+    try:
+        ts = float(info.get("ts"))
+    except (TypeError, ValueError):
+        return None
+    if _now().timestamp() - ts > LOCK_TTL_S:
+        return None
+    return info.get("run_id")
+
+
 def append_event(event, **kw):
     """pr-watch.jsonl へ1行追記。merge record / dispatch / hold / 削除・
-    sweep skip / escalate / エラーの実績エントリで、日次 report と監査の材料。"""
+    sweep skip / escalate / エラーの実績エントリで、日次 report と監査の材料。
+
+    run_id を全 event に付ける (run lock が生きていれば) — report.md は
+    tick ごとに上書きされる snapshot なので、tick 単位の事実は jsonl を
+    run_id で検索して復元する。"""
     p = jsonl_path()
     p.parent.mkdir(parents=True, exist_ok=True)
-    rec = {"ts": _iso(_now()), "event": event, **kw}
+    rec = {"ts": _iso(_now()), "event": event, "run_id": _live_run_id(), **kw}
     with p.open("a", encoding="utf-8") as f:
         f.write(json.dumps(rec, ensure_ascii=False) + "\n")
     return rec
@@ -1546,18 +1563,29 @@ def send_prompt(handle, text, fallback_cwds=()):
     """
     since = _now()
     terminal = orca_json(["terminal", "show", "--terminal", handle]).get("terminal") or {}
-    local_pi = terminal.get("agentIdentity") == "pi" and terminal.get("executionHostId") == "local"
-    cwds = []
-    if local_pi:
+    # 探索の可否は「対象 cwd が分かるか」で決める。agentIdentity /
+    # executionHostId は terminal 作成直後に未設定のことがあり、ここで
+    # pi 以外と確定できたときだけ省略する（remote host の session dir は
+    # この local から読めないので対象外）。
+    if terminal.get("agentIdentity") in (None, "", "pi") and \
+            terminal.get("executionHostId") in (None, "", "local"):
+        cwds = []
         for cwd in [terminal.get("worktreePath"), *fallback_cwds]:
             if cwd and cwd not in cwds:
                 cwds.append(cwd)
+    else:
+        cwds = []
+    send_error = None
     try:
         res = orca_json(["terminal", "send", "--terminal", handle,
                          "--text", text, "--enter",
                          "--wait-submit", str(SEND_WAIT_S)], timeout=90)
     except ApiError as e:
-        return False, {"error": str(e)}
+        # 送信 API の失敗は未送信の確定ではない — submit 確認だけが失敗し、
+        # 入力は受理されて agent が次 turn を開始していることがある。
+        # JSONL evidence を先に諦めると、成立済みの dispatch を
+        # 「turn_started not observed」として escalate してしまう。
+        res, send_error = {"error": str(e)}, str(e)
     if "turn_started" in json.dumps(res or {}, ensure_ascii=False):
         return True, res
     if cwds:
@@ -1566,10 +1594,15 @@ def send_prompt(handle, text, fallback_cwds=()):
             for cwd in cwds:
                 evidence = pi_delivery_evidence(cwd, text, since)
                 if evidence:
-                    return True, {"receipt": res, "evidence": evidence}
+                    out = {"receipt": res, "evidence": evidence}
+                    if send_error:
+                        out["send_error"] = send_error
+                    return True, out
             if time.monotonic() >= deadline:
                 break
             time.sleep(1)
+    if send_error:
+        return False, {"error": send_error}
     return False, res
 
 
@@ -2018,7 +2051,7 @@ def cmd_gate(a):
             _lock_release(run_id)
         msg = str(e) if isinstance(e, ApiError) else \
             f"{type(e).__name__}: {e}"
-        append_event("tick_error", error=msg)
+        append_event("tick_error", error=msg, run_id=run_id)
         fail(msg, code=2)
 
 
@@ -2134,6 +2167,34 @@ def cmd_plan(a):
 
 # ---------- dispatch ----------
 
+def dispatch_failure_detail(handle, detail, route):
+    """dispatch 失敗時に次 tick・人間の実査が要る事実を1つの dict にまとめる。
+
+    reason の文字列だけでは「terminal が死んでいる」と「入力は受理されたが
+    確認できない」を区別できないので、経路・実査先 handle・送信結果・
+    terminal の識別を jsonl に残す。"""
+    def short(value):
+        try:
+            text = json.dumps(value, ensure_ascii=False)
+        except (TypeError, ValueError):
+            text = str(value)
+        return text[:400]
+
+    out = {"route": route.get("route"), "handle": handle,
+           "send": short(detail)}
+    try:
+        terminal = (orca_json(["terminal", "show", "--terminal", handle])
+                    or {}).get("terminal") or {}
+    except ApiError as e:
+        out["terminal"] = {"unreadable": str(e)[:200]}
+        return out
+    keys = ("agentIdentity", "executionHostId", "worktreePath", "branch",
+            "connected", "writable", "orphaned", "title")
+    out["terminal"] = {k: terminal.get(k) for k in keys
+                       if terminal.get(k) is not None}
+    return out
+
+
 def cmd_dispatch(a):
     try:
         # 直接 CLI を並行実行しても、最新 state の確認から送信結果の保存まで直列化する。
@@ -2218,8 +2279,11 @@ def _cmd_dispatch(a):
     delivered, detail = send_prompt(handle, msg, fallback_cwds)
     if not delivered:
         # 入力が受理された可能性があるため、次 tick でも再送しない。
+        # 実査・切り分けに要る事実 (経路・実査先 terminal の識別・送信結果) を
+        # 残す — reason だけでは死んだ terminal と受理済み未確認を区別できない。
         append_event("dispatch_failed", repo=a.repo, pr=a.number,
-                     error="turn_started not observed")
+                     error="turn_started not observed",
+                     detail=dispatch_failure_detail(handle, detail, route))
         emit({"ok": True, "dispatched": False,
               "reason": "turn_started not observed", "detail": detail,
               "needs_escalate": True})
@@ -2227,9 +2291,13 @@ def _cmd_dispatch(a):
     pending.pop("delivery_pending", None)
     mark_dispatch_sent(st, a.repo, a.number, head, sig, handle)
     save_state(st)
+    extra = {}
+    if isinstance(detail, dict) and detail.get("send_error"):
+        # send API は失敗を返したが session JSONL で送達を確認した場合。
+        extra["send_error"] = str(detail["send_error"])[:200]
     append_event("dispatch", repo=a.repo, pr=a.number, sha=head,
                  route=route["route"], items=len(items),
-                 kinds=sorted({it["kind"] for it in items}))
+                 kinds=sorted({it["kind"] for it in items}), **extra)
     emit({"ok": True, "dispatched": True,
           "route": route["route"], "items": len(items)})
 

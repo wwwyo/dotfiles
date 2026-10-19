@@ -70,7 +70,7 @@ flowchart TD
 - agent が working → 次 tick に回す（割り込まない）
 - session が無い → `author` が `wwwyo` または bot なら専用 worktree を head branch で立てて送信（head branch を checkout 済みの worktree は branch fallback で先に拾われて dispatch 先になるため、spawn に至る時点で占有の衝突は起きない）。それ以外の author の PR には dispatch も spawn もしない
 - dispatch 上限: 同一 (PR, head SHA) への送信は3回まで。加えて「response session が push した後に新しい指摘が来た」往復が1 PR で3ラウンドに達した時点で打ち切り、PR へ escalation コメントを投稿し日次 report で明示する。上限到達は指摘が「機械的往復で解消しない」サインなので、人間に回す
-- delivery 検証: `terminal send --wait-submit` で `turn_started` を観測して届いたとみなす（既定の receipt は入力の受理しか示さない）。起動直後の session へ送る場合は先に `terminal wait --for tui-idle` を挟む。timeout・送信失敗・ターン開始を確認できなかった dispatch は state の送信カウントを進めず report に失敗として記録する — 次 tick で再送対象になる。再送は `--retry-request` の ID で冪等に行う
+- delivery 検証: `terminal send --wait-submit` の `turn_started` に加え、それが返らない local pi では対象 cwd の session JSONL に今回の固有 delivery marker 付き user input と後続 generation があることを観測して届いたとみなす（既定の receipt は入力の受理しか示さない。探索は terminal の `agentIdentity` ではなく対象 cwd で決める — 作成直後の terminal では identity が未設定のことがある）。起動直後の session へ送る場合は先に `terminal wait --for tui-idle` を挟む。timeout・送信失敗・ターン開始を確認できなかった dispatch は入力を再送せず、pending（対象 head・実査先 handle）を保存して reason 付き escalate とし、次 tick の同一 head への dispatch は行わない — 受理済み入力を重複させないため
 
 **merge の冪等と発行経路**: merge の発行は script の merge 経路のみとし、その内部で必ず直前に `state`・`mergeable`・`pullfrog-approval`（現在 head。bot 依存更新の whitelist 経路のみ免除）・`reviewDecision`（`CHANGES_REQUESTED` なら hold — thread が無くてもレビュー本文だけの変更要求を潰さない）・**unaddressed review の全件判定（未解消 thread・author の最終活動より新しい CHANGES_REQUESTED がないこと）**・required check を引き直して検証する — `pullfrog-approval` だけに依存しない。executor session はこの経路以外で merge しない（SKILL.md の規約で縛る。permission deny で強制はしない — 全 session に効いてしまい、他 repo の通常作業まで塞ぐため）。GitHub の状態を正として毎 tick 再取得し、local state は補助に留める。
 

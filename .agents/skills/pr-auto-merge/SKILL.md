@@ -108,7 +108,10 @@ hold し、hard gate も `isDraft` を弾く（plan 後に author が draft 化�
 ## report
 
 `plan.report.md`（`wwwyo/me` の `daily/<date>/pr-watch.md`）は**人間が読む
-日次レポート**で、PR の現在の決着と保留理由だけを書く。
+日次レポート**で、PR の現在の決着と保留理由だけを書く。md は tick ごとに
+書き直す snapshot で、載るのは書いた時点の状態 — 前 tick の行は残らない。
+「md に無い = 起きなかった」と読まず、tick 単位の実績は jsonl を `run_id` で
+検索して復元する（全 event に `run_id` が入る。`pr_triage.py events --date` で引く）。
 
 Merge の掲載と merge 件数は、当日の jsonl に script の merge 成功実績が
 ある PR だけを対象にする。本人による手動 merge は人間向けレポートに載せない。
@@ -216,6 +219,10 @@ head SHA ごとに記録されるため同じ PR は1行に集約し、当日の
   Merge に移す。CLOSED も Hold
   から外す。取り直しで plan 後に変わったと分かったものは TOCTOU として
   jsonl の note に記録し、md には書かない。action は追加しない。
+  plan と live が食い違う理由は live の `mergedAt` と `plan.generated_at` の
+  前後で分ける — 新しければ plan 後の変化（同じ tick の routine merge か
+  author の merge）、古ければ plan 時点で既に stale だった plan。どちらかを
+  note に書く（merge 実績の有無は当日 jsonl の `merge` event で確認する）。
   取り直し自体に失敗した PR は TOCTOU の一覧とは別に扱い、取得を試みた時刻つきで
   「未確認」を md の当該行に書く（時刻ごと md 側に残す）。現在 open と断定
   しない。過去の失敗は Error に残す。
@@ -275,4 +282,7 @@ pullfrog-approval を免除する。
 
 ## pi の送信確認
 
-修復 worker の新規・復帰起動は delegate の worker/personal からモデル・thinking を読み、mise 経由の pi 対話 session に指定する。Orca が `turn_started` を返さない local pi では、対象 cwd の session JSONL に今回の固有 delivery marker を持つ新しい user input と、その後のエラー・中断ではない、内容のある assistant generation があることを script が確認する。本文は報告に出さない。入力受付だけを成功とせず、直接 CLI の dispatch も lock で直列化し、送信前に pending を保存するため、中断・未確認時も同じ head へ自動再送しない。remote host・独自 session dir などで確認できない場合は reason 付き escalate とし、terminal を実査してから復旧する。`dispatch_failed`（名目 turn_started not observed）は未送信の確定ではない — `worktreePath` 欠落や観測窓より遅い generation でも起こる。escalate した PR の実査は、report の `handle` から terminal の `agentIdentity` / `worktreePath` と、対象 worktree の session JSONL に delivery marker 付き user input と後続 generation があるかを先に見る。
+修復 worker の新規・復帰起動は delegate の worker/personal からモデル・thinking を読み、mise 経由の pi 対話 session に指定する。`turn_started` が返らない local pi では、対象 cwd の session JSONL に今回の固有 delivery marker を持つ新しい user input と、その後のエラー・中断ではない、内容のある assistant generation があることを script が確認する。本文は報告に出さない。探索の可否は identity ではなく対象 cwd（terminal の `worktreePath` と dispatch が知っている worktree path）で決める — `agentIdentity`/`executionHostId` は terminal 作成直後に未設定のことがあり、それだけで確認を諦めると成立済みの dispatch を落とす。入力受付だけを成功とせず、直接 CLI の dispatch も lock で直列化し、送信前に pending を保存するため、中断・未確認時も同じ head へ自動再送しない。`dispatch_failed`（名目 turn_started not observed）は未送信の確定ではない — `worktreePath` 欠落、send API のエラー、観測窓より遅い generation でも起こる。send に成功したかに関わらず evidence を確認してから失敗と判定し、確認できない場合だけ reason 付き escalate とする（remote host・独自 session dir などはこの確認ができないので escalate）。
+
+escalate した PR の実査は、report の `handle` から terminal の `agentIdentity` /
+`worktreePath` と、対象 worktree の session JSONL に delivery marker 付き user input と後続 generation があるかを先に見る。この経路・handle・送信結果・terminal の `agentIdentity`/`executionHostId`/`worktreePath`/`connected` は `dispatch_failed` event の `detail` に残るので、まず `pr_triage.py events --event dispatch_failed` を読む（terminal の実査は `detail` が無い・古い場合だけでよい）。

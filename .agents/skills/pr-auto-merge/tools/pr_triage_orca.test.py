@@ -8,6 +8,7 @@ from pathlib import Path
 import subprocess
 import sys
 import tempfile
+import time
 import unittest
 
 
@@ -58,6 +59,8 @@ if tool == 'orca':
         reply({'terminal': {'handle': 'fixture-agent'}})
     elif args[:2] == ['terminal', 'show']:
         term = {'agentIdentity': 'pi', 'executionHostId': 'local'}
+        if mode == 'unsupported-no-identity':
+            term = {}
         if mode != 'unsupported-no-worktreepath':
             term['worktreePath'] = str(root / 'checkout')
         reply({'terminal': term})
@@ -65,7 +68,7 @@ if tool == 'orca':
         reply({'wait': {'satisfied': True}})
     elif args[:2] == ['terminal', 'send']:
         if mode.startswith('unsupported'):
-            if mode in ('unsupported-evidence', 'unsupported-stale', 'unsupported-user-only', 'unsupported-error', 'unsupported-no-worktreepath'):
+            if mode in ('unsupported-evidence', 'unsupported-stale', 'unsupported-user-only', 'unsupported-error', 'unsupported-no-worktreepath', 'unsupported-no-identity', 'unsupported-send-error-evidence'):
                 cwd = str(root / 'checkout')
                 folder = '--' + re.sub(r'[/\\:]', '-', cwd.lstrip('/')) + '--'
                 target = Path(os.environ['PI_CODING_AGENT_DIR']) / 'sessions' / folder
@@ -85,6 +88,9 @@ if tool == 'orca':
                 if mode == 'unsupported-user-only':
                     events = events[:2]
                 (target / 'fixture.jsonl').write_text(''.join(json.dumps(e) + '\n' for e in events))
+            if mode == 'unsupported-send-error-evidence':
+                # 入力は受理されたが submit 確認だけが失敗したケース
+                error('submit_timeout')
             reply({'send': {'accepted': True, 'prompt': {
                 'provider': 'unsupported', 'requestId': 'request-1', 'stages': ['input_accepted']}}})
         else:
@@ -181,6 +187,66 @@ class OrcaCliTest(unittest.TestCase):
         self.assertTrue(json.loads(result.stdout)["dispatched"])
         state = json.loads((self.root / "state/state.json").read_text())
         self.assertNotIn("delivery_pending", state["prs"]["wwwyo/fixture#30"])
+
+    def test_send_error_with_session_evidence_counts_as_delivered(self):
+        # 送信 API の失敗は未送信の確定ではない — session JSONL に今回の
+        # delivery marker 付き入力と後続 generation があれば送達として扱い、
+        # 「turn_started not observed」で escalate しない。
+        (self.root / "registered").touch()
+        result = self.run_cli("unsupported-send-error-evidence", "dispatch",
+                              "--repo", "wwwyo/fixture", "--number", "30")
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertTrue(json.loads(result.stdout)["dispatched"])
+        state = json.loads((self.root / "state/state.json").read_text())
+        self.assertNotIn("delivery_pending", state["prs"]["wwwyo/fixture#30"])
+        events = json.loads(self.run_cli(
+            "unsupported-send-error-evidence", "events",
+            "--event", "dispatch").stdout)["events"]
+        self.assertIn("submit_timeout", events[-1]["send_error"])
+
+    def test_missing_terminal_identity_uses_cwd_evidence(self):
+        # terminal 作成直後は agentIdentity/executionHostId が未設定のことが
+        # ある。対象 cwd が分かるなら session JSONL で送達を確認する。
+        (self.root / "registered").touch()
+        result = self.run_cli("unsupported-no-identity", "dispatch",
+                              "--repo", "wwwyo/fixture", "--number", "30")
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertTrue(json.loads(result.stdout)["dispatched"])
+        state = json.loads((self.root / "state/state.json").read_text())
+        self.assertNotIn("delivery_pending", state["prs"]["wwwyo/fixture#30"])
+
+    def test_dispatch_failed_records_routing_and_terminal(self):
+        # 実査・切り分けに要る事実 (経路・handle・terminal の識別) を
+        # dispatch_failed に残す — reason の文字列だけでは死んだ terminal と
+        # 受理済み未確認を区別できない。
+        (self.root / "registered").touch()
+        self.run_cli("unsupported-error", "dispatch",
+                     "--repo", "wwwyo/fixture", "--number", "30")
+        event = json.loads(self.run_cli(
+            "unsupported-error", "events",
+            "--event", "dispatch_failed").stdout)["events"][-1]
+        self.assertEqual(event["error"], "turn_started not observed")
+        self.assertEqual(event["detail"]["route"], "spawn")
+        self.assertEqual(event["detail"]["handle"], "fixture-agent")
+        self.assertEqual(event["detail"]["terminal"]["agentIdentity"], "pi")
+        self.assertEqual(event["detail"]["terminal"]["executionHostId"], "local")
+
+    def test_events_carry_live_run_id(self):
+        # report.md は tick ごとに上書きされる snapshot なので、tick 単位の
+        # 事実は jsonl を run_id で検索して復元する。
+        lock = Path(self.env["PR_WATCH_STATE_DIR"]) / "run.lockdir"
+        lock.mkdir(parents=True)
+        info = lock / "info.json"
+        info.write_text(json.dumps({"pid": os.getpid(), "run_id": "fixture-run",
+                                    "ts": time.time()}))
+        out = json.loads(self.run_cli("unsupported-error", "log",
+                                      "--message", "note").stdout)
+        self.assertEqual(out["record"]["run_id"], "fixture-run")
+        info.write_text(json.dumps({"pid": os.getpid(), "run_id": "stale-run",
+                                    "ts": 0}))
+        out = json.loads(self.run_cli("unsupported-error", "log",
+                                      "--message", "note").stdout)
+        self.assertIsNone(out["record"]["run_id"])
 
     def test_escalate_reports_terminal_handle(self):
         # dispatch_failed で残った delivery_pending の handle を escalate が

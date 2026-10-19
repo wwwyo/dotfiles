@@ -183,3 +183,10 @@ nits や codemod という説明も実際の差分と照合する。
 判断が付かないものは ng。**ng のコストは lane に乗らないだけ**で、
 理由を report に残し、本人の判断に回す。誤 ok のコストは
 気づかないまま merge されること。
+
+`--reason` に残す形の例（中・ok）: 「差分5ファイルの設定変更。PR 本文のローカル
+`apps/api` 照合は失敗したが、current head の hosted CI で web security 18 件・
+入口 3 件・typecheck・build/deploy dry-run と `apps/api` 158 件が成功 — 影響操作を
+hosted CI が覆う。`cf dev` 実接続と本番 secret との組合せは未検証（可逆な設定変更
+なので検証充足と判断）」。ローカル検証の失敗を hosted CI の成功で代替した場合は、
+代替した job 名と件数、未検証のまま残る項目を明記する。
