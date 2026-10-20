@@ -4,3 +4,13 @@ elif [[ -x /home/linuxbrew/.linuxbrew/bin/brew ]]; then
   eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
 fi
 export PATH="$HOME/.local/bin:$PATH"
+
+# agent は生きているが鍵が空（ssh-add -l の rc=1）のときだけ Keychain から載せ直す。
+# --apple-load-keychain は macOS の ssh-add 拡張なので launchctl の有無で分岐し、
+# brew 版 openssh に解決されないよう /usr/bin/ssh-add を明示する（ssh-sign と同じ判断）
+if [[ -x /bin/launchctl ]]; then
+  /usr/bin/ssh-add -l >/dev/null 2>&1
+  if [[ $? -eq 1 ]]; then
+    /usr/bin/ssh-add --apple-load-keychain -q 2>/dev/null
+  fi
+fi
