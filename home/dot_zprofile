@@ -4,3 +4,7 @@ elif [[ -x /home/linuxbrew/.linuxbrew/bin/brew ]]; then
   eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
 fi
 export PATH="$HOME/.local/bin:$PATH"
+
+# agent は生きているが鍵が空（ssh-add -l の rc=1）のときだけ Keychain から載せ直す
+ssh-add -l >/dev/null 2>&1
+[ $? -eq 1 ] && ssh-add --apple-load-keychain -q 2>/dev/null
