@@ -57,7 +57,7 @@ mise の `[tools]` は開発用依存（devDependencies 相当）として扱う
 
    | action | やること |
    |--------|---------|
-   | `dispatch` | `pr_triage.py dispatch --repo <r> --number <n>` を呼ぶ。revive / spawn の解決・上限・dedup・delivery 検証は script がやる。結果が `needs_escalate: true` なら、返された `reason` を `--reason` に渡して続けて `escalate` を呼ぶ。`defer`/`none` なら何もしない。`dispatched: false` の `reason` が stale plan（plan 取得後に指摘が解消された）でも失敗ではない — 再送・独自回復せず次 tick に委ねる |
+   | `dispatch` | `pr_triage.py dispatch --repo <r> --number <n>` を呼ぶ。revive / spawn の解決・上限・dedup・delivery 検証は script がやる。結果が `needs_escalate: true` なら、返された `reason` を `--reason` に渡して続けて `escalate` を呼ぶ。`defer`/`none` なら何もしない。送信成功は `dispatched: true` で判定する — terminal への書き込みが無出力で返ったことを成功と読まない。`dispatched: false` の `reason` が stale plan（plan 取得後に指摘が解消された）でも失敗ではない — 再送・独自回復せず次 tick に委ねる |
    | `escalate` | `pr_triage.py escalate --repo <r> --number <n>`（上限到達の旨を PR にコメントして打ち切り）。戻り値の `handle`（実査する terminal）を report の該当行に書く |
    | `judge` | `judge-input` で diff・PR 本文・CI を取得し、**executor 自身が references/judge.md の基準で判定して** `judge-result --sha <sha> --context-hash <context_hash> --verdict ok\|ng\|repair --reason <理由>` に登録する。材料取得だけで終えない。判断不能なら理由付きで ng。**ok の登録結果が `merge_ready: true` なら、次 tick を待たず同じ実行内で続けて `merge` を呼び、`merged: true` なら直後に `sweep` を呼ぶ**（`merge` が発行直前に hard gate を全件再検証する）。`merge_ready: false`（`blocked` の理由付き）なら merge せず、理由を report に残す。repair は次 tick の dispatch に渡す |
    | `merge` | `pr_triage.py merge --repo <r> --number <n>`。`merged: true` を確認したら直後に `pr_triage.py sweep` を呼ぶ（開始時の `plan.sweep` が空でも必須）。`merged: false` / `blocked`・失敗・成功未確認なら、merge 後の sweep は呼ばず理由を記録する。`ok: true` だけでは merge 成功ではない |
@@ -173,6 +173,14 @@ Merge の掲載と merge 件数は、当日の jsonl に script の merge 成功
 `plan.report.jsonl`（同じ dir の `pr-watch.jsonl`）を**唯一のログ**とし、
 script の action・judge・エラー実績と executor の長い判定根拠・参照URL・
 状態再取得・次回への引き継ぎをここに集約する。`pr-watch-log.md` は生成・追記しない。
+
+hold の理由も script が `hold` event（`repo`・`pr`・`reason`・`head`）として残す。
+同じ PR で理由か head が変わったときだけ追記されるので、ある時点の hold 集合は
+「窓内の最新 `hold` event per PR」で再構成する。`pr-watch.md` は tick ごとに
+書き直すスナップショット — 過去 tick の hold 理由を md から読もうとしない。
+各 event には run の `run_id` が付く（`gate` と executor の subcommand は別
+process だが、live の run lock から同じ値を引く）。
+
 script の実績 event を手書き・編集せず、補足は `note` event で残す:
 
 ```bash
@@ -217,7 +225,10 @@ script が構造化エラーで弾く。
   jsonl には前 tick の judge event も入るため、時刻で絞らないと件数が膨らむ。
   `blocked` は同じ絞り込んだ judge event の `blocked`（judge-result が ok でも hard
   gate が通らず `merge_ready: false` のときに残る理由の配列）を理由ごとに数える
-  （`pullfrog-approval not success`・`judge ok stale`・`draft` など）。該当の無い
+  （`pullfrog-approval not success`・`judge ok stale`・`draft` など）。`error` は
+  gh/API の例外の件数ではなく、script が `ok: false` を返した action（dispatch の
+  revive/spawn 失敗を含む）と `tick_error` の件数 — `merged: false`・`blocked`・
+  `hold` は正常な判定結果なので数えない。該当の無い
   field は 0・`[]` とし、行自体は省略しない。長い根拠は従来どおり jsonl の `note` に残す。
   `pr-watch.md` の件数見出しは**当日累計**（当日 jsonl 全体）、tick-summary は
   **per-tick** — 両者が一致しなくても不整合と読まない（後続 tick が同じ日次 file に追記する）。
@@ -335,6 +346,13 @@ pullfrog-approval を免除する。
 
 ## 運用上の前提
 
+- state を変更する subcommand（`judge-result`・`merge`・`dispatch`・
+  `escalate`・`sweep`）は、完了を待って1件ずつ実行する — 背景起動や同一
+  turn 内の並行呼び出しをしない。state.json の read-modify-write が交差すると、
+  直前に登録した judge ok が次の subcommand から見えない。その状態で出る
+  `no judge ok`・`pullfrog-approval not success` は独立した原因ではなく
+  二次症状なので、まず judge 記録と head を確認し、新しい材料で再判定する
+  （`approval absent` を先に疑わない）
 - `gh` はネットワーク/認証が要るので sandbox 外で実行する
 - `pullfrog-approval` が absent・fail でも直ちに異常としない。bot の
   manifest・lock・workflow だけの PR は script の依存自動 ok または

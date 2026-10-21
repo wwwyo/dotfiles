@@ -182,6 +182,13 @@ nits や codemod という説明も実際の差分と照合する。
  参照URL・検証手順・長い根拠は `pr_triage.py log --input <JSON_FILE>` の
  `note` event へ同じ repo/pr/sha とともに記録する。別の Markdown log は作らない。
 
+`note` の `details` は tick 間で形を揃える（eval と次 tick が jsonl だけで
+判定を追える）。次の key を使う: `reviewed_files`（実際に見た file）、
+`independent_checks`（PR 本文の QA と別に自分で実行・確認したこと。
+未実施なら空配列）、`author_qa`（申告された QA と照合した結果）、
+`ci_at_judge_input`（判定材料取得時点の check 状態）、`limitation`
+（未確認・判断し切れなかった点）。
+
 判断が付かないものは ng。**ng のコストは lane に乗らないだけ**で、
 理由を report に残し、本人の判断に回す。誤 ok のコストは
 気づかないまま merge されること。

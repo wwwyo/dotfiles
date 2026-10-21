@@ -81,6 +81,8 @@ gh pr create --draft --assignee @me --title "<title>" --body-file <本文ファ�
 
 `gh stack` が無い環境の fallback: `--base` で親ブランチを指定し、親 merge 後は新しい main へ rebase して `git log <main>..HEAD` と diff から親 PR の変更が消えたことを確認する。
 
+fork 由来の clone では `gh` は cwd の clone 元（fork）を PR の作成先とみなす。upstream に出すときは `-R <upstream owner/repo> --head <fork owner>:<branch>` を明示する（`gh repo set-default <upstream>` を先に済ませておく）。意図せず fork 側に PR を作らない。
+
 - ブランチ削除は `gh` 経由で行う。`git push origin --delete` で消すと子 PR が retarget されず close される。
 - merge は `gh pr merge --squash`（デフォルト squash merge 前提）。切り替え先の main が別 worktree で checkout 済みだと、PR の merge 後にローカルブランチ削除だけ失敗する。`gh pr view` で merge 済みを確認し、リモートブランチは明示的に削除する。現在の worktree が使うローカルブランチは無理に削除しない。
 
@@ -148,6 +150,9 @@ CI・レビューが既に完了し、以下の終了条件を全て満たして
 
 ## 注意点
 
+- 同じ worktree を別 session が同時に進めている前提で扱う。編集前に `git fetch` と `gh pr view <URL> --json state,headRefOid` で鮮度を確認し、merge 済み・branch gone を検出したら編集を止めて報告に切り替える（同じ変更を二重に積まない）。
+- 前段の判断や delivery が「merge 不要」でも、それ以降のユーザーの `merge` 発言は上書き指示として扱う — 実行し、merge 後の片付け（上記の手動 merge 手順）まで同じ実行で行う。
+- 自動レビュー（Pullfrog 等）が未完のまま merge した場合は、PR 本文か完了報告に「自動レビュー未完了」と残す — 後続がそのレビュー結果を根拠に使えないことを明示する。
 - `gh` コマンドは sandbox 外で実行する（TLS証明書検証の制約回避）。
 - `gh` で PR を参照するときは番号だけでなく URL（または `-R owner/repo`）で対象 repo を固定する。番号だけだと cwd の repo を暗黙に見に行き、worktree 削除後などに別 repo へ静かに誤爆する。
 - AIレビューボットの指摘をコードに採用する前に、その変更がユーザーが過去に明示的に外した・却下した判断の再導入でないか確認する（git log・直近の会話・PR 履歴）。bot指摘の逐語適用で同じ設計判断を二度入れて二度外される事故が起きている。同一論点にP2（通常。いずれ修正すべき一般的な問題）以下の指摘が何度も出る場合はこのループの兆候とみなし、コードを再度変更せず、却下理由を返信するかユーザーに判断を委ねる
