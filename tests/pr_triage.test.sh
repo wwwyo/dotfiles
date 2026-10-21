@@ -59,7 +59,7 @@ PY
 python3 "$PT" lock release >/dev/null
 
 python3 - "$PT" <<'EOF'
-import importlib.util, json, sys
+import importlib.util, json, os, subprocess, sys
 from pathlib import Path
 
 spec = importlib.util.spec_from_file_location("pt", sys.argv[1])
@@ -70,7 +70,8 @@ def view(**kw):
     v = {"state": "OPEN", "mergeable": "MERGEABLE", "reviewDecision": "",
          "headRefOid": "sha1", "headRefName": "wwwyo/x", "baseRefName": "main",
          "author": {"login": "wwwyo", "is_bot": False}, "isDraft": False,
-         "statusCheckRollup": [], "reviews": [], "comments": [], "commits": []}
+         "statusCheckRollup": [], "reviews": [], "comments": [], "commits": [],
+         "updatedAt": "2026-10-01T00:00:00Z"}
     v.update(kw)
     return v
 
@@ -437,28 +438,33 @@ ok, reasons = pt.hard_gate(facts(view=vd, files=["package.json"],
 assert not ok and any("draft" in r for r in reasons), reasons
 
 # ============================ dispatch routing ============================
+clean_path = Path(os.environ["PR_WATCH_STATE_DIR"]).parent / "clean-worktree"
+subprocess.run(["git", "init", "-q", str(clean_path)], check=True)
 wt = lambda **kw: dict({"worktreeId": "r::w1", "repo": "me",
-                        "branch": "refs/heads/wwwyo/x", "path": "/p",
+                        "branch": "refs/heads/wwwyo/x", "path": str(clean_path),
                         "liveTerminalCount": 0, "status": "inactive",
                         "agents": [], "linkedPR": None}, **kw)
 pr = {"number": 7, "headRefName": "wwwyo/x",
+      "updatedAt": "2026-10-01T00:00:00Z",
       "author": {"login": "wwwyo", "is_bot": False}}
 pr_other = dict(pr, author={"login": "someone"})
 R = "wwwyo/me"
 route = lambda ws, ts, p=pr: pt.route_dispatch(ws, ts, R, p)
 
-# linkedPR 優先 → send
+# linkedPR 優先でも live terminal は defer
 w = wt(linkedPR={"number": 7, "state": "open"})
 w = dict(w, branch="refs/heads/other-branch")
 terms = {"r::w1": [{"handle": "wt_t1", "agentIdentity": "pi",
                   "writable": True, "connected": True}]}
 r = route([w], terms)
-assert r["route"] == "send" and r["handle"] == "wt_t1"
+assert r["route"] == "defer" and r["handle"] is None
+assert route([w], {"r::w1": []})["reason"].startswith("matched via linkedPR")
 
-# branch fallback → send
+# branch fallback でも live terminal は defer
 w = wt()
 r = route([w], terms)
-assert r["route"] == "send" and r["reason"].startswith("matched via branch")
+assert r["route"] == "defer"
+assert route([w], {"r::w1": []})["reason"].startswith("matched via branch")
 
 # agent working → defer
 w = wt(status="working")
@@ -468,10 +474,10 @@ w = wt(agents=[{"state": "working", "agent": "pi"}])
 r = route([w], {"r::w1": []})
 assert r["route"] == "defer"
 
-# Retired idle sessions receive no new work; an active legacy turn remains deferred.
+# Retired/idle sessions also occupy their worktree until the terminal is closed.
 legacy_terms = {"r::w1": [{"handle": "legacy", "agentIdentity": "devin",
                             "writable": True, "connected": True}]}
-assert route([wt()], legacy_terms)["route"] == "revive"
+assert route([wt()], legacy_terms)["route"] == "defer"
 assert route([wt(status="working")], legacy_terms)["route"] == "defer"
 
 # agent 無し → revive
@@ -494,7 +500,8 @@ assert r["route"] == "none"
 # linkedPR が merged → branch fallback に落ちる
 w = wt(linkedPR={"number": 7, "state": "merged"})
 r = route([w], terms)
-assert r["route"] == "send" and "branch" in r["reason"]
+assert r["route"] == "defer"
+assert "branch" in route([w], {"r::w1": []})["reason"]
 
 # 別 repo の同 branch worktree は dispatch 対象にしない
 w2 = wt(repo="dotfiles")
@@ -589,16 +596,15 @@ assert not pt.sweep_skip_transient("orca worktree rm failed: x")
 
 # ============================ state / compute_pr_decision ============================
 st = {}
-# unaddressed → dispatch action（linkedPR match + idle → send）
+# unaddressed → dispatch action（linkedPR match + clean/unoccupied → revive）
 w = wt(linkedPR={"number": 7, "state": "open"})
 f = facts(threads=[thread()])
-# terms_cache に入れておかないと compute 内で本物の orca を呼びに行く
-terms = {"r::w1": [{"handle": "wt_t1", "agentIdentity": "pi",
-                  "writable": True, "connected": True}]}
+# 空の inventory を注入し、clean かつ他 terminal がない場合だけ復帰させる。
+terms = {"r::w1": []}
 e = pt.compute_pr_decision({"repo": "wwwyo/me", "number": 7},
                            f, [w], terms, st)
 acts = [a["type"] for a in e["actions"]]
-assert acts == ["dispatch"] and e["actions"][0]["route"] == "send"
+assert acts == ["dispatch"] and e["actions"][0]["route"] == "revive"
 
 # 2回目（同 head+sig 既送）→ hold
 pt.mark_dispatch_sent(st, "wwwyo/me", 7, f["view"]["headRefOid"],

@@ -12,7 +12,7 @@ executor session から呼ばれる。全 subcommand は JSON を stdout に出�
                 session へ引き継ぐ）。なし → lock 解放して exit 1。
                 API 失敗 → lock 解放して exit 2（fail-closed）
   plan          現在の tick plan を返す（session はこれだけを見る）
-  dispatch      1 PR 分の dispatch を実行（send / revive / spawn の解決、
+  dispatch      1 PR 分の dispatch を実行（revive / spawn の解決、
                 上限管理、delivery 検証、jsonl 記録まで script がやる）
   escalate      上限到達 PR へ escalation コメントを投稿して打ち切る
   judge-input   diff・PR 本文・CI を LLM judge へ渡す形で出す
