@@ -94,9 +94,11 @@ Orca worktree/terminal 一覧・git status を取り直す。次のいずれか�
   remote host の git status はこの script では確認できないので延期する。
 
 この節は PRD の旧 routing（idle terminal への再送・即時 spawn）に優先する。
-旧「指摘発生から45分未満」はこの安全待機中には適用しない。待機を含む実際の
-伝達時間と、ガード解除後の伝達時間を分けて評価する。往復上限は terminal 閉鎖後に
-新しく修復を起動する場合も含めて適用する。
+旧「指摘発生から45分未満」はこの安全待機中には適用しない。監査ログから測れる
+伝達時間は、GitHub の review/thread の `createdAt` から jsonl の `event == "dispatch"`
+の `ts` までの待機込みの時間に限る。延期履歴と実際のガード解除時刻は記録していないため、
+ガード解除後の伝達時間や待機時間だけを分離して算出しない。延期の状況は Hold 表で
+定性的に追う。往復上限は terminal 閉鎖後に新しく修復を起動する場合も含めて適用する。
 
 延期は送信回数を消費しない。使い終えた terminal は利用者が閉じるまで占有として残る。
 draft への修復 dispatch 自体は従来どおり対象だが、このガードを満たす必要がある。
@@ -186,10 +188,19 @@ script が構造化エラーで弾く。
   **per-tick** — 両者が一致しなくても不整合と読まない（後続 tick が同じ日次 file に追記する）。
 
 dispatch ガードの延期も Hold に載せ、恒久的な保留と区別して日本語で理由を書く。
-`PR recently updated` は「PR 更新後の待機（解除予定 YYYY-MM-DD HH:mm JST）」、
-terminal 占有は「terminal 閉鎖待ち」、dirty は「未確定の変更があるため待機」、
-取得不能は「作業状態を確認できないため待機」とする。時刻は script が返した
-`defer until` を JST に変換し、解除時刻のない理由に時刻を推測して付けない。
+script の `reason` は次のとおり対応させ、返された理由以上の原因を推測しない。
+
+| `reason` | Hold に書く理由 |
+|----------|----------------|
+| `PR activity timestamp unavailable` | PR 活動時刻を確認できないため待機 |
+| `PR recently updated; defer until <UTC>` | PR 更新後の待機（更新待機の期限 YYYY-MM-DD HH:mm JST） |
+| `agent working or terminal live/unverifiable` | 作業中または terminal 占有・状態不明のため待機 |
+| `worktree cleanliness unavailable` | worktree が clean か確認できないため待機 |
+| `dirty worktree` | 未確定の変更があるため待機 |
+
+`reason` 内の部分文字列 `defer until <UTC>` を JST に変換する。これは PR 更新待機の
+期限であり、他のガードも含めた実際の解除時刻ではない。時刻のない理由に期限を
+推測して付けず、worktree の確認不能だけから一時的・恒久的とも断定しない。
 
 dispatch は修正依頼を送った中間状態で、PR の決着ではない。dispatch の
 見出し・件数・成果一覧は md と最終返信に載せず、送信履歴は jsonl に残す。
