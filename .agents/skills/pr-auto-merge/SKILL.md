@@ -79,6 +79,26 @@ mise の `[tools]` は開発用依存（devDependencies 相当）として扱う
 途中で script がエラーを返したら、その action を自分で代替実装せず
 report に記録して次へ進む。
 
+## dispatch の作業中ガード
+
+`gate` と `dispatch` が同じ条件で延期を判定し、`dispatch` は実行時に PR・
+Orca worktree/terminal 一覧・git status を取り直す。次のいずれかなら送信・復帰・新規起動をしない:
+
+- PR の更新（`updatedAt`・作成時刻・head commit 時刻の最新）から1時間未満。
+  古い commit の push も拾うため `updatedAt` を使うので、コメント・レビューでも待機が延びる。
+  時刻を取得できない場合も延期する。
+- 対象 worktree の agent が working、live/状態不明 terminal が存在する、または
+  terminal 一覧に接続中/接続不明の terminal がある。agentIdentity・writable・idle 表示に
+  依存せず、shell も占有扱いにする（別 cwd から動く Claude subagent は status だけでは見えない）。
+- 対象 worktree の index・tracked/untracked に変更がある、または clean を確認できない。
+  remote host の git status はこの script では確認できないので延期する。
+
+延期は送信回数を消費しない。使い終えた terminal は利用者が閉じるまで占有として残る。
+draft への修復 dispatch 自体は従来どおり対象だが、このガードを満たす必要がある。
+draft の judge/merge は引き続き hold。repo 固有の heavy.lock は汎用ガードには使わない。
+判定直後に別 session が起動する race を完全に防ぐ共有ロックではないため、修復側も
+書き込み開始前に [repair](references/repair.md) の確認を行う。
+
 ## judge の内容判断（executor が担当）
 
 PR 本文の `Blast Radius` と `QA` を差分・検証結果と照合し、判定の根拠が確かかを確認する。

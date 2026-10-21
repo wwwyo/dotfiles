@@ -7,8 +7,14 @@ merge は author session で発行せず、修正後の次 tick で script に�
 ## 共通手順
 
 - PR の head・base・状態を取得する。OPEN でなければ作業しない。
-- Orca の該当 worktree を使う。別の作業があるなら `orca worktree create`
-  で分離する。repo の AGENTS.md と delegate skill の設定に従う。
+- 書き込み開始前に Orca の `worktree ps`・`terminal list --worktree <id>` と
+  `git --no-optional-locks status --porcelain --untracked-files=all` を確認する。
+  自分以外の接続中/接続不明 terminal、他 agent の working、既存の dirty があれば
+  書き込まず停止する。agentIdentity が無い shell も他 session の占有とする。
+  自分の作業開始後の dirty と開始前からの変更を混同しない。
+- script の1時間の PR 更新待機・terminal 占有・dirty ガードを迂回して再送・別 worktree
+  での同一 branch 修復を始めない。repo 固有の heavy.lock 等の作業ロックも尊重する。
+  repo の AGENTS.md と delegate skill の設定に従う。
 - push・コメント直前に state と head を再取得する。OPEN でなくなった、
   または他の session が head を更新した場合は push せず再確認する。
   通常 push を使い、他の変更を上書きする force push はしない。

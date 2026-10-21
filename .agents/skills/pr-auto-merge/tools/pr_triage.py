@@ -83,6 +83,7 @@ LOCK_TTL_S = int(os.environ.get("PR_WATCH_LOCK_TTL_S", 25 * 60))
 ME_REPO = Path(os.environ.get(
     "PR_WATCH_ME_REPO", Path.home() / "src" / "github.com" / "wwwyo" / "me"))
 
+DISPATCH_QUIET_S = 60 * 60  # PR 更新後1時間は author の作業を優先する
 DISPATCH_MAX_PER_HEAD = 3   # 同一 (PR, head SHA) への送信上限
 DISPATCH_MAX_ROUNDS = 3     # 往復ラウンド（dispatch を送った異なる head 数）上限
 DISPATCH_STALE_TICKS = 6    # 送信後に指摘が動かないままの tick 数上限（~3h）
@@ -296,7 +297,7 @@ def pr_view(repo, number):
     # 落ちると unaddressed が消えて fail-open になるため暗黙の上限を使わない）
     fields = ("number,title,body,author,isDraft,state,mergeable,"
               "reviewDecision,headRefOid,headRefName,"
-              "baseRefName,baseRefOid,url,comments,commits,"
+              "baseRefName,baseRefOid,url,comments,commits,updatedAt,createdAt,"
               "statusCheckRollup")
     v = gh_json(["pr", "view", str(number), "--repo", repo,
                  "--json", fields])
@@ -1330,22 +1331,44 @@ def find_worktree(worktrees, repo, number, head_ref):
     return None, None
 
 
-def agent_terminal(terminals):
-    """agent TUI と思われる terminal（agentIdentity 付き・writable）を返す。
-    複数なら先頭の1つ — dual send を避けるため必ず単一 handle。"""
-    cands = [t for t in terminals
-             if t.get("agentIdentity") and t.get("writable", True)
-             and t.get("connected", True)]
-    return cands[0] if cands else None
-
-
 def agent_busy(worktree, terminals):
-    """author が作業中なら dispatch しない（次 tick に回す）。
-    status=working または agents[].state==working。"""
-    if (worktree.get("status") or "") == "working":
+    """status だけでは subagent を観測できない。live/不明 terminal も占有。"""
+    if worktree.get("status") == "working":
         return True
-    return any(a.get("state") == "working"
-               for a in (worktree.get("agents") or []))
+    if any(a.get("state") == "working"
+           for a in (worktree.get("agents") or [])):
+        return True
+    return bool(worktree.get("liveTerminalCount") or
+                worktree.get("unverifiableTerminalCount") or
+                any(t.get("connected") is not False for t in terminals))
+
+
+def dispatch_quiet_reason(pr):
+    # updatedAt は push 以外の活動でも進むが、commit 時刻だけでは古い commit の
+    # push を見逃す。安全側に PR 全体の更新を使い、head commit 時刻も併用する。
+    times = [_ts(pr.get(k)) for k in ("updatedAt", "createdAt")]
+    times.extend(_ts(c.get("committedDate")) for c in pr.get("commits", [])
+                 if c.get("oid") == pr.get("headRefOid"))
+    times = [t for t in times if t is not None]
+    if not times:
+        return "PR activity timestamp unavailable"
+    until = max(times) + timedelta(seconds=DISPATCH_QUIET_S)
+    if _now() < until:
+        return f"PR recently updated; defer until {_iso(until)}"
+    return None
+
+
+def dispatch_worktree_reason(worktree):
+    """git の index・tracked/untracked を読むだけ。取得不能も延期する。"""
+    path = worktree.get("path")
+    if not path or worktree.get("hostId", "local") != "local":
+        return "worktree cleanliness unavailable"
+    try:
+        dirty = sh(["git", "--no-optional-locks", "-C", path, "status",
+                    "--porcelain", "--untracked-files=all"], timeout=30).stdout
+    except ApiError:
+        return "worktree cleanliness unavailable"
+    return "dirty worktree" if dirty else None
 
 
 def _author_eligible(pr):
@@ -1359,12 +1382,17 @@ def route_dispatch(worktrees, terminals_by_wt, repo, pr):
     """dispatch のルーティング決定（純粋判定部）。pr は pr_view の dict
     （author・number・headRefName を使う）。
 
-    戻り値: {"route": "send"|"revive"|"spawn"|"defer"|"none",
+    戻り値: {"route": "revive"|"spawn"|"defer"|"none",
              "worktree": w|None, "handle": h|None, "reason": str}
     """
     if not _author_eligible(pr):
         return {"route": "none", "worktree": None, "handle": None,
                 "reason": "author not eligible for dispatch/spawn"}
+
+    reason = dispatch_quiet_reason(pr)
+    if reason:
+        return {"route": "defer", "worktree": None, "handle": None,
+                "reason": reason}
 
     head = pr.get("headRefName")
     w, how = find_worktree(worktrees, repo, pr.get("number"), head)
@@ -1378,15 +1406,20 @@ def route_dispatch(worktrees, terminals_by_wt, repo, pr):
     terms = terminals_by_wt.get(w.get("worktreeId"), [])
     if agent_busy(w, terms):
         return {"route": "defer", "worktree": w, "handle": None,
-                "reason": "agent working"}
+                "reason": "agent working or terminal live/unverifiable"}
 
-    t = agent_terminal([t for t in terms
-                        if t.get("agentIdentity") != "devin"])
-    if t:
-        return {"route": "send", "worktree": w, "handle": t["handle"],
-                "reason": f"matched via {how}; agent idle/done"}
     return {"route": "revive", "worktree": w, "handle": None,
             "reason": f"matched via {how}; no agent terminal"}
+
+
+def checked_dispatch_route(worktrees, terminals_by_wt, repo, pr):
+    """gate と dispatch は同じ安全条件を使う。dispatch は毎回再取得する。"""
+    route = route_dispatch(worktrees, terminals_by_wt, repo, pr)
+    if route["route"] == "revive":
+        reason = dispatch_worktree_reason(route["worktree"])
+        if reason:
+            return dict(route, route="defer", handle=None, reason=reason)
+    return route
 
 
 # ---------- dispatch state ----------
@@ -1754,7 +1787,7 @@ def compute_pr_decision(pr, facts, worktrees, terms_cache, state):
                 if w and w.get("worktreeId") not in terms_cache:
                     terms_cache[w["worktreeId"]] = terminal_list(
                         w["worktreeId"])
-                route = route_dispatch(worktrees, terms_cache, repo, v)
+                route = checked_dispatch_route(worktrees, terms_cache, repo, v)
                 if route["route"] in ("none", "defer"):
                     # none（author 非対象）は永続、defer（作業中）は次 tick で
                     # 再評価 — どちらも dispatch subcommand が no-op で終わる
@@ -2179,17 +2212,14 @@ def _cmd_dispatch(a):
     terms = {}
     if w:
         terms = {w["worktreeId"]: terminal_list(w["worktreeId"])}
-    route = route_dispatch(worktrees, terms, a.repo, v)
+    route = checked_dispatch_route(worktrees, terms, a.repo, v)
     if route["route"] in ("defer", "none"):
         emit({"ok": True, "dispatched": False, "reason": route["reason"],
               "defer": route["route"] == "defer"})
         return
 
     fallback_cwds = []
-    if route["route"] == "send":
-        handle = route["handle"]
-        fallback_cwds = [(route.get("worktree") or {}).get("path")]
-    elif route["route"] == "revive":
+    if route["route"] == "revive":
         res = orca_json(["terminal", "create", "--worktree",
                          route["worktree"]["worktreeId"],
                          "--command", pi_worker_command()], timeout=120)
