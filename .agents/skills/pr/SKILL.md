@@ -84,6 +84,15 @@ gh pr create --draft --assignee @me --title "<title>" --body-file <本文ファ�
 - ブランチ削除は `gh` 経由で行う。`git push origin --delete` で消すと子 PR が retarget されず close される。
 - merge は `gh pr merge --squash`（デフォルト squash merge 前提）。切り替え先の main が別 worktree で checkout 済みだと、PR の merge 後にローカルブランチ削除だけ失敗する。`gh pr view` で merge 済みを確認し、リモートブランチは明示的に削除する。現在の worktree が使うローカルブランチは無理に削除しない。
 
+ユーザーの明示指示で routine 外の手動 merge を行う場合も、`gh pr view <PR URL> --json state`
+で `MERGED` を確認した直後、同じ実行内で
+`python3 ~/.agents/skills/pr-auto-merge/tools/pr_triage.py sweep` を呼ぶ（wwwyo/* 対象）。
+merge 失敗・blocked・成功未確認ではこの後処理を呼ばない。これは merge の許可を
+追加する手順ではなく、routine 内の merge は引き続き `pr_triage.py merge` の hard gate に従う。
+sweep は routine 外の merge も再照合し、安全条件を満たす worktree/session だけを片付ける。
+削除の安全条件・残存理由と実施結果の jsonl 記録は
+[pr-auto-merge の tick 手順](../pr-auto-merge/SKILL.md#tick-の手順executor-session)に従う。
+
 PR 作成後、出力された PR URL を `orca tab create --url <PR URL>` で Orca のブラウザタブで開く。
 
 ### 4. QA

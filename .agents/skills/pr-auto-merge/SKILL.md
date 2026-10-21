@@ -24,7 +24,9 @@ Orca automation `pr-auto-merge`（30分間隔・`workspace_path` = `wwwyo/me` �
   merge の発行権は持たない
 
 「script の判断に従う」は、script の条件を agent が独自に緩めたり、plan にない action を
-追加したりしないという意味。**plan の `judge` は agent に内容判断を求める action であり、
+追加したりしないという意味。ただし、`judge-result` の `merge_ready: true` に続く
+同実行の `merge` と、merge 成功直後の `sweep` は、以下で定める固定手順であり
+独自の action 追加ではない。**plan の `judge` は agent に内容判断を求める action であり、
 `judge-input` の取得だけでは完了しない**。確認しても判断できない場合は、未確認事項を理由に
 `ng` を登録する。
 
@@ -57,17 +59,27 @@ mise の `[tools]` は開発用依存（devDependencies 相当）として扱う
    |--------|---------|
    | `dispatch` | `pr_triage.py dispatch --repo <r> --number <n>` を呼ぶ。send / revive / spawn の解決・上限・dedup・delivery 検証は script がやる。結果が `needs_escalate: true` なら、返された `reason` を `--reason` に渡して続けて `escalate` を呼ぶ。`defer`/`none` なら何もしない。`dispatched: false` の `reason` が stale plan（plan 取得後に指摘が解消された）でも失敗ではない — 再送・独自回復せず次 tick に委ねる |
    | `escalate` | `pr_triage.py escalate --repo <r> --number <n>`（上限到達の旨を PR にコメントして打ち切り）。戻り値の `handle`（実査する terminal）を report の該当行に書く |
-   | `judge` | `judge-input` で diff・PR 本文・CI を取得し、**executor 自身が references/judge.md の基準で判定して** `judge-result --sha <sha> --context-hash <context_hash> --verdict ok\|ng\|repair --reason <理由>` に登録する。材料取得だけで終えない。判断不能なら理由付きで ng。**ok の登録結果が `merge_ready: true` なら、次 tick を待たず同じ実行内で続けて `merge` を呼ぶ**（`merge` が発行直前に hard gate を全件再検証する）。`merge_ready: false`（`blocked` の理由付き）なら merge せず、理由を report に残す。repair は次 tick の dispatch に渡す |
-   | `merge` | `pr_triage.py merge --repo <r> --number <n>`。`blocked` が返ったら直前再検証で弾かれたので何もしない（状況が変わったサイン） |
+   | `judge` | `judge-input` で diff・PR 本文・CI を取得し、**executor 自身が references/judge.md の基準で判定して** `judge-result --sha <sha> --context-hash <context_hash> --verdict ok\|ng\|repair --reason <理由>` に登録する。材料取得だけで終えない。判断不能なら理由付きで ng。**ok の登録結果が `merge_ready: true` なら、次 tick を待たず同じ実行内で続けて `merge` を呼び、`merged: true` なら直後に `sweep` を呼ぶ**（`merge` が発行直前に hard gate を全件再検証する）。`merge_ready: false`（`blocked` の理由付き）なら merge せず、理由を report に残す。repair は次 tick の dispatch に渡す |
+   | `merge` | `pr_triage.py merge --repo <r> --number <n>`。`merged: true` を確認したら直後に `pr_triage.py sweep` を呼ぶ（開始時の `plan.sweep` が空でも必須）。`merged: false` / `blocked`・失敗・成功未確認なら、merge 後の sweep は呼ばず理由を記録する。`ok: true` だけでは merge 成功ではない |
    | `hold` | 何もしない。理由は report に載せる |
 
 3. script は毎 tick local Orca の全 worktree/session を確認する。`plan.local_sessions`
-   に確認件数、`plan.sweep` に片付け候補が入る。候補があれば `pr_triage.py sweep`。
+   に確認件数、`plan.sweep` に開始時点の片付け候補が入る。**各 merge 成功直後には、
+   通常の merge action・judge ok からの同実行 merge のどちらも、同じ実行内で
+   `pr_triage.py sweep` を必ず呼ぶ**。`sweep` 自身が最新状態から候補を再計算するため、
+   開始時の `plan.sweep=[]` を理由に省略しない。開始時に候補があった場合は merge の
+   成否とは独立して sweep する（merge 後に実施済みなら重ねて呼ぶ必要はない）。
    routine 外で merge された PR も対象。branch/head が merge 済み PR と一致・git clean・
    agent idle/done の worktree だけ、session を `orca terminal close --all` で閉じて削除する。
    live terminal がある場合は workspace completed・shell が prompt に戻っていることも必要。
    main・active workspace・子 worktree の親・作業中 agent は残す。削除直前に全条件を
-   再検証し、close 後に live terminal が0になったことを確認する。force は使わない。
+   再検証し、close 後に live terminal が0になったことを確認する。条件を通すためだけに
+   workspaceStatus を completed に変えたり、force 削除したりしない。
+   sweep の実施と削除成功は区別する。返された `removed` / `skipped` と残存理由を
+   既存 jsonl で確認し、呼び出した事実・削除件数・エラーは `pr_triage.py log` の note に
+   記録する。候補外のため script の skip event がない場合も、merge した PR の
+   worktree を残す理由（active・作業中・live terminal があり未 completed 等）を
+   再取得した状態から note に補う。確認できなければ未確認と書き、削除成功に数えない。
 4. report を書く（下記）
 5. 最後に必ず `pr_triage.py lock release --run-id <plan.run_id>`。
    `gate` が保持したまま渡した run lock を executor session が引き継ぐ
@@ -134,7 +146,8 @@ python3 ~/.agents/skills/pr-auto-merge/tools/pr_triage.py events --event note --
 "repo":"wwwyo/example","pr":1,"sha":"確認した head",
 "sources":["https://github.com/wwwyo/example/pull/1"]}`。
 `note` は補足ログであり action・verdict・送信成功・merge 実績を変更しない。
-空振りや tick ごとの件数を重複記録せず、次回に必要な情報だけ補足する。
+merge 後 sweep の実施結果は削除0件でも note に残す。それ以外の空振りや
+tick ごとの件数を重複記録せず、次回に必要な情報だけ補足する。
 既存 `pr-watch-log.md` の移行時は、原文と元ファイルの日付・path を `note` に
 保持して読み戻しを確認してから旧ファイルを削除する。過去の実績 event として再生成しない。
 **note の JSON を組む独自 helper を書かない** — キーを取り違えた helper は
@@ -150,6 +163,8 @@ script が構造化エラーで弾く。
   tick-summary: date=<YYYY-MM-DD> run_id=<plan.run_id> dispatch=<n> escalate=<n> judge=<n> merge=<n> hold=<n> sweep=<n> error=<n> judge_ok=<n> judge_ng=<n> judge_repair=<n> blocked=[<理由>:<n>,...]
   ```
 
+  `sweep` はこの tick の削除成功件数（`worktree_rm`）で、呼び出し回数ではない。
+  sweep 実施済みでも `removed=[]` なら 0 とし、実施・残存理由は jsonl の note を参照する。
   `hold` は plan の hold action 件数。`judge_ok`・`judge_ng`・`judge_repair` は
   `event == "judge"` かつ `ts >= plan.generated_at` の event だけを数える — 当日の
   jsonl には前 tick の judge event も入るため、時刻で絞らないと件数が膨らむ。
