@@ -48,6 +48,7 @@ pr-watch.md の記述は executor session が行う。
 import argparse
 import fcntl
 import hashlib
+import html
 import json
 import os
 import re
@@ -87,6 +88,13 @@ DISPATCH_QUIET_S = 60 * 60  # PR 更新後1時間は author の作業を優先�
 DISPATCH_MAX_PER_HEAD = 3   # 同一 (PR, head SHA) への送信上限
 DISPATCH_MAX_ROUNDS = 3     # 往復ラウンド（dispatch を送った異なる head 数）上限
 DISPATCH_STALE_TICKS = 6    # 送信後に指摘が動かないままの tick 数上限（~3h）
+# 入力は受理されたが assistant の生成が 0（provider error 等で会話が
+# 始まらなかった）場合に許す追加送信の回数。transcript を見れば分かる
+# 短時間の provider 障害（503 を 4 attempt で打ち切る等）で PR 1 件の
+# レビュー対応が人間待ちに固定されるのを避ける。会話が成立していない
+# ので再送しても二重にならないが、恒久障害で無限に再送しないよう 1 回で
+# 打ち切って escalate する。
+DISPATCH_DELIVERY_RETRY_MAX = 1
 SWEEP_MAX_TRIES = 6         # sweep が永続的理由で skip し続ける回数上限（~3h）
 # 一時的な理由は ps 再取得との race 窓の 2 つだけ。git の timeout は
 # race ではなく再現する失敗（path が wedged・repo 破損等）なので
@@ -1475,6 +1483,12 @@ def dispatch_allows(ds, head):
     pending = ds.get("delivery_pending") or {}
     if pending.get("sha") == head:
         return False, "delivery unverified; inspect terminal before retry", True
+    fails = (ds.get("delivery_failures") or {}).get(head, 0)
+    if fails > DISPATCH_DELIVERY_RETRY_MAX:
+        # 会話が始まらない失敗（provider error）が上限を超えた。escalate
+        # の記録が欠けても再送し続けないよう、ここでも打ち切る
+        return False, (f"provider error on {fails} delivery attempts; "
+                       "conversation never started"), True
     same_head = [d for d in ds.get("dispatches", []) if d.get("sha") == head]
     if len(same_head) >= DISPATCH_MAX_PER_HEAD:
         return False, f"dispatch cap per head ({DISPATCH_MAX_PER_HEAD})", True
@@ -1497,12 +1511,32 @@ def mark_dispatch_sent(state, repo, number, head, sig, handle=None):
     ds.setdefault("dispatches", []).append(
         {"sha": head, "sig": sig, "at": _iso(_now()), "handle": handle})
     ds["stale_ticks"] = 0  # 新しい指摘へ送ったので滞留カウントは戻す
+    # 送達できたので、同じ head の provider 障害カウントも戻す
+    (ds.get("delivery_failures") or {}).pop(head, None)
     rounds = ds.setdefault("rounds", [])
     if head and head not in rounds:
         rounds.append(head)
 
 
 # ---------- dispatch message ----------
+
+ITEM_TEXT_MAX = 400         # 指摘1件ぶんの本文上限 chars
+
+
+def item_text(body, limit=ITEM_TEXT_MAX):
+    """指摘本文を terminal へ渡す1行に畳む。
+
+    GitHub の本文は `<details>`・`<summary>`・code block を含み、生の字数で
+    切ると `<details><s` のような tag の途中で終わる断片が渡る。受け取る
+    session は「指摘は1件で全部」か「続きが切れている」かを判別できず、
+    残りの指摘を読み落とす。先に tag を落として空白を畳み、切ったときは
+    省略マーカーを付けて全文の在処を書く。"""
+    text = re.sub(r"<[^>]*>", " ", body or "")
+    text = re.sub(r"\s+", " ", html.unescape(text)).strip()
+    if len(text) > limit:
+        return text[:limit] + " …(以下省略 — 全文は review thread)"
+    return text
+
 
 def build_dispatch_message(repo, pr, items):
     lines = [
@@ -1533,8 +1567,7 @@ def build_dispatch_message(repo, pr, items):
     for i, it in enumerate(items, 1):
         loc = f" {it['path']}:{it['line']}" if it.get("path") else ""
         who = f" ({it['author']})" if it.get("author") else ""
-        body = re.sub(r"\s+", " ", it.get("body") or "").strip()[:400]
-        lines.append(f"{i}. [{it['kind']}]{loc}{who} {body}")
+        lines.append(f"{i}. [{it['kind']}]{loc}{who} {item_text(it.get('body'))}")
     msg = "\n".join(lines)
     if len(msg) > DISPATCH_MSG_MAX:
         msg = msg[:DISPATCH_MSG_MAX - 60] + \
@@ -1545,7 +1578,18 @@ def build_dispatch_message(repo, pr, items):
 # ---------- send / spawn ----------
 
 def pi_delivery_evidence(cwd, text, since):
-    """対象 cwd の新しい user input と後続 generation だけを確認する。"""
+    """対象 cwd の新しい user input と後続 generation だけを確認する。
+
+    戻り値 `kind`: `generation` = 送達確認済み。`input-only` = 入力は記録
+    されたが、その後の assistant generation が全て error/aborted で内容が
+    無い（provider 障害等で会話が始まっていない）。None = 入力自体が
+    見つからない。
+
+    `input-only` を別扱いにするのは、未確認の入力（`None`）と混ぜると
+    「受理済みの入力を再送しない」規約で provider の短時間障害も恒久的な
+    escalate に落ち、実査する人間が空の assistant だけを見ることになる
+    から。provider の errorMessage もここで拾って report に残す。
+    """
     safe_path = "--" + re.sub(r"[/\\:]", "-", re.sub(r"^[/\\]", "", cwd)) + "--"
     agent_dir = Path(os.environ.get("PI_CODING_AGENT_DIR", Path.home() / ".pi/agent"))
     for path in (agent_dir / "sessions" / safe_path).glob("*.jsonl"):
@@ -1557,6 +1601,7 @@ def pi_delivery_evidence(cwd, text, since):
                 if header.get("type") != "session" or header.get("cwd") != cwd:
                     continue
                 matched = False
+                errors = []
                 for line in f:
                     try:
                         event = json.loads(line)
@@ -1571,8 +1616,15 @@ def pi_delivery_evidence(cwd, text, since):
                                        if isinstance(c, dict) and c.get("type") == "text")
                         ts = _ts(event.get("timestamp"))
                         matched = body == text and ts is not None and ts >= since
+                        errors = []
                     elif matched and message.get("role") == "assistant":
                         if message.get("stopReason") in ("error", "aborted"):
+                            errors.append({
+                                "stop_reason": message.get("stopReason"),
+                                "error": (message.get("errorMessage") or "")[:300],
+                                "provider": message.get("provider"),
+                                "model": message.get("model"),
+                            })
                             continue
                         content = message.get("content") or []
                         generated = any(isinstance(c, dict) and (
@@ -1582,10 +1634,18 @@ def pi_delivery_evidence(cwd, text, since):
                             for c in content)
                         if not generated:
                             continue
-                        return {"kind": "pi_session", "session_id": header.get("id"),
+                        return {"kind": "generation",
+                                "session_id": header.get("id"),
                                 "message_id": event.get("id"),
                                 "provider": message.get("provider"),
                                 "model": message.get("model")}
+                if matched and errors:
+                    last = errors[-1]
+                    return {"kind": "input-only",
+                            "session_id": header.get("id"),
+                            "provider": last.get("provider"),
+                            "model": last.get("model"),
+                            "errors": errors}
         except (OSError, StopIteration, ValueError, TypeError):
             continue
     return None
@@ -1594,6 +1654,16 @@ def pi_delivery_evidence(cwd, text, since):
 def send_prompt(handle, text, fallback_cwds=()):
     """Orca の turn_started、または local pi の新しい generation で確認する。
     未確認なら入力を再送しない。呼び出し側が pending を永続化している。
+
+    戻り値 (delivered, status)。status の `outcome` が配信の確認結果:
+      turn_started / generation     — 送達を確認
+      input-accepted-no-generation  — 入力は記録されたが assistant の
+        生成が 0（provider error 等で会話が始まらなかった）
+      unverified                    — 入力の記録も見つからない
+      send-error                    — terminal send 自体が失敗
+
+    `input-only` は deadline まで待ってから返す — pi は turn 内で provider
+    の再試行を続けるので、最初の error で折ると回復する attempt を取り逃す。
 
     terminal の worktreePath が欠落・不一致でも、呼び出し元が知っている
     対象 worktree の path を fallback_cwds に渡すと session JSONL を探せる —
@@ -1612,20 +1682,79 @@ def send_prompt(handle, text, fallback_cwds=()):
                          "--text", text, "--enter",
                          "--wait-submit", str(SEND_WAIT_S)], timeout=90)
     except ApiError as e:
-        return False, {"error": str(e)}
+        return False, {"outcome": "send-error", "error": str(e)[:500]}
     if "turn_started" in json.dumps(res or {}, ensure_ascii=False):
-        return True, res
+        return True, {"outcome": "turn_started", "receipt": res}
+    input_only = None
     if cwds:
         deadline = time.monotonic() + SEND_WAIT_S
         while True:
             for cwd in cwds:
                 evidence = pi_delivery_evidence(cwd, text, since)
-                if evidence:
-                    return True, {"receipt": res, "evidence": evidence}
+                if not evidence:
+                    continue
+                if evidence["kind"] == "generation":
+                    return True, {"outcome": "generation",
+                                  "receipt": res, "evidence": evidence}
+                input_only = evidence
             if time.monotonic() >= deadline:
                 break
             time.sleep(1)
-    return False, res
+    if input_only:
+        return False, {"outcome": "input-accepted-no-generation",
+                       "receipt": res, "evidence": input_only}
+    return False, {"outcome": "unverified", "receipt": res}
+
+
+def delivery_failure(status):
+    """send_prompt の status を、jsonl・report に残す失敗の要約にする。
+
+    これが無いと report には「turn_started not observed」しか残らず、
+    実査する人間は空の assistant を見て provider 障害だったことを
+    session JSONL まで掘らないと復元できない。"""
+    evidence = (status or {}).get("evidence") or {}
+    errors = [e.get("error") for e in (evidence.get("errors") or [])
+              if e.get("error")]
+    return {
+        "outcome": (status or {}).get("outcome") or "unverified",
+        "retryable": (status or {}).get("outcome") ==
+        "input-accepted-no-generation",
+        "provider": evidence.get("provider"),
+        "model": evidence.get("model"),
+        "session_id": evidence.get("session_id"),
+        "provider_error": errors[-1][:300] if errors else None,
+        "attempts": len(errors),
+        "send_error": ((status or {}).get("error") or None),
+    }
+
+
+def record_delivery_failure(ds, head, failure):
+    """会話が始まらなかった失敗を state に残し、次 tick の再送可否を返す。
+
+    `delivery_pending` は「受理されたか不明な入力を再送しない」ための
+    ラッチ。外すのは「入力は記録された」と「その turn が生成 0 で終わった」
+    を両方確認できたときだけ — assistant の本文も tool 呼び出しも無いので、
+    再送しても二重の会話にならない。回数は head ごとに数え、上限で
+    escalate に倒す（provider の恒久障害で再送を繰り返さない）。
+    戻り値 (retry, reason)。"""
+    if not failure.get("retryable"):
+        return False, ("delivery unverified; inspect terminal before retry"
+                       if not failure.get("send_error") else
+                       f"terminal send failed: {failure['send_error'][:120]}")
+    # 実査先を残す — pending を外すと handle の置き場が無くなるが、
+    # 再送が失敗したときに人間が見るべき terminal は同じ
+    handle = (ds.get("delivery_pending") or {}).get("handle")
+    if handle:
+        ds["delivery_handle"] = handle
+    fails = ds.setdefault("delivery_failures", {})
+    fails[head] = int(fails.get(head) or 0) + 1
+    tries = fails[head]
+    if tries > DISPATCH_DELIVERY_RETRY_MAX:
+        return False, ("provider error; conversation never started "
+                       f"({tries} attempts)")
+    ds.pop("delivery_pending", None)
+    return True, ("provider error; conversation never started "
+                  f"(retry {tries}/{DISPATCH_DELIVERY_RETRY_MAX} next tick)")
 
 
 def pi_worker_command():
@@ -2135,6 +2264,10 @@ def prune_state(st, days=30):
     for k, d in list((st.get("prs") or {}).items()):
         if d.get("delivery_pending"):
             continue  # 未確認入力は日数・dispatch 実績によらず実査まで残す
+        if d.get("delivery_failures"):
+            # 会話が始まらない失敗の回数。落とすと再送上限が毎 tick 戻り、
+            # provider の恒久障害で送り続ける
+            continue
         acts = [x.get("at") for x in d.get("dispatches", []) if x.get("at")]
         if not acts:
             # dispatch 実績が無い entry は read path で作られた空殻
@@ -2301,14 +2434,18 @@ def _cmd_dispatch(a):
                                    "at": _iso(_now())}
     save_state(st)
     msg += "\n[pr-merge-lane delivery " + str(uuid.uuid4()) + "]"
-    delivered, detail = send_prompt(handle, msg, fallback_cwds)
+    delivered, status = send_prompt(handle, msg, fallback_cwds)
     if not delivered:
-        # 入力が受理された可能性があるため、次 tick でも再送しない。
-        append_event("dispatch_failed", repo=a.repo, pr=a.number,
-                     error="turn_started not observed")
-        emit({"ok": True, "dispatched": False,
-              "reason": "turn_started not observed", "detail": detail,
-              "needs_escalate": True})
+        failure = delivery_failure(status)
+        retry, why = record_delivery_failure(pending, head, failure)
+        save_state(st)
+        fields = {k: v for k, v in failure.items()
+                  if v and k not in ("retryable",)}
+        append_event("dispatch_failed", repo=a.repo, pr=a.number, head=head,
+                     reason=why, retry=retry, **fields)
+        emit({"ok": True, "dispatched": False, "reason": why,
+              "detail": status, "provider_error": failure.get("provider_error"),
+              "needs_escalate": not retry})
         return
     pending.pop("delivery_pending", None)
     mark_dispatch_sent(st, a.repo, a.number, head, sig, handle)
@@ -2336,6 +2473,8 @@ def _cmd_escalate(a):
     # 実査する terminal を report へ出せるようにする。dispatch_failed 直後は
     # delivery_pending に、成功済み dispatch では最後の dispatch 記録に handle が残る。
     handle = (ds.get("delivery_pending") or {}).get("handle")
+    if not handle:
+        handle = ds.get("delivery_handle")
     if not handle:
         dispatches = ds.get("dispatches") or []
         handle = dispatches[-1].get("handle") if dispatches else None

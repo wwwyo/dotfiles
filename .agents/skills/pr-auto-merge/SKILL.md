@@ -57,7 +57,7 @@ mise の `[tools]` は開発用依存（devDependencies 相当）として扱う
 
    | action | やること |
    |--------|---------|
-   | `dispatch` | `pr_triage.py dispatch --repo <r> --number <n>` を呼ぶ。revive / spawn の解決・上限・dedup・delivery 検証は script がやる。結果が `needs_escalate: true` なら、返された `reason` を `--reason` に渡して続けて `escalate` を呼ぶ。`defer`/`none` なら何もしない。送信成功は `dispatched: true` で判定する — terminal への書き込みが無出力で返ったことを成功と読まない。`dispatched: false` の `reason` が stale plan（plan 取得後に指摘が解消された）でも失敗ではない — 再送・独自回復せず次 tick に委ねる |
+   | `dispatch` | `pr_triage.py dispatch --repo <r> --number <n>` を呼ぶ。revive / spawn の解決・上限・dedup・delivery 検証は script がやる。結果が `needs_escalate: true` なら、返された `reason` を `--reason` に渡して続けて `escalate` を呼ぶ。`needs_escalate: false` の `dispatched: false` は provider 障害の再送待ち（`reason` に retry 回数）— escalate せず、`provider_error` を report に写して次 tick に任せる。`defer`/`none` なら何もしない。送信成功は `dispatched: true` で判定する — terminal への書き込みが無出力で返ったことを成功と読まない。`dispatched: false` の `reason` が stale plan（plan 取得後に指摘が解消された）でも失敗ではない — 再送・独自回復せず次 tick に委ねる |
    | `escalate` | `pr_triage.py escalate --repo <r> --number <n>`（上限到達の旨を PR にコメントして打ち切り）。戻り値の `handle`（実査する terminal）を report の該当行に書く |
    | `judge` | `judge-input` で diff・PR 本文・CI を取得し、**executor 自身が references/judge.md の基準で判定して** `judge-result --sha <sha> --context-hash <context_hash> --verdict ok\|ng\|repair --reason <理由>` に登録する。材料取得だけで終えない。判断不能なら理由付きで ng。**ok の登録結果が `merge_ready: true` なら、次 tick を待たず同じ実行内で続けて `merge` を呼び、`merged: true` なら直後に `sweep` を呼ぶ**（`merge` が発行直前に hard gate を全件再検証する）。`merge_ready: false`（`blocked` の理由付き）なら merge せず、理由を report に残す。repair は次 tick の dispatch に渡す |
    | `merge` | `pr_triage.py merge --repo <r> --number <n>`。`merged: true` を確認したら直後に `pr_triage.py sweep` を呼ぶ（開始時の `plan.sweep` が空でも必須）。`merged: false` / `blocked`・失敗・成功未確認なら、merge 後の sweep は呼ばず理由を記録する。`ok: true` だけでは merge 成功ではない |
@@ -371,4 +371,13 @@ pullfrog-approval を免除する。
 
 ## pi の送信確認
 
-修復 worker の新規・復帰起動は delegate の worker/personal からモデル・thinking を読み、mise 経由の pi 対話 session に指定する。Orca が `turn_started` を返さない local pi では、対象 cwd の session JSONL に今回の固有 delivery marker を持つ新しい user input と、その後のエラー・中断ではない、内容のある assistant generation があることを script が確認する。本文は報告に出さない。入力受付だけを成功とせず、直接 CLI の dispatch も lock で直列化し、送信前に pending を保存するため、中断・未確認時も同じ head へ自動再送しない。remote host・独自 session dir などで確認できない場合は reason 付き escalate とし、terminal を実査してから復旧する。`dispatch_failed`（名目 turn_started not observed）は未送信の確定ではない — `worktreePath` 欠落や観測窓より遅い generation でも起こる。escalate した PR の実査は、report の `handle` から terminal の `agentIdentity` / `worktreePath` と、対象 worktree の session JSONL に delivery marker 付き user input と後続 generation があるかを先に見る。
+修復 worker の新規・復帰起動は delegate の worker/personal からモデル・thinking を読み、mise 経由の pi 対話 session に指定する。Orca が `turn_started` を返さない local pi では、対象 cwd の session JSONL に今回の固有 delivery marker を持つ新しい user input と、その後のエラー・中断ではない、内容のある assistant generation があることを script が確認する。本文は報告に出さない。入力受付だけを成功とせず、直接 CLI の dispatch も lock で直列化し、送信前に pending を保存するため、中断・未確認時も同じ head へ自動再送しない。remote host・独自 session dir などで確認できない場合は reason 付き escalate とし、terminal を実査してから復旧する。`dispatch_failed`（以前は名目 `turn_started not observed`。今は `outcome` で区別する）は未送信の確定ではない — `worktreePath` 欠落や観測窓より遅い generation でも起こる。escalate した PR の実査は、report の `handle` から terminal の `agentIdentity` / `worktreePath` と、対象 worktree の session JSONL に delivery marker 付き user input と後続 generation があるかを先に見る。
+
+失敗の種類で再送の扱いを分ける（`dispatch_failed` event の `outcome`）:
+
+| outcome | 意味 | 次 tick |
+|---------|------|---------|
+| `input-accepted-no-generation` | 入力は session に記録されたが、その turn の assistant が全て error/aborted で本文・tool 呼び出しが 0 | 例外として 1 回だけ再送する（同じ head につき `DISPATCH_DELIVERY_RETRY_MAX`）。超過は escalate |
+| `unverified` | 入力の記録自体が見つからない（worktreePath 欠落・観測窓外） | 再送しない。pending を残して escalate |
+
+provider の短時間障害（503 を pi の turn 内 retry が 4 attempt で打ち切る等）は前者に落ちる。会話が 1 token も成立していないので再送で二重にならず、16 秒の outage で PR の対応が恒久的に人間待ちになるのを避けられる。event には `provider_error`（errorMessage）・`provider`・`attempts`・`retry` が入る — これを残さないと実査する人間は空の assistant だけを見て原因を session JSONL まで掘る必要がある。`delivery_pending` を外すのは前者（入力受理済み・生成 0）を確認できたときだけで、回数は state の `delivery_failures`（head ごと）に残る。crash 時の二重送信防止は pending が担う。

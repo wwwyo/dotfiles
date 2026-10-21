@@ -96,7 +96,8 @@ if tool == 'orca':
                      'message': {'role': 'assistant', 'model': 'mimo-v2.6-flash', 'provider': 'opencode-go',
                                  'content': [{'type': 'text', 'text': 'started'}], 'stopReason': 'stop'}}]
                 if mode == 'unsupported-error':
-                    events[-1]['message'].update(content=[], stopReason='error', usage={'output': 0})
+                    events[-1]['message'].update(content=[], stopReason='error', usage={'output': 0},
+                                                 errorMessage='503 Upstream request failed: Endpoint is unavailable.')
                 if mode == 'unsupported-user-only':
                     events = events[:2]
                 (target / 'fixture.jsonl').write_text(''.join(json.dumps(e) + '\n' for e in events))
@@ -244,7 +245,7 @@ with patch.object(Path, 'home', return_value=Path(fixture_home)):
 
     def test_unverified_input_is_not_resent_on_next_dispatch(self):
         (self.root / "registered").touch()
-        for mode in ("unsupported-empty", "unsupported-stale", "unsupported-user-only", "unsupported-error"):
+        for mode in ("unsupported-empty", "unsupported-stale", "unsupported-user-only"):
             with self.subTest(mode=mode):
                 # Separate state between scenarios; preserve state within each pair.
                 self.env["PR_WATCH_STATE_DIR"] = str(self.root / mode)
@@ -266,6 +267,43 @@ with patch.object(Path, 'home', return_value=Path(fixture_home)):
                 sends = [c for c in calls if c[:3] == ["orca", "terminal", "send"]]
                 self.assertEqual(len(sends), 1)
                 (self.root / "calls.jsonl").unlink()
+
+    def test_provider_error_without_generation_is_retried_once(self):
+        # 入力は記録されたが assistant の生成が 0（provider 障害）なら、
+        # 未確認入力と区別して次 tick の 1 回だけ再送し、provider の
+        # errorMessage を jsonl に残す。
+        (self.root / "registered").touch()
+        self.env["PR_WATCH_STATE_DIR"] = str(self.root / "error-retry")
+        first = self.run_cli("unsupported-error", "dispatch",
+                             "--repo", "wwwyo/fixture", "--number", "30")
+        self.assertEqual(first.returncode, 0, first.stdout + first.stderr)
+        out = json.loads(first.stdout)
+        self.assertFalse(out["dispatched"])
+        self.assertFalse(out["needs_escalate"])
+        self.assertIn("retry 1/1", out["reason"])
+        self.assertIn("503", out["provider_error"])
+        state = json.loads((self.root / "error-retry/state.json").read_text())
+        entry = state["prs"]["wwwyo/fixture#30"]
+        self.assertNotIn("delivery_pending", entry)
+        self.assertEqual(entry["delivery_failures"]["fixture-sha"], 1)
+        failed = json.loads(self.run_cli(
+            "unsupported-error", "events", "--event", "dispatch_failed").stdout)["events"]
+        self.assertTrue(failed[-1]["retry"])
+        self.assertIn("503", failed[-1]["provider_error"])
+        # 2 回目は上限で escalate し、それ以上送らない。gate の state 整理を
+        # 挟んでも失敗回数（再送上限）は残る
+        prune = subprocess.run([sys.executable, "-c",
+            "import importlib.util; s=importlib.util.spec_from_file_location('pt', " + repr(str(SCRIPT)) + "); "
+            "m=importlib.util.module_from_spec(s); s.loader.exec_module(m); "
+            "st=m.load_state(); m.prune_state(st); m.save_state(st)"],
+            env=self.env, capture_output=True, text=True)
+        self.assertEqual(prune.returncode, 0, prune.stdout + prune.stderr)
+        second = self.run_cli("unsupported-error", "dispatch",
+                              "--repo", "wwwyo/fixture", "--number", "30")
+        out = json.loads(second.stdout)
+        self.assertFalse(out["dispatched"])
+        self.assertTrue(out["needs_escalate"])
+        self.assertIn("conversation never started", out["reason"])
 
     def test_parallel_dispatch_sends_once(self):
         (self.root / "registered").touch()
@@ -528,6 +566,175 @@ class AuditTrailTest(unittest.TestCase):
         pt._RUN_ID = ""
         pt.append_event("note", message="no-lock gate")
         self.assertNotIn("run_id", pt.read_events()[-1])
+
+
+class DispatchMessageTest(unittest.TestCase):
+    """指摘本文の切り詰めは tag の途中で切らず、切ったことを示す。"""
+
+    def setUp(self):
+        spec = importlib.util.spec_from_file_location("triage_message", SCRIPT)
+        self.pt = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(self.pt)
+
+    def message(self, body):
+        return self.pt.build_dispatch_message(
+            "wwwyo/fixture", dict(number=1, url="https://example/1", title="t"),
+            [{"kind": "review", "body": body}])
+
+    def test_long_html_body_is_flattened_and_marked(self):
+        body = "指摘です。 <details><summary>ログ</summary>" + "x" * 600
+        item = self.message(body).splitlines()[-1]
+        self.assertNotIn("<details", item)
+        self.assertNotIn("<su", item)
+        self.assertIn("以下省略", item)
+
+    def test_short_body_is_kept_verbatim(self):
+        item = self.message("`turnstile.ts:46` で container が残る").splitlines()[-1]
+        self.assertTrue(item.endswith("`turnstile.ts:46` で container が残る"))
+        self.assertNotIn("省略", item)
+
+    def test_entities_are_decoded(self):
+        # tag を落としてから entity を戻す（escape された <tag> は本文）。
+        self.assertEqual(self.pt.item_text("a &amp; b &lt;tag&gt;"), "a & b <tag>")
+
+
+class DeliveryEvidenceTest(unittest.TestCase):
+    """入力は受理されたが会話が始まらなかったことを、未確認と区別する。
+
+    ここを分けないと provider の短時間障害が恒久的な escalate に落ちる。"""
+
+    TEXT = "[pr-merge-lane] 依頼 body [pr-merge-lane delivery 1234]"
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory(prefix="pr-triage-delivery-")
+        self.addCleanup(self.tmp.cleanup)
+        self.root = Path(self.tmp.name)
+        self.cwd = str(self.root / "checkout")
+        self.sessions = (self.root / "agent" / "sessions" /
+                         ("--" + str(self.cwd).lstrip("/").replace("/", "-") + "--"))
+        self.sessions.mkdir(parents=True)
+        spec = importlib.util.spec_from_file_location("triage_delivery", SCRIPT)
+        self.pt = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(self.pt)
+        self.since = self.pt._now() - timedelta(minutes=1)
+
+    def write(self, *events):
+        lines = [{"type": "session", "id": "s1", "cwd": self.cwd}]
+        lines += list(events)
+        path = self.sessions / "s1.jsonl"
+        path.write_text("\n".join(json.dumps(e) for e in lines) + "\n",
+                        encoding="utf-8")
+        os.utime(path, None)
+
+    def user(self, text=None):
+        return {"type": "message", "id": "u1",
+                "timestamp": self.pt._iso(self.pt._now()),
+                "message": {"role": "user",
+                            "content": [{"type": "text",
+                                         "text": text or self.TEXT}]}}
+
+    def assistant(self, stop=None, error=None, text=""):
+        msg = {"role": "assistant", "provider": "opencode-go",
+               "model": "deepseek-v4.1-flash", "stopReason": stop or "stop",
+               "content": [{"type": "text", "text": text}] if text else []}
+        if error:
+            msg["errorMessage"] = error
+        return {"type": "message", "id": f"a{error or text}",
+                "timestamp": self.pt._iso(self.pt._now()), "message": msg}
+
+    def evidence(self, text=None):
+        with mock.patch.dict(os.environ,
+                             {"PI_CODING_AGENT_DIR": str(self.root / "agent")}):
+            return self.pt.pi_delivery_evidence(self.cwd, text or self.TEXT,
+                                                self.since)
+
+    def test_provider_errors_without_generation_report_the_error(self):
+        self.write(self.user(),
+                   self.assistant(stop="error", error="503 Upstream failed"),
+                   self.assistant(stop="error", error="503 Upstream failed"))
+        ev = self.evidence()
+        self.assertEqual(ev["kind"], "input-only")
+        self.assertEqual(len(ev["errors"]), 2)
+        self.assertEqual(ev["errors"][-1]["error"], "503 Upstream failed")
+        self.assertEqual(ev["provider"], "opencode-go")
+
+    def test_generation_after_an_error_is_delivery(self):
+        self.write(self.user(),
+                   self.assistant(stop="error", error="429 rate limited"),
+                   self.assistant(text="対応します"))
+        self.assertEqual(self.evidence()["kind"], "generation")
+
+    def test_unknown_input_is_not_reported_as_accepted(self):
+        self.write(self.user(text="別の依頼"),
+                   self.assistant(stop="error", error="503"))
+        self.assertIsNone(self.evidence())
+
+
+def failure(outcome="input-accepted-no-generation", error="503 Upstream failed"):
+    status = {"outcome": outcome}
+    if outcome == "input-accepted-no-generation":
+        status["evidence"] = {"kind": "input-only", "session_id": "s1",
+                             "provider": "opencode-go", "model": "m",
+                             "errors": [{"stop_reason": "error",
+                                          "error": error}]}
+    return status
+
+
+class DeliveryRetryTest(unittest.TestCase):
+    """会話が始まらない失敗だけ、次 tick の 1 回再送を許す。"""
+
+    HEAD = "sha-1"
+
+    def setUp(self):
+        spec = importlib.util.spec_from_file_location("triage_retry", SCRIPT)
+        self.pt = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(self.pt)
+
+    def pending(self):
+        return {"delivery_pending": {"sha": self.HEAD, "handle": "h"}}
+
+    def test_first_unstarted_conversation_is_retried_next_tick(self):
+        ds = self.pending()
+        fail = self.pt.delivery_failure(failure())
+        self.assertEqual(fail["provider_error"], "503 Upstream failed")
+        retry, why = self.pt.record_delivery_failure(ds, self.HEAD, fail)
+        self.assertTrue(retry)
+        self.assertIn("retry 1/1", why)
+        self.assertNotIn("delivery_pending", ds)
+        self.assertEqual(self.pt.dispatch_allows(ds, self.HEAD)[0], True)
+
+    def test_second_failure_escalates_and_keeps_pending(self):
+        ds = self.pending()
+        fail = self.pt.delivery_failure(failure())
+        self.pt.record_delivery_failure(ds, self.HEAD, fail)
+        # 再送も _cmd_dispatch が送信前に pending を立て直す
+        ds["delivery_pending"] = {"sha": self.HEAD, "handle": "h"}
+        retry, why = self.pt.record_delivery_failure(ds, self.HEAD, fail)
+        self.assertFalse(retry)
+        self.assertIn("conversation never started", why)
+        self.assertIn("delivery_pending", ds)  # 未確認入力は実査まで残す
+        self.assertEqual(self.pt.dispatch_allows(ds, self.HEAD)[2], True)
+
+    def test_failure_count_alone_blocks_redispatch(self):
+        # pending が何かの契機で外れても、回数上限を超えたら再送しない
+        ds = self.pending()
+        fail = self.pt.delivery_failure(failure())
+        for _ in range(2):
+            self.pt.record_delivery_failure(ds, self.HEAD, fail)
+        allowed, why, escalate = self.pt.dispatch_allows(ds, self.HEAD)
+        self.assertFalse(allowed)
+        self.assertTrue(escalate)
+        self.assertIn("conversation never started", why)
+
+    def test_unverified_input_keeps_pending_and_escalates(self):
+        ds = self.pending()
+        fail = self.pt.delivery_failure(failure(outcome="unverified"))
+        self.assertFalse(fail["retryable"])
+        retry, why = self.pt.record_delivery_failure(ds, self.HEAD, fail)
+        self.assertFalse(retry)
+        self.assertIn("inspect terminal", why)
+        self.assertIn("delivery_pending", ds)
+        self.assertEqual(self.pt.dispatch_allows(ds, self.HEAD)[2], True)
 
 
 if __name__ == "__main__":
