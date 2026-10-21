@@ -95,8 +95,9 @@ Orca worktree/terminal 一覧・git status を取り直す。次のいずれか�
 
 この節は PRD の旧 routing（idle terminal への再送・即時 spawn）に優先する。
 旧「指摘発生から45分未満」はこの安全待機中には適用しない。監査ログから測れる
-伝達時間は、GitHub の review/thread の `createdAt` から jsonl の `event == "dispatch"`
-の `ts` までの待機込みの時間に限る。延期履歴と実際のガード解除時刻は記録していないため、
+伝達時間の起点は review では `pr_reviews` が取得する `submittedAt`（REST の
+`submitted_at`）、thread では GitHub から再取得する comment の `createdAt` とし、
+jsonl の `event == "dispatch"` の `ts` までの待機込みの時間に限る。延期履歴と実際のガード解除時刻は記録していないため、
 ガード解除後の伝達時間や待機時間だけを分離して算出しない。延期の状況は Hold 表で
 定性的に追う。往復上限は terminal 閉鎖後に新しく修復を起動する場合も含めて適用する。
 
@@ -188,7 +189,8 @@ script が構造化エラーで弾く。
   **per-tick** — 両者が一致しなくても不整合と読まない（後続 tick が同じ日次 file に追記する）。
 
 dispatch ガードの延期も Hold に載せ、恒久的な保留と区別して日本語で理由を書く。
-script の `reason` は次のとおり対応させ、返された理由以上の原因を推測しない。
+以下の表は dispatch ガード延期の `reason` だけを対象とし、返された理由以上の原因を
+推測しない。送信上限・既送・author 非対象など、他の Hold 理由をこの表の待機理由へ置き換えない。
 
 | `reason` | Hold に書く理由 |
 |----------|----------------|
