@@ -76,7 +76,7 @@ flowchart TD
 
 merge record の耐久性: merge 発行前に intent（対象 PR・head SHA・試行時刻）を state に書き、GitHub 側で merge 成功を確認してから `pr-watch.jsonl` に record を書く。script は起動時に「intent があるのに record が無い」項目を reconcile する — API が merge を受け付けた直後にクラッシュしても記録が欠落しないようにする。
 
-**worktree 削除**: 毎 tick local Orca の全 worktree/session を確認する。routine 外の merge も GitHub で照合する。merge 済み PR の branch/head と一致・git clean・agent idle/done の worktree を片付ける。live terminal がある場合は workspace completed・shell が prompt に戻っていることも必要。main・active workspace・子の親・作業中 agent は残す。削除直前に全条件を再検証し、`orca terminal close --worktree ... --all` 後に live terminal が0になったことを確認して `orca worktree rm`（force なし）を呼ぶ。失敗したら理由を記録して残す。恒久的な skip は既存の `SWEEP_MAX_TRIES` で打ち切る。
+**worktree 削除**: 毎 tick local Orca の全 worktree/session を確認する。通常 merge・judge ok からの同実行 merge のどちらも、成功直後に同じ実行内で既存 sweep を呼び、開始時の候補が空でも省略しない。blocked・失敗・成功未確認では merge 後の sweep を呼ばない。routine 外の merge も GitHub で照合する。明示指示による手動 merge 後も [pr skill](../../../.agents/skills/pr/SKILL.md) から既存 sweep へ接続し、共有 run lock を取得できない場合は理由を残して次 tick に委ねる。merge 済み PR の branch/head と一致・git clean・agent idle/done の worktree を片付ける。live terminal がある場合は workspace completed・shell が prompt に戻っていることも必要。main・active workspace・子の親・作業中 agent は残す。削除直前に全条件を再検証し、`orca terminal close --worktree ... --all` 後に live terminal が0になったことを確認して `orca worktree rm`（force なし）を呼ぶ。失敗したら理由を記録して残す。恒久的な skip は既存の `SWEEP_MAX_TRIES` で打ち切る。
 
 **CI**: lane の条件に CI の有無は入れない。required check が fail・pending なら従来どおり「絶対に merge しない」で hold（CI が無い repo ではその条件自体が無い）。non-required check の fail はブロックしないが merge record に残す。検証の実質的な負荷は `pullfrog-approval` と path 分類が担う。
 
@@ -130,6 +130,7 @@ merge record の耐久性: merge 発行前に intent（対象 PR・head SHA・�
 - [ ] Blast Radius と QA の根拠を差分・検証結果と照合し、高は hold、中は影響に対応する検証済みの場合だけ可、低は可と判定する。判断できない場合は hold にする
 - [ ] テストファイルを変更していなくても、既存テストの実行など実施した QA を根拠に判定できる
 - [ ] 「絶対に merge しないもの」の既存条件（未解消 thread・required check fail 等）に該当する PR が merge されない
+- [ ] 通常 merge・同実行 judge→merge の成功直後に、開始時候補が空でも sweep する。blocked・失敗・成功未確認では merge 後の sweep を呼ばず、実施結果・削除件数・残存理由を jsonl に記録する
 - [ ] 毎 tick local session を全件確認し、routine 外の merge も含め、完了済み session と clean・branch/head 一致の worktree を片付ける
 - [ ] 作業中 agent・実行中 shell・main・active workspace・子の親は削除されない。close 失敗時は worktree を残す
 - [ ] API 失敗の tick では merge・削除が実行されない

@@ -31,7 +31,9 @@ python3 ~/.agents/skills/pr-auto-merge/tools/pr_triage.py judge-result \
   待たず同じ実行内で `pr_triage.py merge` を呼んでよい**。`merge` が発行
   直前に hard gate を全件再検証するため、判定後に状態が変わっていれば
   blocked で弾かれる。`merge_ready: false` なら merge せず、`blocked` の
-  理由を report に残す
+  理由を report に残す。`merge` が `merged: true` を返したら、開始時の
+  `plan.sweep` が空でも直後に `pr_triage.py sweep` を呼ぶ（[tick の手順](../SKILL.md#tick-の手順executor-session)）。
+  `merged: false` / `blocked`・失敗・成功未確認では merge 後の sweep を呼ばない
 - ng でも PR は close しない（hold が続くだけ。判断材料を report に書く）。
   依存更新への対応が具体的に必要なら `repair` を記録し、次 tick の script dispatch に渡す。
 - **file 分類を先に適用し、diff サイズを条件にしない**。`judge-input` は
