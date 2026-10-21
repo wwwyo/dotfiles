@@ -2761,7 +2761,7 @@ SCHEMA = {
              "0=session必要 1=skip(変化なし/locked) 2=API失敗(fail-closed)"},
     "plan": {"out": "current tick plan"},
     "dispatch": {"args": "--repo R --number N",
-                 "out": "{dispatched, route?, reason?, needs_escalate?}"},
+                 "out": "{dispatched, route?, reason?, defer?, needs_escalate?}"},
     "escalate": {"args": "--repo R --number N [--reason T]",
                  "out": "{escalated}"},
     "judge-input": {"args": "--repo R --number N",

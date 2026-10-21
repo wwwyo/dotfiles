@@ -173,9 +173,22 @@ class OrcaCliTest(unittest.TestCase):
                 self.assertFalse((self.root / "state/state.json").exists())
 
     def test_unregistered_repo_is_registered_and_dispatch_starts(self):
-        # Existing canonical checkout is only inspected; fixtures handle every mutation.
-        result = self.run_cli("register", "dispatch", "--repo",
-                              "wwwyo/dotfiles", "--number", "30")
+        # Keep the canonical-path fixture isolated; CI has no user's checkout.
+        fixture_home = self.root / "home"
+        (fixture_home / "src/github.com/wwwyo/fixture").mkdir(parents=True)
+        runner = """import runpy, sys
+from pathlib import Path
+from unittest.mock import patch
+fixture_home, script, *args = sys.argv[1:]
+sys.argv = [script, *args]
+with patch.object(Path, 'home', return_value=Path(fixture_home)):
+    runpy.run_path(script, run_name='__main__')
+"""
+        result = subprocess.run(
+            [sys.executable, "-c", runner, str(fixture_home), str(SCRIPT),
+             "dispatch", "--repo", "wwwyo/fixture", "--number", "30"],
+            env=dict(self.env, FIXTURE_MODE="register"),
+            capture_output=True, text=True, timeout=20)
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         self.assertTrue(json.loads(result.stdout)["dispatched"])
         calls = [json.loads(s) for s in (self.root / "calls.jsonl").read_text().splitlines()]
