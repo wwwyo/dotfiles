@@ -1,8 +1,7 @@
 {
   "mcpServers": {
-    "context7": {
-      "command": "context7-mcp",
-      "args": []
+    "mcphub": {
+      "url": "https://mcp.wwwyo.dev/mcp"
     }
   }
 }
