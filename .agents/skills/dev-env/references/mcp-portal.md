@@ -10,12 +10,14 @@ ChatGPT / claude.ai / ローカル agent ──OAuth──▶ portal mcp.wwwyo.d
 
 ## portal に載せる MCP の基準
 
-portal は個人の MCP の入口を 1 つにまとめる経路。ChatGPT・claude.ai に加え、ローカル agent（Codex・pi・Devin・Claude Code）も `https://mcp.wwwyo.dev/mcp` の 1 entry だけを持つ（2026-10-21 に context7・fudoki の個別設定から切り替えた）。目的は context の節約で、Code Mode（`default_on`）により server・tool が増えても agent に載る tool 定義は Code Mode の少数の tool に留まる。credential も client に渡さない。
+portal は個人の MCP の入口を 1 つにまとめる経路。ChatGPT・claude.ai に加え、ローカル agent（Codex・pi・Devin・Claude Code）も `https://mcp.wwwyo.dev/mcp` の 1 entry だけを持つ。client 側の server 名は `mcphub`（portal ID の `wwwyo` とは別。agent・人が名前から中身を推測できるように付けた）で、tool は `mcp__mcphub__*` に見える（2026-10-21 に context7・fudoki の個別設定から切り替えた）。目的は context の節約で、Code Mode（`default_on`）により server・tool が増えても agent に載る tool 定義は Code Mode の少数の tool に留まる。credential も client に渡さない。
 
 - **載せる**: 個人で常用する MCP。credential を隠せるもの（context7）・loopback にしか無いもの（OpenScreen）・認証の無い公開 MCP（fudoki）も同じ portal に入れる。Access・Cloudflare の障害でまとめて使えなくなるのは受け入れている
-- **自動実行からは使わない前提**: service token では server の tool が見えない（下記）ため、CI・scheduled task など人のログインが無い経路から portal は使えない。必要になったら個別に判断する（ユーザーの許可を取る）
-- **各 client の初回は OAuth ログインが要る**: `codex mcp login wwwyo` / `pi mcp login wwwyo` / `devin mcp login wwwyo`、Claude Code は `/mcp`。redirect が localhost・loopback になるため portal Access app の DCR で `allow_any_on_localhost`・`allow_any_on_loopback` を有効にしている（Access policy で本人のメールに限るので、登録できても本人以外は通らない）。grant の `session_duration` は 720h（30 日。2026-10-21 に 24h から延長 — ローカル 4 client の日次再ログインを避ける）で、切れたら再ログインする。access token は 15m のまま
-- Claude Code の MCP は `~/.claude.json`（dotfiles 管理外）にあるため、各マシンで `claude mcp add --transport http -s user wwwyo https://mcp.wwwyo.dev/mcp` で登録する。permission は `mcp__wwwyo__*` を allow
+- **自動実行はこの Mac では人の grant を継承する**: CI・他のマシンからは service token で server の tool が見えず（下記）、token も無いので portal は使えない。一方この Mac の無人実行（Orca automation の pi・codex）は、人が一度ログインした grant をそのまま使う — Managed OAuth は refresh token を背景で更新するので「人のログインが無い経路」にはならない。scheduled task は今のところ MCP を使っていないが、無人の実行から portal の全 upstream（loopback の OpenScreen を含む）に届く状態は残る。止めたいときは client 側で切る（pi は `--no-mcp`、Codex は `[mcp_servers.mcphub] enabled = false` を local に置く。base が持たない key なので `chezmoi apply` で戻らない）
+- **各 client の初回は OAuth ログインが要る**: `codex mcp login mcphub` / `pi mcp login mcphub` / `devin mcp login mcphub`、Claude Code は `/mcp`。redirect が localhost・loopback になるため portal Access app の DCR で `allow_any_on_localhost`・`allow_any_on_loopback` を有効にしている（Access policy で本人のメールに限るので、登録できても本人以外は通らない）。grant の `session_duration` は 720h（30 日。2026-10-21 に 24h から延長 — ローカル 4 client の日次再ログインを避ける）で、切れたら再ログインする。access token は 15m のまま
+  - Codex は `oauth_resource` を設定しなくても `resource` を送る（discovery の protected resource metadata、無ければ server URL。`codex mcp login wwwyo --no-browser` が出す authorization URL に `resource=https%3A%2F%2Fmcp.wwwyo.dev%2Fmcp` が入るのを確認済み）。`oauth_resource` を足すと `resource` が二重に付くので設定しない
+- Claude Code の MCP は `~/.claude.json`（dotfiles 管理外）にあるため、各マシンで `claude mcp add --transport http -s user mcphub https://mcp.wwwyo.dev/mcp` で登録する。permission は `mcp__mcphub__*` を allow（Devin も同じ）
+  - この allow は portal の全 upstream の自動承認になる（旧 `mcp__context7__*` より広い）。portal は承認を server 単位でしか分けられず（tool 単位の呼び出し認証を持たない）、Code Mode では code 実行 tool 1 つが全 upstream を呼ぶため。upstream の権限は context7・fudoki が読み取りのみ、OpenScreen が編集中の動画プロジェクトの編集で、shell・filesystem・画面操作は無い。都度確認に戻したければこの entry を消す
 
 ## 手元（dotfiles 管理）
 
@@ -31,7 +33,7 @@ portal は個人の MCP の入口を 1 つにまとめる経路。ChatGPT・clau
 | Tunnel | リモート管理。ingress は `http_status:404` だけ、`warp-routing` 有効 |
 | Tunnel CIDR route | `127.0.0.1/32` → 上の Tunnel（default virtual network） |
 | Gateway network policy | L4 block: `net.dst.ip in {127.0.0.1/32} and not(net.dst.port in {<公開する port>})` |
-| MCP server | `openscreen`: `http://127.0.0.1:47821/mcp`、`auth_type: bearer`（OpenScreen の token を Cloudflare に保存）、`secure_web_gateway: true` |
+| MCP server | `openscreen`: `http://127.0.0.1:47821/mcp`、`auth_type: bearer`（OpenScreen の token を Cloudflare に保存）、`secure_web_gateway: true`。tool は編集中の動画プロジェクト（クリップ・トリム・ズーム・字幕・音声）の読み書きで、shell・filesystem・画面操作は持たない |
 | MCP server | `context7`: `https://mcp.context7.com/mcp`、`auth_type: bearer`（`CONTEXT7_API_KEY` を Cloudflare に保存。context7 は `Authorization: Bearer` で key を受ける）、`secure_web_gateway: false`（公開 upstream なので Gateway・Tunnel を通さない） |
 | MCP server | `fudoki`: `https://api.fudoki.dev/mcp`、`auth_type: unauthenticated`、`secure_web_gateway: false` |
 | MCP portal | `wwwyo`: `mcp.wwwyo.dev`、`code_mode: default_on`（2026-10-21 に `off` から変更。client は `?codemode=off` で従来の tool 一覧に戻せる）、portal 側 `secure_web_gateway: false`、server ごとに `on_behalf: false` |
