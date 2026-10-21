@@ -10,7 +10,7 @@ ChatGPT / claude.ai / ローカル agent ──OAuth──▶ portal mcp.wwwyo.d
 
 ## portal に載せる MCP の基準
 
-portal は個人の MCP の入口を 1 つにまとめる経路。ChatGPT・claude.ai に加え、ローカル agent（Codex・pi・Devin・Claude Code）も `https://mcp.wwwyo.dev/mcp` の 1 entry だけを持つ。client 側の server 名は `mcphub`（portal ID の `wwwyo` とは別。agent・人が名前から中身を推測できるように付けた）で、tool は `mcp__mcphub__*` に見える（2026-10-21 に context7・fudoki の個別設定から切り替えた）。目的は context の節約で、Code Mode（`default_on`）により server・tool が増えても agent に載る tool 定義は Code Mode の少数の tool に留まる。credential も client に渡さない。
+portal は個人の MCP の入口を 1 つにまとめる経路。ChatGPT・claude.ai に加え、ローカル agent（Codex・pi・Devin・Claude Code）も `https://mcp.wwwyo.dev/mcp` の 1 entry だけを持つ。client 側の server 名は `mcphub`（portal ID の `wwwyo` とは別。agent・人が名前から中身を推測できるように付けた）で、tool は `mcp__mcphub__*` に見える（2026-10-21 に context7・fudoki の個別設定から切り替えた）。入口と credential を portal に集約する。Code Mode は `opt_in`（通常モードが標準）。MCP Apps は描画 tool 自体の UI metadata が host に見える必要があり、Code Mode を標準にすると画面を出せなくなるため。画面を使わず context を節約する接続だけ、URL に `?codemode=search_and_execute` を付ける。
 
 - **載せる**: 個人で常用する MCP。credential を隠せるもの（context7）・loopback にしか無いもの（OpenScreen）・認証の無い公開 MCP（fudoki）も同じ portal に入れる。Access・Cloudflare の障害でまとめて使えなくなるのは受け入れている
 - **自動実行はこの Mac では人の grant を継承する**: CI・他のマシンからは service token で server の tool が見えず（下記）、token も無いので portal は使えない。一方この Mac の無人実行（Orca automation の pi・codex）は、人が一度ログインした grant をそのまま使う — Managed OAuth は refresh token を背景で更新するので「人のログインが無い経路」にはならない。scheduled task は今のところ MCP を使っていないが、無人の実行から portal の全 upstream（loopback の OpenScreen を含む）に届く状態は残る。止めたいときは client 側で切る（pi は `--no-mcp`、Codex は `[mcp_servers.mcphub] enabled = false` を local に置く。base が持たない key なので `chezmoi apply` で戻らない）
@@ -36,7 +36,7 @@ portal は個人の MCP の入口を 1 つにまとめる経路。ChatGPT・clau
 | MCP server | `openscreen`: `http://127.0.0.1:47821/mcp`、`auth_type: bearer`（OpenScreen の token を Cloudflare に保存）、`secure_web_gateway: true`。tool は編集中の動画プロジェクト（クリップ・トリム・ズーム・字幕・音声）の読み書きで、shell・filesystem・画面操作は持たない |
 | MCP server | `context7`: `https://mcp.context7.com/mcp`、`auth_type: bearer`（`CONTEXT7_API_KEY` を Cloudflare に保存。context7 は `Authorization: Bearer` で key を受ける）、`secure_web_gateway: false`（公開 upstream なので Gateway・Tunnel を通さない） |
 | MCP server | `fudoki`: `https://api.fudoki.dev/mcp`、`auth_type: unauthenticated`、`secure_web_gateway: false` |
-| MCP portal | `wwwyo`: `mcp.wwwyo.dev`、`code_mode: default_on`（2026-10-21 に `off` から変更。client は `?codemode=off` で従来の tool 一覧に戻せる）、portal 側 `secure_web_gateway: false`、server ごとに `on_behalf: false` |
+| MCP portal | `wwwyo`: `mcp.wwwyo.dev`、`code_mode: opt_in`（2026-10-21 に `default_on` から変更。MCP Apps 用の接続は通常 URL、Code Mode が必要な client だけ `?codemode=search_and_execute` を付ける）、portal 側 `secure_web_gateway: false`、server ごとに `on_behalf: false` |
 | Access app | portal 用（type `mcp_portal`、Managed OAuth + DCR、redirect は ChatGPT の callback・claude.ai の `https://claude.ai/api/mcp/auth_callback`・任意の localhost/loopback）と server 用（type `mcp`、`destinations: [{type: via_mcp_server_portal, mcp_server_id}]`、server ごとに 1 つ）。どれも本人のメールだけ Allow |
 | DNS | `mcp` CNAME → `gateway.agents.cloudflare.com`（proxied） |
 
@@ -50,6 +50,8 @@ portal は個人の MCP の入口を 1 つにまとめる経路。ChatGPT・clau
 
 ## ハマりどころ
 
+- **Code Mode は MCP Apps の描画 tool を隠す。** `tools/list` に出るのは検索・実行と管理用の5 tool で、`_meta.ui.resourceUri` はない。通常モードでは `fudoki_render_expenditure_view` の UI metadata と `resources/read` の HTML を取得できることを実測した。ChatGPT で画面を使う接続は通常モードにし、接続先の tool 定義を再取得する。
+- **upstream の Server Instructions は portal から返らない。** 風土記への直接の `initialize` は `instructions` を返すが、portal の応答には通常モード・Code Mode ともに無い（2026-10-21 実測）。upstream に設定しただけでモデルに用途が伝わると扱わない。
 - **server ID に `-` を入れない。** portal は tool 名を `serverId_toolName` で扱い、`openscreen-local` だと ChatGPT からの呼び出しが `Invalid tool name format` で失敗した。英数字だけにする。
 - **ChatGPT には `/mcp` まで含む URL を登録する。** ルートでも OAuth は通るが、その後の action discovery が失敗する。
 - **`cf mcp portals update` は省いた項目を既定値に戻す。** `--servers` だけ送ると `code_mode` が `opt_in`、portal 側 `secure_web_gateway` が `true` に戻った。毎回全項目を指定する。
