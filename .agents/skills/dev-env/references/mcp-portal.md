@@ -1,19 +1,21 @@
-# ローカル MCP を MCP Server Portal で外部 agent へ出す
+# 個人の MCP を MCP Server Portal に集約する
 
-ChatGPT・claude.ai（web・スマホ）など dotfiles を配れない client から、この Mac の loopback で動く MCP（OpenScreen）と公開 remote MCP（context7・fudoki）を 1 つのコネクタで使う構成。2026-10-13 に自前 proxy（wwwyo/access-mcp-proxy、archive 済み）から置き換えた。判断の経緯は同 repo の ADR 0002 と PRD `docs/prd/mcp-portal/` に残っている。
+ChatGPT・claude.ai（web・スマホ）とローカル agent から、この Mac の loopback で動く MCP（OpenScreen）と公開 remote MCP（context7・fudoki）を 1 つの入口で使う構成。2026-10-13 に自前 proxy（wwwyo/access-mcp-proxy、archive 済み）から置き換えた。判断の経緯は同 repo の ADR 0002 と PRD `docs/prd/mcp-portal/` に残っている。
 
 ```text
-ChatGPT / claude.ai ──OAuth──▶ portal mcp.wwwyo.dev ─┬─▶ Gateway ──▶ Tunnel ──▶ 127.0.0.1:<port>
-                                                      ├─▶ https://mcp.context7.com/mcp（key は Cloudflare 保管）
-                                                      └─▶ https://api.fudoki.dev/mcp（認証なし）
+ChatGPT / claude.ai / ローカル agent ──OAuth──▶ portal mcp.wwwyo.dev ─┬─▶ Gateway ──▶ Tunnel ──▶ 127.0.0.1:<port>
+                                                                       ├─▶ https://mcp.context7.com/mcp（key は Cloudflare 保管）
+                                                                       └─▶ https://api.fudoki.dev/mcp（認証なし）
 ```
 
 ## portal に載せる MCP の基準
 
-portal は「dotfiles を配れない client（ChatGPT・claude.ai）で使う MCP を 1 つのコネクタにまとめ、credential を client に渡さない」ための経路で、ローカル agent（Claude Code・Codex・pi・Devin）の MCP 設定の置き換えではない。ローカル agent は今まで通り各 config から直接つなぐ。
+portal は個人の MCP の入口を 1 つにまとめる経路。ChatGPT・claude.ai に加え、ローカル agent（Codex・pi・Devin・Claude Code）も `https://mcp.wwwyo.dev/mcp` の 1 entry だけを持つ（2026-10-21 に context7・fudoki の個別設定から切り替えた）。目的は context の節約で、Code Mode（`default_on`）により server・tool が増えても agent に載る tool 定義は Code Mode の少数の tool に留まる。credential も client に渡さない。
 
-- **載せる**: web・スマホの client から使いたいもの。credential を隠せるもの（context7）・loopback にしか無いもの（OpenScreen）は特に効く。認証の無い公開 MCP（fudoki）も、client ごとのコネクタ登録を 1 つにまとめ Code Mode に載せるために入れる（その分 Access・Cloudflare の障害でまとめて使えなくなる）
-- **ローカル agent を portal 経由に切り替えない**: service token では server の tool が見えない（下記）ため、CI・scheduled task など人のログインが無い経路から使えなくなる。client ごとに Access の Managed OAuth + DCR が通るかも保証されない
+- **載せる**: 個人で常用する MCP。credential を隠せるもの（context7）・loopback にしか無いもの（OpenScreen）・認証の無い公開 MCP（fudoki）も同じ portal に入れる。Access・Cloudflare の障害でまとめて使えなくなるのは受け入れている
+- **自動実行からは使わない前提**: service token では server の tool が見えない（下記）ため、CI・scheduled task など人のログインが無い経路から portal は使えない。必要になったら個別に判断する（ユーザーの許可を取る）
+- **各 client の初回は OAuth ログインが要る**: `codex mcp login wwwyo` / `pi mcp login wwwyo` / `devin mcp login wwwyo`、Claude Code は `/mcp`。redirect が localhost・loopback になるため portal Access app の DCR で `allow_any_on_localhost`・`allow_any_on_loopback` を有効にしている（Access policy で本人のメールに限るので、登録できても本人以外は通らない）。grant の `session_duration` は 24h で、切れたら再ログインする
+- Claude Code の MCP は `~/.claude.json`（dotfiles 管理外）にあるため、各マシンで `claude mcp add --transport http -s user wwwyo https://mcp.wwwyo.dev/mcp` で登録する。permission は `mcp__wwwyo__*` を allow
 
 ## 手元（dotfiles 管理）
 
@@ -33,7 +35,7 @@ portal は「dotfiles を配れない client（ChatGPT・claude.ai）で使う M
 | MCP server | `context7`: `https://mcp.context7.com/mcp`、`auth_type: bearer`（`CONTEXT7_API_KEY` を Cloudflare に保存。context7 は `Authorization: Bearer` で key を受ける）、`secure_web_gateway: false`（公開 upstream なので Gateway・Tunnel を通さない） |
 | MCP server | `fudoki`: `https://api.fudoki.dev/mcp`、`auth_type: unauthenticated`、`secure_web_gateway: false` |
 | MCP portal | `wwwyo`: `mcp.wwwyo.dev`、`code_mode: default_on`（2026-10-21 に `off` から変更。client は `?codemode=off` で従来の tool 一覧に戻せる）、portal 側 `secure_web_gateway: false`、server ごとに `on_behalf: false` |
-| Access app | portal 用（type `mcp_portal`、Managed OAuth + DCR、redirect は ChatGPT の callback と claude.ai の `https://claude.ai/api/mcp/auth_callback`）と server 用（type `mcp`、`destinations: [{type: via_mcp_server_portal, mcp_server_id}]`、server ごとに 1 つ）。どれも本人のメールだけ Allow |
+| Access app | portal 用（type `mcp_portal`、Managed OAuth + DCR、redirect は ChatGPT の callback・claude.ai の `https://claude.ai/api/mcp/auth_callback`・任意の localhost/loopback）と server 用（type `mcp`、`destinations: [{type: via_mcp_server_portal, mcp_server_id}]`、server ごとに 1 つ）。どれも本人のメールだけ Allow |
 | DNS | `mcp` CNAME → `gateway.agents.cloudflare.com`（proxied） |
 
 ## MCP を追加するとき

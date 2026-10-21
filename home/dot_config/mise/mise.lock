@@ -2082,10 +2082,6 @@ backend = "npm:@langfuse/cli"
 version = "1.64.0"
 backend = "npm:@playwright/test"
 
-[[tools."npm:@upstash/context7-mcp"]]
-version = "4.3.0"
-backend = "npm:@upstash/context7-mcp"
-
 [[tools."npm:agent-browser"]]
 version = "0.39.0"
 backend = "npm:agent-browser"

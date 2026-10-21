@@ -28,7 +28,7 @@ description: "dotfiles で管理する開発環境の tool 設定・hooks・tele
 | Langfuse telemetry の opt-in・exporter・secrets を触る | [references/langfuse-telemetry.md](references/langfuse-telemetry.md) |
 | CodeRabbit の central config・`.coderabbit.yaml` を触る | [references/coderabbit.md](references/coderabbit.md) |
 | Cloudflare AI Gateway の tool・Access 認証・環境設定を触る | [Cloudflare AI Gateway の開発環境設定](references/cloudflare.md) |
-| MCP を MCP Server Portal（・Tunnel）で ChatGPT・claude.ai へ出す・portal に載せる MCP を選ぶ・追加する | [references/mcp-portal.md](references/mcp-portal.md) |
+| 個人の MCP を MCP Server Portal（・Tunnel）に集約する・各 agent の MCP 設定・portal に MCP を追加する | [references/mcp-portal.md](references/mcp-portal.md) |
 | gh-aw の生成 workflow（`.github/workflows/*.md` + `*.lock.yml`）を触る | [references/gh-aw.md](references/gh-aw.md) |
 | workflow の `uses:` を変える・`actions.lock` を更新する | [references/actions-lock.md](references/actions-lock.md) |
 
