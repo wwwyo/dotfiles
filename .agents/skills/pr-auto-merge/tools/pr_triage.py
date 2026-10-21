@@ -162,12 +162,34 @@ def jsonl_path(date=None):
     return ME_REPO / "daily" / (date or _today_jst()) / "pr-watch.jsonl"
 
 
+_RUN_ID = None  # None=未確定（lock から引く）、""=lock 無しの gate が実行中
+
+
+def current_run_id():
+    """この event を書いている run の run_id。
+
+    executor session の subcommand は gate と別 process なので、gate が
+    保持した run lock の info.json から引く（release されるまで同じ値）。
+    gate 自身は自分の値を持ち、lock 無し（--no-lock）なら None にする —
+    手動実行を他 run の lock に帰属させない。"""
+    if _RUN_ID is not None:
+        return _RUN_ID or None
+    return _lock_info().get("run_id") or None
+
+
 def append_event(event, **kw):
     """pr-watch.jsonl へ1行追記。merge record / dispatch / hold / 削除・
-    sweep skip / escalate / エラーの実績エントリで、日次 report と監査の材料。"""
+    sweep skip / escalate / エラーの実績エントリで、日次 report と監査の材料。
+
+    run_id を全 event に刻む — tick（plan.run_id）と event を join する
+    手段が他に無く、これが無いと tick 単位の再構成ができない。"""
     p = jsonl_path()
     p.parent.mkdir(parents=True, exist_ok=True)
-    rec = {"ts": _iso(_now()), "event": event, **kw}
+    rec = {"ts": _iso(_now()), "event": event}
+    rid = current_run_id()
+    if rid:
+        rec["run_id"] = rid
+    rec.update(kw)
     with p.open("a", encoding="utf-8") as f:
         f.write(json.dumps(rec, ensure_ascii=False) + "\n")
     return rec
@@ -2026,6 +2048,35 @@ def sweep_skip_transient(reason):
     return any(t in reason for t in SWEEP_TRANSIENT_REASONS)
 
 
+def record_hold_events(entries):
+    """plan の hold action を jsonl に残す。
+
+    `pr-watch.md` は tick ごとに書き直すスナップショットなので、hold の
+    理由とその推移はここが唯一の記録になる（いつ・どの PR が・何を待って
+    いたか）。ある時点の hold 集合は「窓内の最新 hold event per PR」で
+    再構成できる。
+
+    毎 tick 同じ行を積むと jsonl が太るので、同じ PR の理由と head が
+    変わったときだけ追記する（sweep_skipped / worktree_rm と同じ方針）。
+    日付が変われば先頭から再記録される。"""
+    prev = {}
+    for ev in read_events():
+        if ev.get("event") == "hold":
+            prev[pr_key(ev.get("repo"), ev.get("pr"))] = (
+                ev.get("reason") or "", ev.get("head"))
+    for e in entries:
+        hold = next((x for x in e["actions"] if x["type"] == "hold"), None)
+        if not hold:
+            continue
+        key = pr_key(e["repo"], e["number"])
+        cur = (hold.get("reason") or "", e.get("head"))
+        if prev.get(key) == cur:
+            continue
+        append_event("hold", repo=e["repo"], pr=e["number"],
+                     reason=cur[0], head=cur[1])
+        prev[key] = cur
+
+
 def cmd_gate(a):
     # --no-lock でも STATE_DIR は要る（lock を飛ばすと _lock_acquire 内の
     # mkdir も走らず、plan/state の書き込み先が無い path になる）
@@ -2095,6 +2146,8 @@ def prune_state(st, days=30):
 
 
 def _gate(a, st, run_id):
+    global _RUN_ID
+    _RUN_ID = run_id or ""
     # intent reconcile: 前回 crash 等で record が欠落した merge を拾い直す。
     # merge 発行前に intent を書いているので、API が受理した直後に
     # process が死んでもここで MERGED を確認して record を補完する
@@ -2131,6 +2184,9 @@ def _gate(a, st, run_id):
 
     plan_entries = [compute_pr_decision(p, facts, worktrees, terms_cache, st)
                     for p, facts in entries]
+    # hold の推移は jsonl にしか残らない（md は tick ごとの上書き）。
+    # action が hold だけの tick でも記録する
+    record_hold_events(plan_entries)
 
     sweeps = sweep_candidates(st, worktrees)
     has_work = sweeps or any(

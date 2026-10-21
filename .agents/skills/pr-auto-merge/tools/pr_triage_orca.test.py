@@ -458,5 +458,77 @@ class MergeableSettleTest(unittest.TestCase):
         self.assertEqual(len(calls), mod.MERGEABLE_RETRY)
 
 
+class AuditTrailTest(unittest.TestCase):
+    """hold の推移と run_id は jsonl にしか残らない（md は tick ごとに
+    上書きされる）。tick を事後に再構成できることをここで担保する。"""
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory(prefix="pr-triage-audit-")
+        self.addCleanup(self.tmp.cleanup)
+        self.root = Path(self.tmp.name)
+        self.pt = self._load()
+
+    def _load(self):
+        spec = importlib.util.spec_from_file_location("pr_triage_audit", SCRIPT)
+        with mock.patch.dict(os.environ, {
+                "PR_WATCH_STATE_DIR": str(self.root / "state"),
+                "PR_WATCH_ME_REPO": str(self.root / "me")}):
+            mod = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(mod)
+        return mod
+
+    def _entry(self, number, reason=None, head="sha-1"):
+        actions = [] if reason is None else [{"type": "hold", "reason": reason}]
+        return {"repo": "wwwyo/fixture", "number": number, "head": head,
+                "actions": actions}
+
+    def _holds(self):
+        return [e for e in self.pt.read_events() if e["event"] == "hold"]
+
+    def test_repeated_same_hold_is_recorded_once(self):
+        pt = self.pt
+        entries = [self._entry(1, "draft (author ready 待ち)"),
+                   self._entry(2, "mergeable=UNKNOWN")]
+        pt.record_hold_events(entries)
+        pt.record_hold_events(entries)
+        self.assertEqual(
+            [(e["pr"], e["reason"]) for e in self._holds()],
+            [(1, "draft (author ready 待ち)"), (2, "mergeable=UNKNOWN")])
+
+    def test_reason_or_head_change_is_recorded(self):
+        pt = self.pt
+        pt.record_hold_events([self._entry(1, "mergeable=UNKNOWN")])
+        pt.record_hold_events([self._entry(1, "required check failing: ci")])
+        pt.record_hold_events([self._entry(1, "required check failing: ci",
+                                           head="sha-2")])
+        self.assertEqual([e["reason"] for e in self._holds()],
+                         ["mergeable=UNKNOWN", "required check failing: ci",
+                          "required check failing: ci"])
+        self.assertEqual([e["head"] for e in self._holds()],
+                         ["sha-1", "sha-1", "sha-2"])
+
+    def test_prs_without_hold_action_are_not_recorded(self):
+        self.pt.record_hold_events([self._entry(1), self._entry(2)])
+        self.assertEqual(self._holds(), [])
+
+    def test_events_carry_the_live_lock_run_id(self):
+        pt = self.pt
+        pt.append_event("note", message="before lock")
+        self.assertNotIn("run_id", pt.read_events()[-1])
+        pt.LOCK_DIR.mkdir(parents=True)
+        (pt.LOCK_DIR / "info.json").write_text(
+            json.dumps({"run_id": "run-from-lock", "ts": 0}),
+            encoding="utf-8")
+        pt.append_event("note", message="executor subcommand")
+        self.assertEqual(pt.read_events()[-1]["run_id"], "run-from-lock")
+        pt._RUN_ID = "run-in-gate"
+        pt.append_event("note", message="gate itself")
+        self.assertEqual(pt.read_events()[-1]["run_id"], "run-in-gate")
+        # --no-lock の gate は他 run の lock に自分の event を帰属させない
+        pt._RUN_ID = ""
+        pt.append_event("note", message="no-lock gate")
+        self.assertNotIn("run_id", pt.read_events()[-1])
+
+
 if __name__ == "__main__":
     unittest.main()
