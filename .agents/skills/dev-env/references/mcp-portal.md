@@ -14,7 +14,7 @@ portal は個人の MCP の入口を 1 つにまとめる経路。ChatGPT・clau
 
 - **載せる**: 個人で常用する MCP。credential を隠せるもの（context7）・loopback にしか無いもの（OpenScreen）・認証の無い公開 MCP（fudoki）も同じ portal に入れる。Access・Cloudflare の障害でまとめて使えなくなるのは受け入れている
 - **自動実行からは使わない前提**: service token では server の tool が見えない（下記）ため、CI・scheduled task など人のログインが無い経路から portal は使えない。必要になったら個別に判断する（ユーザーの許可を取る）
-- **各 client の初回は OAuth ログインが要る**: `codex mcp login wwwyo` / `pi mcp login wwwyo` / `devin mcp login wwwyo`、Claude Code は `/mcp`。redirect が localhost・loopback になるため portal Access app の DCR で `allow_any_on_localhost`・`allow_any_on_loopback` を有効にしている（Access policy で本人のメールに限るので、登録できても本人以外は通らない）。grant の `session_duration` は 24h で、切れたら再ログインする
+- **各 client の初回は OAuth ログインが要る**: `codex mcp login wwwyo` / `pi mcp login wwwyo` / `devin mcp login wwwyo`、Claude Code は `/mcp`。redirect が localhost・loopback になるため portal Access app の DCR で `allow_any_on_localhost`・`allow_any_on_loopback` を有効にしている（Access policy で本人のメールに限るので、登録できても本人以外は通らない）。grant の `session_duration` は 720h（30 日。2026-10-21 に 24h から延長 — ローカル 4 client の日次再ログインを避ける）で、切れたら再ログインする。access token は 15m のまま
 - Claude Code の MCP は `~/.claude.json`（dotfiles 管理外）にあるため、各マシンで `claude mcp add --transport http -s user wwwyo https://mcp.wwwyo.dev/mcp` で登録する。permission は `mcp__wwwyo__*` を allow
 
 ## 手元（dotfiles 管理）
