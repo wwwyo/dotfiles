@@ -15,7 +15,7 @@
           "api": "openai-completions",
           "baseUrl": "https://opencode.ai/inference/go/v1",
           "reasoning": true,
-          "input": ["text"],
+          "input": ["text", "image"],
           "compat": {
             "supportsStore": false,
             "supportsDeveloperRole": false,
