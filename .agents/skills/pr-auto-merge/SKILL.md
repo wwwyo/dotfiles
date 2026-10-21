@@ -96,8 +96,14 @@ Orca worktree/terminal 一覧・git status を取り直す。次のいずれか�
 この節は PRD の旧 routing（idle terminal への再送・即時 spawn）に優先する。
 旧「指摘発生から45分未満」はこの安全待機中には適用しない。監査ログから測れる
 伝達時間の起点は review では `pr_reviews` が取得する `submittedAt`（REST の
-`submitted_at`）、thread では GitHub から再取得する comment の `createdAt` とし、
-jsonl の `event == "dispatch"` の `ts` までの待機込みの時間に限る。延期履歴と実際のガード解除時刻は記録していないため、
+`submitted_at`）、thread では GitHub から再取得する先頭 comment（指摘本体）の
+`createdAt` とし、
+jsonl の `event == "dispatch"` の `ts` までの待機込みの時間に限る。
+集計対象は `kinds` に `thread` / `changes_requested` を含み、起点の指摘との対応を
+確認できる dispatch に限る。`conflict`・`dependency_ci`・`dependency_migration` は
+対象外とし、複数 kind が混在する場合も review/thread の指摘だけを対象にする。
+起点との対応が確認できないものは未計測とし、推定で対応付けない。
+延期履歴と実際のガード解除時刻は記録していないため、
 ガード解除後の伝達時間や待機時間だけを分離して算出しない。延期の状況は Hold 表で
 定性的に追う。往復上限は terminal 閉鎖後に新しく修復を起動する場合も含めて適用する。
 
