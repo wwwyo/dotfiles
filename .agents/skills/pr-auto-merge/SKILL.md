@@ -93,6 +93,11 @@ Orca worktree/terminal 一覧・git status を取り直す。次のいずれか�
 - 対象 worktree の index・tracked/untracked に変更がある、または clean を確認できない。
   remote host の git status はこの script では確認できないので延期する。
 
+この節は PRD の旧 routing（idle terminal への再送・即時 spawn）に優先する。
+旧「指摘発生から45分未満」はこの安全待機中には適用しない。待機を含む実際の
+伝達時間と、ガード解除後の伝達時間を分けて評価する。往復上限は terminal 閉鎖後に
+新しく修復を起動する場合も含めて適用する。
+
 延期は送信回数を消費しない。使い終えた terminal は利用者が閉じるまで占有として残る。
 draft への修復 dispatch 自体は従来どおり対象だが、このガードを満たす必要がある。
 draft の judge/merge は引き続き hold。repo 固有の heavy.lock は汎用ガードには使わない。
@@ -180,6 +185,12 @@ script が構造化エラーで弾く。
   `pr-watch.md` の件数見出しは**当日累計**（当日 jsonl 全体）、tick-summary は
   **per-tick** — 両者が一致しなくても不整合と読まない（後続 tick が同じ日次 file に追記する）。
 
+dispatch ガードの延期も Hold に載せ、恒久的な保留と区別して日本語で理由を書く。
+`PR recently updated` は「PR 更新後の待機（解除予定 YYYY-MM-DD HH:mm JST）」、
+terminal 占有は「terminal 閉鎖待ち」、dirty は「未確定の変更があるため待機」、
+取得不能は「作業状態を確認できないため待機」とする。時刻は script が返した
+`defer until` を JST に変換し、解除時刻のない理由に時刻を推測して付けない。
+
 dispatch は修正依頼を送った中間状態で、PR の決着ではない。dispatch の
 見出し・件数・成果一覧は md と最終返信に載せず、送信履歴は jsonl に残す。
 修正待ちの open PR は Hold にまとめ、待っている理由を書く。Hold 表の行数が plan の hold 件数より多いのは正常（dispatch 済みで author 対応待ちの PR も Hold に載る）— tick-summary の `hold=` と突き合わせて不整合と読まない。
@@ -202,7 +213,7 @@ head SHA ごとに記録されるため同じ PR は1行に集約し、当日の
 は理由にそれを明記する）
 
 ## Error
-（tick_error・script 失敗・dispatch の send/revive/spawn 失敗があった日だけ。
+（tick_error・script 失敗・dispatch の revive/spawn 失敗があった日だけ。
 時刻（JST）|内容 の表で。plan の action を処理しきった=送信成功ではない — 
 失敗した dispatch はここに明記し、Hold の理由にも残す）
 
