@@ -9,6 +9,9 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from unittest import mock
+from types import SimpleNamespace
+from datetime import datetime, timedelta, timezone
 
 
 SCRIPT = Path(__file__).with_name("pr_triage.py")
@@ -45,7 +48,19 @@ if tool == 'orca':
         print(json.dumps({'ok': False, 'error': {'code': 'runtime_access_denied', 'message': 'permission denied'}}))
         sys.exit(0 if mode == 'zero-error' else 1)
     if args[:2] == ['worktree', 'ps']:
-        reply({'worktrees': []})
+        worktrees = []
+        if mode in ('busy-shell', 'busy-claude', 'recent-head', 'dirty'):
+            worktrees = [{'worktreeId': 'fixture::checkout', 'path': str(root / 'checkout'),
+                          'repo': 'fixture', 'branch': 'refs/heads/wwwyo/fix',
+                          'status': 'inactive', 'agents': [], 'liveTerminalCount': 0}]
+        reply({'worktrees': worktrees})
+    elif args[:2] == ['terminal', 'list']:
+        terms = []
+        if mode.startswith('busy-'):
+            terms = [{'handle': 'author', 'connected': True, 'status': 'running'}]
+            if mode == 'busy-claude':
+                terms[0]['agentIdentity'] = 'claude'
+        reply({'terminals': terms})
     elif args[:2] == ['worktree', 'create']:
         if not (root / 'registered').exists():
             error('repo_not_found')
@@ -95,6 +110,7 @@ elif tool == 'gh':
     if args[:2] == ['pr', 'view']:
         print(json.dumps({'number': 30, 'state': 'OPEN', 'author': {'login': 'wwwyo'},
                           'headRefOid': 'fixture-sha', 'headRefName': 'wwwyo/fix',
+                          'updatedAt': datetime.now(timezone.utc).isoformat() if mode == 'recent-head' else '2026-10-01T00:00:00Z',
                           'baseRefName': 'main', 'mergeable': 'MERGEABLE',
                           'title': 'fixture', 'url': 'https://github.com/wwwyo/fixture/pull/30'}))
     elif args[:2] == ['api', 'graphql']:
@@ -110,7 +126,10 @@ elif tool == 'mise':
     assert args == ['x', '--', 'pi', '--offline', '--list-models']
     print('opencode-go deepseek-v4.1-flash 1M 128K yes yes')
     print('opencode-go mimo-v2.6-flash 1M 128K yes yes')
-elif tool != 'git':
+elif tool == 'git':
+    if mode == 'dirty':
+        print(' M work.py')
+else:
     raise AssertionError(tool)
 '''
 
@@ -139,14 +158,37 @@ class OrcaCliTest(unittest.TestCase):
                               env=dict(self.env, FIXTURE_MODE=mode),
                               capture_output=True, text=True, timeout=20)
 
+    def test_dispatch_cli_defers_without_starting_or_sending(self):
+        for mode in ("busy-shell", "busy-claude", "recent-head", "dirty"):
+            with self.subTest(mode=mode):
+                (self.root / "calls.jsonl").unlink(missing_ok=True)
+                result = self.run_cli(mode, "dispatch", "--repo", "wwwyo/fixture", "--number", "30")
+                self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+                out = json.loads(result.stdout)
+                self.assertFalse(out["dispatched"])
+                self.assertTrue(out["defer"])
+                calls = [json.loads(s) for s in (self.root / "calls.jsonl").read_text().splitlines()]
+                orca_calls = [c[1:3] for c in calls if c[0] == "orca"]
+                self.assertEqual(orca_calls, [["worktree", "ps"], ["terminal", "list"]])
+                self.assertFalse((self.root / "state/state.json").exists())
+
     def test_unregistered_repo_is_registered_and_dispatch_starts(self):
-        # Use a unique canonical directory so recovery exercises the real path
-        # check without changing HOME or touching an existing checkout.
-        repos = Path.home() / "src/github.com/wwwyo"
-        repos.mkdir(parents=True, exist_ok=True)
-        with tempfile.TemporaryDirectory(prefix="pr-triage-test-", dir=repos) as repo:
-            result = self.run_cli("register", "dispatch", "--repo",
-                                  f"wwwyo/{Path(repo).name}", "--number", "30")
+        # Keep the canonical-path fixture isolated; CI has no user's checkout.
+        fixture_home = self.root / "home"
+        (fixture_home / "src/github.com/wwwyo/fixture").mkdir(parents=True)
+        runner = """import runpy, sys
+from pathlib import Path
+from unittest.mock import patch
+fixture_home, script, *args = sys.argv[1:]
+sys.argv = [script, *args]
+with patch.object(Path, 'home', return_value=Path(fixture_home)):
+    runpy.run_path(script, run_name='__main__')
+"""
+        result = subprocess.run(
+            [sys.executable, "-c", runner, str(fixture_home), str(SCRIPT),
+             "dispatch", "--repo", "wwwyo/fixture", "--number", "30"],
+            env=dict(self.env, FIXTURE_MODE="register"),
+            capture_output=True, text=True, timeout=20)
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         self.assertTrue(json.loads(result.stdout)["dispatched"])
         calls = [json.loads(s) for s in (self.root / "calls.jsonl").read_text().splitlines()]
@@ -251,6 +293,117 @@ class OrcaCliTest(unittest.TestCase):
                 self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
                 self.assertIn(expected, json.loads(result.stdout)["error"])
                 self.assertFalse((self.root / "registered").exists())
+
+
+class DispatchSafetyTest(unittest.TestCase):
+    def setUp(self):
+        spec = importlib.util.spec_from_file_location("triage_safety", SCRIPT)
+        self.pt = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(self.pt)
+        self.now = datetime(2026, 10, 21, 3, 1, 42, tzinfo=timezone.utc)
+        self.pt._now = lambda: self.now
+        self.pr = dict(number=266, state="OPEN", isDraft=True,
+                       headRefOid="dd2f9daa", headRefName="wwwyo/paddle-onnx-default",
+                       mergeable="CONFLICTING", baseRefOid="base",
+                       author={"login": "wwwyo"}, updatedAt="2026-10-21T02:38:11Z")
+        self.w = dict(worktreeId="fixture::paddle", repo="fudoki", path="/fixture",
+                      branch="refs/heads/wwwyo/paddle-onnx-default", status="inactive",
+                      agents=[], liveTerminalCount=0)
+        self.pt.sh = mock.Mock(return_value=SimpleNamespace(stdout=""))
+
+    def route(self, terminals=(), worktree=True):
+        return self.pt.checked_dispatch_route(
+            [self.w] if worktree else [], {self.w["worktreeId"]: list(terminals)},
+            "wwwyo/fudoki", self.pr)
+
+    def old_head(self):
+        self.pr["updatedAt"] = "2026-10-21T01:00:00Z"
+
+    def test_incident_pr_creation_and_recent_head_both_defer(self):
+        # 12:01 tick / 11:38 PR creation, then head pushed a few minutes ago.
+        for updated in ("2026-10-21T02:38:11Z", "2026-10-21T02:59:00Z"):
+            with self.subTest(updated=updated):
+                self.pr["updatedAt"] = updated
+                self.assertEqual(self.route()["route"], "defer")
+                self.assertEqual(self.route(worktree=False)["route"], "defer")
+
+    def test_live_terminal_blocks_even_without_agent_identity_or_working_status(self):
+        self.old_head()
+        for term in ({"connected": True, "agentIdentity": "claude"},
+                     {"connected": True}, {"agentIdentity": "claude"},
+                     {"connected": True, "writable": False, "agentIdentity": "pi"}):
+            with self.subTest(term=term):
+                self.assertEqual(self.route([term])["route"], "defer")
+        for field in ("liveTerminalCount", "unverifiableTerminalCount"):
+            self.w[field] = 1
+            self.assertEqual(self.route()["route"], "defer")
+            self.w[field] = 0
+
+    def test_dirty_and_git_failure_defer(self):
+        self.old_head()
+        for status in (" M source.py", "M  source.py", "?? output.json", "UU source.py"):
+            self.pt.sh.return_value.stdout = status
+            self.assertEqual(self.route()["reason"], "dirty worktree")
+        self.pt.sh.side_effect = self.pt.ApiError("git timed out")
+        self.assertEqual(self.route()["route"], "defer")
+
+    def test_quiet_clean_unoccupied_worktree_can_revive(self):
+        self.old_head()
+        self.assertEqual(self.route([{"connected": False}])["route"], "revive")
+        self.assertEqual(self.route(worktree=False)["route"], "spawn")
+
+    def test_boundary_missing_invalid_and_future_timestamp(self):
+        self.pr["updatedAt"] = self.pt._iso(self.now - timedelta(seconds=self.pt.DISPATCH_QUIET_S))
+        self.assertEqual(self.route()["route"], "revive")
+        for value in (None, "invalid", "2026-10-22T00:00:00Z"):
+            self.pr["updatedAt"] = value
+            self.assertEqual(self.route()["route"], "defer")
+
+    def test_real_git_status_detects_index_and_untracked_changes(self):
+        self.old_head()
+        with tempfile.TemporaryDirectory(prefix="triage-dirty-") as tmp:
+            subprocess.run(["git", "init", "-q", tmp], check=True)
+            self.w["path"] = tmp
+            spec = importlib.util.spec_from_file_location("triage_real_git", SCRIPT)
+            real = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(real)
+            self.pt.sh = real.sh
+            self.assertEqual(self.route()["route"], "revive")
+            target = Path(tmp) / "new.txt"
+            target.write_text("work in progress")
+            self.assertEqual(self.route()["reason"], "dirty worktree")
+            subprocess.run(["git", "-C", tmp, "add", "new.txt"], check=True)
+            self.assertEqual(self.route()["reason"], "dirty worktree")
+
+    def test_plan_and_direct_dispatch_recheck_safety_before_any_mutation(self):
+        facts = {"view": self.pr}
+        items = [{"kind": "conflict", "body": "conflict"}]
+        self.pt.dispatch_items = lambda *args: items
+        self.pt.unaddressed_sig = lambda *args: "sig"
+        self.pt.load_state = lambda: {}
+        self.pt.pr_facts = lambda *args: facts
+        self.pt.build_dispatch_message = lambda *args: "repair"
+        self.pt.worktree_ps = lambda: [self.w]
+        self.pt.terminal_list = lambda *args: [{"connected": True}]
+        self.pt.orca_json = mock.Mock(side_effect=AssertionError("must not mutate Orca"))
+        self.pt.save_state = mock.Mock(side_effect=AssertionError("must not consume dispatch budget"))
+        self.pt.emit = mock.Mock()
+        for recent, terminal, dirty in ((True, True, False), (False, True, False),
+                                        (False, False, True)):
+            with self.subTest(recent=recent, terminal=terminal, dirty=dirty):
+                self.pr["updatedAt"] = "2026-10-21T02:59:00Z" if recent else "2026-10-21T01:00:00Z"
+                terms = [{"connected": True}] if terminal else []
+                self.pt.terminal_list = lambda *args: terms
+                self.pt.sh.return_value.stdout = " M file" if dirty else ""
+                entry = self.pt.compute_pr_decision(
+                    {"repo": "wwwyo/fudoki", "number": 266}, facts,
+                    [self.w], {self.w["worktreeId"]: terms}, {})
+                self.assertEqual(entry["actions"][0]["type"], "hold")
+                self.pt._cmd_dispatch(SimpleNamespace(repo="wwwyo/fudoki", number=266))
+                self.assertFalse(self.pt.emit.call_args.args[0]["dispatched"])
+                self.assertTrue(self.pt.emit.call_args.args[0]["defer"])
+        self.pt.orca_json.assert_not_called()
+        self.pt.save_state.assert_not_called()
 
 
 class MergeableSettleTest(unittest.TestCase):

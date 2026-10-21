@@ -57,7 +57,7 @@ mise の `[tools]` は開発用依存（devDependencies 相当）として扱う
 
    | action | やること |
    |--------|---------|
-   | `dispatch` | `pr_triage.py dispatch --repo <r> --number <n>` を呼ぶ。send / revive / spawn の解決・上限・dedup・delivery 検証は script がやる。結果が `needs_escalate: true` なら、返された `reason` を `--reason` に渡して続けて `escalate` を呼ぶ。`defer`/`none` なら何もしない。`dispatched: false` の `reason` が stale plan（plan 取得後に指摘が解消された）でも失敗ではない — 再送・独自回復せず次 tick に委ねる |
+   | `dispatch` | `pr_triage.py dispatch --repo <r> --number <n>` を呼ぶ。revive / spawn の解決・上限・dedup・delivery 検証は script がやる。結果が `needs_escalate: true` なら、返された `reason` を `--reason` に渡して続けて `escalate` を呼ぶ。`defer`/`none` なら何もしない。`dispatched: false` の `reason` が stale plan（plan 取得後に指摘が解消された）でも失敗ではない — 再送・独自回復せず次 tick に委ねる |
    | `escalate` | `pr_triage.py escalate --repo <r> --number <n>`（上限到達の旨を PR にコメントして打ち切り）。戻り値の `handle`（実査する terminal）を report の該当行に書く |
    | `judge` | `judge-input` で diff・PR 本文・CI を取得し、**executor 自身が references/judge.md の基準で判定して** `judge-result --sha <sha> --context-hash <context_hash> --verdict ok\|ng\|repair --reason <理由>` に登録する。材料取得だけで終えない。判断不能なら理由付きで ng。**ok の登録結果が `merge_ready: true` なら、次 tick を待たず同じ実行内で続けて `merge` を呼び、`merged: true` なら直後に `sweep` を呼ぶ**（`merge` が発行直前に hard gate を全件再検証する）。`merge_ready: false`（`blocked` の理由付き）なら merge せず、理由を report に残す。repair は次 tick の dispatch に渡す |
    | `merge` | `pr_triage.py merge --repo <r> --number <n>`。`merged: true` を確認したら直後に `pr_triage.py sweep` を呼ぶ（開始時の `plan.sweep` が空でも必須）。`merged: false` / `blocked`・失敗・成功未確認なら、merge 後の sweep は呼ばず理由を記録する。`ok: true` だけでは merge 成功ではない |
@@ -98,6 +98,43 @@ mise の `[tools]` は開発用依存（devDependencies 相当）として扱う
 
 途中で script がエラーを返したら、その action を自分で代替実装せず
 report に記録して次へ進む。
+
+## dispatch の作業中ガード
+
+`gate` と `dispatch` が同じ条件で延期を判定し、`dispatch` は実行時に PR・
+Orca worktree/terminal 一覧・git status を取り直す。次のいずれかなら送信・復帰・新規起動をしない:
+
+- PR の更新（`updatedAt`・作成時刻・head commit 時刻の最新）から1時間未満。
+  古い commit の push も拾うため `updatedAt` を使うので、コメント・レビューでも待機が延びる。
+  時刻を取得できない場合も延期する。
+- 対象 worktree の agent が working、live/状態不明 terminal が存在する、または
+  terminal 一覧に接続中/接続不明の terminal がある。agentIdentity・writable・idle 表示に
+  依存せず、shell も占有扱いにする（別 cwd から動く Claude subagent は status だけでは見えない）。
+- 対象 worktree の index・tracked/untracked に変更がある、または clean を確認できない。
+  remote host の git status はこの script では確認できないので延期する。
+
+この節は PRD の旧 routing（idle terminal への再送・即時 spawn）に優先する。
+旧「指摘発生から45分未満」は、このガードの合否条件には使わない。
+
+現行の jsonl の `dispatch` event は送信成功を記録するが、指摘ごとの識別子・
+起点時刻・送信対象との対応を保存しない。`repo` / `pr` / `sha` と後続の送信時刻や、
+種別の集合である `kinds` だけから、当時の対象を一意に復元することはできない。
+GitHub の現在の resolved 状態や author の後続活動を当時の状態として代用せず、
+指摘と dispatch を推定で対応付けて伝達時間を算出しない（待機込みの時間も含む）。
+計測を再開するには、送信時に選別された起点の識別子・時刻と成功送信との対応を
+監査可能に記録し、PRD と集計仕様を別途整える。この PR では計測機能を追加しない。
+
+延期 event は jsonl に残らない。plan と日次 Hold 表には確認時点の理由と、
+算出できる場合の PR 更新待機の期限を表示するが、更新される状態表示であり、
+延期履歴や実際のガード解除時刻の記録としては扱わない。延期の状況は Hold 表で
+定性的に追い、ガード解除後の伝達時間や待機時間だけを分離して算出しない。
+往復上限は terminal 閉鎖後に新しく修復を起動する場合も含めて適用する。
+
+延期は送信回数を消費しない。使い終えた terminal は利用者が閉じるまで占有として残る。
+draft への修復 dispatch 自体は従来どおり対象だが、このガードを満たす必要がある。
+draft の judge/merge は引き続き hold。repo 固有の heavy.lock は汎用ガードには使わない。
+判定直後に別 session が起動する race を完全に防ぐ共有ロックではないため、修復側も
+書き込み開始前に [repair](references/repair.md) の確認を行う。
 
 ## judge の内容判断（executor が担当）
 
@@ -185,6 +222,22 @@ script が構造化エラーで弾く。
   `pr-watch.md` の件数見出しは**当日累計**（当日 jsonl 全体）、tick-summary は
   **per-tick** — 両者が一致しなくても不整合と読まない（後続 tick が同じ日次 file に追記する）。
 
+dispatch ガードの延期も Hold に載せ、恒久的な保留と区別して日本語で理由を書く。
+以下の表は dispatch ガード延期の `reason` だけを対象とし、返された理由以上の原因を
+推測しない。送信上限・既送・author 非対象など、他の Hold 理由をこの表の待機理由へ置き換えない。
+
+| `reason` | Hold に書く理由 |
+|----------|----------------|
+| `PR activity timestamp unavailable` | PR 活動時刻を確認できないため待機 |
+| `PR recently updated; defer until <UTC>` | PR 更新後の待機（更新待機の期限 YYYY-MM-DD HH:mm JST） |
+| `agent working or terminal live/unverifiable` | 作業中または terminal 占有・状態不明のため待機 |
+| `worktree cleanliness unavailable` | worktree が clean か確認できないため待機 |
+| `dirty worktree` | 未確定の変更があるため待機 |
+
+`reason` 内の部分文字列 `defer until <UTC>` を JST に変換する。これは PR 更新待機の
+期限であり、他のガードも含めた実際の解除時刻ではない。時刻のない理由に期限を
+推測して付けず、worktree の確認不能だけから一時的・恒久的とも断定しない。
+
 dispatch は修正依頼を送った中間状態で、PR の決着ではない。dispatch の
 見出し・件数・成果一覧は md と最終返信に載せず、送信履歴は jsonl に残す。
 修正待ちの open PR は Hold にまとめ、待っている理由を書く。Hold 表の行数が plan の hold 件数より多いのは正常（dispatch 済みで author 対応待ちの PR も Hold に載る）— tick-summary の `hold=` と突き合わせて不整合と読まない。
@@ -207,7 +260,7 @@ head SHA ごとに記録されるため同じ PR は1行に集約し、当日の
 は理由にそれを明記する）
 
 ## Error
-（tick_error・script 失敗・dispatch の send/revive/spawn 失敗があった日だけ。
+（tick_error・script 失敗・dispatch の revive/spawn 失敗があった日だけ。
 時刻（JST）|内容 の表で。plan の action を処理しきった=送信成功ではない — 
 失敗した dispatch はここに明記し、Hold の理由にも残す）
 
