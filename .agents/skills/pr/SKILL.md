@@ -85,8 +85,13 @@ gh pr create --draft --assignee @me --title "<title>" --body-file <本文ファ�
 - merge は `gh pr merge --squash`（デフォルト squash merge 前提）。切り替え先の main が別 worktree で checkout 済みだと、PR の merge 後にローカルブランチ削除だけ失敗する。`gh pr view` で merge 済みを確認し、リモートブランチは明示的に削除する。現在の worktree が使うローカルブランチは無理に削除しない。
 
 対象 repo が `wwwyo/*` で、ユーザーの明示指示により routine 外の手動 merge を行う場合は、`gh pr view <PR URL> --json state`
-で `MERGED` を確認した直後、同じ実行内で
-`python3 ~/.agents/skills/pr-auto-merge/tools/pr_triage.py sweep` を `gh` と同じく sandbox 外で呼ぶ（Orca socket・GitHub・jsonl 保存先へのアクセスが必要）。
+で `MERGED` を確認した直後、同じ実行内で既存 script の `lock status` を確認する。
+`locked: true`・状態未確認なら sweep を見送り、理由を note に残して次 tick に委ねる。
+`locked: false` なら `lock acquire` を呼び、`acquired: true` の場合だけ
+`python3 ~/.agents/skills/pr-auto-merge/tools/pr_triage.py sweep` を実行する。
+取得失敗時も sweep は見送る。取得した lock は、sweep の成功・失敗によらず最後に
+`lock release --run-id <acquire が返した run_id>` で解放する。他 run の lock は解放しない。
+これらは `gh` と同じく sandbox 外で実行する（Orca socket・GitHub・state dir・jsonl 保存先へのアクセスが必要）。
 `MERGED` を確認できなかった場合はこの後処理を呼ばない。これは merge の許可を
 追加する手順ではなく、routine 内の merge は引き続き `pr_triage.py merge` の hard gate に従う。
 sweep は wwwyo 以外も含む全ローカル worktree を再照合し、安全条件を満たすものを片付ける。

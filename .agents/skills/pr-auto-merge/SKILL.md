@@ -84,8 +84,8 @@ mise の `[tools]` は開発用依存（devDependencies 相当）として扱う
    記録する。残存理由が出力にない場合は、`orca worktree ps --json` と必要に応じ
    `orca terminal list --worktree id:<worktreeId> --json` で merge した PR の worktree を
    再確認し、active・作業中・live terminal があり未 completed 等の理由を note に補う。
-   確認できなければ未確認と書き、削除成功に数えない。sweep / log は Orca socket・
-   GitHub・jsonl 保存先へアクセスできる環境で実行する。sandbox に阻まれる場合は
+   確認できなければ未確認と書き、削除成功に数えない。sweep / log と状態確認の Orca コマンドは、Orca socket・
+   GitHub・state dir（`~/.local/state/pr-watch`）・jsonl 保存先へアクセスできる環境で実行する。sandbox に阻まれる場合は
    `gh` と同じく sandbox 外で実行し、権限設定を一律に緩めない。
    sweep 失敗で merge 成功を取り消さず、代替実装もしない。log も失敗したら報告に残す。
 4. report を書く（下記）
