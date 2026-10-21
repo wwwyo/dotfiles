@@ -50,8 +50,8 @@ portal は個人の MCP の入口を 1 つにまとめる経路。ChatGPT・clau
 
 ## ハマりどころ
 
-- **Code Mode は MCP Apps の描画 tool を隠す。** `tools/list` に出るのは検索・実行と管理用の5 tool で、`_meta.ui.resourceUri` はない。通常モードでは `fudoki_render_expenditure_view` の UI metadata と `resources/read` の HTML を取得できることを実測した。ChatGPT で画面を使う接続は通常モードにし、接続先の tool 定義を再取得する。
-- **upstream の Server Instructions は portal から返らない。** 風土記への直接の `initialize` は `instructions` を返すが、portal の応答には通常モード・Code Mode ともに無い（2026-10-21 実測）。upstream に設定しただけでモデルに用途が伝わると扱わない。
+- **Code Mode は MCP Apps の描画 tool を隠す。** `tools/list` に出るのは検索・実行と管理用の5 tool で、`_meta.ui.resourceUri` はない。通常モードでは `fudoki_render_expenditure_view` の UI metadata と `resources/read` の HTML を取得でき、描画結果の `structuredContent`・`_meta` が保持されることを実測した。ChatGPT の実表示・画面内操作は未確認。画面を使う接続は通常モードにし、接続先の tool 定義を再取得する。
+- **風土記の Server Instructions はこの portal の初期化応答に含まれない。** 風土記への直接の `initialize` は `instructions` を返すが、`wwwyo` portal の応答には通常モード・Code Mode ともに無い（2026-10-21 実測）。風土記に設定しただけでモデルに用途が伝わると扱わない。
 - **server ID に `-` を入れない。** portal は tool 名を `serverId_toolName` で扱い、`openscreen-local` だと ChatGPT からの呼び出しが `Invalid tool name format` で失敗した。英数字だけにする。
 - **ChatGPT には `/mcp` まで含む URL を登録する。** ルートでも OAuth は通るが、その後の action discovery が失敗する。
 - **`cf mcp portals update` は省いた項目を既定値に戻す。** `--servers` だけ送ると `code_mode` が `opt_in`、portal 側 `secure_web_gateway` が `true` に戻った。毎回全項目を指定する。
