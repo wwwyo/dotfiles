@@ -18,6 +18,12 @@ merge は author session で発行せず、修正後の次 tick で script に�
 - push・コメント直前に state と head を再取得する。OPEN でなくなった、
   または他の session が head を更新した場合は push せず再確認する。
   通常 push を使い、他の変更を上書きする force push はしない。
+- push が non-fast-forward で拒否されたら、リモートの新 head を `git show <sha>`
+  で読み、自分の commit と同じ修正（対象 file・条件分岐・戻した挙動）が
+  入っているかを照合する。等価ならローカル commit は `git reset --hard
+  origin/<branch>` で捨て、新 head で検証をやり直す（rebase して二重に積まない）。
+  内容が違うなら自分の修正を重ねず hold — 同じ論点を別実装で二重に積むと、
+  どちらが意図か決められない競合になる。
 - 変更は必要な最小限にする。ローカル検証の結果と未確認事項を区別して
   PR に原因・変更・理由を書く。ローカル green を hosted CI green としない。
 - 判断や人間の対応が必要なら、修正せず PR に理由を書く。重複 PR の

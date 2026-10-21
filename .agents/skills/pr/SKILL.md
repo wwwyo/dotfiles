@@ -119,6 +119,8 @@ QA担当は関連実装を読まず、要件と実際のUI/APIの振る舞いか
 PR作成後、CI の完了とレビューコメントの到着を監視する。**待機は CI 完了で起き、判定は起きた後の状態評価で行う**:
 
 1. `gh pr checks <PRのURL> --watch --fail-fast` で check の完了（または最初の fail）まで待つ。CI 待ちが監視時間の大半なので、固定間隔の polling より早く起きられ、check として走る review bot（pullfrog 等）もここで待てる。待機を `--required` に絞らないのは、required 未設定の repo では `--required` だと待たずに即終了するため（合否の判定は step 2 の `--required` で行う）。push 直後は check が未登録で `no checks reported` を返して即終了することがあるので、そのときは少し置いて再実行する。CodeRabbit の check だけが pending で他の check が揃ったら、その時点で 2 の評価へ進む（CodeRabbit の完了は待たない）
+
+   **すでに fail している check があると `--watch --fail-fast` は待たずに即終了する**（draft 中の `pullfrog-approval` が典型）。待ちたい check を名指しした bounded poll（`gh pr checks --json name,state` を 1 分間隔で見て、対象が終わったら起きる）に切り替える — fail の存在を「待機の終わり」と読み違えて、まだ走っている check を見ずに評価へ進まない
 2. 起きたら `gh pr checks <PRのURL> --required` + `gh pr view <PRのURL> --json statusCheckRollup,reviews,comments,mergeable,reviewDecision`（未 resolve の thread は `gh api graphql`）を取り直し、下の終了条件を評価する。待機コマンドの出力や exit code は起きる合図に使い、終了判定の根拠にしない
 3. 対応が必要なら対応して push し、1 に戻る。check にならないレビュー（Copilot review 等。CodeRabbit は polling 対象から除く）だけが待機中・進行中なら、数分おきに 2 を評価する短い polling で待つ
 
@@ -150,6 +152,8 @@ CI・レビューが既に完了し、以下の終了条件を全て満たして
 
 ## 注意点
 
+- `pullfrog-approval`（pullfrog app の check。`.github/workflows` に実体は無い）は **draft の間は fail したまま**で、承認は `gh pr ready` の後に新しい pullfrog run が走ってから success になる。赤いことをコードの問題と読まず、`gh api repos/<owner>/<repo>/check-runs` で該当 run の `output.summary` を読んで理由（outstanding review feedback 等）を取る。原因が PR 本文の QA や head のずれなら直してから ready にし、`@pullfrog` をメンションして再レビューを起動する。メンションで起動した Actions run が数秒で success になっても check-run の完了は別（無料枠の model で 15 分程度かかる）ので、緑を待つなら check 名で見る
+- pullfrog の承認は **COMMENTED のレビュー**として投稿される。`reviewDecision` は空のままで、APPROVED を待つと待ち続ける — 承認の有無は `pullfrog-approval` check で判定する
 - 同じ worktree を別 session が同時に進めている前提で扱う。編集前に `git fetch` と `gh pr view <URL> --json state,headRefOid` で鮮度を確認し、merge 済み・branch gone を検出したら編集を止めて報告に切り替える（同じ変更を二重に積まない）。
 - 前段の判断や delivery が「merge 不要」でも、それ以降のユーザーの `merge` 発言は上書き指示として扱う — 実行し、merge 後の片付け（上記の手動 merge 手順）まで同じ実行で行う。
 - 自動レビュー（Pullfrog 等）が未完のまま merge した場合は、PR 本文か完了報告に「自動レビュー未完了」と残す — 後続がそのレビュー結果を根拠に使えないことを明示する。
