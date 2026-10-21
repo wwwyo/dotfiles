@@ -68,18 +68,26 @@ mise の `[tools]` は開発用依存（devDependencies 相当）として扱う
    通常の merge action・judge ok からの同実行 merge のどちらも、同じ実行内で
    `pr_triage.py sweep` を必ず呼ぶ**。`sweep` 自身が最新状態から候補を再計算するため、
    開始時の `plan.sweep=[]` を理由に省略しない。開始時に候補があった場合は merge の
-   成否とは独立して sweep する（merge 後に実施済みなら重ねて呼ぶ必要はない）。
+   成否とは独立して tick 末尾に sweep する。ただし、この tick で merge 後の sweep を
+   1回でも実施済みなら tick 末尾の分だけ省略する。各 merge 成功直後の分は省略しない。
+   永続的な skip の上限は呼び出し回数で進むため、複数 merge の tick では従来より
+   早く上限に達し得る。追加 retry はせず、既存の上限を維持する。
    routine 外で merge された PR も対象。branch/head が merge 済み PR と一致・git clean・
    agent idle/done の worktree だけ、session を `orca terminal close --all` で閉じて削除する。
    live terminal がある場合は workspace completed・shell が prompt に戻っていることも必要。
    main・active workspace・子 worktree の親・作業中 agent は残す。削除直前に全条件を
    再検証し、close 後に live terminal が0になったことを確認する。条件を通すためだけに
    workspaceStatus を completed に変えたり、force 削除したりしない。
-   sweep の実施と削除成功は区別する。返された `removed` / `skipped` と残存理由を
-   既存 jsonl で確認し、呼び出した事実・削除件数・エラーは `pr_triage.py log` の note に
-   記録する。候補外のため script の skip event がない場合も、merge した PR の
-   worktree を残す理由（active・作業中・live terminal があり未 completed 等）を
-   再取得した状態から note に補う。確認できなければ未確認と書き、削除成功に数えない。
+   sweep の実施と削除成功は区別する。`removed` / `skipped` は sweep の出力で確認する。
+   jsonl には `worktree_rm` と `sweep_skipped` が残るが、同一 worktree・理由の連続 skip は
+   重複記録されない。呼び出した事実・削除件数・エラーは `pr_triage.py log` の note に
+   記録する。残存理由が出力にない場合は、`orca worktree ps --json` と必要に応じ
+   `orca terminal list --worktree id:<worktreeId> --json` で merge した PR の worktree を
+   再確認し、active・作業中・live terminal があり未 completed 等の理由を note に補う。
+   確認できなければ未確認と書き、削除成功に数えない。sweep / log は Orca socket・
+   GitHub・jsonl 保存先へアクセスできる環境で実行する。sandbox に阻まれる場合は
+   `gh` と同じく sandbox 外で実行し、権限設定を一律に緩めない。
+   sweep 失敗で merge 成功を取り消さず、代替実装もしない。log も失敗したら報告に残す。
 4. report を書く（下記）
 5. 最後に必ず `pr_triage.py lock release --run-id <plan.run_id>`。
    `gate` が保持したまま渡した run lock を executor session が引き継ぐ
@@ -163,7 +171,9 @@ script が構造化エラーで弾く。
   tick-summary: date=<YYYY-MM-DD> run_id=<plan.run_id> dispatch=<n> escalate=<n> judge=<n> merge=<n> hold=<n> sweep=<n> error=<n> judge_ok=<n> judge_ng=<n> judge_repair=<n> blocked=[<理由>:<n>,...]
   ```
 
-  `sweep` はこの tick の削除成功件数（`worktree_rm`）で、呼び出し回数ではない。
+  `sweep` はこの tick の sweep 出力の `removed` 件数の合計で、呼び出し回数ではない。
+  jsonl で照合する場合は `ts >= plan.generated_at` の `worktree_rm` に絞り、
+  この実行の sweep 出力と worktree を照合する（同時刻の手動 sweep を混ぜない）。
   sweep 実施済みでも `removed=[]` なら 0 とし、実施・残存理由は jsonl の note を参照する。
   `hold` は plan の hold action 件数。`judge_ok`・`judge_ng`・`judge_repair` は
   `event == "judge"` かつ `ts >= plan.generated_at` の event だけを数える — 当日の
