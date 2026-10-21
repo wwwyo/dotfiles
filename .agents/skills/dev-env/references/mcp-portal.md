@@ -1,10 +1,19 @@
 # ローカル MCP を MCP Server Portal で外部 agent へ出す
 
-ChatGPT などの外部 agent から、この Mac の loopback で動く MCP（最初は OpenScreen）を使う構成。2026-10-13 に自前 proxy（wwwyo/access-mcp-proxy、archive 済み）から置き換えた。判断の経緯は同 repo の ADR 0002 と PRD `docs/prd/mcp-portal/` に残っている。
+ChatGPT・claude.ai（web・スマホ）など dotfiles を配れない client から、この Mac の loopback で動く MCP（OpenScreen）と、API key が要る公開 remote MCP（context7）を使う構成。2026-10-13 に自前 proxy（wwwyo/access-mcp-proxy、archive 済み）から置き換えた。判断の経緯は同 repo の ADR 0002 と PRD `docs/prd/mcp-portal/` に残っている。
 
 ```text
-ChatGPT ──OAuth──▶ portal mcp.wwwyo.dev ──▶ Gateway ──▶ Tunnel ──▶ 127.0.0.1:<port>
+ChatGPT / claude.ai ──OAuth──▶ portal mcp.wwwyo.dev ─┬─▶ Gateway ──▶ Tunnel ──▶ 127.0.0.1:<port>
+                                                      └─▶ https://mcp.context7.com/mcp（key は Cloudflare 保管）
 ```
+
+## portal に載せる MCP の基準
+
+portal は「dotfiles を配れない client に、credential を渡さず MCP を出す」ための経路で、ローカル agent（Claude Code・Codex・pi・Devin）の MCP 設定の置き換えではない。ローカル agent は今まで通り各 config から直接つなぐ。
+
+- **載せる**: web・スマホの client から使いたく、かつ credential を client に渡したくないもの（context7）、または loopback にしか無いもの（OpenScreen）
+- **載せない**: 認証の無い公開 remote MCP（fudoki など）。隠す credential が無く、Access・Cloudflare への依存が増えるだけなので client に直接登録する
+- **ローカル agent を portal 経由に切り替えない**: service token では server の tool が見えない（下記）ため、CI・scheduled task など人のログインが無い経路から使えなくなる。client ごとに Access の Managed OAuth + DCR が通るかも保証されない
 
 ## 手元（dotfiles 管理）
 
@@ -21,16 +30,17 @@ ChatGPT ──OAuth──▶ portal mcp.wwwyo.dev ──▶ Gateway ──▶ Tu
 | Tunnel CIDR route | `127.0.0.1/32` → 上の Tunnel（default virtual network） |
 | Gateway network policy | L4 block: `net.dst.ip in {127.0.0.1/32} and not(net.dst.port in {<公開する port>})` |
 | MCP server | `openscreen`: `http://127.0.0.1:47821/mcp`、`auth_type: bearer`（OpenScreen の token を Cloudflare に保存）、`secure_web_gateway: true` |
-| MCP portal | `wwwyo`: `mcp.wwwyo.dev`、`code_mode: off`、portal 側 `secure_web_gateway: false`、server ごとに `on_behalf: false` |
-| Access app | portal 用（type `mcp_portal`、Managed OAuth + DCR、redirect は ChatGPT の callback だけ）と server 用（type `mcp`、`destinations: [{type: via_mcp_server_portal, mcp_server_id}]`）。どちらも本人のメールだけ Allow |
+| MCP server | `context7`: `https://mcp.context7.com/mcp`、`auth_type: bearer`（`CONTEXT7_API_KEY` を Cloudflare に保存。context7 は `Authorization: Bearer` で key を受ける）、`secure_web_gateway: false`（公開 upstream なので Gateway・Tunnel を通さない） |
+| MCP portal | `wwwyo`: `mcp.wwwyo.dev`、`code_mode: default_on`（2026-10-21 に `off` から変更。client は `?codemode=off` で従来の tool 一覧に戻せる）、portal 側 `secure_web_gateway: false`、server ごとに `on_behalf: false` |
+| Access app | portal 用（type `mcp_portal`、Managed OAuth + DCR、redirect は ChatGPT の callback と claude.ai の `https://claude.ai/api/mcp/auth_callback`）と server 用（type `mcp`、`destinations: [{type: via_mcp_server_portal, mcp_server_id}]`、server ごとに 1 つ）。どれも本人のメールだけ Allow |
 | DNS | `mcp` CNAME → `gateway.agents.cloudflare.com`（proxied） |
 
 ## MCP を追加するとき
 
-1. `cf mcp servers create --body @file`（token を含む body はファイル経由で渡し、`--dry-run` に token を通さない）。`secure_web_gateway: true`。同期が `ready` になるまで `cf mcp servers read` で待つ。
+1. `cf mcp servers create --body @file`（token を含む body はファイル経由で渡し、`--dry-run` に token を通さない）。loopback の server は `secure_web_gateway: true`、公開 remote の server は `false`。同期が `ready` になるまで `cf mcp servers read` で待つ。
 2. server 用の Access app（type `mcp`）を作る。無いと portal 経由でその server が見えない。
 3. `cf mcp portals update wwwyo` に server を足す。
-4. Gateway network policy の許可 port に足す。
+4. loopback の server だけ、Gateway network policy の許可 port に足す。
 5. shell・filesystem 書き込みなど強い権限の MCP は `wwwyo` に入れず、`<name>-mcp.wwwyo.dev` の別 portal にする（hostname は 1 段。2 段は Universal SSL の対象外）。
 
 ## ハマりどころ
