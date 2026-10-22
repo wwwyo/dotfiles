@@ -86,12 +86,17 @@ hold にする。テストファイルの追加や CI green だけを、影響�
 
 赤い check や PR 本文の成功報告を、更新由来の失敗・十分な検証と読み違えないための切り分け。
 
-- **job が開始していない**: run が failure でも `steps=[]`
-  （`gh run view <run> --json jobs` で job に step が無い）、`gh run view <run> --log-failed` は
-  `log not found` を返す。ログが無いこと自体は失敗の根拠にしない — check-run の annotation
-  （`gh api repos/<owner>/<repo>/check-runs/<id>/annotations`）か run の annotation に
-  支払い失敗・利用上限・runner 不足の理由があるときだけ、課金・上限による job 未開始と断定する。
-  annotation も取れなければ「原因未取得」と書く
+- **job が開始していない**: run が failure でも、対象 job に step が無く
+  （`gh run view <run> --json jobs` の `steps=[]`）、`gh run view <run> --log-failed` は
+  `log not found` を返す。ただし **`skipped`・`completed` を未開始として扱わない** —
+  別 job の失敗で skip されただけのことがある。対象 job の `status`/`conclusion` と
+  対応する check-run を確かめてから未開始と判定する。ログが無いこと自体は失敗の根拠にしない。
+  停止理由は check-run の annotation から取る — check-run の id は
+  `gh api repos/<owner>/<repo>/commits/<sha>/check-runs` の `id`（Actions job の
+  `databaseId` も同じ値を指す）で引き、`.../check-runs/<id>/annotations` を読む。
+  annotation・API 応答・status page・billing の実測（[pullfrog 手順の billing 確認](../../project-setup/references/pullfrog.md)）
+  のいずれにも理由が無ければ「原因未取得」と書き、原因を断定しない
+  （`SKILL.md` の report 規約と同じ水準）
 - **代替根拠**: 対象 job を実行できない場合も、公式 release / migration guide / compare との照合、
   bump した action の outputs・token の永続化・trigger/permissions の差分有無、その action の id を
   workflow が参照しているか、既存成果物の sha・代表値の一致、revert 手順で影響を判定できる。
@@ -104,6 +109,9 @@ hold にする。テストファイルの追加や CI green だけを、影響�
   差分が食い違えば差分を正とし、食い違い自体も note に残す
 - **記録する sha**: `judge-result`・`log --sha` に渡す sha は取得レスポンスの値をそのまま渡し、
   transcript から転記しない
+- **原因が確定したときの verdict**: 課金・上限・runner 不足は PR 側で直せないので
+  `ng` で hold（`repair` は PR の修正が要る場合）。この節は材料の集め方の指針で
+  verdict の基準は変えない — `JUDGE_POLICY_VERSION` は上げない
 
 ## 変更内容の確認
 
