@@ -100,10 +100,11 @@ hold にする。テストファイルの追加や CI green だけを、影響�
   ```
 
   re-run した run は `--attempt` で対象 attempt を取り直す。`jobs[].name` は表示名
-  （matrix は `test (ubuntu-latest)` 形）で job キーと一致しない。
-  `commits/<sha>/check-runs` を一覧で引く場合は `--paginate`（既定は 1 ページ 30 件）と
-  `?filter=latest` を付け、同じ SHA には同名の check-run が複数残りうる（re-run の旧 attempt・
-  app 違い）ので、複数候補が残ったら「一意に決まらない（未取得）」と書く。
+  （matrix は `test (ubuntu-latest)` 形）で job キーと一致しない。job の `databaseId` を
+  特定できないときだけ `commits/<sha>/check-runs?per_page=100` を 1 ページで引く —
+  この endpoint の応答は object なので `--paginate` の連結が壊れる。同じ SHA には
+  同名の check-run が複数残りうる（re-run の旧 attempt・app 違い）ので、複数候補が
+  残ったら「一意に決まらない（未取得）」と書く。
   対象 check-run が見つからない（未取得）・403（権限不足）・annotation が 0 件は区別して書き、
   どれも「annotation が無い」と同一視しない。
   annotation・API 応答・status page・billing の実測（[Pullfrog 導入手順 4 の billing 確認](../../project-setup/references/pullfrog.md)）
@@ -124,9 +125,9 @@ hold にする。テストファイルの追加や CI green だけを、影響�
 - **原因が確定したときの verdict**: 課金・上限・runner 不足は PR 側の欠陥ではないので、
   その失敗だけを理由に `ng` にしないし `repair` にもしない（PR を直しても job は起動しない）。
   `ng` にするのは検証未実施・根拠不足など他の理由による。verdict は下の
-  「変更内容の確認」節（`whitelist_hint` の個別基準）と QA・Blast Radius の基準で決める —
-  `bot_dep` なら「失敗が更新と無関係」を確認して `ok`。既存の判定結果は変わらない
-  （新たな verdict 規則を足していない）ので `JUDGE_POLICY_VERSION` は上げない
+  「変更内容の確認」節（`whitelist_hint` の個別基準）と QA・Blast Radius の基準で決める。
+  既存の判定結果は変わらない（新たな verdict 規則を足していない）ので
+  `JUDGE_POLICY_VERSION` は上げない
 
 ## 変更内容の確認
 
