@@ -91,12 +91,21 @@ hold にする。テストファイルの追加や CI green だけを、影響�
   `log not found` を返す。ただし **`skipped`・`completed` を未開始として扱わない** —
   別 job の失敗で skip されただけのことがある。対象 job の `status`/`conclusion` と
   対応する check-run を確かめてから未開始と判定する。ログが無いこと自体は失敗の根拠にしない。
-  停止理由は check-run の annotation から取る —
-  `gh api --paginate "repos/<owner>/<repo>/commits/<sha>/check-runs"` で `check_runs[]` を引き、
-  対象 job の name に一致する要素の `id`（Actions job の `databaseId` と同じ値）で
-  `.../check-runs/<id>/annotations` を読む。`gh api` は既定でページングしないので `--paginate` を
-  付け、30 件を超える head でも対象 job に届かせる。対象 check-run が見つからない（未取得）・
-  403（権限不足）・annotation が 0 件は区別して書き、どれも「annotation が無い」と同一視しない。
+  停止理由は check-run の annotation から取る。対象 job の check-run は
+  `gh run view <run> --attempt <N> --json jobs` の対象 job の `databaseId` で直接引ける
+  （Actions の job id は check-run の id と同じ値）。
+
+  ```bash
+  gh api "repos/<owner>/<repo>/check-runs/<databaseId>/annotations"
+  ```
+
+  re-run した run は `--attempt` で対象 attempt を取り直す。`jobs[].name` は表示名
+  （matrix は `test (ubuntu-latest)` 形）で job キーと一致しない。
+  `commits/<sha>/check-runs` を一覧で引く場合は `--paginate`（既定は 1 ページ 30 件）と
+  `?filter=latest` を付け、同じ SHA には同名の check-run が複数残りうる（re-run の旧 attempt・
+  app 違い）ので、複数候補が残ったら「一意に決まらない（未取得）」と書く。
+  対象 check-run が見つからない（未取得）・403（権限不足）・annotation が 0 件は区別して書き、
+  どれも「annotation が無い」と同一視しない。
   annotation・API 応答・status page・billing の実測（[Pullfrog 導入手順 4 の billing 確認](../../project-setup/references/pullfrog.md)）
   のいずれにも理由が無ければ「原因未取得」と書き、原因を断定しない
   （`SKILL.md` の report 規約と同じ水準）
@@ -114,9 +123,10 @@ hold にする。テストファイルの追加や CI green だけを、影響�
   transcript から転記しない
 - **原因が確定したときの verdict**: 課金・上限・runner 不足は PR 側の欠陥ではないので、
   その失敗だけを理由に `ng` にしないし `repair` にもしない（PR を直しても job は起動しない）。
-  verdict は通常どおり QA・Blast Radius と上の hint 節の基準で決める — `bot_dep` なら
-  「失敗が更新と無関係」を確認して `ok`。この節は材料の集め方の指針で verdict の基準は
-  変えないため `JUDGE_POLICY_VERSION` は上げない
+  `ng` にするのは検証未実施・根拠不足など他の理由による。verdict は下の
+  「変更内容の確認」節（`whitelist_hint` の個別基準）と QA・Blast Radius の基準で決める —
+  `bot_dep` なら「失敗が更新と無関係」を確認して `ok`。既存の判定結果は変わらない
+  （新たな verdict 規則を足していない）ので `JUDGE_POLICY_VERSION` は上げない
 
 ## 変更内容の確認
 
