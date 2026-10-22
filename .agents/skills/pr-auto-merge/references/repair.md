@@ -106,7 +106,9 @@ CI の frozen install を含む同じコマンドで検証する。CI 自体の 
    green になっても merge の条件を緩めず script の判定に従う。
 
 課金・利用上限・外部サービス障害等の根拠があれば、人間対応の理由を
-PR に書いて hold。失敗ログだけで根拠なく billing と断定しない。
+PR に書いて hold。失敗ログだけで根拠なく billing と断定しない。job が未開始なら
+ログは存在しない（`log not found`）— check-run annotation に停止理由があるときだけ
+それを根拠に書く（切り分けは [judge](judge.md) の「CI と検証の根拠が取れないとき」）。
 
 ### preview deploy のみ失敗（beta snapshot の env rename）
 

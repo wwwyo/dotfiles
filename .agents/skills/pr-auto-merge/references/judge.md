@@ -82,6 +82,29 @@ PR の自己申告をそのまま採用せず、影響の深刻さ・検証状�
 hold にする。テストファイルの追加や CI green だけを、影響範囲の検証完了とは扱わない。
 `ok` は merge 候補への推薦であり、CI・review 等の通常の gate は script が確認する。
 
+## CI と検証の根拠が取れないとき
+
+赤い check や PR 本文の成功報告を、更新由来の失敗・十分な検証と読み違えないための切り分け。
+
+- **job が開始していない**: run が failure でも `steps=[]`
+  （`gh run view <run> --json jobs` で job に step が無い）、`gh run view <run> --log-failed` は
+  `log not found` を返す。ログが無いこと自体は失敗の根拠にしない — check-run の annotation
+  （`gh api repos/<owner>/<repo>/check-runs/<id>/annotations`）か run の annotation に
+  支払い失敗・利用上限・runner 不足の理由があるときだけ、課金・上限による job 未開始と断定する。
+  annotation も取れなければ「原因未取得」と書く
+- **代替根拠**: 対象 job を実行できない場合も、公式 release / migration guide / compare との照合、
+  bump した action の outputs・token の永続化・trigger/permissions の差分有無、その action の id を
+  workflow が参照しているか、既存成果物の sha・代表値の一致、revert 手順で影響を判定できる。
+  何を確認して何が非該当かを `--reason` に列挙する
+- **画像・OGP の差分**: diff から実ファイルを取り出して開き、解像度・byte 数・描画内容を確認する。
+  `gh` の raw 取得が差分の base64 を返して失敗する経路では、head の commit から取り出すか、
+  diff の hunk の base64 を復元する
+- **本文の成功報告を根拠にしたとき**: build・再生など実行可能な検証を再実行せず PR 本文の報告を
+  根拠にしたら、再実行していない事実と代替根拠を `--reason` に明記する。本文の記述と現 head の
+  差分が食い違えば差分を正とし、食い違い自体も note に残す
+- **記録する sha**: `judge-result`・`log --sha` に渡す sha は取得レスポンスの値をそのまま渡し、
+  transcript から転記しない
+
 ## 変更内容の確認
 
 plan の action にある `whitelist_hint` で判定の軸が決まる。
