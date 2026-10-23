@@ -655,7 +655,7 @@ its update `status` needs. Do not read whole skills when a diff suffices:
 | --- | --- | --- |
 | `merged` | `git diff HEAD~1 -- <path>` | Check the applied upstream change against the intent; edit only where it violates the intent |
 | `conflicted` | `conflicts` and `git diff HEAD~1 -- <path>` | Resolve each reported region following the intent; for binary or modify/delete conflicts, compare with the new original under `original` |
-| `replaced` | The whole skill directory | No previous original was available: adapt the new original from the intent once; later updates merge |
+| `replaced` | The whole skill directory and `git diff HEAD~1 --diff-filter=D --name-only -- <path>` | No previous original was available: adapt the new original from the intent once; later updates merge. The import also deleted local-only files; restore with `git checkout HEAD~1 -- <file>` each one the intent needs or a repository test under `tests/` references |
 | `refreshed` | Root `SKILL.md` and `git diff HEAD~1` of each changed input | Check that routing still fits the refreshed originals |
 
 Then:
