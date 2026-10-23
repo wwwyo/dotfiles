@@ -2003,7 +2003,7 @@ version = "1.8.1"
 backend = "go:github.com/rubenv/sql-migrate/sql-migrate"
 
 [[tools."go:github.com/wwwyo/skillctrl"]]
-version = "17c4f0b9d0892cfa4ae81ef4e4c9ea7284b4fcd6"
+version = "ebc692126ae1975d536623b8049361ca7865b19c"
 backend = "go:github.com/wwwyo/skillctrl"
 
 [[tools."go:golang.org/x/tools/cmd/goyacc"]]

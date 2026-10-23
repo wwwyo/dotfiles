@@ -415,7 +415,7 @@ jobs:
           mkdir -p "$CI_DIR"
           "$SKILLCTRL_BIN" --adapter git update > "$CI_DIR/update.json"
           git add -A -- .agents skills-lock.json
-          git diff --cached > "$CI_DIR/input.patch"
+          git diff --cached --binary > "$CI_DIR/input.patch"
           gh pr list --state open --head automation/skillctrl-update --json url > "$CI_DIR/existing.json" || echo '[]' > "$CI_DIR/existing.json"
           "$SKILLCTRL_BIN" check > "$CI_DIR/check.json"
           jq -er '.local.lock_changed | if type == "boolean" then tostring else error("invalid lock_changed") end' "$CI_DIR/check.json" > /dev/null
@@ -427,8 +427,10 @@ jobs:
           ci = Path(os.environ['CI_DIR'])
           check = json.loads((ci / 'check.json').read_text())
           local = check['local']
+          updates = json.loads((ci / 'update.json').read_text()).get('updates') or []
           plan = {'head': os.environ['PR_HEAD'], 'review_skills': local['review_skills'],
-                  'needs_review': local['needs_review'], 'lock_changed': local['lock_changed']}
+                  'needs_review': local['needs_review'], 'lock_changed': local['lock_changed'],
+                  'updates': updates}
           changed = (ci / 'input.patch').read_text().strip() != ''
           existing = json.loads((ci / 'existing.json').read_text())
           plan.update(comparison=None, skills=local['skills'],
@@ -640,14 +642,29 @@ installed skills with their saved customization intent. `skills-lock.json`
 
 The selection plan lists `review_skills`: registered upstream skills whose
 directory hash drifted from the accepted lock after the import, plus `head`,
-the default-branch commit being updated. For each one:
+the default-branch commit being updated, and `updates`: the `skillctrl update`
+report for each changed skill (`status`, `path`, `original`, `changes`,
+`conflicts`). The harness commits the imported state on top of `head`, so
+`git diff HEAD~1 -- <path>` shows what the import changed in the skill and
+`git diff HEAD~1 -- <original>` shows the pure upstream difference.
 
-1. Read `.agents/skillctrl/intents/<name>.md` and the complete imported
-   directory `.agents/skills/<name>/`, including references, scripts, and
-   file modes.
-2. Adapt the editable skill content so it satisfies its saved intent. Keep
-   immutable bundled upstream snapshots under `references/` intact. Do not
-   edit intent documents, workflows, or policy.
+For each review skill, read `.agents/skillctrl/intents/<name>.md` and only what
+its update `status` needs. Do not read whole skills when a diff suffices:
+
+| `status` | Read | Task |
+| --- | --- | --- |
+| `merged` | `git diff HEAD~1 -- <path>` | Check the applied upstream change against the intent; edit only where it violates the intent |
+| `conflicted` | `conflicts` and `git diff HEAD~1 -- <path>` | Resolve each reported region following the intent; for binary or modify/delete conflicts, compare with the new original under `original` |
+| `replaced` | The whole skill directory | No previous original was available: adapt the new original from the intent once; later updates merge |
+| `refreshed` | Root `SKILL.md` and `git diff HEAD~1` of each changed input | Check that routing still fits the refreshed originals |
+
+Then:
+
+1. Edit only `.agents/skills/<name>/`. Keep immutable bundled upstream
+   snapshots under `references/` intact. Do not edit stored originals under
+   `.agents/skillctrl/originals/`, intent documents, workflows, or policy.
+2. Confirm no conflict markers remain, for example with
+   `git grep -n -e '^<<<<<<< local' -- .agents/skills/<name>`.
 3. Verify the result, then run `"$SKILLCTRL_BIN" record <name>` for that
    verified skill only. `record` writes `.agents/skillctrl/lock.json`;
    it accepts content, it does not review it.
