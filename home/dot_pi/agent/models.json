@@ -10,18 +10,18 @@
     "opencode-go": {
       "models": [
         {
-          "id": "minimax-m3.1-flash-free",
-          "name": "MiniMax M3.1 Flash Free",
+          "id": "beam-free",
+          "name": "Beam Free",
           "api": "openai-completions",
           "baseUrl": "https://opencode.ai/inference/go/v1",
           "reasoning": true,
-          "input": ["text", "image"],
+          "input": ["text"],
           "compat": {
             "supportsStore": false,
             "supportsDeveloperRole": false,
             "maxTokensField": "max_tokens"
           },
-          "contextWindow": 1000000,
+          "contextWindow": 1048576,
           "maxTokens": 131072,
           "cost": { "input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0 }
         }
