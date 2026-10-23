@@ -11,11 +11,9 @@
 #
 # BYOK keys are org-scoped (OPENCODE_API_KEY inherited) — see `pf secret list`.
 #
-# Pinned models can vanish upstream: opencode-go free/contributor tiers are
-# removed without notice (space-bunny-free's deletion broke pullfrog checks on
-# every repo at once). Recovery = `pullfrog config set model <new> --repo <r>`
-# to fix the backend immediately AND update the pf_set model line below —
-# re-running this script otherwise re-pins the dead model.
+# model/effort inherit the org default in .github/pullfrog.org.config.sh
+# (wwwyo/dotfiles). To override for this repo only, replace the pf_unset lines
+# below with `pf_set model '<id>'` / `pf_set effort '<n>'`.
 set -euo pipefail
 
 REPO="wwwyo/dotfiles"
@@ -26,8 +24,8 @@ pf_unset() { "${PF[@]}" config unset "$1"     --repo "$REPO" --yes; }
 
 
 pf_set enabled 'true'
-pf_set model 'opencode-go/beam-free'
-pf_set effort '1'
+pf_unset model   # inherit org default
+pf_unset effort  # inherit org default
 pf_set progress-comments 'true'
 pf_set oss 'true'
 pf_set push 'enabled'

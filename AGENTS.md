@@ -116,7 +116,7 @@ Edge が `.svg` を奪っていくので、宣言して奪い返す運用にし�
 
 この repo の Pullfrog 設定は [`.github/pullfrog.config.sh`](.github/pullfrog.config.sh) が正本。public repo では初回レビューと追加コミットの再レビューを自動で行い、手動でも `@pullfrog` で依頼できる。CLI のバージョンはグローバルの mise 設定（[`home/dot_config/mise/config.toml`](home/dot_config/mise/config.toml)）で管理し、設定変更は script を編集して実行する。
 
-org 共通の defaults（日本語出力・重要度ラベルの instructions 等）は [`.github/pullfrog.org.config.sh`](.github/pullfrog.org.config.sh)（`--org wwwyo` scope）が正本で、repo 側で unset した key は org の値を継承する。`pullfrog config list --repo` は継承値を見せないので、実効値の監査は `--repo` と `--org` の両方を引く。`review.approve=false` でも `review.approval-check=true` が `pullfrog-approval` status check を出す — merge lane はこちらを見る。
+org 共通の defaults（model・effort、日本語出力・重要度ラベルの instructions 等）は [`.github/pullfrog.org.config.sh`](.github/pullfrog.org.config.sh)（`--org wwwyo` scope）が正本で、repo 側で unset した key は org の値を継承する。各 repo の script は model・effort を `pf_unset` して継承し、repo 個別に変えたいときだけ `pf_set` で上書きする。`pullfrog config list --repo` は継承値を見せないので、実効値の監査は `--repo` と `--org` の両方を引く。`review.approve=false` でも `review.approval-check=true` が `pullfrog-approval` status check を出す — merge lane はこちらを見る。
 
 ## Story
 
