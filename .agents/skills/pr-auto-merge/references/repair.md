@@ -30,7 +30,9 @@ merge は author session で発行せず、修正後の次 tick で script に�
    main 固定にしない。stack は親から処理する。
 3. 位置ずれや同じ変更の重なりなど、意図を選ばずに解消できるものだけを
    修正する。production コードもこの条件なら対象。lockfile・生成物は
-   repo の正規コマンドで再生成する。競合の一方が upstream 管理 skill の
+   repo の正規コマンドで再生成する — 片側の版を採ると、片側にしか無い
+   文字・項目が静かに欠落する（フォントサブセット・codegen の出力も同様）。
+   再生成後は生成物の検証コマンド（`*:check` 等）も通す。競合の一方が upstream 管理 skill の
    改変を含む場合は「原本へ戻す」で閉じず、ローカル差分が
    `.agents/skillctrl/intents/<name>.md` の意図でカバーされているかで
    分岐する — 意図内ならローカル側を保持して機械的解消、意図に無い
@@ -106,7 +108,11 @@ CI の frozen install を含む同じコマンドで検証する。CI 自体の 
    green になっても merge の条件を緩めず script の判定に従う。
 
 課金・利用上限・外部サービス障害等の根拠があれば、人間対応の理由を
-PR に書いて hold。失敗ログだけで根拠なく billing と断定しない。
+PR に書いて hold。失敗ログだけで根拠なく billing と断定しない。`log not found`
+を未開始の根拠にするのは、対象 job が `skipped`・`completed` でない（別 job の失敗で
+skip されていない）ことを確かめた後だけ。停止理由は check-run annotation か
+API 応答・status page で裏付け、無ければ理由を未取得として書く
+（切り分けは [judge](judge.md) の「CI と検証の根拠が取れないとき」）。
 
 ### preview deploy のみ失敗（beta snapshot の env rename）
 

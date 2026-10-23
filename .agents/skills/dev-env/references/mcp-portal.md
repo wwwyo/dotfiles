@@ -49,7 +49,8 @@ portal は個人の MCP の入口を 1 つにまとめる経路。ChatGPT・clau
 
 1. `cf mcp servers create --body @file`（token を含む body はファイル経由で渡し、`--dry-run` に token を通さない）。loopback の server は `secure_web_gateway: true`、公開 remote の server は `false`。同期が `ready` になるまで `cf mcp servers read` で待つ。
 2. server 用の Access app（type `mcp`）を作る。無いと portal 経由でその server が見えない。
-3. `cf mcp portals update wwwyo` に server を足す。upstream が OAuth の server は、ダッシュボードの server 画面で「サーバーの認証」を押して同期させる（`cf` に相当コマンドが無い）。利用者の権限で呼ばせるなら `on_behalf: true`。
+3. `cf mcp portals update wwwyo` に server を足す。upstream が OAuth の server は、ダッシュボードの server 画面で「サーバーの認証」を押して同期させる（`cf` に相当コマンドが無い）。`on_behalf` は「その upstream の権限を利用者ごとに分けるか」で決める — 利用者ごとの同意・token を持つ OAuth upstream は `true`（現状 cloudflare だけ）、portal が共有 credential で呼ぶ bearer・認証なし upstream は `false`。1人運用なら `false` でも動くが、client を共有した時点で権限境界が消える。同意した scope 外の操作を upstream が拒否するかは未検証 — 拒否の挙動を前提に自動承認の範囲を広げない
+   - 1段目（manager 側の同期）で止まっている signature は `status: waiting` + `authentication_status: required` + `last_successful_sync: null`。2段目の同意はその後に出るので、切り分けはこの3つで行う
 4. loopback の server だけ、Gateway network policy の許可 port に足す。
 5. shell・filesystem 書き込みなど強い権限の MCP は `wwwyo` に入れず（upstream の OAuth 同意で scope を絞れるものは除く）、`<name>-mcp.wwwyo.dev` の別 portal にする（hostname は 1 段。2 段は Universal SSL の対象外）。
 
@@ -63,4 +64,8 @@ portal は個人の MCP の入口を 1 つにまとめる経路。ChatGPT・clau
 - **tool の無効化はダッシュボードに出ないことがある。** API の `servers[].updated_tools: [{name, enabled: false}]` なら設定できる。
 - **`127.0.0.1/32` の route は loopback の全 port に届きうる。** network policy の対照実験（rule ON で接続失敗、OFF で到達）で効くことを確認済み。新しい port を公開するときは policy の許可も更新する。
 - **Gateway の「Route traffic through Cloudflare Gateway」は server 側の設定が効く。** portal 側の同名設定は server の登録・tool 同期には効かない。private upstream へ portal から届かないときは server の `secure_web_gateway` を先に見る。route は IP 単位で port を指定できないため、port 制限は上記の L4 network policy で行う（doc に記載が無く、検証 server とルール on/off の対照で確認した）。
+- **portal は upstream の Server Instructions を引き継がない。** upstream が `initialize` で `instructions` を返していても、portal 経由の接続では消える（2026-10-22 に codemode 有効・無効の双方で実測）。用途を初期コンテキストに載せたいなら client 側（`AGENTS.md`・system prompt）か upstream の tool description に書く — upstream の Instructions は client が server を直接登録する経路でだけ効く。有無は `initialize` を直叩きすれば確認できる。
+- **codemode の値でモデルに見える tool 構成が変わる。** `default_on` では portal の Code Mode tool 5個だけが見え、`?codemode=off` では upstream の個別 tool が見える（2026-10-22 時点で 11個＋UI 用 `_meta`。数は upstream の tool 追加で変わる）。MCP Apps（UI `_meta`）を Code Mode と併用できるかは未検証 — ChatGPT からの UI 動作確認は取れていない。
+- **`cf` は `gh` と同じく sandbox 外で実行する。** sandbox 有効時は通信制限で `cf mcp servers list` 等が落ちる。権限設定を緩めず escalated で実行する。
+- **Codex で mcphub の tool が載らないときは層で分ける。** (1) `~/.codex/config.toml` に `[mcp_servers.mcphub]` が実在するか（`home/.chezmoitemplates/codex-base.toml.tmpl` 由来）(2) session が見ている tool 一覧（Code Mode なら portal の 5 tool だけ）(3) `codex mcp login mcphub` の grant が残っているか。
 - **portal は tool 単位の呼び出し認証を持たない**（tool の on/off と alias のみ）。強い権限の分離は別 portal + 短い Access セッション、または同一 MCP の 2 server 登録で行う。**portal を分けても ChatGPT は同一会話で複数コネクタの tool を混ぜられる**ため、分割の目的は権限・credential の分離であって tool mixing の防止ではない（基本は 1 portal、強い権限だけ別 portal）。

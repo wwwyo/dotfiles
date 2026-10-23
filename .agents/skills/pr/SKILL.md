@@ -137,7 +137,7 @@ CI・レビューが既に完了し、以下の終了条件を全て満たして
 
 - QA対象ならstep 4で対象要件の検証が現在のPR headで成功している。QA対象外なら現在のdiffにもその判断が適用でき、理由がPR bodyに記録されている
 - required な check が全て pass している（`gh pr checks --required` が exit 0）。required checkが設定されていない場合の`no required checks reported`は失敗として扱わず、`statusCheckRollup`で実際のCI結果を確認する。レビュー以外のnon-requiredなadvisory checkは終了をブロックしない
-- 開始されたレビューが全て終了している。required / non-requiredを問わず、レビューが待機中・進行中ならdraftを維持する。ただしCodeRabbitは例外とし、未実施・待機中・進行中・rate limitや利用上限による途中終了のいずれもreadyの必須条件にしない（required check に設定された CodeRabbit の check は前項の required 判定の対象のまま）。CodeRabbitの結果待ちを理由にユーザー確認を追加しない。CodeRabbit以外の外部レビュアーが rate limit・利用上限で途中終了した場合は「終了」と見なさない — rollup が全部 pass に見えても未カバー範囲が残るので pass 扱いにせず、未確認としてユーザーに報告する
+- 開始されたレビューが全て終了している。required / non-requiredを問わず、レビューが待機中・進行中ならdraftを維持する。ただしCodeRabbitは例外とし、未実施・待機中・進行中・rate limitや利用上限による途中終了のいずれもreadyの必須条件にしない（required check に設定された CodeRabbit の check は前項の required 判定の対象のまま）。CodeRabbitの結果待ちを理由にユーザー確認を追加しない。CodeRabbit以外の外部レビュアーが rate limit・利用上限・プロバイダ障害で途中終了した場合は「終了」と見なさない — rollup が全部 pass に見えても未カバー範囲が残るので pass 扱いにせず、未確認としてユーザーに報告する
 - コンフリクトしていない（`mergeable` が CONFLICTING でない）
 - 未対応のレビューコメントがない（AIボットのコメントは対応済み、人間のコメントはユーザーに報告済み）
 - 上記を全て満たした場合、監視を終えてユーザーにPRの状態を報告する
@@ -154,6 +154,7 @@ CI・レビューが既に完了し、以下の終了条件を全て満たして
 - bot の指摘本文・修正案（条件分岐の追加を含む）は事実として扱わず、採否の前に upstream の実コード・vendor の公式ドキュメントで検証する。指摘はレビュー時点の状態への言及なので、前提が対応時点でも成立するか（依存 PR が merge 済み・対象 file が移動済み等）も合わせて確認し、前提が消えた指摘は stale として扱う。実機で反証できた指摘は、重要度ラベルに関わらず根拠を添えて不採用にしてよい
 - レビュー指摘が極端なエッジケースへの対処なら採用しない。現実的に起こり得ないシナリオのためにコードを複雑化する方が害が大きい — 対応しない場合は理由を添えて返信する
 - 数値定数・閾値（TTL・間隔・上限・件数など）を変える変更では、その値や旧値を前提にした doc・コメント・テストを `rg --hidden` で repo 全体（`.agents/` などの隠し dir 含む）から grep し、追随が必要なものを同一 commit で更新する。定数だけ変えて古い結論を残すと意味が反転して drift する（TTL 短縮で doc の「次 tick は起動しない」が逆になった実例）
+- 生成物（lockfile・フォントサブセット・codegen の出力など）の競合は、片方の版を選ばず merge 後のソースから再生成する — 手順と検証は [pr-auto-merge の機械的な競合解消](../pr-auto-merge/references/repair.md#機械的な競合解消) が正本。
 - `git mv` 直後に同じファイルを編集したときは、commit 前に `git status` で staged/unstaged の両方を確認する — rename の stage と編集の未 stage が混在し、片方だけが commit に乗ることがある
 - merge 済み PR への追加対応は、merged branch を復活させて push せず新しい branch/PR に切る — merged PR の branch へ push しても PR は reopen せず、commit だけが誰にも見えない場所に積まれる（「merged なのに差分が残る」状態の温床）
 - 完了報告の前に `git status` が clean かつ untracked 0 であることを確認する — 生成物の commit 忘れ・別 worktree への置き忘れをここで止める
