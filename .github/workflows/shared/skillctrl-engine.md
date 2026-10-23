@@ -60,13 +60,15 @@ engine:
         {stdio: ['ignore', report, 'inherit']});
       fs.closeSync(report);
       run('git', ['add', '-A', '--', '.agents', 'skills-lock.json']);
-      const patch = spawnSync('git', ['diff', '--cached'], {env, encoding: 'utf8'});
-      fs.writeFileSync(directory + '/repair.patch', patch.stdout || '');
+      // Stream to a file: spawnSync's 1 MiB maxBuffer silently truncated large repairs.
+      const patch = fs.openSync(directory + '/repair.patch', 'w');
+      run('git', ['diff', '--cached', '--binary'], {stdio: ['ignore', patch, 'inherit']});
+      fs.closeSync(patch);
       const check = spawnSync(process.env.SKILLCTRL_BIN, ['check'], {env, encoding: 'utf8'});
       let state = {};
       try { state = JSON.parse(check.stdout || '{}'); } catch {}
       fs.writeFileSync(directory + '/result.json', JSON.stringify({check: state}));
-      if ((patch.stdout || '').trim()) {
+      if (fs.statSync(directory + '/repair.patch').size > 0) {
         run('safeoutputs', ['apply_skill_repairs', '--head', plan.head]);
       }
 
