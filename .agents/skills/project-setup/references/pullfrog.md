@@ -4,7 +4,7 @@
 
 1. **Install + workflow**: CLI は dotfiles のグローバル mise 設定（`home/dot_config/mise/config.toml` の `npm:pullfrog`）でバージョン管理する。未導入なら `mise install npm:pullfrog`、repo dir で `mise exec -- pullfrog init`。GitHub App を repo に install し dashboard が開く。`.github/workflows/pullfrog.yml` は Pullfrog 側から届く PR（or console の指示）をそのまま取り込む — **手で書いたり `with:` を足したりしない**。managed file なので全 repo byte 同一を保ち、model 等を書くと console の repo 設定に負けて dead config になる
 2. **`.github/pullfrog.config.sh` を生成**: repo-level 設定（model・effort・review/issue/label mode・hooks…）は backend にしか無く git から見えないため、`pf config set/unset` を並べたこの script を SSOT として置く。既存 repo の同名ファイルをコピーして `REPO=` を書き換え、CLI 呼び出しは `PF=(mise exec -- pullfrog)` に揃える。repo ごとに以下を調整する:
-   - `model`・`effort`: [delegate](../../delegate/SKILL.md) の「Agent・モデルの共通設定」にある Pullfrog の例外に従う。コピー元の値をそのまま継承せず、effort は Pullfrog の受け付ける形式へ変換する
+   - `model`・`effort`: `pf_unset` のまま org 共通値（dotfiles の `.github/pullfrog.org.config.sh`）を継承する。その repo だけ変えたい場合に限り `pf_set model '<id>'` / `pf_set effort '<n>'` へ置き換える。effort は Pullfrog の受け付ける形式で書く
    - `review.re-review`: private → `'false'`（Actions の消費を抑えるため、追加コミットのレビューは必要なときに `@pullfrog` で依頼する）/ public → `'true'`。初回の自動レビュー（`review.mode='agent'`）と手動依頼（`mention.enabled='true'`）は両方で有効にする。個別設定の正本とレビュー方針を生成済みの `AGENTS.md` にも簡潔に記載する
    - playground repo → `enabled=false`、かつ `hooks.setup` は `pf_unset` 側に回す
    - `pf_unset instructions` はそのまま残す — repo で instructions を set すると org 共通 instructions（日本語返答・P0–P3 ラベル）を置換する。org scope の SSOT は dotfiles の `.github/pullfrog.org.config.sh` で、新規 repo 側で org 設定を触る必要はない

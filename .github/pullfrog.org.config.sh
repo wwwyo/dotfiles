@@ -15,11 +15,19 @@ set -euo pipefail
 
 PF=(mise exec -- pullfrog)
 
-pf_unset() { "${PF[@]}" config unset "$1" --org wwwyo --yes; }
+pf_set()   { "${PF[@]}" config set   "$1" "$2" --org wwwyo --yes; }
+pf_unset() { "${PF[@]}" config unset "$1"     --org wwwyo --yes; }
+
+# Shared model/effort for every repo. Repos inherit these by `pf_unset`-ing
+# model/effort in their own pullfrog.config.sh; a repo that needs something
+# else overrides with `pf_set model '<id>'` there.
+# opencode-go free/contributor tiers vanish without notice (space-bunny-free,
+# minimax-m3.1-flash-free): recover by changing the model here and re-running
+# this script — inheriting repos follow without per-repo edits.
+pf_set model 'opencode-go/beam-free'
+pf_set effort '1'
 
 # explicit unsets — keep the backend converged on this file
-pf_unset model   # repos pin their own model (see each pullfrog.config.sh)
-pf_unset effort  # repos pin their own effort
 pf_unset xrepo.brief  # org-only key, no repo override exists; unused
 
 "${PF[@]}" config set instructions --org wwwyo --yes --file - <<'PULLFROG_ORG_INSTRUCTIONS'
