@@ -2099,7 +2099,7 @@ version = "0.21.2"
 backend = "npm:e2e"
 
 [[tools."npm:firecrawl-cli"]]
-version = "1.26.7"
+version = "1.26.8"
 backend = "npm:firecrawl-cli"
 
 [[tools."npm:portless"]]
