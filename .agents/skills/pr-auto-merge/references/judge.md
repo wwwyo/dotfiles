@@ -57,10 +57,17 @@ lane への推薦で、merge の発行は script が hard gate の再検証後�
   check rollup が判定時と一致しない。`judge-input` の後に CI check や
   pullfrog-approval が進むと起きる。次 tick に新しい材料で再判定する
   （エラーや手順ミスではない）。head が動いたなら新しい差分を判定する。
+  何が変わったか分からないときは `judge-input` 時点の `checks` と merge 直前の
+  live checks を比べる — `context_hash` は checks を含むので、check の遷移だけでも
+  stale になる（承認到着後に再判定になるのはこのため。設計どおりで不具合ではない）。
 - `no judge ok ...` — 現在 head に紐付く ok verdict が無い。judge action を
   まだ処理していないか、ng/repair が記録されている。
 - `pullfrog-approval not success (...)` — review の承認が現在 head に無い。
-  bot 依存更新・確認済み追従の whitelist 経路以外は merge できない。
+  bot 依存更新・確認済み追従の whitelist 経路以外は merge できない。`absent` の
+  ときは同名の check-run 自体があるかを先に見る — check-run が1件も無ければ
+  review の前に workflow が起動していない（private repo の Actions 上限等）。
+  [Pullfrog 導入 4](../../project-setup/references/pullfrog.md) の billing 確認へ進み、
+  この不在を PR 側の欠陥として `repair` にしない。
 - `draft (author ready 待ち)` — draft は author が未完成と明示した PR で、
   plan の hold と hard gate の両方が弾く。draft のまま pullfrog が承認を
   保留すると pullfrog-approval が FAILURE になり、lane は author に代わって
@@ -120,6 +127,13 @@ hold にする。テストファイルの追加や CI green だけを、影響�
 - **本文の成功報告を根拠にしたとき**: build・再生など実行可能な検証を再実行せず PR 本文の報告を
   根拠にしたら、再実行していない事実と代替根拠を `--reason` に明記する。本文の記述と現 head の
   差分が食い違えば差分を正とし、食い違い自体も note に残す
+- **CI green が互換性の証拠にならない変更**: model/provider pin・設定・認証境界の変更は、
+  CI がその経路を実行していなければ green でも互換性の証拠にならない。実 endpoint・実権限での
+  確認記録か、公式資料と利用箇所の照合を根拠にし、無ければ `ng`。認証境界を緩める変更
+  （権限追加・allowlist 拡大）は CI で代替できず、何が新たに可能になるかを `--reason` に書く
+- **再実行を省くときの代替根拠**: 同値の定数抽出・移動のように差分から等価性を示せる変更は、
+  テスト再実行の代わりに値の一致を根拠にできる。何を再実行しなかったかと採った代替根拠を
+  `--reason` に並べ、黙って省かない
 - **記録する sha**: `judge-result`・`log --sha` に渡す sha は取得レスポンスの値をそのまま渡し、
   transcript から転記しない
 - **原因が確定したときの verdict**: 課金・上限・runner 不足は PR 側の欠陥ではないので、
