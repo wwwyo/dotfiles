@@ -16,6 +16,8 @@ chezmoi diff                                           # apply 前に差分確�
 
 **apply は main checkout（canonical path）から実行する**。worktree から apply すると `run_after` が張る dir symlink が worktree 内を指し、worktree 削除で壊れる。
 
+`~` 側に手元変更のある実ファイルがあると `apply` は確認で止まる — 差分を読んで意図どおりなら `--force` で進める。`run_after` の dir link script は毎回 `chezmoi diff` に残るので、「差分あり＝未適用」の判定に使わない。
+
 ## chezmoi layout
 
 `.chezmoiroot` が `home` を指し、`home/` が source state root。repo root の `.agents/` `.claude/` `.codex/` `.pi/` 等は source state の外（chezmoi は見ない）。

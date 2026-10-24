@@ -221,6 +221,9 @@ script が構造化エラーで弾く。
   field は 0・`[]` とし、行自体は省略しない。長い根拠は従来どおり jsonl の `note` に残す。
   `pr-watch.md` の件数見出しは**当日累計**（当日 jsonl 全体）、tick-summary は
   **per-tick** — 両者が一致しなくても不整合と読まない（後続 tick が同じ日次 file に追記する）。
+  同じ理由で、md は後続 tick が Hold 行を書き換える（MERGED・他アクターの merge を外す）ため、
+  ある時点の md に行が無いことを「未実施」の証拠にしない — 実施の有無は jsonl の
+  action・note で確認する。
 
 dispatch ガードの延期も Hold に載せ、恒久的な保留と区別して日本語で理由を書く。
 以下の表は dispatch ガード延期の `reason` だけを対象とし、返された理由以上の原因を
