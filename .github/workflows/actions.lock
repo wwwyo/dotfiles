@@ -26,7 +26,7 @@ workflows:
         - 'jdx/mise-action@c2a87611a18de5b3828c5652fe268e992400cb5c'
     '.github/workflows/test.yml':
         - 'actions/checkout@v7'
-        - 'jdx/mise-action@2d8d4cafcbd33be2ea37d2b6f5ad595363d1f1ca'
+        - 'jdx/mise-action@9b200bcecbfd6303e69a4a261b2e09e3757440a7'
 dependencies:
     'actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1':
         ref: 'v7.0.1'
@@ -68,9 +68,9 @@ dependencies:
         commit: 'sha1-924af5fdc64061cfbf66fb584c8b07e2ac230c60'
         owner_id: 9919
         repo_id: 1156386970
-    'jdx/mise-action@2d8d4cafcbd33be2ea37d2b6f5ad595363d1f1ca':
-        ref: 'v5.1.1'
-        commit: 'sha1-2d8d4cafcbd33be2ea37d2b6f5ad595363d1f1ca'
+    'jdx/mise-action@9b200bcecbfd6303e69a4a261b2e09e3757440a7':
+        ref: 'v5.2.0'
+        commit: 'sha1-9b200bcecbfd6303e69a4a261b2e09e3757440a7'
         owner_id: 216188
         repo_id: 738284564
     'jdx/mise-action@c2a87611a18de5b3828c5652fe268e992400cb5c':
