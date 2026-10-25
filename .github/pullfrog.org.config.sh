@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
-# Server-side Pullfrog org defaults for the wwwyo personal account — SSOT.
+# Server-side Pullfrog org defaults for the wwwyo account and its orgs — SSOT.
 #
 # Repo-level settings live in each repo's .github/pullfrog.config.sh.
-# This file covers the org scope (`--org wwwyo`). Keys accepted at org level
+# This file covers the org scope (`--org <each of ORGS>`). Keys accepted at org level
 # are only: model, effort, instructions, xrepo.brief, billing.*.
 # A repo-level `config unset` restores inheritance of these org values.
 #
 # Apply:  .github/pullfrog.org.config.sh        (uses gh auth)
-# Audit:  mise exec -- pullfrog config list --org wwwyo
+# Audit:  mise exec -- pullfrog config list --org <org>
 #
 # billing.* is managed in the Pullfrog console, not here — payment settings
 # are consequential writes and stay out of this script.
@@ -15,8 +15,14 @@ set -euo pipefail
 
 PF=(mise exec -- pullfrog)
 
-pf_set()   { "${PF[@]}" config set   "$1" "$2" --org wwwyo --yes; }
-pf_unset() { "${PF[@]}" config unset "$1"     --org wwwyo --yes; }
+# Every owner whose repos inherit these defaults. BYOK keys are per owner too:
+# a new owner also needs `pullfrog secret set OPENCODE_API_KEY --org <org>`.
+ORGS=(wwwyo fudoki-hensansitu)
+
+pf_set()   { "${PF[@]}" config set   "$1" "$2" --org "$ORG" --yes; }
+pf_unset() { "${PF[@]}" config unset "$1"     --org "$ORG" --yes; }
+
+for ORG in "${ORGS[@]}"; do
 
 # Shared model/effort for every repo. Repos inherit these by `pf_unset`-ing
 # model/effort in their own pullfrog.config.sh; a repo that needs something
@@ -30,7 +36,7 @@ pf_set effort '1'
 # explicit unsets — keep the backend converged on this file
 pf_unset xrepo.brief  # org-only key, no repo override exists; unused
 
-"${PF[@]}" config set instructions --org wwwyo --yes --file - <<'PULLFROG_ORG_INSTRUCTIONS'
+"${PF[@]}" config set instructions --org "$ORG" --yes --file - <<'PULLFROG_ORG_INSTRUCTIONS'
 すべての出力（返答・コメント・レビュー本文）は日本語で書くこと。
 
 レビューの各指摘には、重要度に応じて以下のいずれかのラベルを必ず付けること:
@@ -47,3 +53,5 @@ pf_unset xrepo.brief  # org-only key, no repo override exists; unused
 
 P3 は承認を妨げない。未解決の P0・P1・P2 の指摘や判断に必要な証跡の不足があれば承認しない。P0・P1・P2 の指摘がすべて解消され、承認可能と確認できた場合は、設定に従って承認判定を出し、`pullfrog-approval` check に反映すること。GitHub の Approve 投稿を無効にしている場合も、approval verdict の判定は省略しないこと。
 PULLFROG_ORG_INSTRUCTIONS
+
+done
