@@ -44,7 +44,7 @@ flowchart LR
 
 **決定済み（2026-09-25 のユーザー確認）**:
 
-- **session-retro の還元先 repo**: trace metadata の `transcript_path`（Devin では sessions.db の `working_directory` が入る）から解決する。解決できない session は `wwwyo/me` に還元する（fallback）（2026-10-08 変更: `repo_root` 解決不能な session は coordinator が `learning` の内容から本来の宛先 repo を判定して各 repo の consolidator に割り当て、宛先を特定できないものだけ me fallback に残す運用にした。worker 側での他 repo への reroute 書き込みは廃止）
+- **session-retro の還元先 repo**: trace metadata の `transcript_path`（Devin では sessions.db の `working_directory` が入る）から解決する。解決できない session は `wwwyo/me` に還元する（fallback）（2026-10-08 変更: `repo_root` 解決不能な session は coordinator が `learning` の内容から本来の宛先 repo を判定して各 repo の consolidator に割り当て、宛先を特定できないものだけ me fallback に残す運用にした。worker 側での他 repo への reroute 書き込みは廃止。2026-10-24 変更: `repo_root` が解決できる session でも `learning` が他 repo の skill・`AGENTS.md`・ADR を名指しする場合はその repo の group にも複製し、全 copy に `multi_dest: true` を付ける — `repo_root` は session が動いた場所で学びの宛先ではない）
 - **未完 session の扱い**: 届いている分で評価し、後続 trace が来たら次回 run で再評価（上記 predicate）
 - **同時実行の重複防止**: 実行 lock
 - **データ境界**: telemetry opt-in は評価結果（score + 要約 comment）の Langfuse 保存を含む同意とする
