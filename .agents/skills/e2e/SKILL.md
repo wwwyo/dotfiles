@@ -1,19 +1,58 @@
 ---
 name: e2e
-description: Agentic end-to-end tests with the e2e runner — setup, browser and mobile flows, agent.act/assert, replay cache, reports, and bug bashes. Use when a project uses e2e, when asked for end-to-end, browser, mobile, or agentic UI tests or a bug bash, or when an e2e run fails.
----
+description: Agentic end-to-end tests with the e2e runner — setup, browser and mobile flows, agent.act/assert, replay cache, reports, and bug bashes. Use when a project uses e2e, when asked for end-to-end, browser, mobile, or agentic UI tests or a bug bash, or when an e2e run fails.---
 
-# e2e: agentic end-to-end tests in TypeScript
+# e2e: agentic end-to-end tests
 
-e2e runs UI tests with agent goals and exact assertions. `agent.act` drives
+e2e runs UI tests that mix agent goals with exact steps. `agent.act` drives
 one goal; `agent.assert`, `agent.waitFor`, and `agent.extract` judge the
-screen. `screen`, `app`, `browser`, and `expect` make exact interactions and
-checks. The replay cache reruns verified actions and checks their recorded end
-state without a model call; agent judgments still run live. UI targets use
-`@e2e-dev/web` for browsers or `@e2e-dev/mobile` for iOS simulators,
-Android emulators, and connected phones. A test that takes only `app` can check an API with `fetch`
-and `expect` (topic `writing-tests`). Model sign-in commands are in
-[setup](references/setup.md#subscriptions-and-api-keys).
+screen; `screen`, `app`, `browser`, and `expect` act and check exactly. UI
+targets use `@e2e-dev/web` for browsers or `@e2e-dev/mobile` for iOS
+simulators, Android emulators, and connected phones.
+
+## Start here: pick the reference for the job
+
+Read the one reference that matches the request before doing anything else.
+Each stands on its own; a reference names another topic only for a side
+trip. `mise x -- e2e guide <topic>` prints the installed package's version of a
+reference; prefer it when it differs from this copy.
+The Rules and e2e 自体の問題 sections below still apply.
+
+| When you are | Topic | Read |
+| --- | --- | --- |
+| Adding e2e to a project, writing `e2e.config.ts`, starting the app from the config, signing in to a model, setting up mobile targets | `setup` | [references/setup.md](references/setup.md) |
+| Looking at the running app, checking a UI change, taking a screenshot or video, or trying a locator before writing it, over `e2e mcp` | `mcp` | [references/mcp.md](references/mcp.md) |
+| Writing or fixing a test: fixtures, locators, actions, matchers, sign-in sessions, the `browser` fixture, API-only tests | `writing-tests` | [references/writing-tests.md](references/writing-tests.md) |
+| Adding `agent.*` steps, picking a model, cutting cost, budgets, the replay cache | `agent` | [references/agent.md](references/agent.md) |
+| Running tests: CLI flags, CI, reporters, trace pages, `report.json` for scripts, exit codes | `running` | [references/running.md](references/running.md) |
+| Handling a failed run: error codes and their fixes, `--headed`, `--debug`, `--ai-trace` | `debugging` | [references/debugging.md](references/debugging.md) |
+| Exploring an app toward a goal without a test file: `e2e explore`, its budgets and verdict | `explore` | [references/explore.md](references/explore.md) |
+| Asked to bug bash, QA, or hunt for bugs across an app or a branch | `bug-bash` | [references/bug-bash.md](references/bug-bash.md) |
+
+For anything the references do not cover, the full documentation ships in
+the `docs/` directory of the installed `e2e` package
+(`node_modules/e2e/docs` in a single-package project); a link such as
+`/reference/cli` is `docs/reference/cli.mdx`. Complete projects for Vite,
+Next.js, Astro, Expo, SwiftUI, Jetpack Compose, Kotlin Multiplatform,
+Flutter, and .NET MAUI are in https://github.com/tester-army/e2e/tree/main/examples.
+
+## Quick start
+
+A config with one web target and a model, and a test that drives one goal
+and pins the outcome:
+
+```ts
+// tests/billing.e2e.ts
+import { test } from '@e2e-dev/web';
+import { expect } from 'e2e';
+
+test('a member upgrades to Pro', async ({ app, agent, screen, browser }) => {
+  await app.open('/settings/billing');
+  await agent.act('upgrade the workspace to the Pro plan');
+  await expect(screen.getByRole('status')).toContainText('Pro');
+  await expect(browser).toHaveURL('/settings/billing');
+});
+```
 
 ## この環境の既定
 
@@ -32,64 +71,107 @@ exact pin と cooldown 7 日、汎用 skill は skillctrl で管理する。
 固定値と安定した操作は `screen` + `expect`、判断が必要な操作は `agent.act` にする。
 PRD criterion とテストの対応を残し、出荷判断では未確認の criterion も明示する。
 
-```ts
-// tests/billing.e2e.ts
-import { test } from '@e2e-dev/web';
-import { expect } from 'e2e';
-
-test('a member upgrades to Pro', async ({ app, agent, screen, browser }) => {
-  await app.open('/settings/billing');
-  await agent.act('upgrade the workspace to the Pro plan');
-  await expect(screen.getByRole('status')).toContainText('Pro');
-  await expect(browser).toHaveURL('/settings/billing');
-});
-```
-
-## Topics
-
-Read the topic for the job before writing code. The files sit next to this
-one; the installed CLI prints the same text with `mise x -- e2e guide <topic>`
-(`e2e guide` alone prints this page). For anything the topics do not cover,
-the full documentation ships in the `docs/` directory of the installed `e2e`
-package (`node_modules/e2e/docs` in a single-package project); a link such as
-`/reference/cli` is `docs/reference/cli.mdx`.
-
-| Topic | File | Read it when |
-| --- | --- | --- |
-| `setup` | [references/setup.md](references/setup.md) | Adding e2e to a project, writing `e2e.config.ts`, starting the app from the config, mobile targets |
-| `writing-tests` | [references/writing-tests.md](references/writing-tests.md) | Writing or fixing tests: fixtures, locators, actions, matchers, sign-in sessions, the `browser` fixture |
-| `agent` | [references/agent.md](references/agent.md) | Adding `agent.*` steps, picking a model, cost and budgets, the replay cache |
-| `running` | [references/running.md](references/running.md) | CLI flags, reporters, `.e2e/report.json`, exit codes, CI |
-| `explore` | [references/explore.md](references/explore.md) | Exploring an app toward a goal without a test file: `e2e explore`, its budgets, verdict, and `run.explore` |
-| `debugging` | [references/debugging.md](references/debugging.md) | A run failed: error codes and their fixes, `--headed`, `--debug`, `--ai-trace` |
-| `mcp` | [references/mcp.md](references/mcp.md) | Driving the live app from a coding agent over MCP: `e2e mcp`, its tools, and the explore-then-write loop |
-| `bug-bash` | [references/bug-bash.md](references/bug-bash.md) | Asked to bug bash, QA, or hunt for bugs across an app or a branch: parallel `e2e explore` charters, merging findings, proving each with a repro test |
 
 モデルの画像入力・schema・tool call の診断 helper は
 [debugging の Tools](references/debugging.md#tools)、証跡の秘密混入検査 helper は
 [running の Output](references/running.md#output) を必要時に読む。
 
-## Workflow
+## Workflow: writing a test
 
-1. Look at what exists: `e2e.config.ts` or `e2e.config.mts`, the `tests` glob
+1. Look at what exists: `e2e.config.ts`, `.mts`, `.js`, or `.mjs`, the `tests` glob
    (default `tests/**/*.e2e.ts`), `e2e` in `package.json`. Nothing there:
-   follow `setup`.
+   follow `setup` when the user has requested e2e (see Rules).
 2. Learn the screens before writing a test: routes, labels, roles, button
    text. Semantic locators need the accessible names the app renders, so read
    the components, open the page with `--headed`, or drive the live app over
-   the registered `e2e mcp` server (topic `mcp`): `open_session`, `observe`,
-   and `locate` show exact names and check a locator before you write it.
-3. Write `tests/<feature>.e2e.ts`. Drive the flow with `agent.act`, one goal
-   per call, and pin each outcome right after with `expect` or `agent.assert`.
+   a connected `e2e mcp` server (topic `mcp`): `open_session`, `observe`,
+   and `locate` show exact names and check a locator before you write it,
+   and each action prints the test line that repeats it.
+3. Write `tests/<feature>.e2e.ts`. Drive the flow with `agent.act`, one
+   atomic goal per call, and pin each outcome right after with `expect` or
+   `agent.assert`. A test with three goals makes three calls.
+   Start it on the screen it covers, since every rerun pays for the steps
+   before: in a browser a saved session instead of the sign-in form and
+   `app.open` on that screen's path, on a device `device.openLink`, and data
+   from the app's API (topic `writing-tests`).
    Exact values go through `screen`: a sign-in form in a setup test, a field
    that must receive one specific string, a count that must be one number.
-4. Run one file: `E2E_TELEMETRY_DISABLED=1 mise x -- pnpm exec e2e run tests/<feature>.e2e.ts`. Agent steps need a
-   model in the config and that provider's authentication (a saved
-   subscription login, an API key); a local endpoint may need none. Tests
-   without agent steps need no model.
-5. Read the failure: the reporter prints the error code, message, and a code
-   frame; `.e2e/report.json` has every step and artifact path. Fix the
-   locator, the expectation, or the app. Never add a sleep.
+4. Run only the test you are working on:
+   `E2E_TELEMETRY_DISABLED=1 mise x -- pnpm exec e2e run tests/<feature>.e2e.ts:<line>`,
+   the line its `test(` opens on, with the flags in "Rerunning a test while
+   you fix it" below. Agent steps need a model in the config and that
+   provider's authentication (a saved subscription login, an API key); a
+   local endpoint may need none. Tests without agent steps need no model.
+5. When it fails, fix it from what the run recorded (next section).
+
+## Workflow: fixing a failed test
+
+The run already saw every screen up to the failure. Fix from what it
+recorded; never walk the flow again from the start over MCP just to see a
+screen.
+
+1. Read the failure block in the terminal: the failing line with its code
+   frame, the message (an assertion's `expected` and `observed`), where the
+   screen was (`❯ at`: a URL on the web, the app and screen title on a
+   device), and the nodes nearest a failed locator (`❯ on screen`). Then
+   read the trace page it names (`❯ trace .e2e/results/<test>/trace.md`):
+   every step with what it did, what the app logged, the agent's turns, and
+   `## Screen at failure`, the screen one node per line (topic `debugging`).
+2. Fix every line that evidence covers, not only the one that failed: the
+   screen at failure shows the names the rest of that screen's lines need.
+   Fix the locator, the expectation, or the app. Never add a sleep or a
+   fixed delay (`setTimeout`, `waitForTimeout`): wait for the state you
+   need with `agent.waitFor('<that state>')` instead (topic `agent`; it
+   needs a model).
+3. A test stops at its first failed step (an `expect.soft` lets it go on),
+   and every wrong line after it costs another run. Before rerunning, check
+   the lines after it as far as you can: against the screen at failure, the
+   app source, or a live session.
+4. For a screen the evidence and the source leave out, look live (topic
+   `mcp`): open or reuse a session, go straight to that screen, then
+   `observe` and `locate`. On the web, `navigate` to the path of the `❯ at`
+   URL or the screen's route, and tap only to reach a state no URL opens. A
+   device session starts on the app's launch screen: take the shortest path
+   from there.
+5. Rerun only that test, the way the next section says (topic `mcp` says
+   when a session must close first). Repeat with the next failure.
+
+## Rerunning a test while you fix it
+
+Every run of a failing test waits out its failure, and every `agent.act`
+that runs live spends model calls. Keep each rerun to the one test and the
+lines you changed:
+
+- Run by `file:line`, not the file or the suite. After an edit above the
+  test, look its `test(` line up again: a stale line runs another test, or
+  fails with `NO_TESTS` listing the lines tests start at.
+- Add `--action-timeout 5000`: a locator that matches nothing fails in 5 s
+  instead of the default 30 s. It also bounds each action inside an agent
+  step, so keep it longer than the slowest screen takes to load. A `screen`
+  call's own `{ timeout }` still wins. An `expect` already gives up after
+  5 s by default (`assertionTimeout`).
+- Keep the replay cache on. A failed run keeps the recording of every goal
+  whose check passed, and the next run replays those with no model call.
+  New, changed, and failed goals run live, and so does a replay the trace
+  page shows as handed off. `agent.assert`, `agent.waitFor`, and
+  `agent.extract` always call the model. Leave `--no-cache` off: it sends every goal to the model
+  again. Only a `read-write` cache records: the local default, but not with
+  `CI` set and no cache mode in the config, nor in strict mode. A stopped
+  run (Ctrl-C, a command your tool's timeout kills, `--max-duration`) saves
+  nothing, so give the command a timeout longer than the test.
+- Don't rename the test, its `describe`, or its file, and don't reword a
+  goal, change its params, or change the agent's `context` or the test's
+  `agentContext` once a goal passes. Each is part of a recording's key, so
+  every goal it touches records again live. Fixing a locator or an
+  expectation keeps the recordings.
+- Add `--retries 0` when retries are on (`retries` in the config, or `CI`
+  set, where the default is 1); a `retries` option on the test or its
+  `describe` wins over the flag. Outside strict mode (`--strict-cache`, `cache.strict`), a
+  retry never replays: it runs every goal live and waits out the failure
+  again.
+- Once the test passes, drop `--action-timeout` and run it one time with
+  `--no-cache`: every goal runs live at the config's timeouts, which shows
+  the agent still reaches it without its recordings.
 
 ## Rules
 
@@ -97,6 +179,13 @@ package (`node_modules/e2e/docs` in a single-package project); a link such as
   (use that repo's package manager). Prefix `E2E_TELEMETRY_DISABLED=1` until the
   environment setting is active. Commands in upstream topics illustrate APIs;
   apply the local setup rules to installation, providers, and process startup.
+- In a project without e2e, set it up when the user requests it. Otherwise
+  ask before adding a test framework, and name any existing framework.
+- Live MCP tools need the project's own `e2e mcp` server registered in the
+  client (topic `mcp`); writing and running tests use the CLI directly.
+  Keep a session open across runs while you write or fix a web test; topic
+  `mcp` says when a run can go beside it, and what to do on
+  `APP_ALREADY_RUNNING`.
 - The config is `export default { ... } satisfies E2EConfig` with
   `import type { E2EConfig } from 'e2e'`. `targets` is required; a UI target
   names an engine and declares the app beside it: `{ engine: web(), app: { url, command } }`.
@@ -107,9 +196,10 @@ package (`node_modules/e2e/docs` in a single-package project); a link such as
   typed with `browser`.
 - Config and tests are ES modules whatever `package.json` sets as `type`.
 - Locators resolve when used. Actions wait for readiness and `expect` retries
-  assertions. Reads such as `textContent()` fail at once on zero matches and
-  `count()` answers from the current screen; nothing waits for a value to
-  change, so use a matcher when a value has to settle.
+  assertions. Reads such as `textContent()` wait for one match until the
+  action timeout, then answer the current value; `count()` and `isVisible()`
+  answer from the current screen. Nothing waits for a value to change, so use
+  a matcher when a value has to settle.
 - A locator that matches two nodes fails with `LOCATOR_AMBIGUOUS`; narrow it
   (topic `writing-tests`).
 - Secrets never appear in test code. Declare accounts under `credentials` and
@@ -118,15 +208,18 @@ package (`node_modules/e2e/docs` in a single-package project); a link such as
   namespaces: `secrets.get` never returns a password), and hand the opaque
   `Secret` only to `fill()` or `agent.act` params.
 - Agent instructions: one goal per `act`, the wording on screen, real values
-  in params. Judge meaning, not phrasing: `toContain('Pro')`, not an exact
-  sentence a model produced.
+  in params. A goal is atomic: one outcome that one check confirms. Two
+  outcomes worth checking are two goals, so split them into two `act` calls
+  (topic `agent`). Bad: `'add a todo and mark it done'`. Good: `'add a
+  todo'`, check, then `'mark the todo as done'`, check. Judge meaning, not
+  phrasing: `toContain('Pro')`, not an exact sentence a model produced.
 - Check each agent goal's outcome. A passing `act` with a recorded check can
   be cached and replayed without model calls (topic `agent`).
 - Shape the agent for this app: `context` for vocabulary the screens use,
   `system` for how it works, tools for a test API, named personas under
   `agents`. When a step fails, tighten the goal first, then the context, then
   the agent.
-- `.e2e/` is output (`report.json`, `artifacts/`, `cache/`, `logs/`; the
+- `.e2e/` is output (`report.json`, `results/`, `cache/`, `logs/`; the
   config's `output` moves the report and artifacts, never `cache/` or the
   app's log). Read it, never edit it.
 

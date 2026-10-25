@@ -31,7 +31,7 @@ Their licenses are preserved [here](references/find-skills-LICENSE.txt) and
 | Create a skill or improve its instructions | Read [authoring](references/authoring.md), then write and evaluate the skill |
 | Preserve a customization across updates | Write its intent, edit and verify the skill, then record the accepted content |
 | Refresh or remove installed skills | Update or remove the requested names, then inspect the result |
-| Explain a pending change or accept a manual edit | Inspect local drift with check and the whole skill directory before recording |
+| Explain a pending change or accept a manual edit | Inspect local drift with check and the complete skill directory before recording |
 | Set up PR checks or scheduled upstream updates | Read [CI and scheduled updates](references/ci.md); use separate agent workflows |
 
 Use the task's existing authorization. A search request authorizes discovery;
@@ -87,14 +87,23 @@ start an AI reviewer. Use the existing agent or editor to change content directl
 
 Inspect the repository's diff, new files, links, native root `skills-lock.json` registrations, skillctrl
 provenance and accepted hashes in `.agents/skillctrl/lock.json` when present.
-Check the whole skill directory, including executable scripts and references. Local
-commands do not commit, push, or create a PR. Complete those steps only when
+Check the whole skill directory, including executable scripts and references.
+For an update, start from the `updates` report, then inspect the whole installed
+directory before recording. Local commands do not commit, push, or create a PR. Complete those steps only when
 already requested or required by the user's authorized repository workflow.
 
 Important behavior:
 
 - `update` without names refreshes all registered skills; use it only when the
   requested scope is all skills. An unchanged upstream original is skipped.
+- A changed single-input original is three-way merged into the local skill,
+  using the registered tree hash to recover the previous original from repository
+  Git objects or upstream history, for every adapter without a recorded commit.
+  Local edits survive unless the upstream changed the same lines. Each changed
+  skill appears in the JSON `updates` with `merged`, `conflicted` (resolve the
+  reported diff3 regions), or `replaced` (no previous original was available:
+  re-adapt from the intent once). Legacy base snapshots are ignored;
+  `record` refuses content that still has conflict markers.
 - `remove` deletes the skill, its saved intent document, and registrations.
 - `--dry-run` checks basic arguments and reports command metadata without making
   changes. It does not fetch or inspect source content, confirm that the selected
