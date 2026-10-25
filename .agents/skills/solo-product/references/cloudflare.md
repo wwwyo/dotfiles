@@ -146,7 +146,7 @@ Cloudflare 固有の設定・制約はこの reference に集約する。公開�
   ```
 
 - block してはいけない path: `/.well-known/`（ACME、OAuth・MCP の discovery）と `/cdn-cgi/`。条件を足すときは、zone の HTTP analytics の path 上位（`httpRequestsAdaptiveGroups` の `clientRequestPath`・`edgeResponseStatus`）で正規の path を巻き込まないか確かめる。PHP などを実際に配信する app がある zone では、その host を条件から除く。
-- 操作: `cf rulesets entrypoint get http_request_firewall_custom -z <zone>` で既存ルールを確認する。entrypoint がない zone は `cf rulesets entrypoint update http_request_firewall_custom -z <zone> --body '{"rules":[<rule>]}'` で作る。これは ruleset 全体の置換なので、既存ルールがある zone では `cf rulesets rules create <ruleset-id> -z <zone> --body '<rule>'` で追加する。どちらも `--validate-only` で事前に検証できる。WAF custom rule は config 管理外の state（§7）。
+- 操作: `cf rulesets entrypoint get http_request_firewall_custom -z <zone>` で既存ルールを確認する。entrypoint がない zone は `cf rulesets entrypoint update http_request_firewall_custom -z <zone> --body '{"rules":[<rule>]}'` で作る。これは ruleset 全体の置換なので、既存ルールがある zone では `cf rulesets rules create <ruleset-id> -z <zone> --body '<rule>'` で追加する。`<rule>` は action と expression を持つ JSON（`{"action":"block","description":"Block scanner paths","expression":"<上の式を 1 行にしたもの>"}`）。どちらも `--validate-only` で事前に検証できる。WAF custom rule は config 管理外の state（§7）。
 - 検証: スキャナーの path が 403、正規の path と `/.well-known/...` が従来どおりの status を返すことを `curl -s -o /dev/null -w '%{http_code}'` で確かめる。発動数は Security > Events で見る。
 
 出典: https://developers.cloudflare.com/waf/custom-rules/ （Free 5 ルール・regex は Business 以上・account-level は Enterprise）、https://developers.cloudflare.com/workers/static-assets/binding/#run_worker_first 、https://developers.cloudflare.com/workers/static-assets/billing-and-limitations/ （Free で枠超過時の 429）（確認 2026-10-25）。
