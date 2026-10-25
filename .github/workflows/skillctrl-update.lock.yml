@@ -1,5 +1,5 @@
-# gh-aw-metadata: {"schema_version":"v4","frontmatter_hash":"53f25cfc0e3fda3ff0e94f73bfcef9e1b4557bd933d994b0c0b12f5a061a9eb6","body_hash":"2faec2e944640d4eee3e837d2a638123f0cb7b6cb3567d6032aa9b554e22fa89","compiler_version":"v0.92.0","strict":true,"agent_id":"skillctrl-engine","agent_model":"opencode-go/deepseek-v4.1-flash","agent_image_runner":"ubuntu-latest"}
-# gh-aw-manifest: {"version":1,"secrets":["COPILOT_GITHUB_TOKEN","GH_AW_DEFAULT_OTLP_ENDPOINT","GH_AW_DEFAULT_OTLP_HEADERS","GH_AW_GITHUB_MCP_SERVER_TOKEN","GH_AW_GITHUB_TOKEN","GITHUB_TOKEN","OPENCODE_API_KEY"],"actions":[{"repo":"actions/checkout","sha":"3d3c42e5aac5ba805825da76410c181273ba90b1","version":"v7.0.1"},{"repo":"actions/download-artifact","sha":"3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c","version":"3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c"},{"repo":"actions/download-artifact","sha":"9000827ccba6bdab643e8b6fd33ac0654aef8333","version":"v8.0.2"},{"repo":"actions/github-script","sha":"3a2844b7e9c422d3c10d287c895573f7108da1b3","version":"v9.0.0"},{"repo":"actions/setup-go","sha":"b7ad1dad31e06c5925ef5d2fc7ad053ef454303e","version":"v7.0.0"},{"repo":"actions/setup-node","sha":"949feb2413d6458794dcd2491c4babbbce0c15c1","version":"v7.1.0"},{"repo":"actions/upload-artifact","sha":"043fb46d1a93c77aae656e7c1c64a875d1fc6a0a","version":"043fb46d1a93c77aae656e7c1c64a875d1fc6a0a"},{"repo":"actions/upload-artifact","sha":"cf430e030ddbb5b0abf93d22962f4752f3646cd9","version":"v7.0.2"},{"repo":"github/gh-aw-actions/setup","sha":"458b269006dcf88e3b5496b6fbecabe4b9a0f954","version":"v0.92.0"},{"repo":"jdx/mise-action","sha":"c2a87611a18de5b3828c5652fe268e992400cb5c","version":"c2a87611a18de5b3828c5652fe268e992400cb5c"}],"containers":[{"image":"ghcr.io/github/gh-aw-firewall/agent:0.28.57","digest":"sha256:a9861b2fad1d29c586bbbf98840a61056e30e2720d8d9ec2c0def9049566bd8a","pinned_image":"ghcr.io/github/gh-aw-firewall/agent:0.28.57@sha256:a9861b2fad1d29c586bbbf98840a61056e30e2720d8d9ec2c0def9049566bd8a"},{"image":"ghcr.io/github/gh-aw-firewall/api-proxy:0.28.57","digest":"sha256:f2925ff32dc972a5d8b90a7785b6ca68052efd2575fe896556ac457e22e86dcc","pinned_image":"ghcr.io/github/gh-aw-firewall/api-proxy:0.28.57@sha256:f2925ff32dc972a5d8b90a7785b6ca68052efd2575fe896556ac457e22e86dcc"},{"image":"ghcr.io/github/gh-aw-firewall/cli-proxy:0.28.57","digest":"sha256:4584f030659ee51958223a3c6156e8119c6a94affbfcd92ce75f204702c52641","pinned_image":"ghcr.io/github/gh-aw-firewall/cli-proxy:0.28.57@sha256:4584f030659ee51958223a3c6156e8119c6a94affbfcd92ce75f204702c52641"},{"image":"ghcr.io/github/gh-aw-firewall/squid:0.28.57","digest":"sha256:be808c16b535ebabd070eebe086fe6bffd5bb86b2e5fe8e5cdad30068eb9c0ac","pinned_image":"ghcr.io/github/gh-aw-firewall/squid:0.28.57@sha256:be808c16b535ebabd070eebe086fe6bffd5bb86b2e5fe8e5cdad30068eb9c0ac"},{"image":"ghcr.io/github/gh-aw-mcpg:v0.4.31","digest":"sha256:dbec0f2ddef6adf83b7764019323096e3e5cc0f3886255f6320555b7fe2a7caf","pinned_image":"ghcr.io/github/gh-aw-mcpg:v0.4.31@sha256:dbec0f2ddef6adf83b7764019323096e3e5cc0f3886255f6320555b7fe2a7caf"},{"image":"ghcr.io/github/gh-aw-node","digest":"sha256:11c2c544876cdbaffefe0f7f1283b74838c209654b4934a78e23ed11f750490f","pinned_image":"ghcr.io/github/gh-aw-node@sha256:11c2c544876cdbaffefe0f7f1283b74838c209654b4934a78e23ed11f750490f"},{"image":"ghcr.io/github/github-mcp-server:v2.0.2","digest":"sha256:ffced0d76e77428532a2ced185516992d77fd146d69eec2f244e6237d1a97796","pinned_image":"ghcr.io/github/github-mcp-server:v2.0.2@sha256:ffced0d76e77428532a2ced185516992d77fd146d69eec2f244e6237d1a97796"}],"mcp_servers":[{"name":"safeoutputs","tools":["apply_skill_repairs","missing_data","missing_tool","noop","report_incomplete"]}],"threat_detection":{"mode":"disabled"}}
+# gh-aw-metadata: {"schema_version":"v4","frontmatter_hash":"d506442a3fa473db85a6c6ab01f2646c480bb3f7c840d9b867cfed2edae59683","body_hash":"2faec2e944640d4eee3e837d2a638123f0cb7b6cb3567d6032aa9b554e22fa89","compiler_version":"v0.92.0","strict":true,"agent_id":"skillctrl-engine","agent_model":"opencode-go/deepseek-v4.1-flash","agent_image_runner":"ubuntu-latest"}
+# gh-aw-manifest: {"version":1,"secrets":["COPILOT_GITHUB_TOKEN","GH_AW_DEFAULT_OTLP_ENDPOINT","GH_AW_DEFAULT_OTLP_HEADERS","GH_AW_GITHUB_MCP_SERVER_TOKEN","GH_AW_GITHUB_TOKEN","GITHUB_TOKEN","OPENCODE_API_KEY","SKILLCTRL_APP_PRIVATE_KEY"],"actions":[{"repo":"actions/checkout","sha":"3d3c42e5aac5ba805825da76410c181273ba90b1","version":"v7.0.1"},{"repo":"actions/create-github-app-token","sha":"64ab729a6294000f5aa4a4bc0b73d1f32bc45510","version":"v3.3.0"},{"repo":"actions/download-artifact","sha":"3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c","version":"3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c"},{"repo":"actions/download-artifact","sha":"9000827ccba6bdab643e8b6fd33ac0654aef8333","version":"v8.0.2"},{"repo":"actions/github-script","sha":"3a2844b7e9c422d3c10d287c895573f7108da1b3","version":"v9.0.0"},{"repo":"actions/setup-go","sha":"b7ad1dad31e06c5925ef5d2fc7ad053ef454303e","version":"v7.0.0"},{"repo":"actions/setup-node","sha":"949feb2413d6458794dcd2491c4babbbce0c15c1","version":"v7.1.0"},{"repo":"actions/upload-artifact","sha":"043fb46d1a93c77aae656e7c1c64a875d1fc6a0a","version":"043fb46d1a93c77aae656e7c1c64a875d1fc6a0a"},{"repo":"actions/upload-artifact","sha":"cf430e030ddbb5b0abf93d22962f4752f3646cd9","version":"v7.0.2"},{"repo":"github/gh-aw-actions/setup","sha":"458b269006dcf88e3b5496b6fbecabe4b9a0f954","version":"v0.92.0"},{"repo":"jdx/mise-action","sha":"c2a87611a18de5b3828c5652fe268e992400cb5c","version":"c2a87611a18de5b3828c5652fe268e992400cb5c"}],"containers":[{"image":"ghcr.io/github/gh-aw-firewall/agent:0.28.57","digest":"sha256:a9861b2fad1d29c586bbbf98840a61056e30e2720d8d9ec2c0def9049566bd8a","pinned_image":"ghcr.io/github/gh-aw-firewall/agent:0.28.57@sha256:a9861b2fad1d29c586bbbf98840a61056e30e2720d8d9ec2c0def9049566bd8a"},{"image":"ghcr.io/github/gh-aw-firewall/api-proxy:0.28.57","digest":"sha256:f2925ff32dc972a5d8b90a7785b6ca68052efd2575fe896556ac457e22e86dcc","pinned_image":"ghcr.io/github/gh-aw-firewall/api-proxy:0.28.57@sha256:f2925ff32dc972a5d8b90a7785b6ca68052efd2575fe896556ac457e22e86dcc"},{"image":"ghcr.io/github/gh-aw-firewall/cli-proxy:0.28.57","digest":"sha256:4584f030659ee51958223a3c6156e8119c6a94affbfcd92ce75f204702c52641","pinned_image":"ghcr.io/github/gh-aw-firewall/cli-proxy:0.28.57@sha256:4584f030659ee51958223a3c6156e8119c6a94affbfcd92ce75f204702c52641"},{"image":"ghcr.io/github/gh-aw-firewall/squid:0.28.57","digest":"sha256:be808c16b535ebabd070eebe086fe6bffd5bb86b2e5fe8e5cdad30068eb9c0ac","pinned_image":"ghcr.io/github/gh-aw-firewall/squid:0.28.57@sha256:be808c16b535ebabd070eebe086fe6bffd5bb86b2e5fe8e5cdad30068eb9c0ac"},{"image":"ghcr.io/github/gh-aw-mcpg:v0.4.31","digest":"sha256:dbec0f2ddef6adf83b7764019323096e3e5cc0f3886255f6320555b7fe2a7caf","pinned_image":"ghcr.io/github/gh-aw-mcpg:v0.4.31@sha256:dbec0f2ddef6adf83b7764019323096e3e5cc0f3886255f6320555b7fe2a7caf"},{"image":"ghcr.io/github/gh-aw-node","digest":"sha256:11c2c544876cdbaffefe0f7f1283b74838c209654b4934a78e23ed11f750490f","pinned_image":"ghcr.io/github/gh-aw-node@sha256:11c2c544876cdbaffefe0f7f1283b74838c209654b4934a78e23ed11f750490f"},{"image":"ghcr.io/github/github-mcp-server:v2.0.2","digest":"sha256:ffced0d76e77428532a2ced185516992d77fd146d69eec2f244e6237d1a97796","pinned_image":"ghcr.io/github/github-mcp-server:v2.0.2@sha256:ffced0d76e77428532a2ced185516992d77fd146d69eec2f244e6237d1a97796"}],"mcp_servers":[{"name":"safeoutputs","tools":["apply_skill_repairs","missing_data","missing_tool","noop","report_incomplete"]}],"threat_detection":{"mode":"disabled"}}
 # This file was automatically generated by gh-aw (v0.92.0). DO NOT EDIT. To debug this workflow, load the skill at https://github.com/github/gh-aw/blob/main/debug.md
 #
 #    ___                   _   _
@@ -39,9 +39,11 @@
 #   - GH_AW_GITHUB_TOKEN
 #   - GITHUB_TOKEN
 #   - OPENCODE_API_KEY
+#   - SKILLCTRL_APP_PRIVATE_KEY
 #
 # Custom actions used:
 #   - actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+#   - actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
 #   - actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
 #   - actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
 #   - actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
@@ -1440,6 +1442,25 @@ jobs:
           PR_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
           PR_REF: ${{ github.event.pull_request.head.ref }}
+      - name: Mint the PR app token
+        id: app-token
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        env:
+          CHECKER_SOURCE: ${{ github.event.pull_request.base.sha || github.sha }}
+          CI_DIR: /tmp/skillctrl
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+          GH_AW_AGENT_OUTPUT: ${{ runner.temp }}/gh-aw/safe-jobs/agent_output.json
+          GH_AW_JOB_CHECK_RUN_ID: ${{ job.check_run_id }}
+          GH_TOKEN: ${{ github.token }}
+          PR_BASE: ${{ github.event.pull_request.base.sha || github.sha }}
+          PR_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_REF: ${{ github.event.pull_request.head.ref }}
+        with:
+          client-id: ${{ vars.SKILLCTRL_APP_CLIENT_ID }}
+          permission-pull-requests: write
+          private-key: ${{ secrets.SKILLCTRL_APP_PRIVATE_KEY }}
+          repositories: ${{ github.event.repository.name }}
       - name: Verify the accepted lock and publish
         run: |
           mkdir -p "$CI_DIR"
@@ -1465,11 +1486,12 @@ jobs:
             push origin "HEAD:refs/heads/automation/skillctrl-update"
           existing="$(jq -r '.existing_pr // empty' "$CI_DIR/plan.json" 2>/dev/null || true)"
           if [[ -z "$existing" ]]; then
-            gh pr create --draft --base "$DEFAULT_BRANCH" --head automation/skillctrl-update \
+            GH_TOKEN="$APP_TOKEN" gh pr create --draft --base "$DEFAULT_BRANCH" --head automation/skillctrl-update \
               --title "chore(skills): weekly upstream refresh" \
               --body "Automated upstream skill refresh reconciled with saved intents by the skillctrl update workflow."
           fi
         env:
+          APP_TOKEN: ${{ steps.app-token.outputs.token }}
           CHECKER_SOURCE: ${{ github.event.pull_request.base.sha || github.sha }}
           CI_DIR: /tmp/skillctrl
           DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
@@ -1991,6 +2013,14 @@ jobs:
             echo "=== $t ==="
             bash "$t"
           done
+      - name: Mint the PR app token
+        id: app-token
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        with:
+          client-id: ${{ vars.SKILLCTRL_APP_CLIENT_ID }}
+          permission-pull-requests: write
+          private-key: ${{ secrets.SKILLCTRL_APP_PRIVATE_KEY }}
+          repositories: ${{ github.event.repository.name }}
       - name: Verify the accepted lock and publish
         run: |
           mkdir -p "$CI_DIR"
@@ -2019,12 +2049,14 @@ jobs:
           Path('/tmp/skillctrl/existing-pr.txt').write_text(plan.get('existing_pr') or '')
           PY
             if [[ ! -s /tmp/skillctrl/existing-pr.txt ]]; then
-              gh pr create --draft --base "$DEFAULT_BRANCH" --head automation/skillctrl-update \
+              GH_TOKEN="$APP_TOKEN" gh pr create --draft --base "$DEFAULT_BRANCH" --head automation/skillctrl-update \
                 --title "chore(skills): weekly upstream refresh" \
                 --body "Automated upstream skill refresh; no saved intents required re-adaptation."
             fi
           fi
           cp "$CI_DIR/check.json" /tmp/skillctrl-lock-state.json
+        env:
+          APP_TOKEN: ${{ steps.app-token.outputs.token }}
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
           if-no-files-found: error
