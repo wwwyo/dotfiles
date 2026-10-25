@@ -643,10 +643,12 @@ installed skills with their saved customization intent. `skills-lock.json`
 The selection plan lists `review_skills`: registered upstream skills whose
 directory hash drifted from the accepted lock after the import, plus `head`,
 the default-branch commit being updated, and `updates`: the `skillctrl update`
-report for each changed skill (`status`, `path`, `original`, `changes`,
-`conflicts`). The harness commits the imported state on top of `head`, so
-`git diff HEAD~1 -- <path>` shows what the import changed in the skill and
-`git diff HEAD~1 -- <original>` shows the pure upstream difference.
+report for each changed skill (`status`, `path`, `base`, `changes`,
+`conflicts`, `reason`). skillctrl recovers the previous original from Git
+history by its registered tree hash and three-way merges the upstream change
+into the local skill. The harness commits the imported state on top of `head`,
+so `git diff HEAD~1 -- <path>` shows what the import changed in the skill, and
+`changes` lists the upstream file changes.
 
 For each review skill, read `.agents/skillctrl/intents/<name>.md` and only what
 its update `status` needs. Do not read whole skills when a diff suffices:
@@ -654,15 +656,15 @@ its update `status` needs. Do not read whole skills when a diff suffices:
 | `status` | Read | Task |
 | --- | --- | --- |
 | `merged` | `git diff HEAD~1 -- <path>` | Check the applied upstream change against the intent; edit only where it violates the intent |
-| `conflicted` | `conflicts` and `git diff HEAD~1 -- <path>` | Resolve each reported region following the intent; for binary or modify/delete conflicts, compare with the new original under `original` |
-| `replaced` | The whole skill directory | No previous original was available: adapt the new original from the intent once; later updates merge |
+| `conflicted` | `conflicts` and `git diff HEAD~1 -- <path>` | Resolve each reported diff3 region (`local` / `previous original` / `new original`) following the intent. Binary and modify/delete conflicts keep the local side; if the intent cannot be judged without the new upstream file, leave the skill unrecorded and report it |
+| `replaced` | `reason` and the whole skill directory | No verified previous original was recoverable: adapt the new original from the intent once; later updates merge |
 | `refreshed` | Root `SKILL.md` and `git diff HEAD~1` of each changed input | Check that routing still fits the refreshed originals |
 
 Then:
 
 1. Edit only `.agents/skills/<name>/`. Keep immutable bundled upstream
-   snapshots under `references/` intact. Do not edit stored originals under
-   `.agents/skillctrl/originals/`, intent documents, workflows, or policy.
+   snapshots under `references/` intact. Do not edit intent documents,
+   workflows, or policy.
 2. Confirm no conflict markers remain, for example with
    `git grep -n -e '^<<<<<<< local' -- .agents/skills/<name>`.
 3. Verify the result, then run `"$SKILLCTRL_BIN" record <name>` for that
