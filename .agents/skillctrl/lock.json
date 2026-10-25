@@ -8,7 +8,7 @@
     "e2e": "eb1880edaab4920396ee38f6f2dda585b6f5aac4",
     "grill-with-docs": "8aa67ae654f28fb6a9098a3dd287536438fc2092",
     "langfuse": "65622ce0bb72e78cf7b4afa66477b97170157db9",
-    "learn": "2b5c756a828d6bed0f03c667134a13c322dd62a8",
+    "learn": "6124fddd22c83d2a2a6c7a542aa142bc958c9d5f",
     "orca-cli": "bc02fffd55ef88b063adf30fee8140d86d951954",
     "orchestration": "a081a8cd8c678a7eb907756d13a469ae61329cec",
     "prototype": "37c11153abe53b72cbc1f6c403b18d4c61054d08",
@@ -193,17 +193,17 @@
       "updatedAt": "2026-10-25T04:03:01.634Z"
     },
     "learn": {
-      "computedHash": "02825a5fb76728f92f974e3b57ab179df63a1232ba9c182ac96fda5099dd13dc",
+      "computedHash": "b6dbc87b289cdd187947dc7e2beeef848a96f3a836f30a8c258c2825d77da041",
       "installedAt": "2026-10-05T08:51:53.784Z",
       "nativeName": "answer-me-with-html",
       "skill": "answer-me-with-html",
-      "skillFolderHash": "993aa21d57e18ebc82801d20c22c0efb4183369e",
+      "skillFolderHash": "db1d8d2ca026eba8836b20cc037609238e4d661d",
       "skillPath": "skills/answer-me-with-html/SKILL.md",
       "source": "QingYunA/answer-me-with-html",
-      "sourceCommit": "fa42f5c15acfc4946d5f5bb314b35476a5a5cda9",
+      "sourceCommit": "140374a46d16d4462fd806164ac5e78709cd8302",
       "sourceType": "github",
       "sourceUrl": "https://github.com/QingYunA/answer-me-with-html.git",
-      "updatedAt": "2026-10-25T04:03:02.852Z"
+      "updatedAt": "2026-10-25T05:21:54.615Z"
     },
     "orca-cli": {
       "installedAt": "2026-09-23T03:49:56.682Z",
