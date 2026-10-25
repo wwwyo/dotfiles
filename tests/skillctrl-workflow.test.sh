@@ -147,7 +147,7 @@ with tempfile.TemporaryDirectory(prefix='skillctrl-workflow-') as tmp:
     lock_text = (source / 'home/dot_config/mise/mise.lock').read_text()
     toolchain = tomllib.loads(lock_text)['tools']['go'][0]['version']
     config = '''[tools]
-"go:github.com/wwwyo/skillctrl" = "727161586f725278ba1f7cd8f70c14137724c058"
+"go:github.com/wwwyo/skillctrl" = "3e5135a03c14828323990c44dcac29d76750bf7a"
 go = "GO_FIXTURE_VERSION"
 node = "24.21.0"
 "npm:@earendil-works/pi-coding-agent" = "1.0.0"
@@ -180,7 +180,7 @@ UNRELATED_SECRET = "fixture-only-do-not-copy"
     # The trusted pin step rejects mutable refs and strips unrelated settings.
     run_step(pr_workflow, 'Read the trusted skillctrl pin')
     selected = tomllib.loads((cli_dir / 'mise.toml').read_text())
-    assert selected == {'tools': {'go:github.com/wwwyo/skillctrl': '727161586f725278ba1f7cd8f70c14137724c058', 'go': toolchain},
+    assert selected == {'tools': {'go:github.com/wwwyo/skillctrl': '3e5135a03c14828323990c44dcac29d76750bf7a', 'go': toolchain},
                         'settings': {'pin': True, 'minimum_release_age': '7d'}}
     assert (cli_dir / 'mise.toml').read_text().count('pi-coding-agent') == 0
     assert (cli_dir / 'node.txt').read_text() == '24.21.0'
