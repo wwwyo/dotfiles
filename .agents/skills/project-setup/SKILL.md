@@ -132,6 +132,24 @@ mise exec -- gh secure status --repo <owner>/<repo>
 
 `.github/dependabot.yml`（`version: 2`）を生成する。実際の manifest・lock file に合わせて `updates` の ecosystem・directory を選び、各対象に `schedule.interval: weekly` と `cooldown.default-days: 7` を設定する。ステップ 11 で導入する workflow も含め、GitHub Actions を使う場合は `github-actions`（`directory: "/"`）を加える。[対応する設定値](https://docs.github.com/en/code-security/reference/supply-chain-security/dependabot-options-reference#package-ecosystem) を参照する。
 
+各 `updates` 対象に ecosystem 名の `groups` を設け、`update-types: [minor, patch]` で version update を1つの PR にまとめる（bun・uv・github-actions 等すべて）。major は破壊的変更を個別に見るため package ごとの PR のままにする。security update は group の対象外とし、`applies-to` は既定値が `version-updates` なので書かない（[groups の仕様](https://docs.github.com/en/code-security/reference/supply-chain-security/dependabot-options-reference#groups)）。bun の例:
+
+```yaml
+version: 2
+updates:
+  - package-ecosystem: bun
+    directory: "/"
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 7
+    groups:
+      bun:
+        update-types: [minor, patch]
+```
+
+package ごとに PR を分けると、同じ lockfile の更新が merge のたびにずれて rebase 待ちになり、版を揃える必要のある `ai` と `@ai-sdk/*` 等が別 PR では型検査を通らないこともある。まとめることで、version update の open PR 上限（既定で ecosystem ごとに5件）に詰まって他の更新が出ない状況も減らす。
+
 生成した設定をデフォルトブランチへ commit・push する。更新対象の manifest・workflow がまだなければ、初回追加時に `dependabot.yml` を作成・追記するようステップ 13 の handoff に含める。
 
 lockfile を commit する JS/TS の package manager（bun / npm / pnpm / yarn）を使う場合は、Dependabot が lockfile 未追従の PR を作ったときに自動修復する workflow も生成する。背景・`pull_request_target` が必要な理由・雛形は [references/dependabot-lockfile.md](references/dependabot-lockfile.md) に従う。
