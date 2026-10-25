@@ -1,6 +1,6 @@
 ---
 name: pr-auto-merge
-description: "wwwyo/* の open PR を triage し、QA・Blast Radius の根拠を確認して merge 可否と修正依頼を判断する routine。Orca automation または /pr-auto-merge で実行する。通常の単一 PR 作成・レビューには使わない。"
+description: "wwwyo/*・fudoki-hensansitu/* の open PR を triage し、QA・Blast Radius の根拠を確認して merge 可否と修正依頼を判断する routine。Orca automation または /pr-auto-merge で実行する。通常の単一 PR 作成・レビューには使わない。"
 ---
 
 # pr-auto-merge (pr-merge-lane)

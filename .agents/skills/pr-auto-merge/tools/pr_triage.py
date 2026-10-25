@@ -69,6 +69,7 @@ except Exception:
     JST = timezone(timedelta(hours=9))
 
 OWNER = "wwwyo"
+REPO_OWNERS = (OWNER, "fudoki-hensansitu")
 STATE_DIR = Path(os.environ.get("PR_WATCH_STATE_DIR",
                                 Path.home() / ".local" / "state" / "pr-watch"))
 STATE_FILE = STATE_DIR / "state.json"
@@ -261,13 +262,14 @@ def orca_json(args, timeout=120):
 # ---------- GitHub fetch ----------
 
 def list_open_prs():
-    """owner:wwwyo の open PR を全件列挙する。search API は 1000 件 hard
+    """対象 owner の open PR を全件列挙する。search API は 1000 件 hard
     cap があり、total_count と一致しなければ取り切れていない → fail-closed
     （先頭だけで判定して 51件目以降を見落とすのと同じ失敗を防ぐ）。"""
     items, total = [], None
     for page in range(1, MAX_PAGES + 1):
         d = gh_json(["api", "-X", "GET", "search/issues",
-                     "-f", f"q=is:pr is:open owner:{OWNER}",
+                     "-f", "q=is:pr is:open " + " ".join(
+                         f"owner:{owner}" for owner in REPO_OWNERS),
                      "-f", f"per_page={PR_ENUM_LIMIT}",
                      "-f", f"page={page}"])
         if total is None:
@@ -1643,13 +1645,15 @@ def spawn_worktree(repo_name, number, head_ref):
                          "--name", name, "--no-parent"], timeout=300)
     except ApiError as e:
         # repo 未登録 (repo_not_found) のときだけ登録して再試行する
-        # （~/src/github.com/wwwyo/<name> が個人 repo の規約 path）。
         # timeout 等の非回復エラーで再試行すると原因を覆い隠すので絞る
         if "repo_not_found" not in str(e):
             raise
-        canonical = Path.home() / "src" / "github.com" / "wwwyo" / repo_name
-        if not canonical.is_dir():
+        candidates = [Path.home() / "src" / "github.com" / owner / repo_name
+                      for owner in REPO_OWNERS]
+        existing = [path for path in candidates if path.is_dir()]
+        if len(existing) != 1:
             raise
+        canonical = existing[0]
         orca_json(["repo", "add", "--path", str(canonical)], timeout=60)
         res = orca_json(["worktree", "create", "--repo",
                          f"name:{repo_name}", "--name", name,

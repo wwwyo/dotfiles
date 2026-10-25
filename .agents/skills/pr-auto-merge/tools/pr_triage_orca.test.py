@@ -107,7 +107,17 @@ if tool == 'orca':
     else:
         raise AssertionError(args)
 elif tool == 'gh':
-    if args[:2] == ['pr', 'view']:
+    if mode == 'enumerate-owners':
+        assert args[:4] == ['api', '-X', 'GET', 'search/issues'], args
+        assert 'q=is:pr is:open owner:wwwyo owner:fudoki-hensansitu' in args, args
+        page = int(next(a.split('=', 1)[1] for a in args if a.startswith('page=')))
+        owner = ['wwwyo', 'fudoki-hensansitu'][page - 1]
+        print(json.dumps({'total_count': 2, 'items': [{
+            'number': page, 'title': owner,
+            'repository_url': 'https://api.github.com/repos/' + owner + '/fixture',
+            'html_url': 'https://github.com/' + owner + '/fixture/pull/' + str(page),
+            'user': {'login': 'wwwyo', 'type': 'User'}}]}))
+    elif args[:2] == ['pr', 'view']:
         print(json.dumps({'number': 30, 'state': 'OPEN', 'author': {'login': 'wwwyo'},
                           'headRefOid': 'fixture-sha', 'headRefName': 'wwwyo/fix',
                           'updatedAt': datetime.now(timezone.utc).isoformat() if mode == 'recent-head' else '2026-10-01T00:00:00Z',
@@ -157,6 +167,20 @@ class OrcaCliTest(unittest.TestCase):
         return subprocess.run([sys.executable, str(SCRIPT), *args],
                               env=dict(self.env, FIXTURE_MODE=mode),
                               capture_output=True, text=True, timeout=20)
+
+    def test_enumeration_includes_both_owners_across_pages(self):
+        runner = """import importlib.util, json, sys
+spec = importlib.util.spec_from_file_location('pt', sys.argv[1])
+pt = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(pt)
+print(json.dumps(pt.list_open_prs()))
+"""
+        result = subprocess.run([sys.executable, '-c', runner, str(SCRIPT)],
+                                env=dict(self.env, FIXTURE_MODE='enumerate-owners'),
+                                capture_output=True, text=True, timeout=20)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertEqual([(p['repo'], p['number']) for p in json.loads(result.stdout)],
+                         [('wwwyo/fixture', 1), ('fudoki-hensansitu/fixture', 2)])
 
     def test_dispatch_cli_defers_without_starting_or_sending(self):
         for mode in ("busy-shell", "busy-claude", "recent-head", "dirty"):

@@ -379,10 +379,12 @@ def resolve_repo(md):
             # dir が消えていて git が答えられない歴史 trace のみ規約で推定
             m = re.search(r"/orca/workspaces/([^/]+)/", wd)
             if m:
-                cand = os.path.expanduser(
-                    f"~/src/github.com/wwwyo/{m.group(1)}")
-                if os.path.isdir(cand):
-                    rr = cand
+                candidates = [os.path.expanduser(
+                    f"~/src/github.com/{owner}/{m.group(1)}")
+                    for owner in ("wwwyo", "fudoki-hensansitu")]
+                existing = [cand for cand in candidates if os.path.isdir(cand)]
+                if len(existing) == 1:
+                    rr = existing[0]
     return wd, rr
 
 
