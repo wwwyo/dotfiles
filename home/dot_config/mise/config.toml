@@ -16,7 +16,8 @@
 "aqua:sharkdp/fd" = "10.5.0"
 go = "1.27.2"
 node = "24.22.0"
-"npm:@anthropic-ai/claude-code" = "2.1.302"
+# Use the official native release; the npm wrapper requires postinstall.
+"aqua:anthropics/claude-code" = "2.1.302"
 "npm:@google/gemini-cli" = "0.64.0"
 "npm:@playwright/test" = "1.64.1"
 "npm:e2e" = "0.21.2"
