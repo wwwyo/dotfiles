@@ -121,7 +121,7 @@ merge record の耐久性: merge 発行前に intent（対象 PR・head SHA・�
 - [ ] draft PR は merge されず hold に載る。author が ready 化したあとの tick で通常の判定に回る
 - [ ] 要判定 path に触れる PR は LLM judge が可と判定しない限り merge されない。ただし diff が nits・typo のみの場合は judge が常に可と判定できる
 - [ ] bot の依存更新のみの PR は、実 manifest 差分から全更新が minor/patch または devDependencies（major 含む。mise `[tools]` の固定 semver pin 更新も対象）と確定できれば judge を介さず lane で merge される。runtime major（0.x 台の minor・0.0.x 台の patch を含む）・peerDependencies の更新・確定不能な更新は judge が既存の dependabot 基準を適用したうえで可と判定した場合に merge される（この経路では `pullfrog-approval` を要求しない）。judge ok の登録後、残りの hard gate がその時点で通るなら次 tick を待たず同じ実行内で merge される
-- [ ] dependabot PR は公式の変更内容と実際の利用箇所を照合し、互換性が確認できないもの・cooldown で install が落ちているものは lane で merge されない
+- [ ] dependabot PR は公式の変更内容と実際の利用箇所を照合し、互換性が確認できないもの・cooldown で install が落ちているものは lane で merge されない。セキュリティ修正の cooldown 失敗は下記の例外で修正・検証したうえで通常の merge gate に戻す
 - [ ] `reviewDecision` が `CHANGES_REQUESTED` の PR は thread が無くても merge されない（人間の変更要求を push で通過しない）
 - [ ] diff が nits・typo のみでも、常に hold の path に触れる PR は merge されない
 - [ ] LLM judge が可と判定した後に head・本文・base・check 結果が変わった PR は、古い判定で merge されない
@@ -136,7 +136,7 @@ merge record の耐久性: merge 発行前に intent（対象 PR・head SHA・�
 - [ ] API 失敗の tick では merge・削除が実行されない
 - [ ] その日に行われた merge・dispatch・hold・削除が日次報告から追える
 - [ ] CONFLICTING と bot の依存更新の CI 失敗・judge repair が次 tick の dispatch 対象になる。作業中の保留・同一 head+障害の dedup・送信上限・delivery 検証はレビュー指摘と共通
-- [ ] cooldown の CI 失敗は rerun・回避せず、解除日時を報告する。依存更新前からの失敗や振る舞いの選択が必要な修正は行わない
+- [ ] セキュリティ修正（Dependabot の security update、または GitHub の advisory に対応する修正版への更新）の PR が cooldown で落ちている場合に限り、routine は severity に関わらず、修正を含む最も古い版だけを exact pin のまま cooldown の例外に入れ、待つかどうかをユーザーに確認せず通常の修正・検証へ進める。例外は修正版の公開から repo の cooldown 期間が過ぎたら外し、例外を入れたときは解除できる日時（公開時刻 + cooldown 期間）を PR 本文に書く。指定方法は各 repo の設定に従い、通常の CI・レビュー・merge gate を満たす。それ以外の通常の version update は時間以外で解消せず、rerun・cooldown の解除や除外・version の変更をせず、解除日時を PR 本文に書いて返す。依存更新前からの失敗や振る舞いの選択が必要な修正は行わない
 - [ ] 日次の全件レビュー・重複 PR の統合・close・merge の gate 迂回経路が存在しない
 
 ## Success Metrics
