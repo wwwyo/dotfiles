@@ -35,7 +35,7 @@ pf_set auto-merge 'false'
 pf_set mention.enabled 'true'
 pf_set mention.non-collaborators 'false'
 pf_set review.mode 'agent'
-pf_set review.non-collaborators 'false'
+pf_set review.non-collaborators 'true'   # skillctrl-update の draft PR は GitHub App（collaborator 外）が作るため
 pf_set review.re-review 'true'
 pf_set review.approve 'false'
 pf_set review.drafts 'true'
