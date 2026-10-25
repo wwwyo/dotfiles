@@ -69,6 +69,9 @@ if tool == 'orca':
     elif args[:2] == ['repo', 'add']:
         (root / 'registered').touch()
         reply({})
+    elif args[:2] == ['repo', 'list']:
+        reply({'repos': [{'path': str(root / 'checkout'), 'displayName': 'fixture'}]
+               if (root / 'registered').exists() else []})
     elif args[:2] == ['terminal', 'create']:
         reply({'terminal': {'handle': 'fixture-agent'}})
     elif args[:2] == ['terminal', 'show']:
@@ -117,6 +120,8 @@ elif tool == 'gh':
             'repository_url': 'https://api.github.com/repos/' + owner + '/fixture',
             'html_url': 'https://github.com/' + owner + '/fixture/pull/' + str(page),
             'user': {'login': 'wwwyo', 'type': 'User'}}]}))
+    elif args[:1] == ['api'] and len(args) == 2 and args[1].startswith('repos/'):
+        print(json.dumps({'full_name': os.environ.get('FIXTURE_RESOLVED_REPO', args[1][6:])}))
     elif args[:2] == ['pr', 'view']:
         print(json.dumps({'number': 30, 'state': 'OPEN', 'author': {'login': 'wwwyo'},
                           'headRefOid': 'fixture-sha', 'headRefName': 'wwwyo/fix',
@@ -137,7 +142,9 @@ elif tool == 'mise':
     print('opencode-go deepseek-v4.1-flash 1M 128K yes yes')
     print('opencode-go mimo-v2.6-flash 1M 128K yes yes')
 elif tool == 'git':
-    if mode == 'dirty':
+    if args[-3:] == ['remote', 'get-url', 'origin']:
+        print('https://github.com/' + os.environ.get('FIXTURE_REMOTE', 'wwwyo/fixture') + '.git')
+    elif mode == 'dirty':
         print(' M work.py')
 else:
     raise AssertionError(tool)
@@ -149,6 +156,7 @@ class OrcaCliTest(unittest.TestCase):
         self.tmp = tempfile.TemporaryDirectory(prefix="pr-triage-orca-")
         self.addCleanup(self.tmp.cleanup)
         self.root = Path(self.tmp.name)
+        (self.root / 'checkout').mkdir()
         bins = self.root / "bin"
         bins.mkdir()
         for name in ("orca", "gh", "git", "mise"):
@@ -196,10 +204,14 @@ print(json.dumps(pt.list_open_prs()))
                 self.assertEqual(orca_calls, [["worktree", "ps"], ["terminal", "list"]])
                 self.assertFalse((self.root / "state/state.json").exists())
 
-    def test_unregistered_repo_is_registered_and_dispatch_starts(self):
+    def registration_cli(self, repo="wwwyo/fixture", remote="wwwyo/fixture",
+                         path_owner="wwwyo", resolved=None):
         # Keep the canonical-path fixture isolated; CI has no user's checkout.
-        fixture_home = self.root / "home"
-        (fixture_home / "src/github.com/wwwyo/fixture").mkdir(parents=True)
+        fixture_home = Path(tempfile.mkdtemp(dir=self.root))
+        (fixture_home / "src/github.com" / path_owner / "fixture").mkdir(parents=True)
+        (self.root / "registered").unlink(missing_ok=True)
+        (self.root / "calls.jsonl").unlink(missing_ok=True)
+        (self.root / "state/state.json").unlink(missing_ok=True)
         runner = """import runpy, sys
 from pathlib import Path
 from unittest.mock import patch
@@ -210,14 +222,19 @@ with patch.object(Path, 'home', return_value=Path(fixture_home)):
 """
         result = subprocess.run(
             [sys.executable, "-c", runner, str(fixture_home), str(SCRIPT),
-             "dispatch", "--repo", "wwwyo/fixture", "--number", "30"],
-            env=dict(self.env, FIXTURE_MODE="register"),
+             "dispatch", "--repo", repo, "--number", "30"],
+            env=dict(self.env, FIXTURE_MODE="register", FIXTURE_REMOTE=remote,
+                     FIXTURE_RESOLVED_REPO=resolved or remote),
             capture_output=True, text=True, timeout=20)
+        return result
+
+    def test_unregistered_repo_is_registered_and_dispatch_starts(self):
+        result = self.registration_cli()
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         self.assertTrue(json.loads(result.stdout)["dispatched"])
         calls = [json.loads(s) for s in (self.root / "calls.jsonl").read_text().splitlines()]
         self.assertEqual([c[1:3] for c in calls if c[0] == "orca"], [
-            ["worktree", "ps"], ["worktree", "create"], ["repo", "add"],
+            ["worktree", "ps"], ["repo", "list"], ["worktree", "create"], ["repo", "add"],
             ["worktree", "create"], ["terminal", "create"],
             ["terminal", "wait"], ["terminal", "show"], ["terminal", "send"]])
         create_call = next(c for c in calls if c[:3] == ["orca", "terminal", "create"])
@@ -227,6 +244,25 @@ with patch.object(Path, 'home', return_value=Path(fixture_home)):
         checkout = next(i for i, c in enumerate(calls) if c[0] == "git" and "checkout" in c)
         launch = next(i for i, c in enumerate(calls) if c[:3] == ["orca", "terminal", "create"])
         self.assertLess(checkout, launch)
+
+    def test_org_registration_accepts_current_and_transferred_checkout(self):
+        for path_owner, remote in [('fudoki-hensansitu', 'fudoki-hensansitu/fixture'),
+                                   ('wwwyo', 'wwwyo/fixture')]:
+            with self.subTest(path_owner=path_owner):
+                result = self.registration_cli(
+                    repo='fudoki-hensansitu/fixture', remote=remote,
+                    path_owner=path_owner, resolved='fudoki-hensansitu/fixture')
+                self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+                self.assertTrue(json.loads(result.stdout)['dispatched'])
+
+    def test_registration_rejects_another_owners_same_name_checkout(self):
+        result = self.registration_cli(repo='fudoki-hensansitu/fixture')
+        self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
+        self.assertIn('canonical checkout ambiguous or unavailable', result.stdout)
+        calls = [json.loads(s) for s in (self.root / 'calls.jsonl').read_text().splitlines()]
+        self.assertFalse(any(c[:3] in [['orca', 'repo', 'add'],
+                                      ['orca', 'worktree', 'create'],
+                                      ['orca', 'terminal', 'create']] for c in calls))
 
     def test_unsupported_receipt_uses_fresh_native_evidence(self):
         (self.root / "registered").touch()
@@ -331,6 +367,7 @@ class DispatchSafetyTest(unittest.TestCase):
                        mergeable="CONFLICTING", baseRefOid="base",
                        author={"login": "wwwyo"}, updatedAt="2026-10-21T02:38:11Z")
         self.w = dict(worktreeId="fixture::paddle", repo="fudoki", path="/fixture",
+                      githubRepo="wwwyo/fudoki",
                       branch="refs/heads/wwwyo/paddle-onnx-default", status="inactive",
                       agents=[], liveTerminalCount=0)
         self.pt.sh = mock.Mock(return_value=SimpleNamespace(stdout=""))
@@ -342,6 +379,14 @@ class DispatchSafetyTest(unittest.TestCase):
 
     def old_head(self):
         self.pr["updatedAt"] = "2026-10-21T01:00:00Z"
+
+    def test_dispatch_never_revives_another_owners_same_name_worktree(self):
+        self.old_head()
+        self.w['githubRepo'] = 'fudoki-hensansitu/fudoki'
+        self.w['linkedPR'] = {'number': self.pr['number'], 'state': 'open'}
+        self.assertEqual(self.route()['route'], 'spawn')
+        self.w['githubRepo'] = None
+        self.assertEqual(self.route()['route'], 'defer')
 
     def test_incident_pr_creation_and_recent_head_both_defer(self):
         # 12:01 tick / 11:38 PR creation, then head pushed a few minutes ago.

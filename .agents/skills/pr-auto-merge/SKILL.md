@@ -235,6 +235,7 @@ dispatch ガードの延期も Hold に載せ、恒久的な保留と区別し�
 | `PR recently updated; defer until <UTC>` | PR 更新後の待機（更新待機の期限 YYYY-MM-DD HH:mm JST） |
 | `agent working or terminal live/unverifiable` | 作業中または terminal 占有・状態不明のため待機 |
 | `worktree cleanliness unavailable` | worktree が clean か確認できないため待機 |
+| `worktree repository identity unavailable` | worktree のリポジトリ識別を確認できないため待機 |
 | `dirty worktree` | 未確定の変更があるため待機 |
 
 `reason` 内の部分文字列 `defer until <UTC>` を JST に変換する。これは PR 更新待機の
