@@ -69,10 +69,17 @@ pending・check 未起動を失敗と決めつけず、待たずに次 tick に�
 
 ### cooldown
 
-`blocked by minimum-release-age` 等は時間以外で解消しない。
-rerun、cooldown の解除・除外、version の変更をしない。registry 等の
-publish 時刻 + repo の cooldown 期間で解除日時を計算し、PR に記載する。
-緊急性があっても例外を作らず本人に判断を返す。
+セキュリティ修正（Dependabot の security update、または GitHub の advisory に対応する
+修正版への更新）の PR が `blocked by minimum-release-age` 等の cooldown で落ちている場合に限り、
+routine は severity に関わらず、修正を含む最も古い版だけを exact pin のまま cooldown の
+例外に入れ、ユーザーに待つかどうかを確認せず通常の修正・検証へ進めてよい。
+例外は修正版の公開から repo の cooldown 期間が過ぎたら外す。例外を入れたときは
+公開時刻 + cooldown 期間で解除できる日時を計算し、PR 本文に書く。
+例外の指定方法は各 repo の設定に従う。修正後も通常の CI・レビュー・merge gate を満たすこと。
+
+それ以外の通常の version update は時間以外で解消しない。rerun、cooldown の解除・除外、
+version の変更をしない。registry 等の publish 時刻 + repo の cooldown 期間で
+解除日時を計算し、PR 本文に記載して返す。
 
 ### frozen lockfile
 
