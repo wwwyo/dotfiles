@@ -108,6 +108,13 @@ assert (wd, rr) == (gone_wd, str(canon)), (wd, rr)
 # emit 済みの無い歴史 trace: 削除済み orca worktree の transcript_path から
 # <repo> セグメントを取り canonical が残っていれば採用する
 assert se.resolve_repo({"transcript_path": gone_wd}) == (gone_wd, str(canon))
+org_canon = fake / "src/github.com/fudoki-hensansitu/fudoki"
+org_canon.mkdir(parents=True)
+org_wd = str(fake / "orca/workspaces/fudoki/deleted-wt")
+assert se.resolve_repo({"transcript_path": org_wd}) == (org_wd, str(org_canon))
+legacy_canon = fake / "src/github.com/wwwyo/fudoki"
+legacy_canon.mkdir(parents=True)
+assert se.resolve_repo({"transcript_path": org_wd}) == (org_wd, None)
 # 生存 orca linked worktree: --show-toplevel は worktree 自身を返すが
 # git-common-dir が canonical を正確に答える。canonical が ~/src 規約の
 # 外にある場合（--repo path:）でも拾えることを実 worktree で pin する

@@ -11,7 +11,7 @@ PRを`gh`で作成するスキル。[implement](../implement/SKILL.md) で実装
 
 ## ワークフロー
 
-ステップ1〜6を上から順番に実施する。step 6 は wwwyo/* の repo の場合のみ実施する。step 5 (CI・レビューコメント監視) まで通し、QA対象の検証が失敗・未実施ならdraftのまま理由を報告する。step 3 (PR作成) までしか実行していない場合は未完了とみなす。
+ステップ1〜6を上から順番に実施する。step 6 は wwwyo/*・fudoki-hensansitu/* の repo の場合のみ実施する。step 5 (CI・レビューコメント監視) まで通し、QA対象の検証が失敗・未実施ならdraftのまま理由を報告する。step 3 (PR作成) までしか実行していない場合は未完了とみなす。
 
 ### 1. タイトル決定
 
@@ -84,7 +84,7 @@ gh pr create --draft --assignee @me --title "<title>" --body-file <本文ファ�
 - ブランチ削除は `gh` 経由で行う。`git push origin --delete` で消すと子 PR が retarget されず close される。
 - merge は `gh pr merge --squash`（デフォルト squash merge 前提）。切り替え先の main が別 worktree で checkout 済みだと、PR の merge 後にローカルブランチ削除だけ失敗する。`gh pr view` で merge 済みを確認し、リモートブランチは明示的に削除する。現在の worktree が使うローカルブランチは無理に削除しない。
 
-対象 repo が `wwwyo/*` で、ユーザーの明示指示により routine 外の手動 merge を行う場合は、`gh pr view <PR URL> --json state`
+対象 repo が `wwwyo/*`・`fudoki-hensansitu/*` で、ユーザーの明示指示により routine 外の手動 merge を行う場合は、`gh pr view <PR URL> --json state`
 で `MERGED` を確認した直後、同じ実行内で既存 script の `lock status` を確認する。
 `locked: true`・状態未確認なら sweep を見送り、理由を note に残して次 tick に委ねる。
 `locked: false` なら `lock acquire` を呼び、`acquired: true` の場合だけ
@@ -120,7 +120,7 @@ PR作成後、CI の完了とレビューコメントの到着を監視する。
 2. 起きたら `gh pr checks <PRのURL> --required` + `gh pr view <PRのURL> --json statusCheckRollup,reviews,comments,mergeable,reviewDecision`（未 resolve の thread は `gh api graphql`）を取り直し、下の終了条件を評価する。待機コマンドの出力や exit code は起きる合図に使い、終了判定の根拠にしない
 3. 対応が必要なら対応して push し、1 に戻る。check にならないレビュー（Copilot review 等。CodeRabbit は polling 対象から除く）だけが待機中・進行中なら、数分おきに 2 を評価する短い polling で待つ
 
-**待機は「完了で自分を起こせる」機構で回す。** 素の background 実行は終了を通知しない環境があり、終了に気づけず監視が死ぬ。harness に「background コマンドの終了で agent を再起動する」機構があればそれで待機コマンドを回す（Claude Code は Bash の `run_in_background` — その案内上も、1 回の完了待ちはこれ、出力の継続監視は `Monitor` と使い分ける）。background タスクは起動元の session と運命を共にするので、同期 subagent ではなく PR を所有する session で起動する。無ければ待機コマンドを foreground の blocking 呼び出しとして実行し、timeout で打ち切られたら旧 command が background に残っていないか確認してから再実行する（Claude Code は foreground の timeout を kill せず background へ移す）— 戻り値が返ること自体が起きる合図になる。sleep やポーリング間隔を LLM 側で自前管理すると受動的に凍りうる。session が閉じれば監視も止まる。`wwwyo/*` の長引く PR は merge 可否の triage だけを [pr-auto-merge](../pr-auto-merge/SKILL.md) の定期 lane が拾い、session 固有の報告・QA 再検証・完了通知は引き継がれない — 監視を止めるときは repo を問わず、その時点の PR の状態をユーザーに報告する。
+**待機は「完了で自分を起こせる」機構で回す。** 素の background 実行は終了を通知しない環境があり、終了に気づけず監視が死ぬ。harness に「background コマンドの終了で agent を再起動する」機構があればそれで待機コマンドを回す（Claude Code は Bash の `run_in_background` — その案内上も、1 回の完了待ちはこれ、出力の継続監視は `Monitor` と使い分ける）。background タスクは起動元の session と運命を共にするので、同期 subagent ではなく PR を所有する session で起動する。無ければ待機コマンドを foreground の blocking 呼び出しとして実行し、timeout で打ち切られたら旧 command が background に残っていないか確認してから再実行する（Claude Code は foreground の timeout を kill せず background へ移す）— 戻り値が返ること自体が起きる合図になる。sleep やポーリング間隔を LLM 側で自前管理すると受動的に凍りうる。session が閉じれば監視も止まる。`wwwyo/*`・`fudoki-hensansitu/*` の長引く PR は merge 可否の triage だけを [pr-auto-merge](../pr-auto-merge/SKILL.md) の定期 lane が拾い、session 固有の報告・QA 再検証・完了通知は引き継がれない — 監視を止めるときは repo を問わず、その時点の PR の状態をユーザーに報告する。
 
 新しいコメント・CI fail・コンフリクトを見つけたら対応してループ継続、終了条件を満たしたら監視を終えてユーザーにPRの状態を報告する。製品やテストの修正はimplementの流れで自身が行う。修正・追加commit・rebaseでheadが変わった場合はQA対象の判断を見直す。QA対象ならstep 4で新しいheadを再検証し、PR bodyの検証項目を更新する。過去headの成功はreadyの根拠にしない。
 
@@ -142,9 +142,9 @@ CI・レビューが既に完了し、以下の終了条件を全て満たして
 - 未対応のレビューコメントがない（AIボットのコメントは対応済み、人間のコメントはユーザーに報告済み）
 - 上記を全て満たした場合、監視を終えてユーザーにPRの状態を報告する
 
-### 6. (wwwyo/* のみ) ready にする
+### 6. (wwwyo/*・fudoki-hensansitu/* のみ) ready にする
 
-対象repoが `wwwyo/*` の場合、step 5の終了条件を満たした後、`gh pr view <PRのURL> --json headRefOid,isDraft` で現在のheadを再確認する。QA対象ならheadが検証済みのSHAと一致することを確認し、不一致ならstep 4で再検証してstep 5に戻る。QA対象外なら最新diffとPR bodyの理由を再確認する。条件を満たしたら `gh pr ready <PRのURL>` でdraftを解除し、`isDraft: false` と確認済みheadからSHAが変わっていないことを再確認する。変わっていたら `gh pr ready <PRのURL> --undo` でdraftに戻し、新しいheadでstep 4・5を確認し直す。個人repoは人間レビュアーを介さないため、条件を満たしたdraftはreadyまで進める。業務repoではこのstepをskipし、draftのまま人間のレビューに委ねる。
+対象repoが `wwwyo/*`・`fudoki-hensansitu/*` の場合、step 5の終了条件を満たした後、`gh pr view <PRのURL> --json headRefOid,isDraft` で現在のheadを再確認する。QA対象ならheadが検証済みのSHAと一致することを確認し、不一致ならstep 4で再検証してstep 5に戻る。QA対象外なら最新diffとPR bodyの理由を再確認する。条件を満たしたら `gh pr ready <PRのURL>` でdraftを解除し、`isDraft: false` と確認済みheadからSHAが変わっていないことを再確認する。変わっていたら `gh pr ready <PRのURL> --undo` でdraftに戻し、新しいheadでstep 4・5を確認し直す。個人repoは人間レビュアーを介さないため、条件を満たしたdraftはreadyまで進める。業務repoではこのstepをskipし、draftのまま人間のレビューに委ねる。
 
 ## 注意点
 

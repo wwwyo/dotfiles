@@ -69,6 +69,7 @@ except Exception:
     JST = timezone(timedelta(hours=9))
 
 OWNER = "wwwyo"
+REPO_OWNERS = (OWNER, "fudoki-hensansitu")
 STATE_DIR = Path(os.environ.get("PR_WATCH_STATE_DIR",
                                 Path.home() / ".local" / "state" / "pr-watch"))
 STATE_FILE = STATE_DIR / "state.json"
@@ -261,13 +262,14 @@ def orca_json(args, timeout=120):
 # ---------- GitHub fetch ----------
 
 def list_open_prs():
-    """owner:wwwyo の open PR を全件列挙する。search API は 1000 件 hard
+    """対象 owner の open PR を全件列挙する。search API は 1000 件 hard
     cap があり、total_count と一致しなければ取り切れていない → fail-closed
     （先頭だけで判定して 51件目以降を見落とすのと同じ失敗を防ぐ）。"""
     items, total = [], None
     for page in range(1, MAX_PAGES + 1):
         d = gh_json(["api", "-X", "GET", "search/issues",
-                     "-f", f"q=is:pr is:open owner:{OWNER}",
+                     "-f", "q=is:pr is:open " + " ".join(
+                         f"owner:{owner}" for owner in REPO_OWNERS),
                      "-f", f"per_page={PR_ENUM_LIMIT}",
                      "-f", f"page={page}"])
         if total is None:
@@ -1297,11 +1299,27 @@ def hard_gate(facts, judge=None, via="lane", expect_sha=None):
 
 # ---------- Orca ----------
 
-def worktree_ps():
+def github_repo(path):
+    remote = sh(["git", "-C", str(path), "remote", "get-url", "origin"]).stdout.strip()
+    match = re.fullmatch(r"(?:https?://github\.com/|git@github\.com:|"
+                         r"ssh://git@github\.com(?::22)?/)([^/]+/[^/]+?)(?:\.git)?/?", remote)
+    return match.group(1) if match else None
+
+
+def worktree_ps(only=None):
     res = orca_json(["worktree", "ps"])
     if res.get("truncated"):
         raise ApiError("Orca worktree inventory incomplete")
-    return (res or {}).get("worktrees") or []
+    worktrees = (res or {}).get("worktrees") or []
+    for w in worktrees:
+        if only and w.get("worktreeId") != only:
+            continue
+        if w.get("hostId", "local") == "local" and w.get("path"):
+            try:
+                w["githubRepo"] = github_repo(w["path"])
+            except ApiError:
+                w["githubRepo"] = None
+    return worktrees
 
 
 def terminal_list(wtid):
@@ -1318,8 +1336,7 @@ def _short_branch(b):
 def find_worktree(worktrees, repo, number, head_ref):
     """dispatch routing: linkedPR.number → branch == headRef の順。
     戻り値 (worktree, how)。見つからなければ (None, None)。"""
-    repo_name = repo.split("/")[-1]
-    cands = [w for w in worktrees if w.get("repo") == repo_name]
+    cands = [w for w in worktrees if w.get("githubRepo") == repo]
     for w in cands:
         lp = w.get("linkedPR") or {}
         if lp.get("number") == number and (lp.get("state") or "") == "open":
@@ -1395,6 +1412,10 @@ def route_dispatch(worktrees, terminals_by_wt, repo, pr):
                 "reason": reason}
 
     head = pr.get("headRefName")
+    if any(w.get("repo") == repo.split("/")[-1] and not w.get("githubRepo")
+           for w in worktrees):
+        return {"route": "defer", "worktree": None, "handle": None,
+                "reason": "worktree repository identity unavailable"}
     w, how = find_worktree(worktrees, repo, pr.get("number"), head)
     if w is None:
         # head branch を checkout 済みの worktree は branch fallback で
@@ -1632,27 +1653,46 @@ def pi_worker_command():
     raise ApiError("delegate worker/personal has no available pi candidate")
 
 
-def spawn_worktree(repo_name, number, head_ref):
+def spawn_worktree(repo, number, head_ref):
     """専用 worktree に pi を起動し (handle, path, wtid) を返す。
     pi は ready 前の prompt を保持しないので起動後に wait/send する。
     head branch は agent 起動前に作成した worktree 内で checkout する。"""
     command = pi_worker_command()
     name = f"pr{number}-review"
+    repo_name = repo.split("/")[-1]
+    inventory = orca_json(["repo", "list"])
+    if inventory.get("truncated"):
+        raise ApiError("Orca repo inventory incomplete")
+    candidates = [Path(r["path"]) for r in inventory.get("repos", [])
+                  if r.get("path") and r.get("executionHostId", "local") == "local"
+                  and (r.get("displayName") == repo_name or
+                       (r.get("gitRemoteIdentity") or {}).get("canonicalKey") ==
+                       f"github.com/{repo}")]
+    candidates.extend(Path.home() / "src" / "github.com" / owner / repo_name
+                      for owner in REPO_OWNERS)
+    matching = []
+    for path in dict.fromkeys(candidates):
+        if not path.is_dir():
+            continue
+        identity = github_repo(path)
+        if identity and identity != repo:
+            identity = gh_json(["api", f"repos/{identity}"]).get("full_name")
+        if identity == repo:
+            matching.append(path)
+    if len(matching) != 1:
+        raise ApiError(f"canonical checkout ambiguous or unavailable for {repo}")
+    canonical = matching[0]
     try:
-        res = orca_json(["worktree", "create", "--repo", f"name:{repo_name}",
+        res = orca_json(["worktree", "create", "--repo", f"path:{canonical}",
                          "--name", name, "--no-parent"], timeout=300)
     except ApiError as e:
         # repo 未登録 (repo_not_found) のときだけ登録して再試行する
-        # （~/src/github.com/wwwyo/<name> が個人 repo の規約 path）。
         # timeout 等の非回復エラーで再試行すると原因を覆い隠すので絞る
         if "repo_not_found" not in str(e):
             raise
-        canonical = Path.home() / "src" / "github.com" / "wwwyo" / repo_name
-        if not canonical.is_dir():
-            raise
         orca_json(["repo", "add", "--path", str(canonical)], timeout=60)
         res = orca_json(["worktree", "create", "--repo",
-                         f"name:{repo_name}", "--name", name,
+                         f"path:{canonical}", "--name", name,
                          "--no-parent"], timeout=300)
     wt = (res or {}).get("worktree") or {}
     wtid = wt.get("id") or wt.get("worktreeId")
@@ -1920,7 +1960,7 @@ def sweep_candidates(state, worktrees):
         for w in worktrees:
             if w.get("repo") != repo.split("/")[-1]:
                 continue
-            if w.get("githubRepo") and w["githubRepo"] != repo:
+            if w.get("githubRepo") != repo:
                 continue
             lp = w.get("linkedPR") or {}
             pr_match = lp.get("number") == int(n) and \
@@ -1968,11 +2008,9 @@ def local_session_audit(state, worktrees, terms_cache, record=True):
         branch = _short_branch(w.get("branch"))
         if not branch or branch in ("main", "master"):
             continue
-        remote = sh(["git", "-C", w["path"], "remote", "get-url", "origin"]).stdout.strip()
-        match = re.search(r"github\.com[:/]([^/]+/[^/]+?)(?:\.git)?$", remote)
-        if not match:
+        repo = w["githubRepo"] if "githubRepo" in w else github_repo(w["path"])
+        if not repo:
             continue
-        repo = match.group(1)
         w["githubRepo"] = repo
         lp = w.get("linkedPR") or {}
         v = None
@@ -2233,7 +2271,7 @@ def _cmd_dispatch(a):
             raise ApiError(f"tui-idle not satisfied: {detail}")
     else:  # spawn
         handle, wpath, _wtid = spawn_worktree(
-            a.repo.split("/")[-1], a.number, v.get("headRefName"))
+            a.repo, a.number, v.get("headRefName"))
         fallback_cwds = [wpath]
         ok, detail = wait_tui_idle(handle)
         if not ok:
@@ -2511,7 +2549,7 @@ def _cmd_sweep(a):
             continue
         # ps 再取得と rm はこの呼び出し内で続けて行う（確認と削除の間に
         # session が起きる競合を最小化）。残る僅かな race 窓は設計上の受容
-        w = next((x for x in worktree_ps()
+        w = next((x for x in worktree_ps(c["worktree"])
                   if x.get("worktreeId") == c["worktree"]), None)
         if w is None:
             skip(c, "worktree gone")
@@ -2553,7 +2591,7 @@ def _cmd_sweep(a):
         # 場合に git worktree remove 側が dirty 拒否してくれる最後の網に
         # なる（失敗は skipped 扱いで次 tick に回る）
         try:
-            fresh = next((x for x in worktree_ps() if x.get("worktreeId") == c["worktree"]), None)
+            fresh = next((x for x in worktree_ps(c["worktree"]) if x.get("worktreeId") == c["worktree"]), None)
             if fresh is None or not sweep_candidates(st, [fresh]) or \
                     not sweep_sessions_ready(fresh, terminal_list(c["worktree"])):
                 skip(c, "terminal/agent live")
@@ -2563,7 +2601,7 @@ def _cmd_sweep(a):
                                     f"id:{c['worktree']}", "--all"], timeout=120)
                 append_event("sessions_closed", repo=c["repo"], pr=c["number"],
                              worktree=c["worktree"], result=closed)
-            after = next((x for x in worktree_ps() if x.get("worktreeId") == c["worktree"]), None)
+            after = next((x for x in worktree_ps(c["worktree"]) if x.get("worktreeId") == c["worktree"]), None)
             if after is None or (after.get("liveTerminalCount") or 0) > 0:
                 skip(c, "terminal/agent live")
                 continue

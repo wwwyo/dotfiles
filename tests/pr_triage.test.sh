@@ -440,7 +440,7 @@ assert not ok and any("draft" in r for r in reasons), reasons
 # ============================ dispatch routing ============================
 clean_path = Path(os.environ["PR_WATCH_STATE_DIR"]).parent / "clean-worktree"
 subprocess.run(["git", "init", "-q", str(clean_path)], check=True)
-wt = lambda **kw: dict({"worktreeId": "r::w1", "repo": "me",
+wt = lambda **kw: dict({"worktreeId": "r::w1", "repo": "me", "githubRepo": "wwwyo/me",
                         "branch": "refs/heads/wwwyo/x", "path": str(clean_path),
                         "liveTerminalCount": 0, "status": "inactive",
                         "agents": [], "linkedPR": None}, **kw)
@@ -504,7 +504,7 @@ assert r["route"] == "defer"
 assert "branch" in route([w], {"r::w1": []})["reason"]
 
 # 別 repo の同 branch worktree は dispatch 対象にしない
-w2 = wt(repo="dotfiles")
+w2 = wt(repo="dotfiles", githubRepo="wwwyo/dotfiles")
 r = route([w2], terms)
 assert r["route"] == "spawn"
 

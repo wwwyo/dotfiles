@@ -1,6 +1,6 @@
 ---
 name: pr-auto-merge
-description: "wwwyo/* の open PR を triage し、QA・Blast Radius の根拠を確認して merge 可否と修正依頼を判断する routine。Orca automation または /pr-auto-merge で実行する。通常の単一 PR 作成・レビューには使わない。"
+description: "wwwyo/*・fudoki-hensansitu/* の open PR を triage し、QA・Blast Radius の根拠を確認して merge 可否と修正依頼を判断する routine。Orca automation または /pr-auto-merge で実行する。通常の単一 PR 作成・レビューには使わない。"
 ---
 
 # pr-auto-merge (pr-merge-lane)
@@ -235,6 +235,7 @@ dispatch ガードの延期も Hold に載せ、恒久的な保留と区別し�
 | `PR recently updated; defer until <UTC>` | PR 更新後の待機（更新待機の期限 YYYY-MM-DD HH:mm JST） |
 | `agent working or terminal live/unverifiable` | 作業中または terminal 占有・状態不明のため待機 |
 | `worktree cleanliness unavailable` | worktree が clean か確認できないため待機 |
+| `worktree repository identity unavailable` | worktree のリポジトリ識別を確認できないため待機 |
 | `dirty worktree` | 未確定の変更があるため待機 |
 
 `reason` 内の部分文字列 `defer until <UTC>` を JST に変換する。これは PR 更新待機の

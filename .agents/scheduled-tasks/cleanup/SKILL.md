@@ -15,7 +15,7 @@ cleanup の対象外だが、手動で「storage を空けて」と頼まれて�
 
 ## 2. git worktree / branch
 
-対象は `~/src/github.com/wwwyo/` 配下の個人 repo のみ。**GitHub で archived 済みの repo は対象外** — 新しい merge も fetch 成功も起きないので、走査すると毎回 fetch 失敗のノイズになる。`gh repo view <name> --json isArchived -q .isArchived` で確認する。
+対象は `~/src/github.com/wwwyo/`・`~/src/github.com/fudoki-hensansitu/` 配下の個人 repo のみ。移管後も旧ディレクトリにある checkout を含む。**GitHub で archived 済みの repo は対象外** — 新しい merge も fetch 成功も起きないので、走査すると毎回 fetch 失敗のノイズになる。`gh repo view <name> --json isArchived -q .isArchived` で確認する。
 
 各 repo で順に:
 
