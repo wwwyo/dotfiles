@@ -1,5 +1,5 @@
 [tools]
-"github:github/gh-aw" = "v0.92.0"
+"github:github/gh-aw" = { version = "v0.92.0", rename_exe = "gh-aw" }
 "github:github/gh-actions-lock" = { version = "0.2.0", bin = "gh-actions-lock" }
 "aqua:air-verse/air" = "1.67.4"
 "aqua:BurntSushi/ripgrep" = "15.2.0"
