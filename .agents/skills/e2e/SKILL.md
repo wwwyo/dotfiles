@@ -1,6 +1,7 @@
 ---
 name: e2e
-description: Agentic end-to-end tests with the e2e runner — setup, browser and mobile flows, agent.act/assert, replay cache, reports, and bug bashes. Use when a project uses e2e, when asked for end-to-end, browser, mobile, or agentic UI tests or a bug bash, or when an e2e run fails.---
+description: Agentic end-to-end tests with the e2e runner — setup, browser and mobile flows, agent.act/assert, replay cache, reports, and bug bashes. Use when a project uses e2e, when asked for end-to-end, browser, mobile, or agentic UI tests or a bug bash, or when an e2e run fails.
+---
 
 # e2e: agentic end-to-end tests
 

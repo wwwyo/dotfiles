@@ -45,7 +45,7 @@ Do not paraphrase these rubrics from memory. Read each file and pass it verbatim
 
 **Bounded dispatch.** Queue the reviewers and launch only as many as the harness accepts at once. A concurrency or active-agent-limit error means the harness is full, not that the reviewer failed: leave the reviewer queued and retry after a slot frees. When a dispatch cannot recover through active work, supported release, or a corrected invocation, report the failure and stop.
 
-Read `references/reviewer-dispatch.md` before dispatching; it covers a full harness, releasing review agents, and the permission mode. Its inline fallback for an unrecoverable dispatch does not apply here: never substitute an inline review, report the failure and stop instead.
+Read `references/reviewer-dispatch.md` before dispatching; it covers a full harness, releasing review agents, and the permission mode.
 
 **Model selection.** Use the platform's balanced mid-tier model for these reviewers when the current harness exposes a known override. In Claude Code this is the Sonnet class. In Codex, apply this tier only when the active dispatch primitive exposes an explicit model or custom-agent selector; task wording alone does not select a different model. Otherwise omit the override and inherit the parent model -- a working pass on the parent model beats a broken dispatch.
 
