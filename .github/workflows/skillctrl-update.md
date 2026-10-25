@@ -272,7 +272,19 @@ safe-outputs:
               echo "=== $t ==="
               bash "$t"
             done
+        # GITHUB_TOKEN cannot open PRs here, and PRs it opens would not trigger CI
+        # or review. A dedicated App opens the draft PR; pushes keep GITHUB_TOKEN.
+        - name: Mint the PR app token
+          id: app-token
+          uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+          with:
+            client-id: ${{ vars.SKILLCTRL_APP_CLIENT_ID }}
+            repositories: ${{ github.event.repository.name }}
+            private-key: ${{ secrets.SKILLCTRL_APP_PRIVATE_KEY }}
+            permission-pull-requests: write
         - name: Verify the accepted lock and publish
+          env:
+            APP_TOKEN: ${{ steps.app-token.outputs.token }}
           run: |
             mkdir -p "$CI_DIR"
             "$SKILLCTRL_BIN" check > "$CI_DIR/check.json"
@@ -297,7 +309,7 @@ safe-outputs:
               push origin "HEAD:refs/heads/automation/skillctrl-update"
             existing="$(jq -r '.existing_pr // empty' "$CI_DIR/plan.json" 2>/dev/null || true)"
             if [[ -z "$existing" ]]; then
-              gh pr create --draft --base "$DEFAULT_BRANCH" --head automation/skillctrl-update \
+              GH_TOKEN="$APP_TOKEN" gh pr create --draft --base "$DEFAULT_BRANCH" --head automation/skillctrl-update \
                 --title "chore(skills): weekly upstream refresh" \
                 --body "Automated upstream skill refresh reconciled with saved intents by the skillctrl update workflow."
             fi
@@ -549,7 +561,19 @@ jobs:
             echo "=== $t ==="
             bash "$t"
           done
+      # GITHUB_TOKEN cannot open PRs here, and PRs it opens would not trigger CI
+      # or review. A dedicated App opens the draft PR; pushes keep GITHUB_TOKEN.
+      - name: Mint the PR app token
+        id: app-token
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        with:
+          client-id: ${{ vars.SKILLCTRL_APP_CLIENT_ID }}
+          repositories: ${{ github.event.repository.name }}
+          private-key: ${{ secrets.SKILLCTRL_APP_PRIVATE_KEY }}
+          permission-pull-requests: write
       - name: Verify the accepted lock and publish
+        env:
+          APP_TOKEN: ${{ steps.app-token.outputs.token }}
         run: |
           mkdir -p "$CI_DIR"
           "$SKILLCTRL_BIN" check > "$CI_DIR/check.json"
@@ -577,7 +601,7 @@ jobs:
           Path('/tmp/skillctrl/existing-pr.txt').write_text(plan.get('existing_pr') or '')
           PY
             if [[ ! -s /tmp/skillctrl/existing-pr.txt ]]; then
-              gh pr create --draft --base "$DEFAULT_BRANCH" --head automation/skillctrl-update \
+              GH_TOKEN="$APP_TOKEN" gh pr create --draft --base "$DEFAULT_BRANCH" --head automation/skillctrl-update \
                 --title "chore(skills): weekly upstream refresh" \
                 --body "Automated upstream skill refresh; no saved intents required re-adaptation."
             fi
