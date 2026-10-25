@@ -128,3 +128,25 @@ Cloudflare 固有の設定・制約はこの reference に集約する。公開�
 - BYOK は upstream provider の key と請求を別管理する。Unified Billing は対応モデルの provider key 管理を不要にし、費用を Cloudflare 側へ集約するが、認証・流量・支出制御は引き続き必要。
 
 出典: [Gateway authentication](https://developers.cloudflare.com/ai-gateway/configuration/authentication/)、[Gateway rate limits](https://developers.cloudflare.com/ai-gateway/features/rate-limiting/)、[Unified Billing](https://developers.cloudflare.com/ai-gateway/features/unified-billing/)（確認 2026-10-08）。
+
+## 9. WAF custom rule で脆弱性スキャナーを Worker の前で止める
+
+公開した host には、すぐに `/.env`・`/.git/config`・`/wp-admin/install.php`・`*.php` などを探すスキャナーが来る（syokan.dev では 7 日間の zone の 404 の大半がこれだった、確認 2026-10-25）。Worker に entrypoint がある（§6）か `run_worker_first` が true だと、存在しない path への要求も毎回 Worker 実行になり、request 課金と Free の日次 100k 枠を消費する。
+
+- `run_worker_first`: assets を持つ Worker で、asset に一致する要求でも先に Worker script を実行する設定。`true` は全要求が対象。path パターンの配列で対象を絞れ、`!/` で始まるパターンは除外になる。Free で日次枠を超えると、対象の要求は asset 配信に戻らず 429 になる。認証や SSR が要る path だけに絞る。
+- 対策: zone の WAF custom rule（`http_request_firewall_custom` phase）で、どの app も持たない path を block する。WAF は Worker より前に評価されるため、block した要求は Worker を実行しない。Free でも 1 zone 5 ルール使える。regex は Business 以上なので、`contains`・`ends_with`・`lower()` で書く。account-level の custom ruleset は Enterprise のみなので zone ごとに入れ、zone を足したら同じルールを入れる。
+- ルール例（wwwyo の全 zone で block に使用中）:
+
+  ```
+  (lower(http.request.uri.path) contains "/.env") or (lower(http.request.uri.path) contains "/.git/")
+  or (lower(http.request.uri.path) contains "/.aws/") or (lower(http.request.uri.path) contains "/wp-")
+  or (ends_with(lower(http.request.uri.path), ".php")) or (lower(http.request.uri.path) contains ".php/")
+  or (ends_with(lower(http.request.uri.path), ".env")) or (ends_with(lower(http.request.uri.path), "/credentials"))
+  or (ends_with(lower(http.request.uri.path), "/appsettings.json")) or (ends_with(lower(http.request.uri.path), "/service-account.json"))
+  ```
+
+- block してはいけない path: `/.well-known/`（ACME、OAuth・MCP の discovery）と `/cdn-cgi/`。条件を足すときは、zone の HTTP analytics の path 上位（`httpRequestsAdaptiveGroups` の `clientRequestPath`・`edgeResponseStatus`）で正規の path を巻き込まないか確かめる。PHP などを実際に配信する app がある zone では、その host を条件から除く。
+- 操作: `cf rulesets entrypoint get http_request_firewall_custom -z <zone>` で既存ルールを確認する。entrypoint がない zone は `cf rulesets entrypoint update http_request_firewall_custom -z <zone> --body '{"rules":[<rule>]}'` で作る。これは ruleset 全体の置換なので、既存ルールがある zone では `cf rulesets rules create <ruleset-id> -z <zone> --body '<rule>'` で追加する。`<rule>` は action と expression を持つ JSON（`{"action":"block","description":"Block scanner paths","expression":"<上の式を 1 行にしたもの>"}`）。どちらも `--validate-only` で事前に検証できる。WAF custom rule は config 管理外の state（§7）。
+- 検証: スキャナーの path が 403、正規の path と `/.well-known/...` が従来どおりの status を返すことを `curl -s -o /dev/null -w '%{http_code}'` で確かめる。発動数は Security > Events で見る。
+
+出典: https://developers.cloudflare.com/waf/custom-rules/ （Free 5 ルール・regex は Business 以上・account-level は Enterprise）、https://developers.cloudflare.com/workers/static-assets/binding/#run_worker_first 、https://developers.cloudflare.com/workers/static-assets/billing-and-limitations/ （Free で枠超過時の 429）（確認 2026-10-25）。
