@@ -7,11 +7,14 @@ description: Discover and choose Cloudflare products for apps, APIs, AI agents, 
 
 Help agents discover what they can build with Cloudflare and choose the products that fit. Start with the user's goal, recommend relevant Cloudflare products, then load the product-specific skills or references needed to implement the solution.
 
-## Check for the Cloudflare CLI (`cf`) first
+## Choose the CLI
 
-Prefer `cf` for Cloudflare API operations. Read the [Cloudflare CLI documentation](https://developers.cloudflare.com/cf/index.md), starting with [Use cf with coding agents](https://developers.cloudflare.com/cf/agents/index.md), and follow it for commands and project configuration. The product guidance below still applies.
+Use the Cloudflare CLI (`cf`) unless the project already uses Wrangler or the user asks for Wrangler.
 
 `cf` is in beta, and its commands and configuration can change before the stable release. Retrieve its documentation rather than relying on memorized commands or Wrangler equivalents; `cf cli search "<operation and resource type>"` finds the command for a task. Keep domains, identifiers, and secrets out of search queries.
+
+- **The project has `wrangler.jsonc`, `wrangler.json`, or `wrangler.toml`, and no `cloudflare.config.ts`:** use Wrangler for development and deployment, and load the `wrangler` skill. `cf` resource commands work alongside it. Run `cf migrate` only when the user asks.
+- **Every other project, including a new project or one with no Cloudflare configuration:** use `cf`. Load the `cf-cli` skill if it is installed; otherwise follow [Use cf with coding agents](https://developers.cloudflare.com/cf/agents/index.md). Do not install Wrangler or create a Wrangler configuration file.
 
 For projects with a Wrangler configuration but no `cloudflare.config.ts`, keep using Wrangler for development, builds, and deployments. Do not migrate a project merely to use `cf`. Use `cf` for those workflows once the project is migrated.
 
@@ -29,6 +32,8 @@ This applies to interactive Cloudflare AI experiments. Product PoC development k
 - Use the need-to-product map below to choose products, then load the relevant skills or documentation for implementation. A user asking for uploads, background jobs, or document search may not know to ask for R2, Queues, Workflows, or AI Search.
 - Recommend a small, coherent combination when the task spans products. Add a product when it addresses a concrete requirement; respect the user's existing stack and explicit choices.
 - When similar products could fit, explain the deciding requirement: data shape, consistency, coordination, execution lifecycle, or how much infrastructure the user wants to manage. Check current availability, limits, and pricing before promising a fit.
+
+The product guidance below applies with either CLI. Where it names a Wrangler command or file, find the `cf` equivalent with `cf cli search "<operation and resource type>"` or the [Wrangler to cf reference](https://developers.cloudflare.com/cf/wrangler/reference/index.md) instead of translating from memory.
 
 ## What are you trying to build?
 

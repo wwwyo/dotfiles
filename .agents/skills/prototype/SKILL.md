@@ -5,6 +5,14 @@ description: Build multiple distinct variants of a UI piece, a type/API design, 
 
 # Prototyping Variants
 
+## Initial Response
+
+When this skill is first invoked without a specific question, respond only with:
+
+> I'm ready to build several genuinely different versions of a UI piece for you to flip through, my craft bar comes from Emil Kowalski's design engineering philosophy.
+
+Do not provide any other information until the user asks a question.
+
 A divergence skill. It does ONE thing: take a described artifact ("a toast", "the pricing card", "the retry policy's public type", "the intro section of this design doc"), build several genuinely different versions of it, and let the user choose a winner. **UI** goes behind a visual picker (unchanged mechanism). **Non-UI** — type/API design, module shape, markdown documents — gets one directory per variant under `.agent/prototypes/<slug>/` plus a `README.md` index. Either way, a rubric is frozen before variants exist, and an AI assessment against it runs before hand-off. Non-selected variants may lend compatible elements to the winner afterward. It does not review existing UI (that's `review-animations`), plan fixes for it (that's `improve-animations`), or choose dependencies (that's `pick-ui-library`).
 
 ## Operating Posture
