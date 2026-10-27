@@ -89,10 +89,11 @@ DISPATCH_MAX_PER_HEAD = 3   # 同一 (PR, head SHA) への送信上限
 DISPATCH_MAX_ROUNDS = 3     # 往復ラウンド（dispatch を送った異なる head 数）上限
 DISPATCH_STALE_TICKS = 6    # 送信後に指摘が動かないままの tick 数上限（~3h）
 SWEEP_MAX_TRIES = 6         # sweep が永続的理由で skip し続ける回数上限（~3h）
-# 一時的な理由は ps 再取得との race と非同期削除の進行中。git の timeout は
+# 一時的な理由は ps 再取得との race と削除後の観測不能。git の timeout は
 # race ではなく再現する失敗（path が wedged・repo 破損等）なので
 # 永続的理由として数える — 数えないと毎 tick session が起きる
-SWEEP_TRANSIENT_REASONS = ("worktree gone", "terminal/agent live", "removal pending")
+SWEEP_TRANSIENT_REASONS = ("worktree gone", "terminal/agent live",
+                           "removal verification unavailable")
 THREADS_PAGE = 50           # reviewThreads の page size
 MAX_PAGES = 20              # ページング暴走の止血帯
 PR_ENUM_LIMIT = 100         # search の page size。total > limit*pages は fail-closed
@@ -1955,6 +1956,9 @@ def sweep_candidates(state, worktrees):
         # executor session が起きてしまう
         if int(m.get("sweep_skips") or 0) >= SWEEP_MAX_TRIES:
             continue
+        if m.get("pending_removal"):
+            out.append(m["pending_removal"])
+            continue
         repo, _, n = key.partition("#")
         head_ref = m.get("head_ref")
         for w in worktrees:
@@ -2544,8 +2548,28 @@ def _cmd_sweep(a):
             append_event("sweep_giveup", repo=c["repo"], pr=c["number"],
                          worktree=c["worktree"], reason=reason)
 
+    def verify_removal(c):
+        try:
+            remaining = worktree_ps(c["worktree"])
+            pending = any(x.get("worktreeId") == c["worktree"] for x in remaining)
+            pending = Path(c["path"]).exists() or pending
+        except (ApiError, OSError) as e:
+            skip(c, f"removal verification unavailable: {e}")
+            return
+        if pending:
+            skip(c, "removal pending")
+            return
+        removed.append({**c, "dry_run": True} if a.dry_run else c)
+        if not a.dry_run:
+            st["merged"][pr_key(c["repo"], c["number"])].pop("pending_removal", None)
+            append_event("worktree_rm", repo=c["repo"], pr=c["number"], path=c["path"])
+
     for c in cands:
         if a.only and c["worktree"] != a.only:
+            continue
+        m = st["merged"][pr_key(c["repo"], c["number"])]
+        if m.get("pending_removal"):
+            verify_removal(c)
             continue
         # ps 再取得と rm はこの呼び出し内で続けて行う（確認と削除の間に
         # session が起きる競合を最小化）。残る僅かな race 窓は設計上の受容
@@ -2559,6 +2583,9 @@ def _cmd_sweep(a):
             skip(c, "terminal/agent live")
             continue
         path = w.get("path")
+        if not isinstance(path, str) or not path:
+            skip(c, "invalid worktree path")
+            continue
         try:
             dirty = sh(["git", "-C", path, "status", "--porcelain"],
                        timeout=30).stdout.strip()
@@ -2607,18 +2634,13 @@ def _cmd_sweep(a):
                 continue
             orca_json(["worktree", "rm", "--worktree",
                        f"id:{c['worktree']}"], timeout=120)
-            # rm may acknowledge an asynchronous removal before it has finished.
-            remaining = worktree_ps(c["worktree"])
-            if any(x.get("worktreeId") == c["worktree"] for x in remaining) or \
-                    Path(path).exists():
-                skip(c, "removal pending")
-                continue
         except ApiError as e:
             skip(c, f"rm failed: {e}")
             continue
-        removed.append(c)
-        append_event("worktree_rm", repo=c["repo"], pr=c["number"],
-                     path=path)
+        # Keep observing accepted removals even after Orca deregisters the worktree.
+        m["pending_removal"] = {**c, "path": path}
+        save_state(st)
+        verify_removal(m["pending_removal"])
     if not a.dry_run:
         save_state(st)
     emit({"ok": True, "local_sessions": audit, "removed": removed, "skipped": skipped})

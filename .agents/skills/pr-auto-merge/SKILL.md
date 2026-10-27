@@ -78,7 +78,7 @@ mise の `[tools]` は開発用依存（devDependencies 相当）として扱う
    main・active workspace・子 worktree の親・作業中 agent は残す。削除直前に全条件を
    再検証し、close 後に live terminal が0になったことを確認する。条件を通すためだけに
    workspaceStatus を completed に変えたり、force 削除したりしない。
-   sweep の実施と削除成功は区別する。`removed` は Orca の登録とディレクトリの消失を確認した件数で、削除受付後も残っていれば `skipped` の `removal pending` になる。
+   sweep の実施と削除成功は区別する。`removed` は Orca の登録とディレクトリの消失を確認した件数で、削除受付後も残っていれば `skipped` の `removal pending` になる。受付済みの削除は state に保存して登録消失後も確認し、残存が続けば既存の skip 上限で give up する。観測に失敗した回は `removal verification unavailable` として上限を消費せず、削除要求も繰り返さない。
    jsonl には `worktree_rm` と `sweep_skipped` が残るが、同一 worktree・理由の連続 skip は
    重複記録されない。呼び出した事実・削除件数・エラーは `pr_triage.py log` の note に
    記録する。残存理由が出力にない場合は、`orca worktree ps --json` と必要に応じ
