@@ -1124,7 +1124,7 @@ with tempfile.TemporaryDirectory() as tmp:
             mock.patch.object(pt, 'local_session_audit', return_value={}), \
             mock.patch.object(pt, 'orca_json') as remove, \
             mock.patch.object(pt, 'sh') as git, \
-            mock.patch.object(pt, 'save_state'), \
+            mock.patch.object(pt, 'save_state') as save, \
             mock.patch.object(pt, 'append_event') as events, \
             mock.patch.object(pt, 'emit') as output:
         # Failure after enumeration is observation failure, not rm failure.
@@ -1134,6 +1134,11 @@ with tempfile.TemporaryDirectory() as tmp:
             'removal verification unavailable:')
         assert not entry.get('sweep_skips') and entry['pending_removal']
         inventory.side_effect = None
+        with mock.patch.object(Path, 'lstat', side_effect=PermissionError('unreadable')):
+            pt._cmd_sweep(SimpleNamespace(only=None, dry_run=False))
+            assert output.call_args.args[0]['skipped'][0]['reason'].startswith(
+                'removal verification unavailable:')
+            assert not entry.get('sweep_skips') and entry['pending_removal']
         snapshot = json.dumps(pending_state, sort_keys=True)
         pt._cmd_sweep(SimpleNamespace(only=None, dry_run=True))
         assert json.dumps(pending_state, sort_keys=True) == snapshot
@@ -1150,6 +1155,12 @@ with tempfile.TemporaryDirectory() as tmp:
         # A different accepted removal finishes on a later tick.
         entry['sweep_skips'] = 0
         path.rmdir()
+        persisted = []
+        save.side_effect = lambda st: persisted.append(json.loads(json.dumps(st)))
+        def check_durable(event, **kwargs):
+            if event == 'worktree_rm':
+                assert persisted and 'pending_removal' not in persisted[-1]['merged']['wwwyo/me#8']
+        events.side_effect = check_durable
         pt._cmd_sweep(SimpleNamespace(only=None, dry_run=False))
         assert len(output.call_args.args[0]['removed']) == 1
         assert 'pending_removal' not in entry

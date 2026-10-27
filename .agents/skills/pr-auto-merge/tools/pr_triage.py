@@ -2552,7 +2552,11 @@ def _cmd_sweep(a):
         try:
             remaining = worktree_ps(c["worktree"])
             pending = any(x.get("worktreeId") == c["worktree"] for x in remaining)
-            pending = Path(c["path"]).exists() or pending
+            try:
+                Path(c["path"]).lstat()
+                pending = True
+            except FileNotFoundError:
+                pass
         except (ApiError, OSError) as e:
             skip(c, f"removal verification unavailable: {e}")
             return
@@ -2562,6 +2566,7 @@ def _cmd_sweep(a):
         removed.append({**c, "dry_run": True} if a.dry_run else c)
         if not a.dry_run:
             st["merged"][pr_key(c["repo"], c["number"])].pop("pending_removal", None)
+            save_state(st)
             append_event("worktree_rm", repo=c["repo"], pr=c["number"], path=c["path"])
 
     for c in cands:
