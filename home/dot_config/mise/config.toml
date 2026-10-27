@@ -59,7 +59,7 @@ age = "1.3.2"
 "aqua:Kitware/CMake" = "4.4.4"
 "ubi:dbt-labs/dbt-cli" = { version = "0.40.24", exe = "dbt" }
 "npm:cf" = "1.0.0-beta.18"
-"aqua:cloudflare/cloudflared" = "2026.10.1"
+"aqua:cloudflare/cloudflared" = "2026.10.3"
 "npm:@langfuse/cli" = "1.2.4"
 
 [env]
