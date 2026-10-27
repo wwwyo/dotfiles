@@ -41,10 +41,13 @@ repo 編集が即反映）。supply chain 対策として `pin = true` + `minimu
   mise.lock entry は checksum を持たないため commit pin 自体が integrity anchor — CI で
   検査するなら 40-hex commit と lock entry の一致を見る。backend 切替時は旧 backend の
   install を残さない（別 format の install state を誤読しうる）
-- `github:<owner>/<repo>` backend は release asset 名から platform 部分を落として配置するため、
-  asset が単体 binary の tool（例: `gh-actions-lock`）では `bin = "<tool 名>"` を明示しないと
-  shim が `darwin` のような platform 名になる。asset 名の platform 表記（`*_darwin_arm64` 等）を
-  lockfile・`gh release view` で確認してから `bin` を決める
+- `github:<owner>/<repo>` backend は release asset 名から platform 部分を落として実行ファイルを
+  配置するため、単体 binary asset でも実行ファイル名が tool 名と一致しないことがある
+  （`gh-aw` v0.92.0 では `darwin` になった）。このままだと shim があっても
+  `couldn't exec process` で落ちる。docs の対応表では単体 binary は `bin = "<tool 名>"`
+  （`gh-actions-lock`）、archive 展開後の executable は `rename_exe`。`gh-aw` の asset は
+  `rename_exe` でも同じ結果になり、正本の `home/dot_config/mise/config.toml` はこちら —
+  改名の要否は asset の命名次第なので、どちらか一方を指定して実 install で確認する
 - CI で `mise.lock` の値（URL・checksum 等）を shell の `source` に渡すと、その lockfile を
   書き換えられる PR 作成者が任意コマンドを実行できる。値の検証・配置は Python 等の内部で
   完結させ、lockfile の値を shell に渡さない（gh-actions-lock の verify job で実際に
