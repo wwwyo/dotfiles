@@ -16,7 +16,7 @@
   "extensions": [],
   "packages": [
     "npm:pi-sandbox@0.7.1",
-    "npm:pi-subagents@0.77.0",
+    "npm:pi-subagents@0.83.0",
     "npm:@wwwyo/pi-vim@0.14.2"
   ]
 }

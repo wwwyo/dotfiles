@@ -29,11 +29,13 @@ SE=~/.agents/scheduled-tasks/session-eval/tools/session_eval.py
    - prompt は `references/evaluator-prompt.md` を読み、`{SESSION_ID}` を置換したものをそのまま渡す。追加指示・書き換えはしない（sentinel 行が欠けると自己評価ループになる）
    - pi では `subagent` の `delegate` agent に依頼する（既定モデル DeepSeek V4.1 Flash では `subagent` が最初から使える。tool が見えないモデルでは `subagents_enable` で有効化する）。モデル・thinking は [delegate](../../skills/delegate/SKILL.md) の worker/personal を `subagent` の `model`（`provider/model:effort`）に明示し、profile の既定モデルに任せない。10 件超のときは 5 件ずつの wave に分ける
    - **本番の fanout 前に 1 件を preflight として spawn し、child が起動・完走することを確かめてから残りを流す**。child が全滅しても batch 自体は「完了」扱いになり、そのまま `next_since` を進めると未評価分が無音で失われる（pi-subagents 0.72.0 の peer 不整合で 182/182 が起動失敗した実例）。1 件の確認は数秒で、全滅時の通知渋滞と手戻りを防ぐ。**preflight が起動しない・完走しないときは fanout を中止し、残りを流さず step 4 の `next_since` も更新しない**（未完了 run として失敗を報告し、次回が同じ起点から再スキャンする。ここで `next_since` を進めるとこの窓の session が恒久損失になる。preflight 成功後に一部 session が error になった場合は「session 単位の error」として完走扱いでよい — 中止するのは fanout 全体が起動不能なときだけ）
+   - 起動失敗が **async（background）transport 側**の理由（host package の依存欠落、runner の alias 解決失敗など）なら、同じ session_id を `async: false` で 1 件だけ preflight し直す。それが完走したら残りを sync で逐次流してよい — child が動かないのではなく非同期経路だけが壊れているので、窓を捨てる理由がない。sync でも起動しないときだけ中止する（2026-10-27 実測: pi-subagents 0.77.0 + pi 1.3.0 で `@earendil-works/chord` 欠落により async だけ全滅、sync は 9/9 完走。原因は [dev-env](../../skills/dev-env/references/pi.md) の pi-subagents 節）
 4. 全 subagent の完了を待ち、`next_since` を更新してから `python3 "$SE" lock release`:
    `python3 -c 'from datetime import datetime, timedelta, timezone; print((datetime.now(timezone.utc) - timedelta(hours=24)).strftime("%Y-%m-%dT%H:%M:%SZ"))' > ~/.local/state/session-eval/next_since`
    - `next_since` = 次回 run が `--since` に渡す値。24h 引くのは、turn の startTime が user message 時刻へ backdate されるので、前回 run の fetch 後に完了した長い turn が窓から漏れないようマージンを取るため
    - 途中で止まった run は書かない — 次回が同じ起点から再スキャンして未評価分を拾う。session 単位の error があっても完走したら更新する（error は step 5 で報告済み＝検知可能。retry したい場合は手動で `--since` を戻す）。書き忘れは窓が広がる側にしか効かないので安全方向
 5. 報告 — 窓の起点（targets 出力の `window.from`）と evaluated / self-skip / unsafe-sid / error の件数（`unsafe-sid` は targets 出力の `skipped.unsafe_sid`＝session 単位の件数、`skipped.unsafe_sids` が落ちた sid 一覧。shell 非対応の文字種の session_id を弾いたもので、0 以外なら恒久的に評価対象外になるので sid を明記する）。失敗があれば session_id と理由 1 行
+   - 書き戻しの検証は `GET /api/public/v3/scores?sessionId=<sid>` と `GET /api/public/comments?objectType=SESSION&objectId=<sid>`（`/api/public/scores` と `/api/public/v2/scores` は 410 Gone）。child の最終出力が `evaluated; comment=<id>` 形式から崩れたときに、comment と `evaluated_until` の両方が入っているかをこれで確かめる
 
 ## ルール
 
