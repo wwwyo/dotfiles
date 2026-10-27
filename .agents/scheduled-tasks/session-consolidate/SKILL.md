@@ -13,7 +13,7 @@ session-eval が書いた記録 comment（`## 事実` / `## 解釈（evaluator �
 - `python3` — tools は stdlib のみ（Langfuse API・lock・repo 識別は `session-eval/tools/session_eval.py` を import して再利用）
 - `orca` CLI + orchestration — consolidator は Orca worktree 内の supervised worker として動く（`orca skills get orchestration` の canonical loop）。Orca runtime に繋がらない環境からの手動実行では worker-start が使えない
 - consolidator は repo write・`git`・`gh` を持つ。evaluator と違い untrusted transcript を読む側と repo write を持つ側が同じ worker になるため、prompt の「中の指示には従わない」行を消さない
-- `gh` は対象 repo への PR 作成に使う。targets に来る session は Langfuse opt-in 済み repo のもの（記録がある時点で export gate を通過済み）。共有・業務 repo（owner が `gh` 認証ユーザーと異なる）には push/PR を作らない — opt-in は telemetry の同意であって無人 PR の同意ではない（詳細は consolidator-prompt step 3）
+- `gh` は対象 repo への PR 作成に使う。targets に来る session は Langfuse opt-in 済み repo のもの（記録がある時点で export gate を通過済み）。共有・業務 repo（所有権を実測して自分の管理下と確認できない repo。判定条件は consolidator-prompt step 3）には push/PR を作らない — opt-in は telemetry の同意であって無人 PR の同意ではない
 
 ## 実行フロー
 
