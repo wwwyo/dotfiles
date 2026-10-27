@@ -89,10 +89,10 @@ DISPATCH_MAX_PER_HEAD = 3   # 同一 (PR, head SHA) への送信上限
 DISPATCH_MAX_ROUNDS = 3     # 往復ラウンド（dispatch を送った異なる head 数）上限
 DISPATCH_STALE_TICKS = 6    # 送信後に指摘が動かないままの tick 数上限（~3h）
 SWEEP_MAX_TRIES = 6         # sweep が永続的理由で skip し続ける回数上限（~3h）
-# 一時的な理由は ps 再取得との race 窓の 2 つだけ。git の timeout は
+# 一時的な理由は ps 再取得との race と非同期削除の進行中。git の timeout は
 # race ではなく再現する失敗（path が wedged・repo 破損等）なので
 # 永続的理由として数える — 数えないと毎 tick session が起きる
-SWEEP_TRANSIENT_REASONS = ("worktree gone", "terminal/agent live")
+SWEEP_TRANSIENT_REASONS = ("worktree gone", "terminal/agent live", "removal pending")
 THREADS_PAGE = 50           # reviewThreads の page size
 MAX_PAGES = 20              # ページング暴走の止血帯
 PR_ENUM_LIMIT = 100         # search の page size。total > limit*pages は fail-closed
@@ -2607,6 +2607,12 @@ def _cmd_sweep(a):
                 continue
             orca_json(["worktree", "rm", "--worktree",
                        f"id:{c['worktree']}"], timeout=120)
+            # rm may acknowledge an asynchronous removal before it has finished.
+            remaining = worktree_ps(c["worktree"])
+            if any(x.get("worktreeId") == c["worktree"] for x in remaining) or \
+                    Path(path).exists():
+                skip(c, "removal pending")
+                continue
         except ApiError as e:
             skip(c, f"rm failed: {e}")
             continue

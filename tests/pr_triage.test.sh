@@ -59,7 +59,7 @@ PY
 python3 "$PT" lock release >/dev/null
 
 python3 - "$PT" <<'EOF'
-import importlib.util, json, os, subprocess, sys
+import importlib.util, json, os, subprocess, sys, tempfile
 from pathlib import Path
 
 spec = importlib.util.spec_from_file_location("pt", sys.argv[1])
@@ -1079,6 +1079,36 @@ with mock.patch.object(pt, 'load_state', return_value=state), \
     pt._cmd_sweep(SimpleNamespace(only=None, dry_run=False))
     assert oc.call_args.args[0][:2] == ['terminal', 'close']
     assert oc.call_count == 1 and not output.call_args.args[0]['removed']
+
+# A successful rm receipt can precede deregistration and filesystem deletion.
+for registered, directory_remains in [(True, True), (False, True), (False, False)]:
+    with tempfile.TemporaryDirectory() as tmp:
+        path = Path(tmp) / 'checkout'
+        if directory_remains:
+            path.mkdir()
+        pending = dict(done, path=str(path), liveTerminalCount=0)
+        sweep_state = {'merged': {'wwwyo/me#8': {'sha': 'abc', 'head_ref': 'wwwyo/x'}}}
+        with mock.patch.object(pt, 'load_state', return_value=sweep_state), \
+                mock.patch.object(pt, 'worktree_ps', side_effect=[
+                    [pending], [pending], [pending], [pending],
+                    [pending] if registered else []]), \
+                mock.patch.object(pt, 'local_session_audit', return_value={}), \
+                mock.patch.object(pt, 'terminal_list', return_value=[]), \
+                mock.patch.object(pt, 'sh', side_effect=[SimpleNamespace(stdout=s)
+                    for s in ['', 'abc', 'wwwyo/x']]), \
+                mock.patch.object(pt, 'gh_json', return_value={
+                    'state': 'MERGED', 'headRefOid': 'abc', 'headRefName': 'wwwyo/x'}), \
+                mock.patch.object(pt, 'orca_json', return_value={'removed': True, 'removing': True}), \
+                mock.patch.object(pt, 'append_event') as events, \
+                mock.patch.object(pt, 'save_state'), mock.patch.object(pt, 'emit') as output:
+            pt._cmd_sweep(SimpleNamespace(only=None, dry_run=False))
+            result = output.call_args.args[0]
+            complete = not registered and not directory_remains
+            assert bool(result['removed']) == complete, result
+            assert any(c.args[0] == 'worktree_rm' for c in events.call_args_list) == complete
+            if not complete:
+                assert result['skipped'][0]['reason'] == 'removal pending', result
+                assert not sweep_state['merged']['wwwyo/me#8'].get('sweep_skips')
 
 # skip 理由は sweep_skipped として jsonl に残るが、同じ worktree+理由の
 # 連続は初回だけ（live terminal が tick ごとに残るケースで jsonl を埋めない）
