@@ -45,9 +45,9 @@ repo 編集が即反映）。supply chain 対策として `pin = true` + `minimu
   配置するため、単体 binary asset でも実行ファイル名が tool 名と一致しないことがある
   （`gh-aw` v0.92.0 では `darwin` になった）。このままだと shim があっても
   `couldn't exec process` で落ちる。docs の対応表では単体 binary は `bin = "<tool 名>"`
-  （`gh-actions-lock`）、archive 展開後の executable は `rename_exe`。実測では単体 binary に
-  `rename_exe` を指定しても同じ結果になり、正本の `home/dot_config/mise/config.toml` の
-  gh-aw entry はこちら — どちらか一方を指定すればよい
+  （`gh-actions-lock`）、archive 展開後の executable は `rename_exe`。`gh-aw` の asset は
+  `rename_exe` でも同じ結果になり、正本の `home/dot_config/mise/config.toml` はこちら —
+  改名の要否は asset の命名次第なので、どちらか一方を指定して実 install で確認する
 - CI で `mise.lock` の値（URL・checksum 等）を shell の `source` に渡すと、その lockfile を
   書き換えられる PR 作成者が任意コマンドを実行できる。値の検証・配置は Python 等の内部で
   完結させ、lockfile の値を shell に渡さない（gh-actions-lock の verify job で実際に

@@ -20,7 +20,7 @@ paths = ["home/dot_codex/AGENTS.md", "home/dot_claude/CLAUDE.md",
          "home/dot_config/devin/AGENTS.md"]
 policies = []
 for path in paths:
-    lines = [line.split("セキュリティ修正", 1)[1] for line in Path(path).read_text().splitlines()
+    lines = [line.split("セキュリティ修正", 1)[1] for line in Path(path).read_text(encoding="utf-8").splitlines()
              if line.startswith("- package install ") and "セキュリティ修正" in line]
     if len(lines) != 1:
         raise SystemExit(f"FAIL: {path}: expected one security-update policy")

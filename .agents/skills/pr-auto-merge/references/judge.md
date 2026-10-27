@@ -180,7 +180,7 @@ workflow を判定する:
      （run が無い・未実行・skip の場合はその旨を書き、それだけで ng にはしない — 下の基準どおり）
      run の trigger と実際に使った workflow revision も確認する。`pull_request_target` は
      base 側、`workflow_run` は既定 branch 側の workflow なので、緑でも PR head で
-     更新した action の実行証明にはしない。main push 専用 job は未実行と明記し、
+     更新した action の実行証明にはしない。既定 branch push 専用 job は未実行と明記し、
      静的な照合と revert 可能性を根拠に判定する。
   4. 非該当と判断した outputs/token のどれが非該当かと revert 可能性を `--reason` に書く
 - **major という理由・release note の breaking 記述だけで ng にしない**。
