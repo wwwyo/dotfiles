@@ -20,5 +20,5 @@ workspace_path = "~/src/github.com/wwwyo/me"
 reuse_session = true
 
 prompt = """
-daily-end skill を実行する。今日の分がすでに実行済みなら skip する。作業ディレクトリは {{workspace_path}}。
+daily-end skill を実行する。今日の分がすでに実行済みなら skip する。これは無人の scheduled 実行なので、reuse session が対話端末でも振り返り質問・回答待ちは行わず、end.md に「対話なし」と記す。作業ディレクトリは {{workspace_path}}。
 """

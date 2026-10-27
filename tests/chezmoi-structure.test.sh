@@ -53,4 +53,21 @@ for entry in .[!.]*/; do
     fail "$dir は deploy 対象候補だが link script にも internal allowlist にも無い"
 done
 
+# Shared security-update policy must agree across harnesses; other instructions
+# may intentionally differ. Reading the Pi link also detects a broken target.
+python3 - <<'PYTHON'
+from pathlib import Path
+paths = ["home/dot_codex/AGENTS.md", "home/dot_claude/CLAUDE.md",
+         "home/dot_config/devin/AGENTS.md", "home/dot_pi/agent/AGENTS.md"]
+policies = []
+for path in paths:
+    lines = [line.split("セキュリティ修正", 1)[1] for line in Path(path).read_text().splitlines()
+             if line.startswith("- package install ") and "セキュリティ修正" in line]
+    if len(lines) != 1:
+        raise SystemExit(f"FAIL: {path}: expected one security-update policy")
+    policies.append(lines[0])
+if len(set(policies)) != 1:
+    raise SystemExit("FAIL: security-update policy differs across global instructions")
+PYTHON
+
 echo "OK: chezmoi source layout is consistent"

@@ -66,7 +66,7 @@ version-matched guide は coordinator 視点の記述が中心。worker 側の�
 
 ## 自分のいる worktree を消すとき
 
-`orca worktree rm` は対象を cwd にしている process の足元も消す — cwd が消えた後は相対 path・`getcwd` 依存のコマンドが元の意味をなさないエラーで落ちる。自分が中にいる worktree（pr-auto-merge sweep 等で自分の worktree が対象に含まれうるケース含む）を消す操作の前に、実行側 shell の `pwd` が対象外であることを確認する。確認せず消して後続コマンドが不可解な `ENOENT` / deleted-path エラーで落ちたときの原因はこれ。
+`orca worktree rm` は対象 worktree の agent process 自体を SIGTERM で終了させることがある。tool の shell だけを `cd /tmp` しても、所属 terminal 自体が終了する場合を防げない。自分の worktree を消す必要がある場合は、結果・残課題の報告を先に済ませ、削除を最後の操作にする。監督下の worker は `worker_done` 後の片付けを coordinator に任せる。
 
 ## `orca computer` が focused window を取れないとき
 
