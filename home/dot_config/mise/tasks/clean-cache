@@ -86,8 +86,9 @@ else
 fi
 
 always_step "go testcache" go clean -testcache
-# どの tracked config からも要求されない古い tool version だけを消す
-always_step "mise prune" mise prune -y
+# tracked config も tracked stub も要求せず、実行中 process の起動元でもない
+# tool version だけを消す（stub や実行中の分は残る）
+always_step "mise prune (unused)" mise prune -y
 always_step "pnpm store prune" pnpm store prune
 # simctl は full Xcode（simulator runtime）が無いマシンでは `xcrun: unable to
 # find utility "simctl"` で必ず失敗する。Xcode 不在は閾値判定と無関係な
