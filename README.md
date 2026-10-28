@@ -91,7 +91,7 @@ scripts/ docs/ tests/            # repo 内部ファイル（deploy されない
 - 既存のファイルは chezmoi が検出する（`chezmoi apply` で上書きされる前に `chezmoi diff` で確認推奨）
 - `.ssh/config` のみ管理対象。SSH 鍵や `~/.ssh/config.local`（マシン固有の Host）などの機密ファイルは対象外
 - Codex の共通設定は `home/.chezmoitemplates/codex-base.toml.tmpl`。`~/.codex/config.toml` は実ファイルで、apply は共通設定だけを更新する。repo trust・hook 承認履歴・PC 固有の plugin 配置先などはローカルに保持され、repo には同期されない。`~/.codex/hooks.json` は引き続き template から配置する。
-- Pi の共通 sandbox 設定は `home/.chezmoitemplates/pi-sandbox-base.json`。`~/.pi/agent/sandbox.json` は実ファイルで、個別ファイルの読み取り許可はローカルだけに保存する。sandbox は恒久無効のまま。
+- Pi の sandbox は 2026-10-27 に廃止した（`pi-sandbox` package と `sandbox.json` を削除）。理由と再導入時の前提は [dev-env の pi reference](.agents/skills/dev-env/references/pi.md) にある。
 - Pi の `settings.json` も同じ方式。`home/.chezmoitemplates/pi-settings-base.json` を `private_settings.json.tmpl` が `~` 側と合成する実ファイルで、pi が TUI から書き戻す既定 model・theme などはローカルに残り repo を汚さない。
 - `~/.claude/settings.json` は repo への symlink なので書き戻しが `git status` に出る。Devin の `~/.config/devin/config.json` は template から作る実ファイルで、承認や個人設定はローカルに保持する。Devin の Orca hook は PC ごとの home directory から描画する。
 - mise の age 復号鍵は macOS では Keychain（`service=mise-age-key`）、それ以外では gitignore 済みの `~/.config/mise/age.txt` から読む（`home/dot_zsh/01-exports.zsh`）。鍵ファイル自体は repo に置かず、password manager 等の別経路で持ってくる
