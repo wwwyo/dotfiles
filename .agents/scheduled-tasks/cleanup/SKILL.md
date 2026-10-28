@@ -9,7 +9,7 @@ description: 3日ごと、閾値を超えたキャッシュ・使っていない
 
 ## 1. キャッシュ
 
-`mise clean-cache` を実行する。各キャッシュが閾値（go modcache / buildcache / uv 5GB、bun / npm 2GB、container image 3GB）を超えたときだけ削除し、未満なら skip する。**使っていない mise install**（どの tracked config からも選ばれず、tracked stub も使っていない tool version。実行中 process の起動元 version は残る）は `mise prune` で毎回消す。閾値は無く、消しても再取得で戻せるので常時実行する。残っていないかは `mise ls --prunable` で確認できる（stub や実行中 process が参照している分は残るので、空にならないこともある）。uv cache は他の uv process が lock を持っていれば skip する（`--force` で奪わない）。`simctl unavailable`（未参照 simulator の削除）は full Xcode＋simulator runtime が無い環境では `skip (simctl なし…)` 表示になり、`failed:` や exit 1 にはならない — Xcode 不在は閾値判定と無関係な恒常的な環境要因なので異常に数えない。
+`mise clean-cache` を実行する。各キャッシュが閾値（go modcache / buildcache / uv 5GB、bun / npm 2GB、container image 3GB）を超えたときだけ削除し、未満なら skip する。**使っていない mise install**（どの tracked config からも選ばれず、tracked stub も使っていない tool version。実行中 process の起動元 version は残る）は `mise prune` で毎回消す。閾値は無く、消しても再取得で戻せるので常時実行する。残っていないかは `mise ls --prunable` で確認できる。残す version（stub が参照している分・実行中 process の起動元）は prunable に数えられないので、prune が成功すれば空になる。空でなければ未使用が残っている。uv cache は他の uv process が lock を持っていれば skip する（`--force` で奪わない）。`simctl unavailable`（未参照 simulator の削除）は full Xcode＋simulator runtime が無い環境では `skip (simctl なし…)` 表示になり、`failed:` や exit 1 にはならない — Xcode 不在は閾値判定と無関係な恒常的な環境要因なので異常に数えない。
 
 cleanup の対象外だが、手動で「storage を空けて」と頼まれて消すときは次を消さない。`~/.rustup` は mise 管理 rust の本体を兼ねる — 丸ごと削除すると cargo/rustc が動かなくなる。古い版は、削除前に各プロジェクトで `rustup show` を確認し、`rust-toolchain` / `rust-toolchain.toml` や directory override が対象版を選んでいないことを確かめてから `rustup toolchain uninstall <版>` で版単位に消す（`cargo --version` だけではプロジェクト固有の指定を検出できない）。`~/.codex` は `auth.json`・`config.toml` を含み、消すとログイン・設定が飛ぶ — 容量の大半は `sessions/` なのでそこだけを消す。
 
