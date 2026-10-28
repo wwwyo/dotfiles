@@ -21,7 +21,10 @@ for tool_dir in .claude/skills; do
   for link in "$tool_dir"/* "$tool_dir"/.[!.]*; do
     [ -e "$link" ] || [ -L "$link" ] || continue
     name="$(basename "$link")"
+    # .system / synced はツールが自分で作る実 dir（.gitignore 済みのキャッシュ）で、
+    # .agents/skills の symlink 対象ではない
     [ "$name" = ".system" ] && continue
+    [ "$name" = "synced" ] && continue
     [ -L "$link" ] || fail "$link is not a symlink"
     [ -e "$link" ] || fail "$link is dangling"
     [ -d ".agents/skills/$name" ] || fail "$link has no counterpart in .agents/skills"
