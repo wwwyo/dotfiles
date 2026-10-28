@@ -34,7 +34,7 @@ description: "別 agent への委譲・相談・レビューで harness・model�
 | harness     | bypass の指定                                                                          |
 | ----------- | ----------------------------------------------------------------------------------- |
 | Codex       | `--dangerously-bypass-approvals-and-sandbox`                                        |
-| pi          | `--no-sandbox`（この環境の `pi-sandbox` extension が提供。読み込み確認は [pi の手順](references/pi.md)） |
+| pi          | 指定不要（この環境は sandbox extension を外している。再導入した場合だけ `--no-sandbox` — 読み込み確認は [pi の手順](references/pi.md)） |
 | Claude Code | `--dangerously-skip-permissions`                                                    |
 
 

@@ -44,7 +44,7 @@ SC=~/.agents/scheduled-tasks/session-consolidate/tools/session_consolidate.py
      # create の result.worktree.id（<repo_id>::<worktree_path> 全体）を使う
      # MODEL/EFFORT は選んだ実値へ置換する
      orca terminal create --worktree id:<worktree_id> \
-       --command 'mise x -- pi --no-sandbox --model <MODEL> --thinking <EFFORT>' --json
+       --command 'mise x -- pi --model <MODEL> --thinking <EFFORT>' --json
      # terminal create の handle を使う。ready を確認するまで spec を送らない
      orca terminal wait --terminal <handle> --for tui-idle --timeout-ms 180000 --json
      orca orchestration worker-start \

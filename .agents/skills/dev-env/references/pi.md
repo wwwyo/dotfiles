@@ -4,14 +4,13 @@
 
 ## 構成
 
-設定は dotfiles の `home/dot_pi/agent/` から chezmoi で配置する。通常の設定は file 単位 symlink、settings.json・sandbox.json は local 側の状態を残す実ファイル（template 合成）。
+設定は dotfiles の `home/dot_pi/agent/` から chezmoi で配置する。通常の設定は file 単位 symlink、settings.json は local 側の状態を残す実ファイル（template 合成）。
 
 
 | パス                                            | 中身                                                                                                                                                                                                                                                                                                                                                |
 | --------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `.pi/agent/settings.json`                     | `home/.chezmoitemplates/pi-settings-base.json`（skills パス・`enabledModels`・`extensions`・`packages` の正本）を `private_settings.json.tmpl` が `~` 側の file と合成する。TUI が書き戻す `defaultProvider`/`defaultModel`/`defaultThinkingLevel`/`theme`/`lastChangelogVersion` は local の値を残す — それ以外を TUI や `pi install` から変えても apply で base 値に巻き戻るので、恒久的な変更は base を編集する |
 | `.pi/agent/models.json`                       | openrouter の `data_collection: "deny"` compat（`compat` だけの部分定義は built-in と merge されて安全）と、pi catalog 未掲載の opencode-go model の先行定義。catalog に載ったら先行定義は削除する                                                                                                                                                                                                    |
-| `home/.chezmoitemplates/pi-sandbox-base.json` | sandbox の共通設定（後述「Orca socket」）。個別の読み取り許可は `~/.pi/agent/sandbox.json` だけで管理                                                                                                                                                                                                                                                                        |
 | `.pi/agent/extensions/`                       | TypeScript extension 置き場（現在は空）                                                                                                                                                                                                                                                                                                                    |
 | `~/.pi/agent/AGENTS.md`                       | `.codex/AGENTS.md` への symlink。global 指示として効く                                                                                                                                                                                                                                                                                                      |
 
@@ -32,7 +31,10 @@ skill は `settings.json` の `"skills": ["~/.claude/skills"]` 一本で読ま�
 
 - Go サブスクで使えるかは catalog 掲載ではなく endpoint が決める — catalog 未掲載でも生きている model がある一方、`claude-sonnet-*`/`claude-opus-*` 系は endpoint が `Model is unavailable` で拒否するので `enabledModels` に足しても動かない。`enabledModels` に Anthropic の上位 model が並ばないのは漏れではなくこの境界のため。upstream が枠から model を消す例は [delegate](../../delegate/SKILL.md) に集約する
 - prompt editor の Vim mode は `@wwwyo/pi-vim` package（base の `packages` に `npm:@wwwyo/pi-vim@0.14.2` で exact pin）が提供する。設定 flag ではないので、vim モードが効かなくなったら `packages` 行が残っているかを見る。pin を緩めると後方互換のない更新がそのまま入る。upstream は unscoped の `pi-vim`（github.com/lajarre/pi-vim）で、`@wwwyo/pi-vim` は同じ source を自 scope に publish したもの — 名前は違うが中身は同一なので、`pi list` でどちらの名前が入っているかを見る（旧 pin の `pi-vim` を指す状態では自 scope 側の publish に切り替わらない）
-- `packages` の `npm:pi-subagents` は **0.75.0 以上が必須**（現 pin `@0.77.0`、base の `packages` が正本）。Pi 1.0.0 で `@earendil-works/pi-agent-core` の `./node` subpath が消え、0.74.0 以前の background child は `Background children require the host npm package ... does not provide @earendil-works/pi-agent-core/node` で**全件起動失敗**する（0.75.0 が「host が宣言しない subpath の alias は作らない」optional 化で修正）。親の `subagent` 自体は成功し child だけが即死するので、pin を戻すと batch が静かに全滅する。切り分けは package の `resolveHostPeerAliases(<pi package root>)` を node で直接呼び `missing` が空かを見る（0.72.0 は 1 件）。package 更新は稼働中の pi に反映されない — 再起動か `/reload` が要る。**`/new` では反映されない**: `/reload` は process 内の extension factory cache を捨てて package を再解決・再 install するが、`/new` は session とサービスを作り直すだけで cache を破棄せず、同じ path の旧 factory を使い回す。**`subagent` tool は最初から見えるとは限らない** — 0.74.0 以降は model が tool を途中追加できるかで変わり（既定の DeepSeek V4.1 Flash は最初から `subagent` が見えるので `subagents_enable` は出ない。見えない model では `subagents_enable` で有効化）、config の `toolActivation`（既定 `auto`）で固定できる。skill や batch の手順に `subagents_enable` を前提で書かない
+- `packages` の `npm:pi-subagents` は **0.75.0 以上が必須**（現 pin `@0.83.0`、base の `packages` が正本）。Pi 1.0.0 で `@earendil-works/pi-agent-core` の `./node` subpath が消え、0.74.0 以前の background child は `Background children require the host npm package ... does not provide @earendil-works/pi-agent-core/node` で**全件起動失敗**する（0.75.0 が「host が宣言しない subpath の alias は作らない」optional 化で修正）。親の `subagent` 自体は成功し child だけが即死するので、pin を戻すと batch が静かに全滅する。切り分けは package の `resolveHostPeerAliases(<pi package root>)` を node で直接呼び `missing` が空かを見る（0.72.0 は 1 件）。package 更新は稼働中の pi に反映されない — 再起動か `/reload` が要る。**`/new` では反映されない**: `/reload` は process 内の extension factory cache を捨てて package を再解決・再 install するが、`/new` は session とサービスを作り直すだけで cache を破棄せず、同じ path の旧 factory を使い回す。**`subagent` tool は最初から見えるとは限らない** — 0.74.0 以降は model が tool を途中追加できるかで変わり（既定の DeepSeek V4.1 Flash は最初から `subagent` が見えるので `subagents_enable` は出ない。見えない model では `subagents_enable` で有効化）、config の `toolActivation`（既定 `auto`）で固定できる。skill や batch の手順に `subagents_enable` を前提で書かない
+- **0.77.0 は pi 1.x で background child 全滅**（`... does not provide @earendil-works/chord, @earendil-works/chord/context`）。`runner-aliases.js` の pre-chord 判定が `^0\.(\d+)\.\d+$` の決め打ちで、host version `1.3.0` が「chord 必須期」と誤判定され、chord を同梱しない pi 1.2.0+ で必ず missing になる。**0.78.0 が host manifest の `dependencies` を見る方式に修正**。同期（`async: false`）はこの alias map を使わないので通る — async だけ落ちる症状はこの bug を疑う
+- **`npm update` / `npm install` を `~/.pi/agent/npm` で直接叩かない**。peer の host package（`@earendil-works/pi-coding-agent@0.80.10` 等）を物理導入して extension の module mapping を壊し、`extraneous` も生える（`npm audit` の指摘が増えるのはこの混入が主）。pi の installer は peer を抑制するので、掃除は `node_modules` と `package-lock.json` を消して `pi install` で再構築する。`pi update --extensions` は settings の pin 変更を反映しない（`Updated packages` と出ても何も変わらない）— pin を上げたら `pi install npm:<pkg>@<version>` で reconcile する
+- `pi-subagents` の 0.65.1–0.81.0 は undici advisory を抱える（0.82.0 で undici 8.12.3）。security 修正なので cooldown を待たずに上げてよい区分。
 - `auth.json`（machine 固有、link 対象外）の credential は env の `OPENCODE_API_KEY` より優先される。平文ではなく `"key": "!..."` の command credential を置く（pi は `!` 始まりの値を shell 実行して stdout を key にする）。中身は `MISE_AGE_KEY` で `mise x -- printenv OPENCODE_API_KEY` を返す一行 — 解決値が mise の SSOT と同じなので rotate しても env と不整合にならず、env に key が無い非対話 spawn（Orca daemon・`env -i`・pi-acp）でも動く。`/login` で生 key が書き戻されたら同じコマンド形式に戻す
 - `~/.pi/agent` の管理ファイルは `home/dot_pi/agent/` 配下の chezmoi file 単位 symlink（`auth.json`・`sessions`・`models-store.json` 等は machine 固有の実ファイル）。settings.json は symlink だと pi の TUI 書き戻しが repo 正本を汚して PR diff に乗るため、合成する実ファイルにしている（上の表）。新しい設定ファイルは `home/dot_pi/agent/` に足して `chezmoi apply` しないと live に効かない
 - MCP は pi v1 の built-in `mcp` extension を使う（third-party の `pi-mcp-adapter` package は 2026-10 に削除した）。server 定義は `~/.pi/agent/mcp.json` で、chezmoi の正本は `home/dot_pi/agent/mcp.json`。`~/.agents/mcp.json` は同じ file への相対 symlink で、MCP 設定の generic な置き場として残している（adapter は `~/.agents/mcp.json` を import していた — 別 client も同じ置き場を読む）
@@ -42,15 +44,23 @@ skill は `settings.json` の `"skills": ["~/.claude/skills"]` 一本で読ま�
 - `enabledModels` には provider prefix を付ける。モデル ID だけ書くと部分一致で別 provider にまで広がる（`deepseek-v4.1-flash` が openrouter の `deepseek/deepseek-v4.1-flash` にもマッチする）。さらに pi は TUI での選択を `defaultProvider` ごと settings.json に書き戻すため、Ctrl+P で循環しただけで課金先が黙って変わる。`opencode-go/deepseek-v4.1-flash` のように書く
 - skill の取得・更新・削除は `skillctrl` で行う。正本は `.agents/skills/` で、pi は同じディレクトリを native discovery する。pi 専用のコピーや symlink は作らない
 
-## `sandbox.json` の Orca socket 許可
+## sandbox は使っていない（`pi-sandbox` を外した）
 
-- 現在 `enabled: false` — ユーザー指示で恒久無効化している。設定不調で「直す」ために勝手に再有効化しない
-- sandbox.json の変更反映に再起動は不要 — `/sandbox-enable` で extension が config を読み直す。enable は `enabled: false` を無視する session 単位の override なので、恒久無効の運用では `/sandbox-enable` → `/sandbox-disable` で戻して終わる。再起動をユーザーに頼む前にこちらを試す
-- sandbox は `settings.json` の `packages` に登録した `pi-sandbox` extension が提供する。`--no-sandbox` もこの extension の引数であり、pi 本体の flag ではない。extension を読み込まない隔離起動では同じ引数を付けても解除の証明にならない。読み込み状況は `pi list`、引数の提供は `pi --help` の Extension CLI Flags で確認する
-- sandbox 内から git の SSH 署名を通すには、`~/.ssh` を `filesystem.denyRead` の対象外に保ち（公開鍵を読む必要がある）、SSH agent socket の親 dir を `network.allowUnixSockets` に許可する。denyRead の private key は `**/id_rsa`・`**/id_ed25519` のみ — `id_ecdsa` 等の別名鍵は個別に追加する（`**/id_*` に広げると `id_*.pub` まで読めなくなる）。socket に届く code は確認なしの loaded key で署名・認証を要求できるので、untrusted code には socket 自体を許可しない。署名失敗は「pubkey が読めるか」「`ssh-add -l` が通るか」で層を切り分ける（`launchctl getenv SSH_AUTH_SOCK` が空なのは launchd 未登録環境では正常）
-- Orca CLI は `~/Library/Application Support/orca/orca-runtime.json` から Unix socket endpoint を読み、現在は `o-<pid>-<suffix>.sock` に接続する。macOS の sandbox runtime は Unix socket を既定で遮断するため、`network.allowUnixSockets` に親 directory を許可する。workspace の `allowWrite` は socket 接続を許可しない
-- `allowAllUnixSockets` は全 socket を開くため使わない。endpoint 名は runtime ごとに変わるので Orca の Application Support directory に絞って許可する。runtime は `~` を展開し、macOS では `subpath` で bind/connect の両方を許可するため、値に `/*` は付けない
-- `allowBrowserProcess` は Electron RunAsNode の `task_name_for_pid` 診断を消すために有効化している。これは単なるログ抑制ではなく、`mach*`・全 process-info・広い IOKit・共有メモリを許可する強い緩和。ユーザーが明示的に許可した
+2026-10-27 に `pi-sandbox` package と `~/.pi/agent/sandbox.json`・chezmoi 側の template を削除した。理由:
+
+- 以前から `enabled: false` で恒久無効運用だった（設定不調で「直す」ために勝手に再有効化しない、という指示は維持）
+- 有効化していなくても extension は import される。依存の `@carderne/sandbox-runtime` は Anthropic の `srt` の**個人フォーク**（維持者 1 人・上流から 285 commit 遅れ・`.git` の hooks/config 保護を外す patch 入り）で、`zod < 4.6.6` の HIGH advisory を抱える。上流 0.0.81 も `zod ^3.25.0` のままで、version up では消えない（必要なら sandbox-runtime 側の zod 4 移行を待つ）
+
+再導入するときの前提（外す前に実測した事実）:
+
+- **config を置かないと `enabled: true` になる**（`DEFAULT_CONFIG.enabled = true`）。無効で使うなら `{"enabled": false}` を必ず置く
+- **既存環境の移行**: base から外しただけでは `~/.pi/agent/npm` に `pi-sandbox` と依存（`@carderne/sandbox-runtime`・`zod`・`node-forge`）が残る。`npm uninstall pi-sandbox --prefix ~/.pi/agent/npm` では推移的依存が orphan で残るので、`rm -rf ~/.pi/agent/npm/node_modules ~/.pi/agent/npm/package-lock.json` の後、settings の pin を `pi install npm:<pkg>@<version>` で入れ直す（`pi update --extensions` は pin 変更を反映しない）。完了後は 2 package・`cd ~/.pi/agent/npm && npm audit` が 0 件
+- Orca の launcher args（`--no-sandbox` の残骸）の移行は [orca.md](orca.md) が正本
+- `--no-sandbox` は extension が提供する引数で、pi 本体の flag ではない。付けたまま extension を外すと `Error: Unknown option: --no-sandbox` で**起動しない**（delegate・session-consolidate・pr_triage の起動 command からも消した）
+- sandbox-init 時に `rg` を要求する（無いと `Sandbox dependencies not available: ripgrep (rg) not found`）
+- Orca CLI を sandbox 内から使うには `network.allowUnixSockets` に `~/Library/Application Support/orca` を許可する（Orca は `orca-runtime.json` の `o-<pid>-<suffix>.sock` に接続する）。`allowAllUnixSockets` は使わない
+- git の SSH 署名を通すには `~/.ssh` を `filesystem.denyRead` の対象外にし、ssh-agent socket の親 dir を許可する（private key は `**/id_rsa`・`**/id_ed25519` のみ deny）
+- `allowBrowserProcess` は Electron の `task_name_for_pid` 診断を消す代わりに `mach*`・全 process-info・IOKit・共有メモリを開ける強い緩和なので、必要性を確認してから入れる
 
 ## 関連
 

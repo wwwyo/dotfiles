@@ -1648,7 +1648,7 @@ def pi_worker_command():
                 if match:
                     model, thinking = match.groups()
                     if model in available:
-                        return shlex.join(["mise", "x", "--", "pi", "--no-sandbox",
+                        return shlex.join(["mise", "x", "--", "pi",
                                            "--model", model, "--thinking", thinking])
             break
     raise ApiError("delegate worker/personal has no available pi candidate")

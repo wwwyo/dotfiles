@@ -14,18 +14,18 @@ pi は opencode Go サブスク（月 $10、5時間 $12 / 週 $30 / 月 $60 の�
 
 ## 対話 session の起動・継続
 
-[delegate](../SKILL.md) の「起動時の権限モード」に従い、`--no-sandbox` を付けて実行する。`OPENCODE_API_KEY` の env 注入は不要 — `~/.pi/agent/auth.json` の `!` command credential が mise から都度解決する（[設定・認証](../../dev-env/references/pi.md)を参照）。
+[delegate](../SKILL.md) の「起動時の権限モード」に従う。この環境は sandbox extension を外しているので解除用の引数は付けない（`--no-sandbox` は pi 本体の flag ではなく、付けると `Unknown option` で起動しない）。`OPENCODE_API_KEY` の env 注入は不要 — `~/.pi/agent/auth.json` の `!` command credential が mise から都度解決する（[設定・認証](../../dev-env/references/pi.md)を参照）。
 
-以下の実行例は、この環境で登録済みの `pi-sandbox` extension を読み込む前提。`pi --help` の Extension CLI Flags に `--no-sandbox` が出ることを確認する。出なければ [設定・認証](../../dev-env/references/pi.md)で extension の読み込みを確認し、未知の引数を付けたまま解除済みと判断しない。sandbox extension 自体を使用していない環境では、解除用の引数は不要。
+sandbox extension を再導入した場合だけ、`pi --help` の Extension CLI Flags に `--no-sandbox` が出ることを確かめて付ける。未知の引数を付けたまま解除済みと判断しない。
 
 以下を対象 worktree の Orca `terminal create --command` に渡す。起動時には prompt を付けず、下の handoff 手順で ready を確認してから送る。
 
 ```bash
 # 新規の対話 session
-pi --no-sandbox --model "$MODEL" --thinking "$EFFORT"
+pi --model "$MODEL" --thinking "$EFFORT"
 
 # process 終了後、対象 session を対話モードで再開
-pi --no-sandbox --model "$MODEL" --thinking "$EFFORT" --session <session-path-or-id>
+pi --model "$MODEL" --thinking "$EFFORT" --session <session-path-or-id>
 ```
 
 追加指示は同じ terminal に `terminal send --text ... --enter` で送り、回答後も session を残す。再開は session の path / ID を指定し、別タスクを拾い得る `-c` に頼らない。新規 session に名前が必要なら `--name <task-name>` を使う。`-p` / `--print` / `--mode json` / `--no-session` は通常の委譲では使わず、ユーザーが非対話実行を明示した場合だけ使う。
@@ -38,10 +38,10 @@ resume・同じ session の継続では、初回の `MODEL`・`EFFORT` を引き
 
 **`worktree create --prompt` を使わない**（他の harness では可）。pi の TUI は入力 ready 前のキー入力を保持せず、prompt が滞留または消失して静かに失敗する。Orca の send 証明も `provider: "unsupported"` で未送信を検知できない（stablyai/orca#22580）。`orca-cli` の通常の handoff 手順に対し、次の順序を使う。
 
-1. `worktree create --agent pi` で起動する。`--prompt` は付けない。pi には Orca 既定の bypass 引数が無いため、sandbox extension を使う環境では次の 2 コマンドに替える（`--worktree` を省くと呼び出し元の worktree で pi が動く）。`--agent` 無しの create は fallback shell が残るので、`terminal list` で未使用を確認してから閉じる。sandbox の有効・無効の確認は前述の `pi --help` の手順に従う。`$MODEL`・`$EFFORT` は親の env で export した変数ではなく、選んだ値を command 文字列へそのまま埋め込む。
+1. `worktree create --agent pi` で起動する。`--prompt` は付けない。pi には Orca 既定の bypass 引数が無いため、次の 2 コマンドに替える（`--worktree` を省くと呼び出し元の worktree で pi が動く）。`--agent` 無しの create は fallback shell が残るので、`terminal list` で未使用を確認してから閉じる。`$MODEL`・`$EFFORT` は親の env で export した変数ではなく、選んだ値を command 文字列へそのまま埋め込む。
    ```text
     ORCA worktree create --name <task-name> --no-parent --json
-    ORCA terminal create --worktree id:<repoId>::<worktreePath> --command 'pi --no-sandbox --model "$MODEL" --thinking "$EFFORT"' --json
+    ORCA terminal create --worktree id:<repoId>::<worktreePath> --command 'pi --model "$MODEL" --thinking "$EFFORT"' --json
    ```
 2. 起動した terminal に対して `terminal wait --for tui-idle --timeout-ms ...` を実行し、`satisfied: true` を確認する。pi は起動描画に数分かかるため、timeout は長めに取る。ready が確認できない間は送信しない。
 3. `terminal send --text ... --enter` で依頼文を送る。
