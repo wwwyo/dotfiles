@@ -1692,7 +1692,7 @@ def spawn_worktree(repo, number, head_ref):
             try:
                 identity = (gh_json(["api", f"repos/{identity}"]) or {}).get("full_name")
             except (ApiError, AttributeError, ValueError) as e:
-                unavailable.append(str(e))
+                unavailable.append(f"{path}: {e}")
                 continue
         if identity == repo:
             matching.append(path)
@@ -1721,20 +1721,21 @@ def spawn_worktree(repo, number, head_ref):
     # head branch を checkout（他 worktree で checkout 済みでないことは
     # gate 側で確認済み。ここでの失敗は spawn 失敗として上位へ）
     sh(["git", "-C", path, "fetch", "origin", head_ref], timeout=120)
-    r = subprocess.run(["git", "-C", path, "checkout", head_ref],
-                       capture_output=True, text=True, timeout=60)
+    # 非ゼロは fallback で拾うので check=False。timeout は ApiError に変換され、
+    # 送信前失敗として dispatch_failure の記録に載る（素の TimeoutExpired は
+    # _cmd_dispatch の ApiError 捕捉を素通りする）。
+    r = sh(["git", "-C", path, "checkout", head_ref], timeout=60, check=False)
     if r.returncode != 0:
         # local branch が無い/既存で拾えないなら FETCH_HEAD から作る
-        r = subprocess.run(
-            ["git", "-C", path, "checkout", "-b", head_ref, "FETCH_HEAD"],
-            capture_output=True, text=True, timeout=60)
+        r = sh(["git", "-C", path, "checkout", "-b", head_ref, "FETCH_HEAD"],
+               timeout=60, check=False)
         if r.returncode != 0:
             raise ApiError(f"checkout {head_ref} failed: "
                            f"{r.stderr.strip()[:300]}")
     # remote 側が進んでいるなら fast-forward だけ追従する（merge commit は
     # 作らない — local 実体が残っている場合の分岐は動かさない）
-    subprocess.run(["git", "-C", path, "merge", "--ff-only", "FETCH_HEAD"],
-                   capture_output=True, text=True, timeout=60)
+    sh(["git", "-C", path, "merge", "--ff-only", "FETCH_HEAD"],
+       timeout=60, check=False)
     res = orca_json(["terminal", "create", "--worktree", "id:" + wtid,
                      "--command", command], timeout=120)
     handle = ((res or {}).get("terminal") or {}).get("handle") or \
