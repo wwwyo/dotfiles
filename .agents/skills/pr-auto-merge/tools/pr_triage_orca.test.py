@@ -73,6 +73,8 @@ if tool == 'orca':
         repos = [{'path': str(root / 'checkout'), 'displayName': 'fixture'}] if (root / 'registered').exists() else []
         if mode == 'stale-candidate':
             repos.insert(0, {'path': str(root / 'stale'), 'displayName': 'fixture'})
+        if mode == 'identity-fail':
+            repos.insert(0, {'path': str(root / 'transferred'), 'displayName': 'fixture'})
         reply({'repos': repos})
     elif args[:2] == ['terminal', 'create']:
         reply({'terminal': {'handle': 'fixture-agent'}})
@@ -122,7 +124,11 @@ elif tool == 'gh':
             'repository_url': 'https://api.github.com/repos/' + owner + '/fixture',
             'html_url': 'https://github.com/' + owner + '/fixture/pull/' + str(page),
             'user': {'login': 'wwwyo', 'type': 'User'}}]}))
-    elif args[:1] == ['api'] and len(args) == 2 and args[1].startswith('repos/'):
+    elif args[:1] == ['api'] and len(args) == 2 and args[1].startswith('repos/') \
+            and args[1].count('/') == 2:
+        if mode == 'identity-fail':
+            print('gh: API rate limit exceeded', file=sys.stderr)
+            sys.exit(1)
         print(json.dumps({'full_name': os.environ.get('FIXTURE_RESOLVED_REPO', args[1][6:])}))
     elif args[:2] == ['pr', 'view']:
         print(json.dumps({'number': 30, 'state': 'OPEN', 'author': {'login': 'wwwyo'},
@@ -147,6 +153,9 @@ elif tool == 'git':
     if '-C' in args and args[args.index('-C') + 1] == str(root / 'stale'):
         print('fatal: not a git repository', file=sys.stderr)
         sys.exit(128)
+    if '-C' in args and args[args.index('-C') + 1] == str(root / 'transferred'):
+        print('https://github.com/fudoki-hensansitu/fixture.git')
+        sys.exit(0)
     if args[-3:] == ['remote', 'get-url', 'origin']:
         print('https://github.com/' + os.environ.get('FIXTURE_REMOTE', 'wwwyo/fixture') + '.git')
     elif mode == 'dirty':
@@ -289,6 +298,57 @@ with patch.object(Path, 'home', return_value=Path(fixture_home)):
         result = self.run_cli('denied', *args)
         self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
         self.assertEqual(json.loads(state_path.read_text())['prs']['wwwyo/fixture#30']['dispatch_failure']['count'], 1)
+
+    def test_unresolvable_transfer_identity_does_not_abort_dispatch(self):
+        # remote が別 owner を指す候補は gh api で引き直すが、その照会が失敗しても
+        # 他の候補で canonical path が定まれば dispatch を続ける（fail-closed は
+        # 候補が定まらないときだけ）。
+        (self.root / 'registered').touch()
+        (self.root / 'transferred').mkdir()
+        result = self.run_cli('identity-fail', 'dispatch', '--repo', 'wwwyo/fixture', '--number', '30')
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertTrue(json.loads(result.stdout)['dispatched'])
+        calls = [json.loads(s) for s in (self.root / 'calls.jsonl').read_text().splitlines()]
+        create = next(c for c in calls if c[:3] == ['orca', 'worktree', 'create'])
+        self.assertEqual(create[create.index('--repo') + 1], f'path:{self.root / "checkout"}')
+
+    def test_stale_dispatch_failure_is_pruned(self):
+        args = ('dispatch', '--repo', 'wwwyo/fixture', '--number', '30')
+        self.run_cli('denied', *args)
+        state_path = self.root / 'state/state.json'
+        state = json.loads(state_path.read_text())
+        entry = state['prs']['wwwyo/fixture#30']
+        self.assertEqual(entry['dispatch_failure']['count'], 1)
+        old = (datetime.now(timezone.utc) - timedelta(days=31)).isoformat()
+        entry['dispatch_failure']['at'] = old
+        # 期限切れに加え、dispatch 履歴も古い entry は丸ごと消える
+        entry['dispatches'] = [{'sha': 'old-head', 'sig': 'x', 'at': old}]
+        state_path.write_text(json.dumps(state))
+        prune = subprocess.run([sys.executable, "-c",
+            "import importlib.util; s=importlib.util.spec_from_file_location('pt', " + repr(str(SCRIPT)) + "); "
+            "m=importlib.util.module_from_spec(s); s.loader.exec_module(m); "
+            "st=m.load_state(); m.prune_state(st); m.save_state(st)"],
+            env=self.env, capture_output=True, text=True)
+        self.assertEqual(prune.returncode, 0, prune.stdout + prune.stderr)
+        pruned = json.loads(state_path.read_text())
+        self.assertNotIn('wwwyo/fixture#30', pruned.get('prs') or {})
+
+    def test_fresh_dispatch_failure_survives_prune(self):
+        args = ('dispatch', '--repo', 'wwwyo/fixture', '--number', '30')
+        self.run_cli('denied', *args)
+        state_path = self.root / 'state/state.json'
+        state = json.loads(state_path.read_text())
+        old = (datetime.now(timezone.utc) - timedelta(days=31)).isoformat()
+        state['prs']['wwwyo/fixture#30']['dispatches'] = [{'sha': 'old-head', 'sig': 'x', 'at': old}]
+        state_path.write_text(json.dumps(state))
+        prune = subprocess.run([sys.executable, "-c",
+            "import importlib.util; s=importlib.util.spec_from_file_location('pt', " + repr(str(SCRIPT)) + "); "
+            "m=importlib.util.module_from_spec(s); s.loader.exec_module(m); "
+            "st=m.load_state(); m.prune_state(st); m.save_state(st)"],
+            env=self.env, capture_output=True, text=True)
+        self.assertEqual(prune.returncode, 0, prune.stdout + prune.stderr)
+        kept = json.loads(state_path.read_text())['prs']['wwwyo/fixture#30']
+        self.assertEqual(kept['dispatch_failure']['count'], 1)
 
     def test_org_registration_accepts_current_and_transferred_checkout(self):
         for path_owner, remote in [('fudoki-hensansitu', 'fudoki-hensansitu/fixture'),
