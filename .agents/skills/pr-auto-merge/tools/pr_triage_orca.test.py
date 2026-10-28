@@ -70,8 +70,10 @@ if tool == 'orca':
         (root / 'registered').touch()
         reply({})
     elif args[:2] == ['repo', 'list']:
-        reply({'repos': [{'path': str(root / 'checkout'), 'displayName': 'fixture'}]
-               if (root / 'registered').exists() else []})
+        repos = [{'path': str(root / 'checkout'), 'displayName': 'fixture'}] if (root / 'registered').exists() else []
+        if mode == 'stale-candidate':
+            repos.insert(0, {'path': str(root / 'stale'), 'displayName': 'fixture'})
+        reply({'repos': repos})
     elif args[:2] == ['terminal', 'create']:
         reply({'terminal': {'handle': 'fixture-agent'}})
     elif args[:2] == ['terminal', 'show']:
@@ -142,6 +144,9 @@ elif tool == 'mise':
     print('opencode-go deepseek-v4.1-flash 1M 128K yes yes')
     print('opencode-go mimo-v2.6-flash 1M 128K yes yes')
 elif tool == 'git':
+    if '-C' in args and args[args.index('-C') + 1] == str(root / 'stale'):
+        print('fatal: not a git repository', file=sys.stderr)
+        sys.exit(128)
     if args[-3:] == ['remote', 'get-url', 'origin']:
         print('https://github.com/' + os.environ.get('FIXTURE_REMOTE', 'wwwyo/fixture') + '.git')
     elif mode == 'dirty':
@@ -244,6 +249,46 @@ with patch.object(Path, 'home', return_value=Path(fixture_home)):
         checkout = next(i for i, c in enumerate(calls) if c[0] == "git" and "checkout" in c)
         launch = next(i for i, c in enumerate(calls) if c[:3] == ["orca", "terminal", "create"])
         self.assertLess(checkout, launch)
+
+    def test_stale_candidate_does_not_block_valid_checkout(self):
+        (self.root / 'registered').touch()
+        (self.root / 'stale').mkdir()
+        result = self.run_cli('stale-candidate', 'dispatch', '--repo', 'wwwyo/fixture', '--number', '30')
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertTrue(json.loads(result.stdout)['dispatched'])
+        calls = [json.loads(s) for s in (self.root / 'calls.jsonl').read_text().splitlines()]
+        create = next(c for c in calls if c[:3] == ['orca', 'worktree', 'create'])
+        self.assertEqual(create[create.index('--repo') + 1], f'path:{self.root / "checkout"}')
+
+    def test_repeated_dispatch_errors_escalate_without_sending(self):
+        args = ('dispatch', '--repo', 'wwwyo/fixture', '--number', '30')
+        for count in range(1, 4):
+            result = self.run_cli('denied', *args)
+            self.assertEqual(result.returncode, 1 if count < 3 else 0, result.stdout + result.stderr)
+        self.assertTrue(json.loads(result.stdout)['needs_escalate'])
+        state_path = self.root / 'state/state.json'
+        state = json.loads(state_path.read_text())
+        entry = state['prs']['wwwyo/fixture#30']
+        self.assertEqual(entry['dispatch_failure']['count'], 3)
+        self.assertEqual(entry['dispatches'], [])
+        self.assertNotIn('delivery_pending', entry)
+        (self.root / 'calls.jsonl').unlink()
+        result = self.run_cli('denied', *args)
+        self.assertTrue(json.loads(result.stdout)['needs_escalate'])
+        calls = [json.loads(s) for s in (self.root / 'calls.jsonl').read_text().splitlines()]
+        self.assertFalse(any(c[0] == 'orca' for c in calls))
+        # Reaching the cap stops probes; a new head starts a fresh budget.
+        result = self.run_cli('stderr', *args)
+        self.assertTrue(json.loads(result.stdout)['needs_escalate'])
+        entry['dispatch_failure']['sha'] = 'previous-head'
+        state_path.write_text(json.dumps(state))
+        result = self.run_cli('stderr', *args)
+        self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
+        self.assertEqual(json.loads(state_path.read_text())['prs']['wwwyo/fixture#30']['dispatch_failure']['count'], 1)
+        # Before the cap, a different error resets consecutive failures too.
+        result = self.run_cli('denied', *args)
+        self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
+        self.assertEqual(json.loads(state_path.read_text())['prs']['wwwyo/fixture#30']['dispatch_failure']['count'], 1)
 
     def test_org_registration_accepts_current_and_transferred_checkout(self):
         for path_owner, remote in [('fudoki-hensansitu', 'fudoki-hensansitu/fixture'),

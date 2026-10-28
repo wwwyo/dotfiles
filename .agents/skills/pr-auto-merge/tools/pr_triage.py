@@ -87,6 +87,7 @@ ME_REPO = Path(os.environ.get(
 DISPATCH_QUIET_S = 60 * 60  # PR 更新後1時間は author の作業を優先する
 DISPATCH_MAX_PER_HEAD = 3   # 同一 (PR, head SHA) への送信上限
 DISPATCH_MAX_ROUNDS = 3     # 往復ラウンド（dispatch を送った異なる head 数）上限
+DISPATCH_MAX_FAILURES = 3   # 同一 head・同一エラーの送信前失敗上限
 DISPATCH_STALE_TICKS = 6    # 送信後に指摘が動かないままの tick 数上限（~3h）
 SWEEP_MAX_TRIES = 6         # sweep が永続的理由で skip し続ける回数上限（~3h）
 # 一時的な理由は ps 再取得との race と削除後の観測不能。git の timeout は
@@ -222,15 +223,15 @@ def save_state(st):
 # ---------- subprocess wrappers ----------
 
 def sh(args, timeout=120, check=True):
+    diagnostic_args = args if args[0] == "git" else args[:2]
+    command = shlex.join(str(arg) for arg in diagnostic_args)[:600]
     try:
         r = subprocess.run(args, capture_output=True, text=True,
                            timeout=timeout)
     except subprocess.TimeoutExpired:
-        raise ApiError(f"{args[0]} {args[1] if len(args) > 1 else ''} "
-                       f"timed out ({timeout}s)")
+        raise ApiError(f"{command} timed out ({timeout}s)")
     if check and r.returncode != 0:
-        raise ApiError(f"{args[0]} {args[1] if len(args) > 1 else ''} "
-                       f"failed({r.returncode}): {r.stderr.strip()[:400]}")
+        raise ApiError(f"{command} failed({r.returncode}): {r.stderr.strip()[:400]}")
     return r
 
 
@@ -1475,6 +1476,9 @@ def dispatch_allows(ds, head):
     pending = ds.get("delivery_pending") or {}
     if pending.get("sha") == head:
         return False, "delivery unverified; inspect terminal before retry", True
+    failure = ds.get("dispatch_failure") or {}
+    if failure.get("sha") == head and failure.get("count", 0) >= DISPATCH_MAX_FAILURES:
+        return False, f"repeated dispatch failure ({failure['count']}): {failure['error']}", True
     same_head = [d for d in ds.get("dispatches", []) if d.get("sha") == head]
     if len(same_head) >= DISPATCH_MAX_PER_HEAD:
         return False, f"dispatch cap per head ({DISPATCH_MAX_PER_HEAD})", True
@@ -1672,16 +1676,22 @@ def spawn_worktree(repo, number, head_ref):
     candidates.extend(Path.home() / "src" / "github.com" / owner / repo_name
                       for owner in REPO_OWNERS)
     matching = []
+    unavailable = []
     for path in dict.fromkeys(candidates):
         if not path.is_dir():
             continue
-        identity = github_repo(path)
+        try:
+            identity = github_repo(path)
+        except ApiError as e:
+            unavailable.append(str(e))
+            continue
         if identity and identity != repo:
             identity = gh_json(["api", f"repos/{identity}"]).get("full_name")
         if identity == repo:
             matching.append(path)
     if len(matching) != 1:
-        raise ApiError(f"canonical checkout ambiguous or unavailable for {repo}")
+        detail = f"; candidate errors: {'; '.join(unavailable)}" if unavailable else ""
+        raise ApiError(f"canonical checkout ambiguous or unavailable for {repo}{detail}")
     canonical = matching[0]
     try:
         res = orca_json(["worktree", "create", "--repo", f"path:{canonical}",
@@ -2130,7 +2140,7 @@ def prune_state(st, days=30):
         if not acts:
             # dispatch 実績が無い entry は read path で作られた空殻
             # （escalated だけ立っているものは往復の記録なので残す）
-            if not d.get("escalated") and not d.get("stale_ticks"):
+            if not d.get("escalated") and not d.get("stale_ticks") and not d.get("dispatch_failure"):
                 st["prs"].pop(k)
         elif all(old(x) for x in acts):
             st["prs"].pop(k)
@@ -2225,6 +2235,24 @@ def cmd_dispatch(a):
 def _cmd_dispatch(a):
     st = load_state()
     facts = pr_facts(a.repo, a.number, {})
+    try:
+        return _dispatch(a, st, facts)
+    except ApiError as e:
+        ds = dispatch_state(st, a.repo, a.number)
+        head = facts["view"].get("headRefOid")
+        previous = ds.get("dispatch_failure") or {}
+        count = previous.get("count", 0) + 1 if (
+            previous.get("sha") == head and previous.get("error") == str(e)) else 1
+        ds["dispatch_failure"] = {"sha": head, "error": str(e), "count": count}
+        save_state(st)
+        if count < DISPATCH_MAX_FAILURES:
+            raise
+        append_event("dispatch_failed", repo=a.repo, pr=a.number, error=str(e))
+        emit({"ok": True, "dispatched": False, "needs_escalate": True,
+              "reason": f"repeated dispatch failure ({count}): {e}"})
+
+
+def _dispatch(a, st, facts):
     v = facts["view"]
     head = v.get("headRefOid")
     items = dispatch_items(a.repo, a.number, facts, st)
@@ -2283,6 +2311,7 @@ def _cmd_dispatch(a):
 
     # 呼び出しが中断しても次 tick が同じ入力を再送しないよう、送信前に保存する。
     pending = dispatch_state(st, a.repo, a.number)
+    pending.pop("dispatch_failure", None)
     pending["delivery_pending"] = {"sha": head, "sig": sig, "handle": handle,
                                    "at": _iso(_now())}
     save_state(st)
