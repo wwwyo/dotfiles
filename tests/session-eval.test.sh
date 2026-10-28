@@ -10,6 +10,52 @@ trap 'rm -rf "$TEST_ROOT"' EXIT
 
 fail() { echo "FAIL: $*" >&2; exit 1; }
 
+# command substitution の中で python3 が非 0 終了すると、set -e は「何も出力せずに」
+# 抜ける（CI で session-eval が無言の exit 1 で落ちた事例の再発時に、原因がログに
+# 残らない）。必ず stderr を拾って fail に載せる。
+se() {
+  local out rc=0
+  if out=$(python3 "$SE" "$@" 2>"$TEST_ROOT/cmd.err"); then rc=0; else rc=$?; fi
+  if [ "$rc" -ne 0 ]; then
+    fail "session_eval $* exited $rc: $(cat "$TEST_ROOT/cmd.err")"
+  fi
+  printf '%s' "$out"
+}
+
+_dump_parallel() {
+  local prefix="$1" i
+  for i in 1 2 3 4 5; do
+    echo "  $prefix-$i rc=$(cat "$TEST_ROOT/$prefix-$i.rc" 2>/dev/null)" \
+         "out=$(head -c 300 "$TEST_ROOT/$prefix-$i.json" 2>/dev/null)" \
+         "err=$(head -c 300 "$TEST_ROOT/$prefix-$i.err" 2>/dev/null)"
+  done
+}
+
+# 並走 acquire の winner がちょうど1つで、どの process も正常終了していることを見る。
+# 落ちたときに読めるよう、各 process の終了 code・JSON・stderr を必ず残す。
+assert_single_winner() {
+  local prefix="$1" label="$2"; shift 2
+  local i rc wins rcs
+  for i in 1 2 3 4 5; do
+    ( python3 "$SE" lock acquire "$@" > "$TEST_ROOT/$prefix-$i.json" \
+        2> "$TEST_ROOT/$prefix-$i.err"; echo $? > "$TEST_ROOT/$prefix-$i.rc" ) &
+  done
+  wait
+  rcs=$(cat "$TEST_ROOT/$prefix"-*.rc | tr '\n' ' ')
+  wins=$({ grep -l '"acquired": true' "$TEST_ROOT/$prefix"-*.json 2>/dev/null || true; } | wc -l | tr -d ' ')
+  if [ "$wins" != "1" ]; then
+    _dump_parallel "$prefix" >&2
+    fail "$label winners=$wins (want 1) rcs=[$rcs]"
+  fi
+  for i in 1 2 3 4 5; do
+    rc=$(cat "$TEST_ROOT/$prefix-$i.rc")
+    if [ "$rc" != "0" ]; then
+      _dump_parallel "$prefix" >&2
+      fail "$label: 非 0 終了した process がある rcs=[$rcs]"
+    fi
+  done
+}
+
 # --- lock: acquire → busy → release ---
 # HOME を差し替えると mise shim 経由の python3 が real config を untrusted
 # 扱いするので、元の config path を明示して shim を通す
@@ -17,32 +63,29 @@ export MISE_TRUSTED_CONFIG_PATHS="$HOME/.config/mise/config.toml:$HOME/.config/m
 export REAL_HOME="$HOME"
 export HOME="$TEST_ROOT/home"
 mkdir -p "$HOME"
-out=$(python3 "$SE" lock acquire)
+out=$(se lock acquire)
 printf '%s' "$out" | grep -q '"acquired": true' || fail "first acquire failed: $out"
-out=$(python3 "$SE" lock acquire)
+out=$(se lock acquire)
 printf '%s' "$out" | grep -q '"acquired": false' || fail "second acquire should be busy: $out"
-out=$(python3 "$SE" lock release)
+out=$(se lock release)
 printf '%s' "$out" | grep -q '"released": true' || fail "release failed: $out"
-out=$(python3 "$SE" lock status)
+out=$(se lock status)
 printf '%s' "$out" | grep -q '"locked": false' || fail "status after release: $out"
 
 # stale lock は回収される（ttl=0 で即 stale 化）
-python3 "$SE" lock acquire >/dev/null
-out=$(python3 "$SE" lock acquire --ttl-seconds 0)
+se lock acquire >/dev/null
+out=$(se lock acquire --ttl-seconds 0)
 printf '%s' "$out" | grep -q '"acquired": true' || fail "stale lock was not recovered: $out"
-python3 "$SE" lock release >/dev/null
+se lock release >/dev/null
 
 # 並走 acquire は winner が1つだけ
-for i in 1 2 3 4 5; do python3 "$SE" lock acquire > "$TEST_ROOT/lock-$i.json" & done
-wait
-wins=$(grep -l '"acquired": true' "$TEST_ROOT"/lock-*.json | wc -l | tr -d ' ')
-[ "$wins" = "1" ] || fail "parallel acquire winners=$wins (want 1)"
-python3 "$SE" lock release >/dev/null
+assert_single_winner lock "parallel acquire"
+se lock release >/dev/null
 
 # stale lock の回収権競争でも winner は1つだけ。
 # info.json の ts を過去に書き換えて stale 化し、回収後の fresh lock は
 # age < ttl で守られる条件（=現実の起きうる競合）にする
-python3 "$SE" lock acquire >/dev/null
+se lock acquire >/dev/null
 python3 - <<'EOF'
 import json, pathlib
 p = pathlib.Path.home() / ".local/state/session-eval/batch.lockdir/info.json"
@@ -50,11 +93,8 @@ d = json.loads(p.read_text())
 d["ts"] -= 300
 p.write_text(json.dumps(d))
 EOF
-for i in 1 2 3 4 5; do python3 "$SE" lock acquire --ttl-seconds 120 > "$TEST_ROOT/steal-$i.json" & done
-wait
-wins=$(grep -l '"acquired": true' "$TEST_ROOT"/steal-*.json | wc -l | tr -d ' ')
-[ "$wins" = "1" ] || fail "parallel stale-steal winners=$wins (want 1)"
-python3 "$SE" lock release >/dev/null
+assert_single_winner steal "parallel stale-steal" --ttl-seconds 120
+se lock release >/dev/null
 
 # --- _resolve_slug / _io_text / resolve_workdir ---
 # expanduser("~") は差し替え後の HOME を見るので、実 FS を見る検証は REAL_HOME を使う
