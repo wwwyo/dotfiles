@@ -856,6 +856,17 @@ def _project_id():
     return pid
 
 
+def _comment_missing_session(e, sid):
+    """comments API は SESSION オブジェクトが無いと 404 を返す。Langfuse の
+    session row は trace 取り込み時に作られるため、turn obs を持たない
+    session (generation だけ) は row が無いまま観測だけが残る。404 全般では
+    なく本文に当該 sid と not found が現れる場合に限定する — base URL や
+    path の誤りでも 404 は返るので、そこまで握ると全 session の記録が
+    無音で落ちる。"""
+    msg = str(e)
+    return "-> 404" in msg and "not found" in msg and sid in msg
+
+
 def _cmd_comment(a):
     """要約は score ではなく comment オブジェクトに書く。score value は
     機械分類の解釈を埋め込む形になるので持たない — 観測の記録と
@@ -873,12 +884,27 @@ def _cmd_comment(a):
         # tool 側で切り落とす
         content = (content[:MAX_COMMENT_CHARS] +
                    "\n\n...(comment 上限超過のため省略)")
-    resp = api_post("/api/public/comments", {
-        "projectId": _project_id(),
-        "objectType": "SESSION",
-        "objectId": a.session_id,
-        "content": content,
-    })
+    try:
+        resp = api_post("/api/public/comments", {
+            "projectId": _project_id(),
+            "objectType": "SESSION",
+            "objectId": a.session_id,
+            "content": content,
+        })
+    except ApiError as e:
+        if not _comment_missing_session(e, a.session_id):
+            raise
+        # 書き戻し先が無い session。fail させると evaluated_until も書かれず
+        # 毎 run 再対象になって永久に失敗し続けるので、正常終了として score 側
+        # へ進ませる。記録は捨てずにローカルへ退避する
+        d = STATE_DIR / "skipped"
+        d.mkdir(parents=True, exist_ok=True)
+        ts = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+        path = d / f"{a.session_id}-{ts}.md"
+        path.write_text(content, encoding="utf-8")
+        emit({"ok": True, "skipped": "session_not_found",
+              "session_id": a.session_id, "archived": str(path)})
+        return
     emit({"ok": True, "id": resp.get("id"), "session_id": a.session_id})
 
 

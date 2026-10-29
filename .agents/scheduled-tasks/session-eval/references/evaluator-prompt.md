@@ -62,6 +62,8 @@ python3 ~/.agents/scheduled-tasks/session-eval/tools/session_eval.py comment \
 
 **POST が失敗した（`ok: false` や終了コード非0）場合は次に進まず、ここでエラー終了する。**
 
+ただし出力が `"skipped": "session_not_found"` の場合は正常系 — Langfuse にその id の SESSION オブジェクトが無く（turn obs を持たず generation だけの session で起きる）、comment の書き戻し先が存在しない。記録は tool が `archived` の path に退避済みなので、そのまま次へ進んで `evaluated_until` を書く（書かないと毎 run 再対象になり永久に失敗し続ける）。
+
 次に `evaluated_until` score を POST する。step 1 の出力の `evaluated_until` をそのまま `--value` に渡す。この score は「この評価が覆った観測の上限」を記録する watermark（次回 batch はこれ以降に完了した observation を新 trace として拾う）で、かつ評価完了の marker — **必ず最後に書く**。score の timestamp はサーバ取り込み時刻に上書きされるため、この値でしか正確に記録できない。
 
 ```bash
@@ -72,4 +74,4 @@ python3 ~/.agents/scheduled-tasks/session-eval/tools/session_eval.py score \
 
 ## 4. 出力
 
-最終出力は `evaluated; comment=<comment id>` の 1 行だけにする。
+最終出力は `evaluated; comment=<comment id>` の 1 行だけにする。session が存在せず comment を skip した場合は `skipped; session_not_found` の 1 行だけにする。
