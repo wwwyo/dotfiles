@@ -346,6 +346,13 @@ pullfrog-approval を免除する。
   それ以外で review が届かない head は人手介入が要る
 - script の失敗（API エラー）は fail-closed: その tick では merge も
   worktree 削除もしない。再試行は次の tick に任せる
+- dispatch の送信前失敗は送信上限とは別に数え、同一 head・同一エラーが3回続くと
+  script が `needs_escalate: true` を返す。返された理由で escalate し、ローカル環境の
+  調査待ちとして Hold に残す。上限到達前は異なる head・エラーで連続回数が戻り、
+  送信準備が完了したら失敗記録を消す。上限到達後は自動再試行しない。
+  数えるのは送信準備の経路（Orca での worktree・terminal の確保から送信まで）に
+  限り、GitHub の facts 取得は対象外 — 全 PR が同じ理由で同時に失敗する共有 API を
+  上限に数えると、障害の復旧後も全 PR が実査待ちになる
 - dispatch の delivery が未確認なら、入力が届いた可能性があるため pending を
   残し、自動再送せず reason 付き escalate とする。terminal を確認してから復旧する
 - 依存 manifest・lockfile は置き場所ではなく file 種別で分類する。
