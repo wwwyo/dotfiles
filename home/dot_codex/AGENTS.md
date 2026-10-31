@@ -8,6 +8,6 @@
 - 汎用skillは `~/src/github.com/wwwyo/dotfiles/.agents/skills` で管理する。codex・pi・devin は `.agents/skills` を直接読み、Claude Code だけ `.claude/skills` から symlink で参照する
 - 動画（demo・product launch・motion graphic）は `~/src/github.com/wwwyo/hyperframes`（HyperFrames の fork）を cwd にして `/hyperframes` skill から入る
 - session 記録は Langfuse。repo の意思決定はその repo の ADR、プロセスは既存 skill/reference を正本とする。wiki は個人の理解・横断的な知識・PJ の位置づけを持つ。過去の文脈が必要で repo 内の根拠では不足するときだけ wiki skill で必要な節を参照し、書き戻し先も同 skill で判定する
-- 常に Orca を前提として動かす。worktree・terminal・file open・ブラウザ操作（Orca 内蔵ブラウザを `orca tab`/`goto`/`eval` 等で操作）など、Orca state が絡む・Orca で代替できる操作は `orca` CLI 経由にし、`git worktree` 直叩き・独自 PTY/tmux・agent-browser 等の別ブラウザを先に選ばない（詳細は orca-cli skill）。GUI 操作（computer use）は bundled の computer-use plugin を使う（`.agents/skills/computer-use` の `orca computer` 経路ではなく）
+- 常に Orca を前提として動かす。worktree・terminal・file open・ブラウザ操作（Orca 内蔵ブラウザを `orca tab`/`goto`/`eval` 等で操作）など、Orca state が絡む・Orca で代替できる操作は `orca` CLI 経由にし、`git worktree` 直叩き・独自 PTY/tmux・agent-browser 等の別ブラウザを先に選ばない（詳細は orca-cli skill）。GUI 操作（computer use）は computer-use skill に従う
   - 通常の分担方法は agent の判断に任せる。別 repo での作業や独立したセッションが必要な場合は delegate skill を使う
 - Orca の scheduled automation は `.agents/scheduled-tasks/*/automation.toml` が desired state（SSOT）

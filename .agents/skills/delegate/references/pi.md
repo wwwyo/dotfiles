@@ -1,6 +1,6 @@
 # pi にタスクを委譲する
 
-pi は opencode Go サブスク（月 $10、5時間 $12 / 週 $30 / 月 $60 のドル建て枠）を叩く別プロセスの coding agent。codex とは別の quota なので、codex が rate limit に当たったときの逃がし先として使う。
+pi は opencode Go サブスク（月 $10、5時間 $12 / 週 $30 / 月 $60 のドル建て枠）を叩く別プロセスの coding agent。Claude とは別の quota で動き、worker の第一候補・Operator / review の fallback として使う。
 
 ## Routing
 
@@ -51,7 +51,7 @@ resume・同じ session の継続では、初回の `MODEL`・`EFFORT` を引き
 
 向くもの。
 
-- codex の quota 切れの肩代わり
+- Claude の quota 切れの肩代わり
 - 安いモデルで足りる調査・要約・機械的な修正
 - 独立していて並列に回せる作業
 

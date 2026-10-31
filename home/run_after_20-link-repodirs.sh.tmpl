@@ -45,20 +45,6 @@ link_dir "$WT/home/dot_config/mise/tasks"  "$HOME/.config/mise/tasks"
 [ -d "$HOME/.ssh" ] || mkdir -p "$HOME/.ssh"
 chmod 700 "$HOME/.ssh"
 
-# Codex projectless workspace の実体は Codex default の ~/Documents/Codex。
-# projectlessWorkspaceRoot は絶対パス必須で ~ を展開しないため config.toml に
-# 書けないので、~/src/Codex を参照用 alias として張る
-mkdir -p "$HOME/src" "$HOME/Documents/Codex"
-if [ -d "$HOME/src/Codex" ] && [ ! -L "$HOME/src/Codex" ]; then
-  rmdir "$HOME/src/Codex" 2>/dev/null || true  # 空のときだけ退ける
-fi
-if [ ! -e "$HOME/src/Codex" ]; then
-  ln -s "$HOME/Documents/Codex" "$HOME/src/Codex"
-  echo "link: $HOME/src/Codex -> $HOME/Documents/Codex"
-elif [ "$(readlink "$HOME/src/Codex" 2>/dev/null)" != "$HOME/Documents/Codex" ]; then
-  echo "warn: $HOME/src/Codex が別の実体を指しています（link せず継続）" >&2
-fi
-
 # .claude/rules は廃止。旧 link.sh が張った symlink が残っていれば外す
 if [ -L "$HOME/.claude/rules" ]; then
   rm -f "$HOME/.claude/rules"

@@ -6,14 +6,18 @@
 
 name = "pr-auto-merge"
 workspace_path = "~/src/github.com/wwwyo/me"
-# executor は codex。model は automation-local の extra_agent_args で pin し Orca の
-# codex global default には影響しない。gpt-6.1-sol high は delegate の operator/review
-# 第一候補（~/.codex/config.toml の既定とも一致）。codex の extra args は orca 検証で
-# `--model` と `-c model_reasoning_effort=…` のみ許可される（`--effort` は弾かれる）。
-# extra_agent_args は orca 制約で --reuse-session と両立しない — だが reuse 外しで
-# terminal は堆積しない（Orca が前 run の automation terminal を自動回収）。
-provider = "codex"
-extra_agent_args = "--model gpt-6.1-sol -c model_reasoning_effort=high"
+# executor は pi。model は Orca Settings → Agents の標準 pi launcher
+# (`--model opencode-go/deepseek-v4.1-flash --thinking high`、delegate の
+# review/operator 候補と同じ) に従う。automation-local の extra_agent_args で
+# pin したいが、Orca 1.4.244 は pi の extra args を受け付けない
+# (shared/automation-extra-agent-args.js の allowlist に pi が無く
+# "Extra arguments aren't supported for this agent yet." で edit が失敗する)。
+# extra_agent_args を書かない manifest は apply で旧 codex 用の live 値を空文字で
+# 消す。Orca が pi を allowlist に足したら
+# `extra_agent_args = "--model opencode-go/deepseek-v4.1-flash --thinking high"` を入れる。
+# reuse_session は付けない — Orca が前 run の automation terminal を自動回収する
+# ので terminal は堆積せず、毎 run fresh な session で起動する。
+provider = "pi"
 enabled = true
 timezone = "Asia/Tokyo"
 
