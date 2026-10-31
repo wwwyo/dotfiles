@@ -9,7 +9,7 @@
 
 age 復号鍵は password manager（Bitwarden の secure note）に退避済み。新 Mac での Keychain 再登録手順は後述。
 
-それ以外のデータ（Obsidian vault、個人文書、Claude・Devin の会話履歴と cache、PostgreSQL のデータ、ブラウザ profile）は移行せず捨てる。
+それ以外のデータ（Obsidian vault、個人文書、Codex・Claude・Devin の会話履歴と cache、PostgreSQL のデータ、ブラウザ profile）は移行せず捨てる。
 
 ## 新しい Mac をセットアップする
 

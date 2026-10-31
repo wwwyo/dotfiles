@@ -18,5 +18,5 @@ workspace_path = "~/src/github.com/wwwyo/me"
 reuse_session = true
 
 prompt = """
-dotfiles の ~/.agents/scheduled-tasks/cleanup/SKILL.md に記載された手順でローカル環境を掃除する。対象は個人 repo と agent workspace 置き場（~/orca/workspaces）のみ。閾値ゲートを守り、強制クリーンや閾値変更はしない。何も消さず freed 0MB で終わるのも正常。作業ディレクトリは {{workspace_path}}。
+dotfiles の ~/.agents/scheduled-tasks/cleanup/SKILL.md に記載された手順でローカル環境を掃除する。対象は個人 repo と agent workspace 置き場（~/orca/workspaces・~/.codex/worktrees）のみ。閾値ゲートを守り、強制クリーンや閾値変更はしない。何も消さず freed 0MB で終わるのも正常。作業ディレクトリは {{workspace_path}}。
 """

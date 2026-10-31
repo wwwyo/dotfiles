@@ -1061,7 +1061,7 @@ with mock.patch.object(pt, 'terminal_list', return_value=[]), \
     except pt.ApiError:
         pass
     api.assert_called_once()
-assert pt.sweep_sessions_ready(done, [{'agentIdentity': 'claude'}, {'connected': True, 'preview': '$'}])
+assert pt.sweep_sessions_ready(done, [{'agentIdentity': 'codex'}, {'connected': True, 'preview': '$'}])
 assert not pt.sweep_sessions_ready(done, [{'connected': True, 'preview': 'building...'}])
 assert not pt.sweep_sessions_ready(dict(done, agents=[{'state': 'working'}]), [])
 
@@ -1382,7 +1382,7 @@ assert not r["eligible"] and "unreadable" in r["reasons"][0]
 # mise の開発 tool pin は Renovate/Dependabot とも devDependencies 相当。
 # 0.x minor、major、beta pin の更新でも judge を挟まず merge 候補になる。
 mise_base = '''[tools]
-"aqua:astral-sh/uv" = "0.159.2"
+"aqua:openai/codex" = "0.159.2"
 "npm:vercel" = "60.1.3"
 "npm:cf" = "1.0.0-beta.6"
 python = "3.14.7"

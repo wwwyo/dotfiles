@@ -1,0 +1,9 @@
+history_approval_mode = "never_ask"
+download_approval_mode = "always_ask"
+approval_mode = "never_ask"
+full_cdp_access_enabled = true
+iab_history_approval_mode = "never_ask"
+
+[origins]
+allowed = [ "https://note.com", "https://zenn.dev", "https://github.com" ]
+denied = []

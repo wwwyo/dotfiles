@@ -5,3 +5,6 @@ targets:
     claude:
         enabled: true
         globalPath: ~/.claude
+    codex:
+        enabled: true
+        globalPath: ~/.codex

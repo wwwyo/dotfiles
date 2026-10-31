@@ -11,11 +11,11 @@ description: 3日ごと、閾値を超えたキャッシュ・使っていない
 
 `mise clean-cache` を実行する。各キャッシュが閾値（go modcache / buildcache / uv 5GB、bun / npm 2GB、container image 3GB）を超えたときだけ削除し、未満なら skip する。**使っていない mise install**（どの tracked config からも選ばれず、tracked stub も使っていない tool version。実行中 process の起動元 version は残る）は `mise prune` で毎回消す。閾値は無く、消しても再取得で戻せるので常時実行する。残っていないかは `mise ls --prunable` で確認できる。残す version（stub が参照している分・実行中 process の起動元）は prunable に数えられないので、prune が成功すれば空になる。空でなければ未使用が残っている。uv cache は他の uv process が lock を持っていれば skip する（`--force` で奪わない）。`simctl unavailable`（未参照 simulator の削除）は full Xcode＋simulator runtime が無い環境では `skip (simctl なし…)` 表示になり、`failed:` や exit 1 にはならない — Xcode 不在は閾値判定と無関係な恒常的な環境要因なので異常に数えない。
 
-cleanup の対象外だが、手動で「storage を空けて」と頼まれて消すときは次を消さない。`~/.rustup` は mise 管理 rust の本体を兼ねる — 丸ごと削除すると cargo/rustc が動かなくなる。古い版は、削除前に各プロジェクトで `rustup show` を確認し、`rust-toolchain` / `rust-toolchain.toml` や directory override が対象版を選んでいないことを確かめてから `rustup toolchain uninstall <版>` で版単位に消す（`cargo --version` だけではプロジェクト固有の指定を検出できない）。
+cleanup の対象外だが、手動で「storage を空けて」と頼まれて消すときは次を消さない。`~/.rustup` は mise 管理 rust の本体を兼ねる — 丸ごと削除すると cargo/rustc が動かなくなる。古い版は、削除前に各プロジェクトで `rustup show` を確認し、`rust-toolchain` / `rust-toolchain.toml` や directory override が対象版を選んでいないことを確かめてから `rustup toolchain uninstall <版>` で版単位に消す（`cargo --version` だけではプロジェクト固有の指定を検出できない）。`~/.codex` は `auth.json`・`config.toml` を含み、消すとログイン・設定が飛ぶ — 容量の大半は `sessions/` なのでそこだけを消す。
 
 ## 2. git worktree / branch
 
-対象は `~/src/github.com/wwwyo/`・`~/src/github.com/fudoki-hensansitu/` 配下の個人 repo と、agent の workspace 置き場（`~/orca/workspaces/`）。移管後も旧ディレクトリにある checkout を含む。workspace 置き場は repo を消しても dir が残るので、repo 走査とは別に単独でも見る（下の「workspace 置き場の残骸」）。**GitHub で archived 済みの repo は対象外** — 新しい merge も fetch 成功も起きないので、走査すると毎回 fetch 失敗のノイズになる。`gh repo view <name> --json isArchived -q .isArchived` で確認する。
+対象は `~/src/github.com/wwwyo/`・`~/src/github.com/fudoki-hensansitu/` 配下の個人 repo と、agent の workspace 置き場（`~/orca/workspaces/`・`~/.codex/worktrees/`）。移管後も旧ディレクトリにある checkout を含む。workspace 置き場は repo を消しても dir が残るので、repo 走査とは別に単独でも見る（下の「workspace 置き場の残骸」）。**GitHub で archived 済みの repo は対象外** — 新しい merge も fetch 成功も起きないので、走査すると毎回 fetch 失敗のノイズになる。`gh repo view <name> --json isArchived -q .isArchived` で確認する。
 
 各 repo で順に:
 
@@ -51,7 +51,7 @@ worktree を消すと未 commit の変更は失われる。30日ルールはそ�
 - 誤って消した workspace の復元: local branch が消えていれば `git branch <b> <sha>`（sha は `git worktree list` の記録か reflog から）で戻し、`orca worktree create --repo name:<repo> --name <name> --base-branch <ref> --no-parent` で同 path に workspace を再作成できる。ただし live terminal の中身（scrollback・対話の表示状態）は戻らない
 - `orca worktree ps --json` の `isPinned` フラグは削除判定に入っていない — pin しても PTY が落ちれば削除判定に進む。その後もこの cleanup の git 判定が適用されるので、dirty や30日以内の更新があれば残る
 
-**workspace 置き場の残骸**（`~/orca/workspaces/`）: ここは repo を消しても dir だけが残る。`orca worktree list` に出ないものは Orca の管理から切り離されているので live terminal の判定は無く、次の順で見る。どの削除も**退避 → 削除**の順で行い、退避に失敗したら消さない。
+**workspace 置き場の残骸**（`~/orca/workspaces/`・`~/.codex/worktrees/`）: ここは repo を消しても dir だけが残る。`orca worktree list` に出ないものは Orca の管理から切り離されているので live terminal の判定は無く、次の順で見る。どの削除も**退避 → 削除**の順で行い、退避に失敗したら消さない。
 
 - 退避先は `~/.local/state/cleanup/wip/`。先に `mkdir -p ~/.local/state/cleanup/wip` を実行する。file 名は `<name>-<worktree id か path の hash>-<date>` で一意にし、既に同名 file があれば上書きせず `-2`, `-3` … を付ける（前回の退避を潰さない）
 - 空 dir: `.DS_Store` だけのものは `rm -f <dir>/.DS_Store` を先に実行してから `rmdir <dir>`（`rmdir` は中身があると失敗するので、予期しない中身が残っている場合の歯止めとして使う）。repo の置き場として空 dir を残す意味は無い（Orca は必要になれば作り直す）

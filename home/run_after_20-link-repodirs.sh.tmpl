@@ -32,6 +32,10 @@ link_dir "$WT/home/dot_claude/hooks"    "$HOME/.claude/hooks"
 link_dir "$WT/.claude/skills"           "$HOME/.claude/skills"
 link_dir "$WT/.claude/agents"           "$HOME/.claude/agents"
 link_dir "$WT/.agents/scheduled-tasks"  "$HOME/.claude/scheduled-tasks"
+link_dir "$WT/.codex/rules"             "$HOME/.codex/rules"
+link_dir "$WT/.codex/scripts"           "$HOME/.codex/scripts"
+link_dir "$WT/.codex/hooks"             "$HOME/.codex/hooks"
+link_dir "$WT/.codex/skills"            "$HOME/.codex/skills"
 link_dir "$WT/.pi/agent/extensions"     "$HOME/.pi/agent/extensions"
 link_dir "$WT/home/dot_config/git/hooks"   "$HOME/.config/git/hooks"
 link_dir "$WT/home/dot_config/git/bin"     "$HOME/.config/git/bin"
@@ -41,8 +45,32 @@ link_dir "$WT/home/dot_config/mise/tasks"  "$HOME/.config/mise/tasks"
 [ -d "$HOME/.ssh" ] || mkdir -p "$HOME/.ssh"
 chmod 700 "$HOME/.ssh"
 
+# Codex projectless workspace の実体は Codex default の ~/Documents/Codex。
+# projectlessWorkspaceRoot は絶対パス必須で ~ を展開しないため config.toml に
+# 書けないので、~/src/Codex を参照用 alias として張る
+mkdir -p "$HOME/src" "$HOME/Documents/Codex"
+if [ -d "$HOME/src/Codex" ] && [ ! -L "$HOME/src/Codex" ]; then
+  rmdir "$HOME/src/Codex" 2>/dev/null || true  # 空のときだけ退ける
+fi
+if [ ! -e "$HOME/src/Codex" ]; then
+  ln -s "$HOME/Documents/Codex" "$HOME/src/Codex"
+  echo "link: $HOME/src/Codex -> $HOME/Documents/Codex"
+elif [ "$(readlink "$HOME/src/Codex" 2>/dev/null)" != "$HOME/Documents/Codex" ]; then
+  echo "warn: $HOME/src/Codex が別の実体を指しています（link せず継続）" >&2
+fi
+
 # .claude/rules は廃止。旧 link.sh が張った symlink が残っていれば外す
 if [ -L "$HOME/.claude/rules" ]; then
   rm -f "$HOME/.claude/rules"
   echo "unlink: $HOME/.claude/rules (廃止)"
+fi
+
+# .codex/automations は repo link を廃止 — Codex の automation runtime state
+# (memory.md や -2 重複 dir) が symlink 経由で repo に書き戻されていた。
+# automation の SSOT は .agents/scheduled-tasks/*/automation.toml + orca。
+# 既存 symlink は実 dir に戻し、Codex の runtime 書き込みはローカルに留める
+if [ -L "$HOME/.codex/automations" ]; then
+  rm -f "$HOME/.codex/automations"
+  mkdir -p "$HOME/.codex/automations"
+  echo "unlink: $HOME/.codex/automations (runtime state は repo 管理外)"
 fi

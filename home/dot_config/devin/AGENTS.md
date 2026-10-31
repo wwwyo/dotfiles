@@ -5,7 +5,7 @@
 - API key / token などの秘密は設定ファイルやリポジトリに平文で置かず、mise + age で管理する。詳細は secret-env skillを参照
 - PoC の dev 環境のプロダクトから AI を呼ぶときは opencode を使う（key は mise の `OPENCODE_API_KEY`）。基本は安さ重視の open model を選び、扱うデータの責任範囲でモデルを分ける
 - package install は supply chain リスクを避けるため、最新版を exact ピン留め（範囲指定 `^`/`~` は使わない）し、cooldown 7day を指定する。これは依存を「どう入れるか」の規則であって「入れない」ではない。定番ライブラリが解く問題を自前実装しない。セキュリティ修正（Dependabot alert 等の脆弱性対応）で依存を上げるときは、severity に関わらず cooldown を無視して修正版を入れてよい。待つかどうかをユーザーに確認しない。exact ピン留めは維持する。例外は修正版の公開から cooldown 期間が過ぎたら外し、例外を入れたときは解除できる日時を PR 本文に書く
-- 汎用skillは `~/src/github.com/wwwyo/dotfiles/.agents/skills` で管理する。pi・devin は `.agents/skills` を直接読み、Claude Code だけ `.claude/skills` から symlink で参照する
+- 汎用skillは `~/src/github.com/wwwyo/dotfiles/.agents/skills` で管理する。codex・pi・devin は `.agents/skills` を直接読み、Claude Code だけ `.claude/skills` から symlink で参照する
 - 対話的入力が要る作業でも、できる限り自分で回してから、人間の入力・承認が本当に必要な箇所だけを最小単位で handoff する。手順を丸ごとユーザーに渡さない。ユーザーにブラウザで開いてほしい URL は自分で `open` までやる
 
 - 動画（demo・product launch・motion graphic）は `~/src/github.com/wwwyo/hyperframes`（HyperFrames の fork）を cwd にして `/hyperframes` skill から入る

@@ -1,0 +1,58 @@
+[
+  {
+    "command": "globalDictationHold",
+    "key": null
+  },
+  {
+    "command": "globalDictationSingleTap",
+    "key": "RightCommand"
+  },
+  {
+    "command": "hotkeyWindow",
+    "key": null
+  },
+  {
+    "command": "openAvatarOverlay",
+    "key": null
+  },
+  {
+    "command": "openCommandMenu",
+    "key": "CmdOrCtrl+K"
+  },
+  {
+    "command": "openReviewTab",
+    "key": null
+  },
+  {
+    "command": "quickChat",
+    "key": "Alt+N"
+  },
+  {
+    "command": "realtimeVoice",
+    "key": "Alt+Shift+Space"
+  },
+  {
+    "command": "stepWorkspaceLayout",
+    "key": "Command+Shift+P"
+  },
+  {
+    "command": "switchToMode1",
+    "key": null
+  },
+  {
+    "command": "switchToMode2",
+    "key": null
+  },
+  {
+    "command": "switchToMode3",
+    "key": null
+  },
+  {
+    "command": "toggleSidebar",
+    "key": "CmdOrCtrl+B"
+  },
+  {
+    "command": "toggleThreadPin",
+    "key": null
+  }
+]

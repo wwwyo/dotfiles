@@ -6,7 +6,7 @@ cd "$repo_dir"
 
 fail() { echo "FAIL: $*" >&2; exit 1; }
 
-# pi・devin は ~/.agents/skills を直接読むので、symlink を張るのは Claude の .claude/skills だけ
+# codex は ~/.agents/skills を native discovery するので .codex/skills の symlink は対象外
 for tool_dir in .claude/skills; do
   # 評価 workspace は skill の隣に置くため、entrypoint を持つ dir を検査する。
   for skill in .agents/skills/*/; do

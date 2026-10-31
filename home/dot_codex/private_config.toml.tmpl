@@ -1,0 +1,10 @@
+{{- /* Codex が書く trust・hook 承認・PC 固有状態は local file だけに保持する。 */ -}}
+{{- $local := dict -}}
+{{- $path := joinPath .chezmoi.homeDir ".codex" "config.toml" -}}
+{{- if lstat $path -}}
+{{- $local = include $path | fromToml -}}
+{{- end -}}
+{{- $base := includeTemplate "codex-base.toml.tmpl" . | fromToml -}}
+{{- $workspace := get $local "sandbox_workspace_write" | default dict -}}
+{{- $_ := set $base.sandbox_workspace_write "writable_roots" (concat (get $workspace "writable_roots" | default list) $base.sandbox_workspace_write.writable_roots | uniq) -}}
+{{- mergeOverwrite $local $base | toToml -}}

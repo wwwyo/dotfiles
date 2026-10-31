@@ -13,6 +13,7 @@ abbr -S -f python='python3' >/dev/null
 
 # Coding agents
 abbr -S yolo='claude --dangerously-skip-permissions' >/dev/null
+abbr -S 'codex-yolo'='codex --dangerously-bypass-approvals-and-sandbox' >/dev/null
 
 # Git shortcuts (top-level)
 abbr -S gs='git status --short --branch' >/dev/null

@@ -4,6 +4,7 @@ import json
 from pathlib import Path
 import subprocess
 import tempfile
+import tomllib
 
 REPO = Path(__file__).resolve().parents[1]
 
@@ -11,7 +12,8 @@ with tempfile.TemporaryDirectory(prefix="agent-config-") as temp:
     root = Path(temp)
     home = root / "another user's home"
     home.mkdir()
-    targets = [home / ".config/devin/config.json", home / ".pi/agent/settings.json"]
+    targets = [home / ".codex/config.toml", home / ".config/devin/config.json",
+               home / ".pi/agent/settings.json"]
     for target in targets:
         target.parent.mkdir(parents=True, exist_ok=True)
     cli = ["chezmoi", "--config", "/dev/null", "--config-format", "toml", "--source", str(REPO),
@@ -26,9 +28,14 @@ with tempfile.TemporaryDirectory(prefix="agent-config-") as temp:
         return result
 
     apply()
-    devin = json.loads(targets[0].read_text())
-    settings = json.loads(targets[1].read_text())
+    codex = tomllib.loads(targets[0].read_text())
+    devin = json.loads(targets[1].read_text())
+    settings = json.loads(targets[2].read_text())
     pi_base = json.loads((REPO / "home/.chezmoitemplates/pi-settings-base.json").read_text())
+    assert codex["model"] == "gpt-6.1-sol"
+    assert not codex.get("projects") and not codex.get("hooks", {}).get("state")
+    assert "perPath" not in codex["desktop"]["open-in-target-preferences"]
+    assert "model_availability_nux" not in codex["tui"]
     assert devin["devin"]["org_id"] == "org_N6dZEjgnb5biUvFw"
     assert settings["defaultProvider"] == "opencode-go"
     assert settings["enabledModels"] == pi_base["enabledModels"]
@@ -39,17 +46,35 @@ with tempfile.TemporaryDirectory(prefix="agent-config-") as temp:
     apply()
     assert fresh == [target.read_bytes() for target in targets]
 
+    project = str(home / "private-project")
+    targets[0].write_text('model = "local-choice"\n' +
+        '[sandbox_workspace_write]\nwritable_roots = ["/local-extra"]\n' +
+        '[projects.' + json.dumps(project) + ']\ntrust_level = "trusted"\n' +
+        '[hooks.state.fixture]\ntrusted_hash = "sha256:fixture"\n' +
+        '[marketplaces.local-fixture]\nsource_type = "local"\nsource = "/local/plugins"\n' +
+        '[desktop.open-in-target-preferences.perPath]\n' + json.dumps(project) + ' = "local-editor"\n' +
+        '[tui.model_availability_nux]\nfixture = 3\n' +
+        '[shell_environment_policy.set]\nNODE_REPL_TRUSTED_BROWSER_CLIENT_SHA256S = "local-hash"\n')
     devin["devin"]["org_id"] = "org_local_fixture"
-    targets[0].write_text(json.dumps(devin))
+    targets[1].write_text(json.dumps(devin))
     settings["defaultModel"] = "local-model"
     settings["theme"] = "dark"
     settings["lastChangelogVersion"] = "9.9.9"
     settings["enabledModels"] = ["local-only/model"]
     settings["localFixture"] = {"keep": True}
-    targets[1].write_text(json.dumps(settings))
+    targets[2].write_text(json.dumps(settings))
     apply()
-    assert json.loads(targets[0].read_text())["devin"]["org_id"] == "org_local_fixture"
-    after_settings = json.loads(targets[1].read_text())
+    codex = tomllib.loads(targets[0].read_text())
+    assert codex["model"] == "gpt-6.1-sol"
+    assert codex["projects"][project]["trust_level"] == "trusted"
+    assert codex["sandbox_workspace_write"]["writable_roots"] == ["/local-extra", "/tmp"]
+    assert codex["hooks"]["state"]["fixture"]["trusted_hash"] == "sha256:fixture"
+    assert codex["marketplaces"]["local-fixture"]["source"] == "/local/plugins"
+    assert codex["desktop"]["open-in-target-preferences"]["perPath"][project] == "local-editor"
+    assert codex["tui"]["model_availability_nux"]["fixture"] == 3
+    assert codex["shell_environment_policy"]["set"]["NODE_REPL_TRUSTED_BROWSER_CLIENT_SHA256S"] == "local-hash"
+    assert json.loads(targets[1].read_text())["devin"]["org_id"] == "org_local_fixture"
+    after_settings = json.loads(targets[2].read_text())
     assert after_settings["defaultModel"] == "local-model"
     assert after_settings["theme"] == "dark"
     assert after_settings["lastChangelogVersion"] == "9.9.9"
@@ -62,7 +87,7 @@ with tempfile.TemporaryDirectory(prefix="agent-config-") as temp:
 
     hook = home / ".orca/agent-hooks/devin-hook.sh"
     commands = []
-    for groups in json.loads(targets[0].read_text())["hooks"].values():
+    for groups in json.loads(targets[1].read_text())["hooks"].values():
         for group in groups:
             for entry in group["hooks"]:
                 command = entry.get("command", "")
@@ -79,7 +104,7 @@ with tempfile.TemporaryDirectory(prefix="agent-config-") as temp:
         result = subprocess.run(["sh", "-c", command], input="{}", text=True, capture_output=True)
         assert result.returncode == 0 and result.stdout == "portable-hook", result
 
-    for target, broken in [(targets[0], '{broken'), (targets[1], '{broken')]:
+    for target, broken in [(targets[0], 'model = [\n'), (targets[1], '{broken'), (targets[2], '{broken')]:
         target.write_text(broken)
         apply(target, success=False)
         assert target.read_text() == broken

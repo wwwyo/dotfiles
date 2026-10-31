@@ -62,6 +62,6 @@ resume・同じ session の継続では、初回の `MODEL`・`EFFORT` を引き
 
 ## 委譲するときのプロンプト
 
-pi は `~/.pi/agent/AGENTS.md`（正本は repo の `home/dot_pi/agent/AGENTS.md` の実ファイル）と `.agents/skills/` を読む。依頼文は [delegate の4項目とテンプレート](../SKILL.md#必ず入れる4項目) に従い、作業ディレクトリ・範囲・タスク・完了条件を渡す。
+pi は `~/.pi/agent/AGENTS.md`（`.codex/AGENTS.md` への symlink）と `.agents/skills/` を読む。依頼文は [delegate の4項目とテンプレート](../SKILL.md#必ず入れる4項目) に従い、作業ディレクトリ・範囲・タスク・完了条件を渡す。
 
 結果は Orca の `terminal read` または監督下の報告経路で確認する。検証可能な形（ファイルを書かせる、判定語を返させる）で頼むと受け取りが楽になる。
