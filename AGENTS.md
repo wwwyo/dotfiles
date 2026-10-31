@@ -20,13 +20,13 @@ chezmoi diff                                           # apply 前に差分確�
 
 ## chezmoi layout
 
-`.chezmoiroot` が `home` を指し、`home/` が source state root。repo root の `.agents/` `.claude/` `.codex/` `.pi/` 等は source state の外（chezmoi は見ない）。
+`.chezmoiroot` が `home` を指し、`home/` が source state root。repo root の `.agents/` `.claude/` `.pi/` 等は source state の外（chezmoi は見ない）。
 
 - `home/dot_foo` → `~/.foo`。`mode = "symlink"` で普通のファイルは source への symlink になる（repo 編集が即反映＝旧 link.sh と同じ）
 - **symlink 化できないもの**（template・executable・encrypted）は実ファイルとして置かれる
 - **dir 単位リンク**: runtime が新規ファイルを書き込む・repo 内相対 symlink を含む・executable を含む dir は `home/run_after_20-link-repodirs.sh.tmpl` が repo dir へ symlink を張る。一覧は同 script、理由は `home/.chezmoiignore` 冒頭。dir link 対象の source は `.chezmoiignore` で chezmoi 管理から除外する
-  - **dir link script は repo dir ↔ `~` の link だけを張る**。repo 内の共有は `.codex/hooks/…` →
-  `../../.agents/hooks/…` のような相対 symlink を git に乗せる。link 対象の source が他 entry の
+  - **dir link script は repo dir ↔ `~` の link だけを張る**。repo 内の共有は `.claude/skills/<name>` →
+  `../../.agents/skills/<name>` のような相対 symlink を git に乗せる。link 対象の source が他 entry の
   target 配下を指しているのはこのパターン違反のサイン
   - **dir link で配る file の変更は merge/pull した時点で即座に本番へ届く**（`~` 側は repo dir を
   指す symlink なので apply を挟まず repo が正=本番）。file の削除・rename・移動を、その file を
@@ -58,7 +58,7 @@ skill の更新・独自適応は [skillctrl](.agents/skillctrl/README.md) に�
 - **このリポジトリの skill は基本すべて global**。`~/.agents` → `.agents/` の symlink なので、取得先は worktree の `.agents/skills/` に固定する。upstream 登録は root の `skills-lock.json`（native `npx skills` 互換）、skillctrl 固有の provenance・受理 hash は `.agents/skillctrl/lock.json` で `skillctrl` が管理する
 - source は GitHub の `owner/repo:skill`（例: `skillctrl add googleworkspace/cli:gws-calendar`）。取得 adapter は既定 `skills`（PATH 上の mise pin `skills` CLI を再利用し、無ければ npx で取得）、`--adapter gh|git` か `SKILLCTRL_ADAPTER` で明示できる。原本が変わっていない skill は取り込み直さず、独自適応を保持する
 - 手書き skill（`memo` `wiki` `project-setup` 等）は `.agents/skills/` に直接置くため、upstream lock に載らない。accepted lock の記録・不一致検出・再適応も upstream lock の登録済み skill だけを対象にする。手書き skill は意図ファイルがあっても対象外。旧 accepted lock に残った未登録 skill の hash は次の `record` で削除し、skill 本文は変更しない
-- 削除は `skillctrl remove <name>` を使い、worktree の実体・upstream 登録・保存済み intent を変更する。Claude symlink は CLI が管理しないため別途確認する。codex は `.agents/skills` を native discovery するため `.codex/skills` に symlink は置かない
+- 削除は `skillctrl remove <name>` を使い、worktree の実体・upstream 登録・保存済み intent を変更する。Claude symlink は CLI が管理しないため別途確認する
 
 - 独立 skill として残すかの判断基準は「その skill だけを目的に起動する場面（単独の入口）があるか」。無ければ既存 skill の reference か節として持つ
 - 運用ルールの記載先は、情報の発生源（不具合の根拠・制約の由来）と適用時（操作を行う skill）で分ける。発生源にだけ書くと使う側が見ず、両方に全文書くと drift する
@@ -68,12 +68,10 @@ skill の更新・独自適応は [skillctrl](.agents/skillctrl/README.md) に�
 
 新しい Mac に別ユーザー名で移行しても dotfiles だけで復元できるよう、repo 内に `/Users/<name>` を書かない。
 
-- **JSON/TOML の設定値は `$HOME` を展開しない**。Claude `settings.json` の `env`、Codex `config.toml` の `shell_environment_policy.set` に PATH を書くと literal の `$HOME` か旧ユーザー名が残るので、PATH はそこに書かない。Claude 側は `home/dot_claude/hooks/session-start.sh`（SessionStart hook）が `CLAUDE_ENV_FILE` に `export PATH=...` を書いて組む
+- **JSON/TOML の設定値は `$HOME` を展開しない**。Claude `settings.json` の `env` に PATH を書くと literal の `$HOME` か旧ユーザー名が残るので、PATH はそこに書かない。Claude 側は `home/dot_claude/hooks/session-start.sh`（SessionStart hook）が `CLAUDE_ENV_FILE` に `export PATH=...` を書いて組む
 - **home dir 参照が必要な .tmpl は `{{ .chezmoi.homeDir }}` を使う**（例: agent hook の配置先）。`{{ .chezmoi.username }}`・`{{ .chezmoi.hostname }}` も使える。hook command など shell snippet 内の path は `"$HOME"` で書けば展開されるので template 化不要
-- **Codex の共通設定**は [`home/.chezmoitemplates/codex-base.toml.tmpl`](home/.chezmoitemplates/codex-base.toml.tmpl) が正本。[`home/dot_codex/private_config.toml.tmpl`](home/dot_codex/private_config.toml.tmpl) が既存の `~/.codex/config.toml` に共通設定だけを上書きし、実ファイルとして配置する。repo にない key は保持し、書き込み先の追加許可も消さない。base から key を削除しても既存の local 値は消えないため、不要になった local 値は `~` 側で削除する。`projects`（trust）・`hooks.state`・ローカル marketplace・モデル案内履歴・PC ごとの editor 設定・browser client の承認 hash は `~` 側だけで管理し、repo に snapshot を取り込まない。共通設定に含めた key を変える場合は base を編集する。逆に、base に載せた key は `mergeOverwrite` で apply 毎に local 値を base 値へ巻き戻すため、local で増殖・変化する値（dictation 辞書・`open-in-target-preferences.perPath` など）は base に入れない。
-  - `projectlessWorkspaceRoot` はローカル設定。未設定時は Codex 標準の `~/Documents/Codex` を使い、`~/src/Codex` は `run_after_20-link-repodirs.sh.tmpl` が参照用 alias を張る。
 - **Pi sandbox は使っていない**。2026-10-27 に `pi-sandbox` package と chezmoi 側の template（`pi-sandbox-base.json`・`private_sandbox.json.tmpl`）・`~/.pi/agent/sandbox.json` を削除した。依存の `@carderne/sandbox-runtime` が Anthropic `srt` の個人フォークで zod advisory を抱え、恒久無効運用だったため。再導入の前提（config 無しだと `enabled: true`、`--no-sandbox` は extension 提供）は [dev-env](.agents/skills/dev-env/references/pi.md) を見る。知識としては残すが、明示指示がない限り復活させない。
-- **Pi の settings.json** も同じ方式 — [`home/dot_pi/agent/private_settings.json.tmpl`](home/dot_pi/agent/private_settings.json.tmpl) が既存の `~/.pi/agent/settings.json` と [`home/.chezmoitemplates/pi-settings-base.json`](home/.chezmoitemplates/pi-settings-base.json) を合成する。pi が TUI から書き戻す key（既定 provider/model・theme・changelog 既読）は local を残し、symlink 配備だった頃の repo 汚染を防ぐ。
+- **Pi の settings.json** は共通設定と local を合成した実ファイル — [`home/dot_pi/agent/private_settings.json.tmpl`](home/dot_pi/agent/private_settings.json.tmpl) が既存の `~/.pi/agent/settings.json` に [`home/.chezmoitemplates/pi-settings-base.json`](home/.chezmoitemplates/pi-settings-base.json) を `mergeOverwrite` で重ねる。repo にない key は local に残り、pi が TUI から書き戻す key（既定 provider/model・theme・changelog 既読）も local を優先して、symlink 配備だった頃の repo 汚染を防ぐ。それ以外の base に載せた key は apply 毎に local 値を base 値へ巻き戻すため、local で増殖・変化する値は base に入れない。base から key を削除しても既存の local 値は消えないので、不要になった値は `~` 側で削除する。
 
 ## gitignore されたファイルを grep 対象に戻す（`home/dot_ignore` → `~/.ignore`）
 

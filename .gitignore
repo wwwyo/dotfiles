@@ -16,9 +16,7 @@
 **/skills/_*
 # Skill evaluation run outputs (transient; evals/ themselves are kept)
 **/skills/*-workspace/
-# codex が自動生成する system skills (コミットのたびに再生成され churn するため追跡しない)
-.codex/skills/.system/
-# Claude Code が同期する bundled skills のキャッシュ (同上の理由で追跡しない)
+# Claude Code が同期する bundled skills のキャッシュ (コミットのたびに再生成され churn するため追跡しない)
 .claude/skills/synced/
 copilot-instructions.md
 **/.claude/settings.local.json
@@ -68,7 +66,6 @@ CLAUDE.local.md
 # Langfuse telemetry の repo opt-in file。収集は個人設定なので project repo に
 # commit させない（dotfiles 自身は tracked で持つが gitignore は tracked file に効かない）
 **/.claude/settings.local.json
-**/.codex/langfuse.json
 **/.pi/settings.json
 # repo 単位の detail override（global default は home/dot_pi/agent/langfuse.json）
 **/.pi/langfuse.json

@@ -8,7 +8,7 @@ usage() {
 {"usage":"setup.sh <command> [args]","commands":{
 "init":{"args":"<repo|owner/repo>","behavior":"ghq create (git init 込み) し CLAUDE.md と最小 .gitignore を置く。既存の file は変更せず、Git 管理外の既存 dir は拒否する","stdout":{"path":"string","owner":"string","repo":"string","created":"bool"}},
 "tools":{"args":"<tool[@prefix]>...","behavior":"mise use --pin --before 7d で exact pin する"},
-"telemetry":{"args":"","behavior":"Claude/Codex/pi の Langfuse opt-in を有効にし (既存 JSON の他 key は保持)、orca.yaml の setup script を置く。orca.yaml が既にあれば書かず orca_yaml=skipped を返す"},
+"telemetry":{"args":"","behavior":"Claude/pi の Langfuse opt-in を有効にし (既存 JSON の他 key は保持)、orca.yaml の setup script を置く。orca.yaml が既にあれば書かず orca_yaml=skipped を返す"},
 "license":{"args":"<key> [--holder <name>]","behavior":"gh api licenses/<key> から LICENSE を生成し [year]/[fullname] 系の placeholder を埋める。holder 既定は gh の name","stdout":{"placeholders_remaining":"string[]"}},
 "publish":{"args":"--visibility public|private [--owner <owner>]","behavior":"commit 済みの HEAD で gh repo create --push し、delete-branch-on-merge と gh secure を設定する。origin が同じ repo を指していれば作成を飛ばして設定だけ再実行する。commit は呼び出し側が行う"}}}
 JSON
@@ -58,11 +58,10 @@ set_json() {
 
 cmd_telemetry() {
   [ $# -eq 0 ] || die "telemetry takes no args" 2
-  mkdir -p .claude .codex
+  mkdir -p .claude
   # 収集は個人設定なので gitignore される local file に書く
   # telemetry の呼び出し自体を opt-in とみなし、既存 file は他の key を残して有効化する
   set_json .claude/settings.local.json '.enabledPlugins["langfuse-observability@langfuse-observability"] = true'
-  set_json .codex/langfuse.json '.enabled = true'
   pi install -l --approve "git:github.com/wwwyo/pi-observability-plugin@v0.2.0" >&2
   orca_yaml=skipped
   if [ ! -e orca.yaml ]; then

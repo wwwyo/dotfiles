@@ -232,7 +232,7 @@ nits や codemod という説明も実際の差分と照合する。
   無害かどうかここで決める
 - **agent の runtime 設定**: hold segment（`.agents` `.claude` `.codex` `.pi`
   `.github`）の外にも agentic 設定はある — dotfiles では
-  `home/dot_codex`・`home/dot_pi`・`home/dot_claude` のような chezmoi
+  `home/dot_pi`・`home/dot_claude` のような chezmoi
   source が deployed 設定の正本になる。model pin・権限・hook・sandbox・
   automation を変える差分は「誰が・どの権限で・何を自動実行するか」の
   変更として見る — 権限拡大・model の上位化・既定 reviewer/approver の

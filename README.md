@@ -31,7 +31,7 @@
    - `home/` 配下のファイルを `~/` へ配置（基本は source への symlink。template / executable は実ファイル）
    - `run_once_10-install` で環境構築（darwin: brew bundle + duti + defaults + mise install / linux: mise install）
    - `run_once_after_15-migrate-legacy-links` で旧 link.sh 時代の whole-dir link 先に残った repo 管理外ファイル（`~/.config/mise/conf.d/local.toml` 等）を新しい dir へ移行
-   - `run_after_20-link-repodirs` で repo 内 dir の symlink（`.agents`, `.claude/*`, `.codex/*` 等）を張る
+   - `run_after_20-link-repodirs` で repo 内 dir の symlink（`.agents`, `.claude/*`, `.pi/*` 等）を張る
 
    **apply は main checkout（canonical path）から実行すること**。worktree から apply すると link 先が worktree 内を指し、worktree 削除で壊れる。
 
@@ -59,7 +59,7 @@ home/               # chezmoi source state（~/ へ deploy されるもの）
   Library/          # → ~/Library/（macOS only）
   run_once_*        # apply 時に1度だけ走る install script
   run_after_*       # apply 後に走る dir link script
-.agents/ .claude/ .codex/ .pi/   # chezmoi 管理外。run_after script が dir 丸ごと symlink
+.agents/ .claude/ .pi/           # chezmoi 管理外。run_after script が dir 丸ごと symlink
 scripts/ docs/ tests/            # repo 内部ファイル（deploy されない）
 ```
 
@@ -77,7 +77,7 @@ scripts/ docs/ tests/            # repo 内部ファイル（deploy されない
 - `.agents` — skillctrl が skill を取り込み、merge 後の実体を各 agent が共有する
 - `.claude/{skills,agents}` / `home/dot_claude/hooks` — 同上 + repo 内相対 symlink（`skills/*` → `../../.agents/`）+ executable script
 - `.agents/scheduled-tasks` → `~/.claude/scheduled-tasks` — Orca automation の手順書置き場。repo 内の `.claude/scheduled-tasks` は旧パスの互換 symlink
-- `.codex/{rules,scripts,hooks,automations,skills}` / `.pi/agent/extensions` — 同上
+- `.pi/agent/extensions` — 同上
 - `home/dot_config/{git/hooks,mise/tasks}` — executable を含むため per-file symlink 不可
 
 ## 新しいファイルを追加する方法
@@ -90,9 +90,8 @@ scripts/ docs/ tests/            # repo 内部ファイル（deploy されない
 
 - 既存のファイルは chezmoi が検出する（`chezmoi apply` で上書きされる前に `chezmoi diff` で確認推奨）
 - `.ssh/config` のみ管理対象。SSH 鍵や `~/.ssh/config.local`（マシン固有の Host）などの機密ファイルは対象外
-- Codex の共通設定は `home/.chezmoitemplates/codex-base.toml.tmpl`。`~/.codex/config.toml` は実ファイルで、apply は共通設定だけを更新する。repo trust・hook 承認履歴・PC 固有の plugin 配置先などはローカルに保持され、repo には同期されない。`~/.codex/hooks.json` は引き続き template から配置する。
 - Pi の sandbox は 2026-10-27 に廃止した（`pi-sandbox` package と `sandbox.json` を削除）。理由と再導入時の前提は [dev-env の pi reference](.agents/skills/dev-env/references/pi.md) にある。
-- Pi の `settings.json` も同じ方式。`home/.chezmoitemplates/pi-settings-base.json` を `private_settings.json.tmpl` が `~` 側と合成する実ファイルで、pi が TUI から書き戻す既定 model・theme などはローカルに残り repo を汚さない。
+- Pi の `settings.json` は実ファイル。共通設定 `home/.chezmoitemplates/pi-settings-base.json` を `private_settings.json.tmpl` が `~` 側の既存 file と合成し、pi が TUI から書き戻す既定 model・theme などはローカルに残り repo を汚さない。
 - `~/.claude/settings.json` は repo への symlink なので書き戻しが `git status` に出る。Devin の `~/.config/devin/config.json` は template から作る実ファイルで、承認や個人設定はローカルに保持する。Devin の Orca hook は PC ごとの home directory から描画する。
 - mise の age 復号鍵は macOS では Keychain（`service=mise-age-key`）、それ以外では gitignore 済みの `~/.config/mise/age.txt` から読む（`home/dot_zsh/01-exports.zsh`）。鍵ファイル自体は repo に置かず、password manager 等の別経路で持ってくる
 

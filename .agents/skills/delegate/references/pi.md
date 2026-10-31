@@ -1,6 +1,6 @@
 # pi にタスクを委譲する
 
-pi は opencode Go サブスク（月 $10、5時間 $12 / 週 $30 / 月 $60 のドル建て枠）を叩く別プロセスの coding agent。codex とは別の quota なので、codex が rate limit に当たったときの逃がし先として使う。
+pi は opencode Go サブスク（月 $10、5時間 $12 / 週 $30 / 月 $60 のドル建て枠）を叩く別プロセスの coding agent。Claude とは別の quota で動き、worker の第一候補・Operator / review の fallback として使う。
 
 ## Routing
 
@@ -51,7 +51,7 @@ resume・同じ session の継続では、初回の `MODEL`・`EFFORT` を引き
 
 向くもの。
 
-- codex の quota 切れの肩代わり
+- Claude の quota 切れの肩代わり
 - 安いモデルで足りる調査・要約・機械的な修正
 - 独立していて並列に回せる作業
 
@@ -62,6 +62,6 @@ resume・同じ session の継続では、初回の `MODEL`・`EFFORT` を引き
 
 ## 委譲するときのプロンプト
 
-pi は `~/.pi/agent/AGENTS.md`（`.codex/AGENTS.md` への symlink）と `.agents/skills/` を読む。依頼文は [delegate の4項目とテンプレート](../SKILL.md#必ず入れる4項目) に従い、作業ディレクトリ・範囲・タスク・完了条件を渡す。
+pi は `~/.pi/agent/AGENTS.md`（正本は repo の `home/dot_pi/agent/AGENTS.md` の実ファイル）と `.agents/skills/` を読む。依頼文は [delegate の4項目とテンプレート](../SKILL.md#必ず入れる4項目) に従い、作業ディレクトリ・範囲・タスク・完了条件を渡す。
 
 結果は Orca の `terminal read` または監督下の報告経路で確認する。検証可能な形（ファイルを書かせる、判定語を返させる）で頼むと受け取りが楽になる。

@@ -5,7 +5,7 @@ argument-hint: <project-name>
 ---
 # Project Setup
 
-新しいプロジェクトを初期化し、開発に必要な基盤ファイルを生成する。AI エージェントは Claude Code・Codex・pi を使う前提で構成する。
+新しいプロジェクトを初期化し、開発に必要な基盤ファイルを生成する。AI エージェントは Claude Code・pi を使う前提で構成する。
 
 ## 外部 OSS を fork する場合
 
@@ -67,7 +67,7 @@ CLAUDE.md は `read @AGENTS.md` の 1 行だけを持つ。起動時 index は `
 
 既存 repo の監査・修正では、`orca.yaml` の scripts・Langfuse 設定が新規 worktree へ伝播するかも完了条件に含める。既存の設定値を不具合と断定する前に意図的な設定でないか確認する（`--setup skip` の免除条件は [telemetry 手順](references/telemetry.md) が正本）。
 
-ステップ 2 で収集を選んだ場合は、[導入手順](references/telemetry.md) を読み、3 agent の opt-in と Orca worktree への設定同期を行う。
+ステップ 2 で収集を選んだ場合は、[導入手順](references/telemetry.md) を読み、各 agent の opt-in と Orca worktree への設定同期を行う。
 
 ### 5. パッケージマネージャーピン留め
 

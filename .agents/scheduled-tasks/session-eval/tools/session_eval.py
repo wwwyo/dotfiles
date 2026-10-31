@@ -277,7 +277,7 @@ def resolve_workdir(md):
     """trace metadata → 起動 cwd の best-effort 復元。
     旧 devin trace は transcript_path = working_directory、pi plugin は metadata.cwd、
     claude/pi exporter は transcript file の親 dir が slug 化された cwd。
-    Codex は手掛かりを持たない → None (呼び出し側が fallback する)。"""
+    手掛かりを持たない trace (過去の codex 等) → None (呼び出し側が fallback する)。"""
     cwd = md.get("cwd")
     if isinstance(cwd, str) and os.path.isdir(cwd):
         return cwd
@@ -461,7 +461,7 @@ def _cmd_targets(a):
         since = now - timedelta(hours=a.lookback_hours)
 
     # sessionId で client 側集約。root 限定にはしない — root span が
-    # sessionId を持たない agent (codex, pi) がいる
+    # sessionId を持たない agent (pi、過去の codex trace) がいる
     sessions = {}
     unsafe_sids = set()
     for o in paged("/api/public/v2/observations",
@@ -591,7 +591,7 @@ def _cmd_targets(a):
 def _io_text(v):
     """root observation の io を text に正規化する。
     旧 devin trace と claude/pi は {"role":..,"content":..} の JSON string、
-    codex は生の string で入る。"""
+    過去の codex trace は生の string で入る。"""
     if v is None:
         return ""
     if isinstance(v, str):

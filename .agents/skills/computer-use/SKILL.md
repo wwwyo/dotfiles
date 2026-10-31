@@ -1,31 +1,19 @@
 ---
 name: computer-use
-description: "Control visible native-app or external-browser windows when a CLI, filesystem, or API cannot reach the needed GUI. Use the bundled computer-use plugin by default; the Orca computer route requires an explicit request. Orca’s embedded browser uses orca-cli."
+description: >-
+  Drives the GUI of a visible local app window through `orca computer`: accessibility
+  tree, clicks, typing, menus, dialogs, and screenshots in native apps and external
+  browser windows (Chrome, Edge, Safari) or webviews. Prefer a programmatic path
+  (shell, filesystem, git, HTTP, existing CLIs) whenever it can complete the task.
+  Use only when a visible window needs GUI control those cannot reach. Do not use
+  for Orca's embedded browser (`orca-cli`).
 ---
 
 # Computer Use
 
-GUI control for a window that no shell, filesystem, git, HTTP or existing CLI can reach. Do not
-use it for Orca's embedded browser — that is `orca-cli`'s job.
-
-## Which GUI path to use
-
-1. **Bundled computer-use plugin (default here).** `~/.codex/config.toml` enables
-   `computer-use@openai-bundled` and `unified-computer-use@openai-bundled`. In a Codex session,
-   drive the GUI with the tools that plugin exposes, reading the plugin's own instructions and
-   tool list from the running session for what is available. Never guess a command or tool name
-   that you have not seen there — if the session does not expose the plugin, say so instead of
-   substituting a different API.
-2. **Orca CLI route (explicit request).** Use the `orca computer` procedure below only when the user
-   explicitly asks for the Orca path. Plugin unavailability alone does not authorize switching
-   the GUI path. Do not run it for ordinary GUI work just because it is
-   documented here.
-
-## Orca CLI route (explicit request only)
-
 This discovery stub loads the version-matched guide from the Orca executable used for this session.
 
-### Resolve the CLI for this session
+## Resolve the CLI for this session
 
 Choose the executable once and reuse it for every later command:
 
@@ -44,7 +32,7 @@ same way in POSIX shells, PowerShell, and cmd.exe.
 If the selected executable cannot run, report its exact error and stop. Do not fall through
 to another executable, which could silently target a different Orca build.
 
-### Load the version-matched guide before running Orca commands
+## Load the version-matched guide before running Orca commands
 
 ```text
 ORCA skills get computer-use

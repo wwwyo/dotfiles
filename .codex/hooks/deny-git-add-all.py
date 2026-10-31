@@ -1,1 +1,0 @@
-../../.agents/hooks/deny-git-add-all.py

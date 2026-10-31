@@ -9,30 +9,20 @@ Langfuse の OTLP endpoint は traces しか受けないため hook/plugin 経�
 | agent | 仕組み | repo opt-in |
 | --- | --- | --- |
 | Claude Code | 公式 plugin `langfuse-observability@langfuse-observability` | repo の `.claude/settings.local.json` で `enabledPlugins` を `true`（user settings で default off。local > user の precedence で反転） |
-| Codex | wwwyo fork の plugin `tracing@codex-observability-plugin`（`home/.chezmoitemplates/codex-base.toml.tmpl`） | repo の `.codex/langfuse.json` に `{"enabled": true}`（`process.cwd()` 解決。git root ではないので subdir 起動では拾わない — root から起動する） |
-| pi | wwwyo fork の extension `@wwwyo/pi-observability-plugin`（`git:github.com/wwwyo/pi-observability-plugin`。codex fork と同じ `detail: turn` を持つ） | repo の `.pi/settings.json` に `packages` 宣言（install 先 `.pi/git/` は gitignore） |
+| pi | wwwyo fork の extension `@wwwyo/pi-observability-plugin`（`git:github.com/wwwyo/pi-observability-plugin`。`detail: turn` を持つ） | repo の `.pi/settings.json` に `packages` 宣言（install 先 `.pi/git/` は gitignore） |
 
 - **opt-in file は global gitignore 済み**（`**/.claude/settings.local.json`・
-  `**/.codex/langfuse.json`・`**/.pi/settings.json`・`**/.pi/langfuse.json`・
+  `**/.pi/settings.json`・`**/.pi/langfuse.json`・
   `**/mise.local.toml` —
   `~/.gitignore`）。収集は個人の設定なので project repo には commit させない。
   dotfiles 自身は tracked で持つ（gitignore は tracked file に効かない）
 - **worktree（Orca workspaces 含む）には gitignore 済み file が
   載らない**ので、opt-in は伝播しない。複製は
   `project-setup/tools/sync-local-worktree-files.sh` で行い、発火点は
-  repo の `orca.yaml` `scripts.setup` と user-level Codex
-  `~/.codex/hooks.json` の `SessionStart`。
-  Codex は `--codex-session-start` で session の cwd を読み、Git root の親に
-  `.codex-worktree-name` がある Codex 作成の worktree で不足 file のみ補う。
-  既存の opt-in（無効化も含む）を上書きせず、Orca 作成の worktree・main checkout・
-  Git 管理外では no-op。marker は installed desktop app の実装に依存するので、
-  Codex の更新後に動かなくなったら作成処理の marker を再確認する
-  共通 hook の正本は `home/dot_codex/hooks.json.tmpl` で、project repo に
-  `environment.toml` は置かない。Codex が新規・変更 hook を実行するには
-  `/hooks` の trust review が要る
+  repo の `orca.yaml` `scripts.setup`。main checkout・Git 管理外では no-op
 - **opt-in は env 変数ではなく cwd 解決の file に寄せる**。env は子プロセスに
   伝播するため、opt-in 済み repo の shell から別 repo に agent を起動
-  （`codex exec --cd` 等）すると env だけで未 opt-in repo が trace されてしまう。
+  （`pi` を別 repo の cwd で起動する等）すると env だけで未 opt-in repo が trace されてしまう。
 - **pi は global install しない**。`~/.pi/agent/settings.json` の `packages` に
   入れると key のある全 repo で有効になり、kill switch
   （`LANGFUSE_TRACING_ENABLED`）が要るが、それは Langfuse Python SDK 自体を
@@ -51,35 +41,22 @@ Langfuse の OTLP endpoint は traces しか受けないため hook/plugin 経�
     `enabledPlugins` に `true` を書き込むので `claude plugin disable
     langfuse-observability@langfuse-observability --scope user` で commit 済みの
     `false` に戻す
-  - Codex: `codex plugin marketplace add wwwyo/codex-observability-plugin` +
-    `codex plugin add tracing@codex-observability-plugin`（初回に Stop hook の
-    trust 承認あり）
 - **dotfiles repo 自身は罠がある**: `home/dot_claude/settings.json` は global の正本で、
-  `home/dot_pi/agent/`・`home/dot_codex/` も `~` 配下の source。ここに global 側の
+  `home/dot_pi/agent/` も `~` 配下の source。ここに global 側の
   opt-in を書くと全 repo で有効になる。dotfiles repo で trace したいときは
-  `.claude/settings.local.json`・`.codex/langfuse.json`・`.pi/settings.json`
-  （repo root、chezmoi 管理外。後2つはこの repo では tracked）を使う
-- **Codex は turn 単位の compact 記録が既定**。Codex は
-  `home/dot_codex/langfuse.json` の `detail=turn` を global default として読む
-  （`enabled` は置かず repo opt-in を維持）。
-  詳細記録へ戻すには Codex の repo `.codex/langfuse.json` で `detail=full` を指定する。
-  turn の input/output はユーザー入力と最終応答。metadata の
-  `telemetry_summary`（JSON、version=1）に generation/tool 件数・tool 名・
-  bounded なエラー概要と時刻・model 別 token 使用量を保持し、session-eval が読む。
-  tool 入出力全文と途中のモデル応答は送らず、個別 generation の cost/latency
-  表示は full mode が必要。subagent の turn は残す。
-- **pi も turn 単位の compact 記録が既定**。`home/dot_pi/agent/langfuse.json` の
+  `.claude/settings.local.json`・`.pi/settings.json`
+  （repo root、chezmoi 管理外。後者はこの repo では tracked）を使う
+- **pi は turn 単位の compact 記録が既定**。`home/dot_pi/agent/langfuse.json` の
   `detail=turn` を global default として読む（keys は mise の env から取るので
   この file に secret は置かない）。詳細記録へ戻すには repo の `.pi/langfuse.json`
   に `detail=full`、run 単位なら `LANGFUSE_PI_DETAIL=full`。metadata の
-  `telemetry_summary`（JSON、version=1）の形は Codex と同一で、session-eval が読む。
+  `telemetry_summary`（JSON、version=1）に generation/tool 件数・tool 名・
+  bounded なエラー概要と時刻・model 別 token 使用量を保持し、session-eval が読む。
+  turn の input/output はユーザー入力と最終応答で、tool 入出力全文と途中の
+  モデル応答は送らず、個別 generation の cost/latency 表示は full mode が必要。
   observation 量の削減が目的（pi は 6h 窓で観測の~6 割を占めていた）。
   mode 切替だけでは過去 turn を replay しない。変更された tail に以前の詳細
   observation が残る場合、評価側は集約値を優先して二重計上を防ぐ。
-- **Codex fork の配布**: marketplace は npm の公式 package ではなく Git 内の
-  `plugins/tracing` を読む。生成 bundle を source と同じ commit に含め、
-  plugin version も上げる。fork URL に変えるだけで npm source を残すと
-  公式 package が引き続き動く。新しい hook の trust は `/hooks` で確認する。
 - **trace の確認は v2 API**: `GET /api/public/v2/observations?fields=core,basic,model,usage,metadata,trace_context`
   （legacy `/api/public/traces` は 410。fields 指定しないと model/usage が返らない。
   `sessionId`/`traceName` は `trace_context` に入るため照合時は指定が要る）

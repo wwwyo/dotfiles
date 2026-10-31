@@ -1,6 +1,6 @@
 ---
 name: delegate
-description: "別 agent への委譲・相談・レビューで harness・model・effort と fallback を選び、起動・再開する共通手順。「Codex に聞いて」「Claude にレビューさせて」「pi でやって」や、別 repo・独立したセッションへの Orca 経由の委譲で使う。通常の分担方法は agent の判断に任せる。"
+description: "別 agent への委譲・相談・レビューで harness・model・effort と fallback を選び、起動・再開する共通手順。「Claude にレビューさせて」「pi でやって」や、別 repo・独立したセッションへの Orca 経由の委譲で使う。通常の分担方法は agent の判断に任せる。"
 ---
 # 別 agent の選択と委譲
 
@@ -9,11 +9,11 @@ description: "別 agent への委譲・相談・レビューで harness・model�
 別の agent session（harness）を起動するときは、役割とデータ区分から次の表で選ぶ。ユーザーが agent を指定した場合はその指定に従う。他の skill に個別のモデル選択ルールを持たせない。
 
 
-| 役割       | public                                                                                        | personal                                                                           | work                                       |
-| -------- | --------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- | ------------------------------------------ |
-| Operator | 1. claude:opus:high, 2. codex:gpt-6.1-sol:high                                                | 同じ                                                                                 | 同じ                                         |
-| worker   | 1. codex:gpt-6.1-sol:medium, 2. pi:opencode-go/muse-spark-1.3-contributor:high                | 1. codex:gpt-6.1-sol:medium, 2. pi:opencode-go/deepseek-v4.1-flash:high            | 同左                                       |
-| review   | 1. claude:opus:high, 2. codex:gpt-6.1-sol:high, 3. pi:opencode-go/muse-spark-1.3-contributor:high | 1. claude:opus:high, 2. codex:gpt-6.1-sol:high, 3. pi:opencode-go/deepseek-v4.1-flash:high | 同左 |
+| 役割       | public                                                                                                         | personal                                                                   | work |
+| -------- | -------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------- | ---- |
+| Operator | 1. claude:opus:high, 2. pi:opencode-go/deepseek-v4.1-flash:high                                                | 同じ                                                                         | 同じ   |
+| worker   | 1. pi:opencode-go/deepseek-v4.1-flash:high, 2. pi:opencode-go/muse-spark-1.3-contributor:high                  | 1. pi:opencode-go/deepseek-v4.1-flash:high                                 | 同左   |
+| review   | 1. claude:opus:high, 2. pi:opencode-go/deepseek-v4.1-flash:high, 3. pi:opencode-go/muse-spark-1.3-contributor:high | 1. claude:opus:high, 2. pi:opencode-go/deepseek-v4.1-flash:high            | 同左   |
 
 
 - personal / work: 個人の責任範囲で扱うデータ / 仕事として組織・案件の利用条件に従うデータ。
@@ -33,7 +33,6 @@ description: "別 agent への委譲・相談・レビューで harness・model�
 
 | harness     | bypass の指定                                                                          |
 | ----------- | ----------------------------------------------------------------------------------- |
-| Codex       | `--dangerously-bypass-approvals-and-sandbox`                                        |
 | pi          | 指定不要（この環境は sandbox extension を外している。再導入した場合だけ `--no-sandbox` — 読み込み確認は [pi の手順](references/pi.md)） |
 | Claude Code | `--dangerously-skip-permissions`                                                    |
 
@@ -42,7 +41,7 @@ description: "別 agent への委譲・相談・レビューで harness・model�
 
 ## 通常の session を開いて prompt を送る
 
-委譲・相談・レビューは、harness を問わず Orca の terminal に通常の対話 session（TUI）を開き、入力 ready を確認してから prompt を送る。短い依頼でもこの手順を使う。新規・再開・fallback に適用し、`pi -p` / `codex exec` などの one-shot はユーザーが非対話実行を明示した場合だけ使う。
+委譲・相談・レビューは、harness を問わず Orca の terminal に通常の対話 session（TUI）を開き、入力 ready を確認してから prompt を送る。短い依頼でもこの手順を使う。新規・再開・fallback に適用し、`pi -p` / `claude -p` などの one-shot はユーザーが非対話実行を明示した場合だけ使う。
 
 追加指示は起動済みの同じ terminal / session に送る。回答後も session は残し、通常の委譲を print mode の繰り返しで代用しない。process が終了したときだけ、対象 session ID を指定して対話モードで再開する。起動・送信・開始確認の具体的な操作は後述の Orca 手順に従う。
 
@@ -53,7 +52,6 @@ description: "別 agent への委譲・相談・レビューで harness・model�
 
 | やること                                        | 読む reference                               |
 | ------------------------------------------- | ------------------------------------------ |
-| Codex へ相談・レビュー・調査を依頼する / 同じ session で対話を続ける | [references/codex.md](references/codex.md) |
 | Claude Code でレビュー・点検を依頼する / 同じ session で対話を続ける | [references/claude.md](references/claude.md) |
 | pi の対話 session を起動する / 継続する                 | [references/pi.md](references/pi.md)       |
 
