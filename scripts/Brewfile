@@ -1,4 +1,5 @@
 tap "abue-ammar/tinycast"
+tap "anomalyco/tap"
 tap "stablyai/orca"
 tap "wwwyo/tap", "https://github.com/wwwyo/homebrew-tap.git", trusted: true
 brew "autoconf"
@@ -55,6 +56,7 @@ cask "ngrok"
 cask "zed"
 cask "zoom"
 cask "abue-ammar/tinycast/tinycast", trusted: true
+cask "anomalyco/tap/hex", trusted: true
 cask "stablyai/orca/orca", trusted: true
 mas "Amphetamine", id: 937984704
 mas "Bitwarden", id: 1352778147
