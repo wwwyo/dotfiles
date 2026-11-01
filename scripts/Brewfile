@@ -1,4 +1,6 @@
 tap "abue-ammar/tinycast"
+# Hex は Apple Silicon + macOS 15 以降のみ対応（cask の depends_on）。対応外の Mac では tap ごと入れない
+tap "anomalyco/tap" if Hardware::CPU.arm? && MacOS.version >= :sequoia
 tap "stablyai/orca"
 tap "wwwyo/tap", "https://github.com/wwwyo/homebrew-tap.git", trusted: true
 brew "autoconf"
@@ -55,6 +57,7 @@ cask "ngrok"
 cask "zed"
 cask "zoom"
 cask "abue-ammar/tinycast/tinycast", trusted: true
+cask "anomalyco/tap/hex", trusted: true if Hardware::CPU.arm? && MacOS.version >= :sequoia
 cask "stablyai/orca/orca", trusted: true
 mas "Amphetamine", id: 937984704
 mas "Bitwarden", id: 1352778147
