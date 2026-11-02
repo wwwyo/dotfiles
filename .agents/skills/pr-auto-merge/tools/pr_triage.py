@@ -2212,6 +2212,19 @@ def _gate(a, st, run_id):
                        "jsonl": str(jsonl_path())}}
     PLAN_FILE.write_text(json.dumps(plan, ensure_ascii=False, indent=1),
                          encoding="utf-8")
+    # plan artifact は次 tick で上書きされるため、tick 単位の復元・窓確定の
+    # 監査用に jsonl へ plan 生成の記録を残す（evaluator は ts/run_id で窓を確定）。
+    try:
+        append_event("plan_generated",
+                     run_id=run_id,
+                     generated_at=plan["generated_at"],
+                     date=plan["date"],
+                     pr_count=len(plan_entries),
+                     action_count=sum(len(e["actions"]) for e in plan_entries),
+                     sweep_count=len(sweeps),
+                     has_work=has_work)
+    except Exception:
+        pass
     save_state(st)
     if not has_work:
         if run_id:
@@ -2753,12 +2766,27 @@ def _lock_acquire(ttl):
         # 取得直前に世代を再照合し、差し替わっていたら他人の fresh lock
         if _lock_info().get("ts") != info.get("ts"):
             return None
+        prev_run_id = info.get("run_id")
+        prev_ts = info.get("ts")
+        try:
+            prev_age = time.time() - float(prev_ts or 0)
+        except (TypeError, ValueError):
+            prev_age = None
         shutil.rmtree(LOCK_DIR)
         os.mkdir(LOCK_DIR)  # atomic — 間に他人が取れば FileExistsError
         try:
-            return _write_lock_info()
+            new_run_id = _write_lock_info()
         except OSError:
             return None
+        try:
+            append_event("tick_abandoned",
+                         previous_run_id=prev_run_id,
+                         previous_ts=prev_ts,
+                         age_seconds=prev_age,
+                         reason="stale lock reclaimed (no release within TTL)")
+        except Exception:
+            pass
+        return new_run_id
     except (FileExistsError, OSError):
         return None
     finally:
