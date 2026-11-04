@@ -9,7 +9,8 @@
 # Apply:  .github/pullfrog.config.sh        (uses gh auth)
 # Audit:  mise exec -- pullfrog config list --repo wwwyo/dotfiles
 #
-# Model auth is owner-scoped keyless OIDC (Anthropic WIF) — see the Pullfrog console, Providers → Keyless (OIDC).
+# Model and its auth are per owner (anthropic: keyless OIDC / opencode-go: OPENCODE_API_KEY)
+# — see model_for in .github/pullfrog.org.config.sh (wwwyo/dotfiles).
 #
 # model/effort inherit the org default in .github/pullfrog.org.config.sh
 # (wwwyo/dotfiles). To override for this repo only, replace the pf_unset lines
