@@ -2213,7 +2213,8 @@ def _gate(a, st, run_id):
     PLAN_FILE.write_text(json.dumps(plan, ensure_ascii=False, indent=1),
                          encoding="utf-8")
     # plan artifact は次 tick で上書きされるため、tick 単位の復元・窓確定の
-    # 監査用に jsonl へ plan 生成の記録を残す（evaluator は ts/run_id で窓を確定）。
+    # 監査用に jsonl へ plan 生成の記録を残す（evaluator は plan の generated_at
+    # と次 tick の generated_at で窓を確定する）。
     try:
         append_event("plan_generated",
                      run_id=run_id,
@@ -2223,8 +2224,9 @@ def _gate(a, st, run_id):
                      action_count=sum(len(e["actions"]) for e in plan_entries),
                      sweep_count=len(sweeps),
                      has_work=has_work)
-    except Exception:
-        pass
+    except Exception as e:
+        print(f"pr_triage: plan_generated append failed: {e}",
+              file=sys.stderr)
     save_state(st)
     if not has_work:
         if run_id:
@@ -2773,19 +2775,29 @@ def _lock_acquire(ttl):
         except (TypeError, ValueError):
             prev_age = None
         shutil.rmtree(LOCK_DIR)
-        os.mkdir(LOCK_DIR)  # atomic — 間に他人が取れば FileExistsError
+        # 回収は rmtree 済みで確定している。mkdir が競合で負けても
+        # (別 acquirer が fresh lock を建てた) tick_abandoned は記録する。
+        won = False
         try:
-            new_run_id = _write_lock_info()
-        except OSError:
-            return None
+            os.mkdir(LOCK_DIR)  # atomic — 間に他人が取れば FileExistsError
+            won = True
+        except FileExistsError:
+            won = False
+        new_run_id = None
+        if won:
+            try:
+                new_run_id = _write_lock_info()
+            except OSError:
+                new_run_id = None
         try:
             append_event("tick_abandoned",
                          previous_run_id=prev_run_id,
                          previous_ts=prev_ts,
                          age_seconds=prev_age,
                          reason="stale lock reclaimed (no release within TTL)")
-        except Exception:
-            pass
+        except Exception as e:
+            print(f"pr_triage: tick_abandoned append failed: {e}",
+                  file=sys.stderr)
         return new_run_id
     except (FileExistsError, OSError):
         return None

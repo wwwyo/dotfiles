@@ -51,9 +51,13 @@ mise の `[tools]` は開発用依存（devDependencies 相当）として扱う
    ```
 
    gate は plan 書き出し時に `plan_generated` event を当日の jsonl に追記する。
-   前 tick の executor が TTL 内に lock release せず死亡した場合、次の gate が
-   stale lock を回収して `tick_abandoned` event（previous_run_id / previous_ts）を
-   記録する — 起動失敗の検出・窓確定はこの2イベントと plan の `generated_at` / `run_id` で行う。
+   前 tick の executor が TTL を超過して lock release せず死亡した場合、次の gate が
+   stale lock を回収して `tick_abandoned` event（previous_run_id / previous_ts /
+   age_seconds / reason）を記録する — 起動失敗の検出・窓確定はこの2イベントと
+   plan の `generated_at` / `run_id` で行う。tick が JST 日付をまたぐ場合、
+   `plan_generated` と `tick_abandoned` は別日の jsonl に分かれて記録される
+   ことがあるため、関連する両日の jsonl を読み、`previous_run_id` を `run_id`
+   に突き合わせて窓を確定する。
 
 2. `plan.prs[*].actions` を順に処理する。`dispatch` はレビュー指摘に加え、
    `CONFLICTING` と bot の依存 manifest・lockfile 更新に伴う CI 失敗、judge が必要とした major 更新への追従も対象。
