@@ -15,12 +15,24 @@ set -euo pipefail
 
 PF=(mise exec -- pullfrog)
 
-# Every owner whose repos inherit these defaults. Auth is per owner too: the
-# Anthropic model runs keyless (GitHub OIDC → Anthropic workload identity
-# federation). A new owner needs the federation IDs set in the Pullfrog console
-# (Providers → Keyless (OIDC): ANTHROPIC_FEDERATION_RULE_ID /
-# ANTHROPIC_ORGANIZATION_ID / ANTHROPIC_SERVICE_ACCOUNT_ID / ANTHROPIC_WORKSPACE_ID),
-# and the Anthropic federation rule must accept that owner's repositories.
+# Every owner whose repos inherit these defaults, with that owner's model.
+# Auth is per owner too:
+# - anthropic/*: keyless (GitHub OIDC → Anthropic workload identity federation).
+#   The owner needs the federation IDs in the Pullfrog console (Providers →
+#   Keyless (OIDC): ANTHROPIC_FEDERATION_RULE_ID / ANTHROPIC_ORGANIZATION_ID /
+#   ANTHROPIC_SERVICE_ACCOUNT_ID / ANTHROPIC_WORKSPACE_ID), and the Anthropic
+#   federation rule must accept that owner's repositories.
+# - opencode-go/*: BYOK — `pullfrog secret set OPENCODE_API_KEY --org <org>`.
+#   opencode-go free/contributor tiers vanish without notice (space-bunny-free,
+#   minimax-m3.1-flash-free): recover by changing the model here and re-running.
+# (case, not an associative array: macOS /bin/bash is 3.2)
+model_for() {
+  case "$1" in
+    wwwyo)             echo 'anthropic/claude-opus-5-5' ;;  # since 2026-11-04 (was opencode-go/beam-free)
+    fudoki-hensansitu) echo 'opencode-go/beam-free' ;;
+    *) echo "no model for owner: $1" >&2; return 1 ;;
+  esac
+}
 ORGS=(wwwyo fudoki-hensansitu)
 
 pf_set()   { "${PF[@]}" config set   "$1" "$2" --org "$ORG" --yes; }
@@ -28,13 +40,12 @@ pf_unset() { "${PF[@]}" config unset "$1"     --org "$ORG" --yes; }
 
 for ORG in "${ORGS[@]}"; do
 
-# Shared model/effort for every repo. Repos inherit these by `pf_unset`-ing
-# model/effort in their own pullfrog.config.sh; a repo that needs something
-# else overrides with `pf_set model '<id>'` there.
-# Changing the model here and re-running this script switches every inheriting
-# repo without per-repo edits. Claude via keyless OIDC since 2026-11-04 (was
-# opencode-go/beam-free; free tiers vanished without notice).
-pf_set model 'anthropic/claude-opus-5-5'
+# Shared model/effort for every repo of the owner. Repos inherit these by
+# `pf_unset`-ing model/effort in their own pullfrog.config.sh; a repo that needs
+# something else overrides with `pf_set model '<id>'` there. Changing model_for
+# above and re-running this script switches every inheriting repo.
+MODEL=$(model_for "$ORG")  # assignment so set -e aborts on an unknown owner
+pf_set model "$MODEL"
 pf_set effort '1'
 
 # explicit unsets — keep the backend converged on this file
