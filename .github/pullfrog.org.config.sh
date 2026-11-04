@@ -15,8 +15,12 @@ set -euo pipefail
 
 PF=(mise exec -- pullfrog)
 
-# Every owner whose repos inherit these defaults. BYOK keys are per owner too:
-# a new owner also needs `pullfrog secret set OPENCODE_API_KEY --org <org>`.
+# Every owner whose repos inherit these defaults. Auth is per owner too: the
+# Anthropic model runs keyless (GitHub OIDC → Anthropic workload identity
+# federation). A new owner needs the federation IDs set in the Pullfrog console
+# (Providers → Keyless (OIDC): ANTHROPIC_FEDERATION_RULE_ID /
+# ANTHROPIC_ORGANIZATION_ID / ANTHROPIC_SERVICE_ACCOUNT_ID / ANTHROPIC_WORKSPACE_ID),
+# and the Anthropic federation rule must accept that owner's repositories.
 ORGS=(wwwyo fudoki-hensansitu)
 
 pf_set()   { "${PF[@]}" config set   "$1" "$2" --org "$ORG" --yes; }
@@ -27,10 +31,10 @@ for ORG in "${ORGS[@]}"; do
 # Shared model/effort for every repo. Repos inherit these by `pf_unset`-ing
 # model/effort in their own pullfrog.config.sh; a repo that needs something
 # else overrides with `pf_set model '<id>'` there.
-# opencode-go free/contributor tiers vanish without notice (space-bunny-free,
-# minimax-m3.1-flash-free): recover by changing the model here and re-running
-# this script — inheriting repos follow without per-repo edits.
-pf_set model 'opencode-go/beam-free'
+# Changing the model here and re-running this script switches every inheriting
+# repo without per-repo edits. Claude via keyless OIDC since 2026-11-04 (was
+# opencode-go/beam-free; free tiers vanished without notice).
+pf_set model 'anthropic/claude-opus-5-5'
 pf_set effort '1'
 
 # explicit unsets — keep the backend converged on this file
