@@ -9,7 +9,7 @@
 # Apply:  .github/pullfrog.config.sh        (uses gh auth)
 # Audit:  mise exec -- pullfrog config list --repo wwwyo/dotfiles
 #
-# BYOK keys are org-scoped (OPENCODE_API_KEY inherited) — see `pf secret list`.
+# Model auth is owner-scoped keyless OIDC (Anthropic WIF) — see the Pullfrog console, Providers → Keyless (OIDC).
 #
 # model/effort inherit the org default in .github/pullfrog.org.config.sh
 # (wwwyo/dotfiles). To override for this repo only, replace the pf_unset lines
