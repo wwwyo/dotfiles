@@ -53,8 +53,11 @@ mise の `[tools]` は開発用依存（devDependencies 相当）として扱う
    gate は plan 書き出し時に `plan_generated` event を当日の jsonl に追記する。
    前 tick の executor が TTL を超過して lock release せず死亡した場合、次の gate が
    stale lock を回収して `tick_abandoned` event（previous_run_id / previous_ts /
-   age_seconds / reason）を記録する — 起動失敗の検出・窓確定はこの2イベントと
-   plan の `generated_at` / `run_id` で行う。tick が JST 日付をまたぐ場合、
+   age_seconds / reason）を記録する — 前 tick が lock を解放せずに終了した
+   （未完了）ことの検出・窓確定はこの2イベントと plan の `generated_at` /
+   `run_id` で行う。stale lock はそれだけで executor の起動失敗を証明しない
+   （TTL を超過したまま生存している executor や、起動後に失敗した executor も
+   含む）ため、起動状態はこれらの記録からは未確定として扱う。tick が JST 日付をまたぐ場合、
    `plan_generated` と `tick_abandoned` は別日の jsonl に分かれて記録される
    ことがあるため、関連する両日の jsonl を読み、`previous_run_id` を `run_id`
    に突き合わせて窓を確定する。
