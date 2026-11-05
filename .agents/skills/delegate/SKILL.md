@@ -12,7 +12,7 @@ description: "別 agent への委譲・相談・レビューで harness・model�
 | 役割       | public                                                                                                         | personal                                                                   | work |
 | -------- | -------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------- | ---- |
 | Operator | 1. claude:opus:high, 2. pi:opencode-go/deepseek-v4.1-flash:high                                                | 同じ                                                                         | 同じ   |
-| worker   | 1. pi:opencode-go/deepseek-v4.1-flash:high, 2. pi:opencode-go/muse-spark-1.3-contributor:high                  | 1. pi:opencode-go/beam-free:high, 2. pi:opencode-go/deepseek-v4.1-flash:high | 1. pi:opencode-go/deepseek-v4.1-flash:high |
+| worker   | 1. pi:opencode-go/deepseek-v4.1-flash:high, 2. pi:opencode-go/muse-spark-1.3-contributor:high                  | 1. pi:opencode/deepseek-v4.1-flash-free:high, 2. pi:opencode-go/deepseek-v4.1-flash:high | 1. pi:opencode-go/deepseek-v4.1-flash:high |
 | review   | 1. claude:opus:high, 2. pi:opencode-go/deepseek-v4.1-flash:high, 3. pi:opencode-go/muse-spark-1.3-contributor:high | 1. claude:opus:high, 2. pi:opencode-go/deepseek-v4.1-flash:high            | 同左   |
 
 
@@ -20,8 +20,8 @@ description: "別 agent への委譲・相談・レビューで harness・model�
 - pi 本体の既定モデルは DeepSeek V4.1 Flash・high。役割ごとの選択値は起動時に明示し、既定モデルに任せない。
 - 候補の順序: 先頭優先。使えない場合に次の候補へ fallback する。
 - 記法: `harness:model:effort`。選んだ値を起動時に指定する。
-- worker/personal の `beam-free` は opencode-go の残高切れ（`402 Insufficient account funds`）からの一時退避。automation の worker を止めないためのもので、残高が戻ったら先頭を `deepseek-v4.1-flash` に戻し、Orca Settings → Agents の pi 起動引数も同じ値へ戻す。公式 docs では学習に使わないが保持は 30 日（`deepseek-v4.1-flash` は 0 日）で、無料提供は期間限定。共有 launcher に載る automation は personal 区分だけなので、work データは退避対象にせず、work の task を足すなら共有 launcher のまま有効化しない。
-- 例外: automation は固定せず task の要件に合わせて選ぶ（実値は各 `automation.toml` の `provider`）。Pullfrog は owner 単位で、wwwyo は `anthropic/claude-opus-5-5:max`（keyless OIDC）、fudoki-hensansitu は `opencode-go/beam-free:max`（effort は最も高いもの。Pullfrog の値では `1`）。プロダクトの LLM モデル（opencode 等）も対象外
+- worker/personal の `opencode/deepseek-v4.1-flash-free` は opencode Zen の無料枠（Go の残高切れ `402 Insufficient account funds` からの退避として beam-free を置いていたが、品質不足で 2026-11-05 に差し替え）。automation の worker を止めないためのもので、無料枠が消えたら先頭を `opencode-go/deepseek-v4.1-flash` に戻し、Orca Settings → Agents の pi 起動引数も同じ値へ戻す。公式 docs では Zen の既定（学習不使用・zero retention）に入り例外扱いされていないが、無料提供は期間限定で、free 版は context 200K・output 32K に絞られている。共有 launcher に載る automation は personal 区分だけなので、work データは退避対象にせず、work の task を足すなら共有 launcher のまま有効化しない。
+- 例外: automation は固定せず task の要件に合わせて選ぶ（実値は各 `automation.toml` の `provider`）。Pullfrog は owner 単位で、wwwyo は `anthropic/claude-opus-5-5:max`（keyless OIDC）、fudoki-hensansitu は `opencode/deepseek-v4.1-flash-free:max`（effort は最も高いもの。Pullfrog の値では `1`）。プロダクトの LLM モデル（opencode 等）も対象外
 - `opencode-go` の free/contributor 枠は upstream が予告なく削除する（`space-bunny-free` 消失で pin 先の pullfrog が全 repo 全滅した実例）。表の候補・自動化側の pin は差し替え前提で選ぶ。Pullfrog の model・effort は org 共通（dotfiles の `.github/pullfrog.org.config.sh`）に置き、各 repo は unset で継承する — 消えたら org script の値を変えて再実行すれば全 repo が追従する。repo 個別の上書きは、その repo の `pullfrog.config.sh` で `pf_set` する
 - 無料・格安枠の「非学習」「ZDR」表記は保証の粒度が違う — 月次更新の契約脚注、学習許可と引換の contributor 枠、保持日数のみの表記、provider 非開示でホスト地を検証できないものがある。personal/work の区分で選ぶときは表記ではなく裏付け（契約期間・学習可否・ホスト）を確認する
 

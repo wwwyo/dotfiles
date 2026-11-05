@@ -22,14 +22,15 @@ PF=(mise exec -- pullfrog)
 #   Keyless (OIDC): ANTHROPIC_FEDERATION_RULE_ID / ANTHROPIC_ORGANIZATION_ID /
 #   ANTHROPIC_SERVICE_ACCOUNT_ID / ANTHROPIC_WORKSPACE_ID), and the Anthropic
 #   federation rule must accept that owner's repositories.
-# - opencode-go/*: BYOK — `pullfrog secret set OPENCODE_API_KEY --org <org>`.
-#   opencode-go free/contributor tiers vanish without notice (space-bunny-free,
+# - opencode-go/* and opencode/* (Zen): BYOK — `pullfrog secret set OPENCODE_API_KEY --org <org>`.
+#   One key covers both; Zen *-free models cost nothing per token.
+#   opencode free/contributor tiers vanish without notice (space-bunny-free,
 #   minimax-m3.1-flash-free): recover by changing the model here and re-running.
 # (case, not an associative array: macOS /bin/bash is 3.2)
 model_for() {
   case "$1" in
     wwwyo)             echo 'anthropic/claude-opus-5-5' ;;  # since 2026-11-04 (was opencode-go/beam-free)
-    fudoki-hensansitu) echo 'opencode-go/beam-free' ;;
+    fudoki-hensansitu) echo 'opencode/deepseek-v4.1-flash-free' ;;  # since 2026-11-05 (was opencode-go/beam-free)
     *) echo "no model for owner: $1" >&2; return 1 ;;
   esac
 }
