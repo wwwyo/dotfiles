@@ -2771,7 +2771,13 @@ def _lock_acquire(ttl):
         prev_run_id = info.get("run_id")
         prev_ts = info.get("ts")
         try:
-            prev_age = time.time() - float(prev_ts or 0)
+            if prev_ts:
+                prev_age = time.time() - float(prev_ts)
+            else:
+                # ts 未記録（info.json 書き込み前に gate が死んだ等）の場合は
+                # stale 判定で計算済みの lock dir の経過時間（mtime ベース）を
+                # 再利用する。0 を引いて年代単位の値になるのを避ける。
+                prev_age = age
         except (TypeError, ValueError):
             prev_age = None
         shutil.rmtree(LOCK_DIR)
