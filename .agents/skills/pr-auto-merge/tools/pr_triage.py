@@ -2212,6 +2212,21 @@ def _gate(a, st, run_id):
                        "jsonl": str(jsonl_path())}}
     PLAN_FILE.write_text(json.dumps(plan, ensure_ascii=False, indent=1),
                          encoding="utf-8")
+    # plan artifact は次 tick で上書きされるため、tick 単位の復元・窓確定の
+    # 監査用に jsonl へ plan 生成の記録を残す（evaluator は plan の generated_at
+    # と次 tick の generated_at で窓を確定する）。
+    try:
+        append_event("plan_generated",
+                     run_id=run_id,
+                     generated_at=plan["generated_at"],
+                     date=plan["date"],
+                     pr_count=len(plan_entries),
+                     action_count=sum(len(e["actions"]) for e in plan_entries),
+                     sweep_count=len(sweeps),
+                     has_work=has_work)
+    except Exception as e:
+        print(f"pr_triage: plan_generated append failed: {e}",
+              file=sys.stderr)
     save_state(st)
     if not has_work:
         if run_id:
@@ -2753,12 +2768,43 @@ def _lock_acquire(ttl):
         # 取得直前に世代を再照合し、差し替わっていたら他人の fresh lock
         if _lock_info().get("ts") != info.get("ts"):
             return None
-        shutil.rmtree(LOCK_DIR)
-        os.mkdir(LOCK_DIR)  # atomic — 間に他人が取れば FileExistsError
+        prev_run_id = info.get("run_id")
+        prev_ts = info.get("ts")
         try:
-            return _write_lock_info()
-        except OSError:
-            return None
+            if prev_ts:
+                prev_age = time.time() - float(prev_ts)
+            else:
+                # ts 未記録（info.json 書き込み前に gate が死んだ等）の場合は
+                # stale 判定で計算済みの lock dir の経過時間（mtime ベース）を
+                # 再利用する。0 を引いて年代単位の値になるのを避ける。
+                prev_age = age
+        except (TypeError, ValueError):
+            prev_age = None
+        shutil.rmtree(LOCK_DIR)
+        # 回収は rmtree 済みで確定している。mkdir が競合で負けても
+        # (別 acquirer が fresh lock を建てた) tick_abandoned は記録する。
+        won = False
+        try:
+            os.mkdir(LOCK_DIR)  # atomic — 間に他人が取れば FileExistsError
+            won = True
+        except FileExistsError:
+            won = False
+        new_run_id = None
+        if won:
+            try:
+                new_run_id = _write_lock_info()
+            except OSError:
+                new_run_id = None
+        try:
+            append_event("tick_abandoned",
+                         previous_run_id=prev_run_id,
+                         previous_ts=prev_ts,
+                         age_seconds=prev_age,
+                         reason="stale lock reclaimed (no release within TTL)")
+        except Exception as e:
+            print(f"pr_triage: tick_abandoned append failed: {e}",
+                  file=sys.stderr)
+        return new_run_id
     except (FileExistsError, OSError):
         return None
     finally:

@@ -50,6 +50,20 @@ mise の `[tools]` は開発用依存（devDependencies 相当）として扱う
    python3 ~/.agents/skills/pr-auto-merge/tools/pr_triage.py plan
    ```
 
+   gate は plan 書き出し時に `plan_generated` event を当日の jsonl に追記する。
+   前 tick の lock が TTL を超過しても解放されなかった場合、次の gate が
+   stale lock を回収して `tick_abandoned` event（previous_run_id / previous_ts /
+   age_seconds / reason）を記録する — この event が示すのは lock が TTL 内に
+   解放されなかった事実のみであり、executor が終了した／未完了だったことの
+   証拠ではない。executor の終了・未完了・窓確定には独立した結果の証拠を
+   要求し、`plan_generated` と plan の `generated_at` / `run_id` は参照として
+   保持する。stale lock はそれだけで executor の起動失敗を証明しない
+   （TTL を超過したまま生存している executor や、起動後に失敗した executor も
+   含む）ため、起動状態はこれらの記録からは未確定として扱う。tick が JST 日付をまたぐ場合、
+   `plan_generated` と `tick_abandoned` は別日の jsonl に分かれて記録される
+   ことがあるため、関連する両日の jsonl を読み、`previous_run_id` を `run_id`
+   に突き合わせて窓を確定する。
+
 2. `plan.prs[*].actions` を順に処理する。`dispatch` はレビュー指摘に加え、
    `CONFLICTING` と bot の依存 manifest・lockfile 更新に伴う CI 失敗、judge が必要とした major 更新への追従も対象。
    修正する author session は **references/repair.md** に従い、該当 PR・
