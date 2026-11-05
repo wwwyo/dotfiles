@@ -29,9 +29,20 @@ PF=(mise exec -- pullfrog)
 # (case, not an associative array: macOS /bin/bash is 3.2)
 model_for() {
   case "$1" in
-    wwwyo)             echo 'anthropic/claude-opus-5-5' ;;  # since 2026-11-04 (was opencode-go/beam-free)
+    wwwyo)             echo 'anthropic/claude-sonnet-5-5' ;;  # since 2026-11-05 (was claude-opus-5-5; API spend too fast)
     fudoki-hensansitu) echo 'opencode/deepseek-v4.1-flash-free' ;;  # since 2026-11-05 (was opencode-go/beam-free)
     *) echo "no model for owner: $1" >&2; return 1 ;;
+  esac
+}
+# Effort is a position on [0,1] over the model's offered rungs; `config set`
+# accepts only numbers. For Claude: 0=low 0.25=medium 0.5=high 0.75=xhigh 1=max.
+# wwwyo pays per token on the Anthropic API, so it runs at medium; the Zen
+# *-free model costs nothing per token and keeps max.
+effort_for() {
+  case "$1" in
+    wwwyo)             echo '0.25' ;;  # medium since 2026-11-05 (was 1 = max; API spend too fast)
+    fudoki-hensansitu) echo '1' ;;
+    *) echo "no effort for owner: $1" >&2; return 1 ;;
   esac
 }
 ORGS=(wwwyo fudoki-hensansitu)
@@ -46,8 +57,9 @@ for ORG in "${ORGS[@]}"; do
 # something else overrides with `pf_set model '<id>'` there. Changing model_for
 # above and re-running this script switches every inheriting repo.
 MODEL=$(model_for "$ORG")  # assignment so set -e aborts on an unknown owner
+EFFORT=$(effort_for "$ORG")
 pf_set model "$MODEL"
-pf_set effort '1'
+pf_set effort "$EFFORT"
 
 # explicit unsets — keep the backend converged on this file
 pf_unset xrepo.brief  # org-only key, no repo override exists; unused
