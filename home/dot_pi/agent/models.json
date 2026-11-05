@@ -6,6 +6,26 @@
           "data_collection": "deny"
         }
       }
+    },
+    "opencode-go": {
+      "models": [
+        {
+          "id": "beam-free",
+          "name": "Beam Free",
+          "api": "openai-completions",
+          "baseUrl": "https://opencode.ai/inference/go/v1",
+          "reasoning": true,
+          "input": ["text"],
+          "compat": {
+            "supportsStore": false,
+            "supportsDeveloperRole": false,
+            "maxTokensField": "max_tokens"
+          },
+          "contextWindow": 1048576,
+          "maxTokens": 131072,
+          "cost": { "input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0 }
+        }
+      ]
     }
   }
 }
