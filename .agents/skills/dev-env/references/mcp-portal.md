@@ -81,7 +81,7 @@ portal は個人の MCP の入口を 1 つにまとめる経路。ChatGPT・clau
 3. 対象の portal（`wwwyo` か `marketing`）に `cf mcp portals update` で server を足す。どちらの portal でも省いた項目は既定値に戻るので、全項目を指定する。upstream が OAuth の server は、ダッシュボードの server 画面で「サーバーの認証」を押して同期させる（`cf` に相当コマンドが無い）。`on_behalf` は「その upstream の権限を利用者ごとに分けるか」で決める — 利用者ごとの同意・token を持つ OAuth upstream は `true`（現状 cloudflare だけ）、portal が共有 credential で呼ぶ bearer・認証なし upstream は `false`。1人運用なら `false` でも動くが、client を共有した時点で権限境界が消える。同意した scope 外の操作を upstream が拒否するかは未検証 — 拒否の挙動を前提に自動承認の範囲を広げない
    - 1段目（manager 側の同期）で止まっている signature は `status: waiting` + `authentication_status: required` + `last_successful_sync: null`。2段目の同意はその後に出るので、切り分けはこの3つで行う
 4. loopback の server だけ、Gateway network policy の許可 port に足す。
-5. shell・filesystem 書き込みなど強い権限の MCP は `wwwyo` に入れず（upstream の OAuth 同意で scope を絞れるものは除く）、`<name>-mcp.wwwyo.dev` の別 portal にする（hostname は 1 段。2 段は Universal SSL の対象外）。用途で分ける portal（`mcp-marketing.wwwyo.dev`）もこの基準の例外ではなく、渡す agent を用途で絞るために分けている。
+5. shell・filesystem 書き込みなど強い権限の MCP は `wwwyo` に入れず（upstream の OAuth 同意で scope を絞れるものは除く）、`<name>-mcp.wwwyo.dev` の別 portal にする（hostname は 1 段。2 段は Universal SSL の対象外）。権限ではなく渡す agent を用途で絞るための portal は `mcp-<用途>.wwwyo.dev`（`mcp-marketing`）と名付けて区別する。
 
 ## ハマりどころ
 
