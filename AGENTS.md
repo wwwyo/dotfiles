@@ -25,7 +25,7 @@ chezmoi diff                                           # apply 前に差分確�
 - `home/dot_foo` → `~/.foo`。`mode = "symlink"` で普通のファイルは source への symlink になる（repo 編集が即反映＝旧 link.sh と同じ）
 - **symlink 化できないもの**（template・executable・encrypted）は実ファイルとして置かれる
 - **dir 単位リンク**: runtime が新規ファイルを書き込む・repo 内相対 symlink を含む・executable を含む dir は `home/run_after_20-link-repodirs.sh.tmpl` が repo dir へ symlink を張る。一覧は同 script、理由は `home/.chezmoiignore` 冒頭。dir link 対象の source は `.chezmoiignore` で chezmoi 管理から除外する
-  - **dir link script は repo dir ↔ `~` の link だけを張る**。repo 内の共有は `.codex/hooks/…` →
+  - **dir link script は repo dir ↔ `~` の link だけを張る**（例外は Devin 用の `~/.config/devin/skills` → wwwyo/skills の `.agents/skills` だけ。理由は Skills 管理の節）。repo 内の共有は `.codex/hooks/…` →
   `../../.agents/hooks/…` のような相対 symlink を git に乗せる。link 対象の source が他 entry の
   target 配下を指しているのはこのパターン違反のサイン
   - **dir link で配る file の変更は merge/pull した時点で即座に本番へ届く**（`~` 側は repo dir を
