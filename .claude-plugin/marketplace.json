@@ -9,13 +9,32 @@
     {
       "name": "core",
       "source": "./",
-      "description": "wiki 参照・メモ・PRD・実装・PR の基本フロー（wiki / memo / prd / implement / pr）",
+      "description": "local でも cloud でも使う共有 skill 一式。local 専用（Orca・browser・mise/age・dotfiles 運用など）は載せず global に残す",
       "skills": [
-        "./.agents/skills/wiki",
-        "./.agents/skills/memo",
-        "./.agents/skills/prd",
+        "./.agents/skills/agent-friendly-cli",
+        "./.agents/skills/ce-simplify-code",
+        "./.agents/skills/cloudflare",
+        "./.agents/skills/design-md",
+        "./.agents/skills/document",
+        "./.agents/skills/domain-modeling",
+        "./.agents/skills/gh-stack",
+        "./.agents/skills/grill-with-docs",
+        "./.agents/skills/grilling",
+        "./.agents/skills/hallmark",
         "./.agents/skills/implement",
-        "./.agents/skills/pr"
+        "./.agents/skills/ingest-to-markdown",
+        "./.agents/skills/japanese-tech-writing",
+        "./.agents/skills/learn",
+        "./.agents/skills/memo",
+        "./.agents/skills/pr",
+        "./.agents/skills/prd",
+        "./.agents/skills/project-setup",
+        "./.agents/skills/prototype",
+        "./.agents/skills/reporting",
+        "./.agents/skills/skill-structure",
+        "./.agents/skills/solo-product",
+        "./.agents/skills/typesafe-ai",
+        "./.agents/skills/wiki"
       ]
     }
   ]

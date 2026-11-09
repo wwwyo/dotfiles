@@ -41,7 +41,7 @@ done < <(find home -mindepth 2 -name '.*' ! -name '.chezmoi*')
 
 # --- repo root の deploy 対象 dir が link list に含まれる ---
 # repo 内部用途の dir は allowlist（deploy 対象外）
-internal=(.cursor .github .agent .git)
+internal=(.cursor .github .agent .git .claude-plugin)
 for entry in .[!.]*/; do
   dir="${entry%/}"
   case " ${internal[*]} " in *" $dir "*) continue ;; esac

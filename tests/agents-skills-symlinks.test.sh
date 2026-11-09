@@ -10,6 +10,8 @@ fail() { echo "FAIL: $*" >&2; exit 1; }
 for tool_dir in .claude/skills; do
   # 評価 workspace は skill の隣に置くため、entrypoint を持つ dir を検査する。
   for skill in .agents/skills/*/; do
+    # 改名互換の alias（.agents/skills 内の symlink）は実体側で検査する
+    [ -L "${skill%/}" ] && continue
     [ -f "$skill/SKILL.md" ] || continue
     name="$(basename "$skill")"
     link="$tool_dir/$name"
