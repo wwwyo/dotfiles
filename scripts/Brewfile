@@ -22,6 +22,7 @@ cask "appcleaner"
 cask "arduino-ide"
 cask "azookey"
 cask "chatgpt"
+cask "claude"
 cask "displaylink"
 cask "eagle"
 cask "figma"
@@ -43,6 +44,7 @@ cask "anomalyco/tap/hex", trusted: true if Hardware::CPU.arm? && MacOS.version >
 cask "stablyai/orca/orca", trusted: true
 mas "Amphetamine", id: 937984704
 mas "Bitwarden", id: 1352778147
+mas "CapCut", id: 1500855883
 mas "Kindle", id: 302584613
 mas "LINE", id: 539883307
 mas "Slack", id: 803453959
