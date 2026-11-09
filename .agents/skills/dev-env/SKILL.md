@@ -1,6 +1,6 @@
 ---
 name: dev-env
-description: "dotfiles で管理する開発環境の tool 設定・hooks・telemetry・macOS アプリ管理の非自明な制約を調べる。Orca の keybindings・browser のフォーカス移動、Claude/Codex/pi の設定・認証・起動不調、hook の不調、Langfuse opt-in、Cloudflare AI Gateway の開発環境設定、ローカル MCP を MCP Server Portal で外部 agent へ出す構成を触るときに参照する。"
+description: "dotfiles で管理する開発環境の tool 設定・hooks・telemetry・macOS アプリ管理の非自明な制約を調べる。Orca の keybindings・browser のフォーカス移動、Claude/Codex/pi の設定・認証・起動不調、hook の不調、Langfuse opt-in、Cloudflare AI Gateway の開発環境設定、ローカル MCP を MCP Server Portal で外部 agent へ出す構成、GSC・GA4 など外部サービスへ agent を繋ぐ（Composio を portal 経由で入れる）ときに参照する。"
 ---
 
 # dev-env
@@ -27,7 +27,7 @@ description: "dotfiles で管理する開発環境の tool 設定・hooks・tele
 | Langfuse telemetry の opt-in・exporter・secrets を触る | [references/langfuse-telemetry.md](references/langfuse-telemetry.md) |
 | CodeRabbit の central config・`.coderabbit.yaml` を触る | [references/coderabbit.md](references/coderabbit.md) |
 | Cloudflare AI Gateway の tool・Access 認証・環境設定を触る | [Cloudflare AI Gateway の開発環境設定](references/cloudflare.md) |
-| 個人の MCP を MCP Server Portal（・Tunnel）に集約する・各 agent の MCP 設定・portal に MCP を追加する | [references/mcp-portal.md](references/mcp-portal.md) |
+| 個人の MCP を MCP Server Portal（・Tunnel）に集約する・各 agent の MCP 設定・portal に MCP を追加する・外部サービス（GSC・GA4・広告など）へ agent を繋ぐ（Composio に統一し portal 経由で入れる） | [references/mcp-portal.md](references/mcp-portal.md) |
 | gh-aw の生成 workflow（`.github/workflows/*.md` + `*.lock.yml`）を触る | [references/gh-aw.md](references/gh-aw.md) |
 | workflow の `uses:` を変える・`actions.lock` を更新する | [references/actions-lock.md](references/actions-lock.md) |
 

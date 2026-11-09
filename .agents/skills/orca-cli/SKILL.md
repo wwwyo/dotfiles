@@ -8,6 +8,8 @@ description: >-
   "Orca browser". Prefer it over raw git worktree, ad hoc PTYs, or Computer Use when Orca
   state is involved. Use Computer Use only when a visible window needs GUI control that a
   CLI, filesystem, or API cannot do.
+  Supervised worker coordination (task dispatch, ask/reply, completion waits, result
+  integration) uses orchestration.
 ---
 
 # Orca CLI
