@@ -1,8 +1,6 @@
 {
     "workbench.colorTheme": "Devin Light",
-    "devin.acp.preferredAgent": "devin-cli",
     "devin.acp.enabledAgents": {
-        "devin-cli": true,
         "codex-acp": false,
         "claude-acp": false,
         "pi-acp": true
@@ -12,10 +10,6 @@
     "devin.acp.agentPreferences": {
         "claude-acp": {
             "mode": "bypassPermissions"
-        },
-        "devin-cli": {
-            "model": "swe-2-high",
-            "mode": "smart"
         }
     },
     "devin.autoContinue": 0,
