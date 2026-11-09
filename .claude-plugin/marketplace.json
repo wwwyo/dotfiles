@@ -13,18 +13,17 @@
       "skills": [
         "./.agents/skills/agent-friendly-cli",
         "./.agents/skills/ce-simplify-code",
-        "./.agents/skills/cloudflare",
         "./.agents/skills/design-md",
         "./.agents/skills/document",
         "./.agents/skills/domain-modeling",
-        "./.agents/skills/gh-stack",
+        "./.agents/skills/e2e",
         "./.agents/skills/grill-with-docs",
         "./.agents/skills/grilling",
         "./.agents/skills/hallmark",
         "./.agents/skills/implement",
-        "./.agents/skills/ingest-to-markdown",
         "./.agents/skills/japanese-tech-writing",
         "./.agents/skills/learn",
+        "./.agents/skills/media-generation",
         "./.agents/skills/memo",
         "./.agents/skills/pr",
         "./.agents/skills/prd",
@@ -33,7 +32,6 @@
         "./.agents/skills/reporting",
         "./.agents/skills/skill-structure",
         "./.agents/skills/solo-product",
-        "./.agents/skills/typesafe-ai",
         "./.agents/skills/wiki"
       ]
     }
