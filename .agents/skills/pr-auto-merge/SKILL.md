@@ -355,7 +355,10 @@ lockfile は分類・内容判定から除外する（GitHub Actions の `*.lock
 mise の `.config/mise/config.toml` と chezmoi の `home/dot_config/mise/config.toml`
 は tool pin の manifest として judge に回す。`.github/workflows/` も
 github-actions ecosystem の依存置き場として judge に回し（`*.lock.yml` は
-生成物で常に hold）、bot の manifest・lock・workflow のみなら、
+生成物で常に hold）、`.github/workflows/actions.lock`（gh-actions-lock の
+生成 lock）は lockfile として扱う — dependabot の workflow 更新に同梱される
+ので、分類不能のままにすると approval 免除枠を外れ、bot PR を review しない
+pullfrog 待ちで永久に hold する（dotfiles#152）。bot の manifest・lock・workflow のみなら、
 script の依存自動 ok または current head の judge ok の後は
 pullfrog-approval を免除する。
 

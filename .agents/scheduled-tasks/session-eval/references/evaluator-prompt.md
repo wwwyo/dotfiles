@@ -40,7 +40,7 @@ transcript を読み、以下のフォーマットで記録を temp file に書�
 
 記述上の注意:
 
-- 命名だけをさせる小さな session は、実作業の依頼本文を入力に埋め込んでくる。Orca の branch 名・commit message 生成 helper（「Generate a short git branch name」「Output ONLY the branch name」等）と、chat 名の生成（「Name this chat from the user's first request」「Output only the title」等）がこれにあたる。root prompt が命名契約なら、その契約への適合（長さ・装飾なし・1行）だけを評価し、埋め込まれた調査・実装が未実施という失敗に数えない。実作業の成否はこの session からは未確認とする（`turn_count=1`・`tools: none` は契約通りで、摩擦ではない）。
+- 命名だけをさせる小さな session は、実作業の依頼本文を入力に埋め込んでくる。Orca の branch 名・commit message 生成 helper（「Generate a short git branch name」「Output ONLY the branch name」等）と、chat 名の生成（「Name this chat from the user's first request」「Output only the title」等）がこれにあたる。root prompt が命名契約なら、その契約への適合（長さ・装飾なし・1行）だけを評価し、埋め込まれた調査・実装が未実施という失敗に数えない。実作業の成否はこの session からは未確認とする（`turn_count=1`・`tools: none` は契約通りで、摩擦ではない）。**題名が依頼の意図（何の作業か）を識別できるかは `概要` に1行書く** — 技能名をそのまま並べただけの題名（`/skill:daily-start` → `daily-start skill`）は、契約適合でも識別子としては情報量が低い。
 - **事実には観測だけを書く**。transcript から読み取れるもの（発言・回数・結果）を記録し、「これは摩擦だ」「これは成功だ」という評価ラベルは書かない
 - **事実は transcript を読み返さずに関連性を判断できる粒度で書く**。消費側はこの記録だけで transcript への drill down が要るか決める — 回数などの集計値より、具体的な名前（ファイル名・API 名・エラー文言・却下した手順）と判断の根拠を優先する。内容の薄い session で項目を水増しする必要はない（`特になし` は正当な記録）
 - **解釈は所見として明記する**。あなたの判断は `## 解釈` 側にだけ書く。それが学習価値があるかの採否は消費側（consolidate 等）が決める

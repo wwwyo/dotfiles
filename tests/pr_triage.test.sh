@@ -185,6 +185,12 @@ assert c(".github/workflows/sub/x.yml") == "hold"     # subdir は実行対象�
 assert c(".github/workflows/auth.test.yml") == "hold" # test 名でも substring hold
 assert not pt.is_actions_workflow(".github/workflows/sub/x.yml")
 assert not pt.is_actions_workflow(".github/workflows/x.lock.yml")
+# gh-actions-lock の生成 lock は workflow 依存の写像 — lockfile として扱う。
+# 分類不能のままにすると dependabot の workflow 更新 PR が approval 免除枠を
+# 外れ、bot PR を review しない pullfrog 待ちで永久に hold する
+default_actions_lock = ".github/workflows/actions.lock"
+assert pt.is_lockfile(default_actions_lock) and c(default_actions_lock) == "standard"
+assert pt.is_dependency_file(default_actions_lock)
 assert c(".agents/hooks/tests/test_auth.py") == "hold"
 assert c("tests/.env") == "hold" and c("tests/main.tf") == "hold"
 assert c("tests/LICENSE") == "hold"
@@ -218,6 +224,15 @@ assert r["lane"] == "judge" and not r["bot_dep_only"]
 # 生成物の lock workflow は whitelist に入らない（hold）
 r = pt.classify_pr([".github/workflows/x.lock.yml"], meta_bot, "")
 assert r["lane"] == "hold" and not r["bot_dep_only"]
+# dependabot の workflow 更新は actions.lock を同梱する — lock を分類不能に
+# 残すと approval 免除枠を外れて永久に hold する（dotfiles#152）
+r = pt.classify_pr([".github/workflows/test.yml", default_actions_lock],
+                   meta_bot, "")
+assert r["lane"] == "judge" and r["bot_dep_only"]
+# 同じ lock でも人が触る PR は whitelist にしない
+r = pt.classify_pr([".github/workflows/test.yml", default_actions_lock],
+                   meta_w, "")
+assert r["lane"] == "judge" and not r["bot_dep_only"]
 # rename 元の hold path（previous_filename）も分類対象 — lock.yml → yml
 # rename は renamed_from に旧名が入り hold 側で止まる
 r = pt.classify_pr([".github/workflows/build.yml"], meta_bot, "",

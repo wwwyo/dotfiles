@@ -515,9 +515,19 @@ LOCKFILE_BASENAMES = {
 }
 
 
+# gh-actions-lock が生成する workflow の `uses:` pin lock。`*.lock.yml` と
+# 違って workflow 本体ではないが、workflow 依存の写像なので lockfile として
+# 扱う — 分類不能のままにすると、dependabot の workflow 更新 PR が bot_dep の
+# approval 免除枠に入らず、pullfrog は bot PR を review しないので永久に
+# hold する（dotfiles#152 が 2026-11-07 から "pullfrog-approval absent" で滞留）
+ACTIONS_LOCK_PATHS = (".github/workflows/actions.lock",)
+
+
 def is_lockfile(path):
     """依存解決・tool pin の生成 lockfile か。workflow の *.lock.yml は含めない。"""
-    return _basename(path.lower()) in LOCKFILE_BASENAMES
+    low = path.lower()
+    return _basename(low) in LOCKFILE_BASENAMES or \
+        any(low == p or low.endswith("/" + p) for p in ACTIONS_LOCK_PATHS)
 
 
 def is_dependency_file(path):
