@@ -10,7 +10,7 @@ import subprocess
 import sys
 import tempfile
 
-script = Path(sys.argv[1]) / '.agents/skills/project-setup/tools/sync-local-worktree-files.sh'
+script = Path(sys.argv[1]) / '.agents/tools/sync-local-worktree-files.sh'
 with tempfile.TemporaryDirectory(prefix='worktree local files ') as directory:
     root = Path(directory)
     main = root / 'main'

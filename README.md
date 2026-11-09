@@ -74,11 +74,12 @@ scripts/ docs/ tests/            # repo 内部ファイル（deploy されない
 
 以下は `run_after_20-link-repodirs.sh.tmpl` が repo 内 dir へ symlink を張る（理由は `.chezmoiignore` 冒頭）:
 
-- `.agents` — skillctrl が skill を取り込み、merge 後の実体を各 agent が共有する
-- `.claude/{skills,agents}` / `home/dot_claude/hooks` — 同上 + repo 内相対 symlink（`skills/*` → `../../.agents/`）+ executable script
+- `.agents` — 共有 hook・scheduled task・MCP 設定（skill 本体は [wwwyo/skills](https://github.com/wwwyo/skills) が持ち、各 agent へ plugin で配る）
+- `.claude/agents` / `home/dot_claude/hooks` — 同上 + executable script
 - `.agents/scheduled-tasks` → `~/.claude/scheduled-tasks` — Orca automation の手順書置き場。repo 内の `.claude/scheduled-tasks` は旧パスの互換 symlink
 - `.codex/{rules,scripts,hooks,automations,skills}` / `.pi/agent/extensions` — 同上
 - `home/dot_config/{git/hooks,mise/tasks}` — executable を含むため per-file symlink 不可
+- `~/src/github.com/wwwyo/skills/.agents/skills` → `~/.config/devin/skills` — plugin を読まない Devin 向け（repo 外を指す唯一の link。checkout が無ければ skip）
 
 ## 新しいファイルを追加する方法
 
@@ -91,7 +92,7 @@ scripts/ docs/ tests/            # repo 内部ファイル（deploy されない
 - 既存のファイルは chezmoi が検出する（`chezmoi apply` で上書きされる前に `chezmoi diff` で確認推奨）
 - `.ssh/config` のみ管理対象。SSH 鍵や `~/.ssh/config.local`（マシン固有の Host）などの機密ファイルは対象外
 - Codex の共通設定は `home/.chezmoitemplates/codex-base.toml.tmpl`。`~/.codex/config.toml` は実ファイルで、apply は共通設定だけを更新する。repo trust・hook 承認履歴・PC 固有の plugin 配置先などはローカルに保持され、repo には同期されない。`~/.codex/hooks.json` は引き続き template から配置する。
-- Pi の sandbox は 2026-10-27 に廃止した（`pi-sandbox` package と `sandbox.json` を削除）。理由と再導入時の前提は [dev-env の pi reference](.agents/skills/dev-env/references/pi.md) にある。
+- Pi の sandbox は 2026-10-27 に廃止した（`pi-sandbox` package と `sandbox.json` を削除）。理由と再導入時の前提は [dev-env の pi reference](https://github.com/wwwyo/skills/blob/main/.agents/skills/dev-env/references/pi.md) にある。
 - Pi の `settings.json` も同じ方式。`home/.chezmoitemplates/pi-settings-base.json` を `private_settings.json.tmpl` が `~` 側と合成する実ファイルで、pi が TUI から書き戻す既定 model・theme などはローカルに残り repo を汚さない。
 - `~/.claude/settings.json` は repo への symlink なので書き戻しが `git status` に出る。Devin の `~/.config/devin/config.json` は template から作る実ファイルで、承認や個人設定はローカルに保持する。Devin の Orca hook は PC ごとの home directory から描画する。
 - mise の age 復号鍵は macOS では Keychain（`service=mise-age-key`）、それ以外では gitignore 済みの `~/.config/mise/age.txt` から読む（`home/dot_zsh/01-exports.zsh`）。鍵ファイル自体は repo に置かず、password manager 等の別経路で持ってくる
