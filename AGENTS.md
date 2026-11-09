@@ -60,6 +60,8 @@ skill の更新・独自適応は [skillctrl](.agents/skillctrl/README.md) に�
 - 手書き skill（`memo` `wiki` `project-setup` 等）は `.agents/skills/` に直接置くため、upstream lock に載らない。accepted lock の記録・不一致検出・再適応も upstream lock の登録済み skill だけを対象にする。手書き skill は意図ファイルがあっても対象外。旧 accepted lock に残った未登録 skill の hash は次の `record` で削除し、skill 本文は変更しない
 - 削除は `skillctrl remove <name>` を使い、worktree の実体・upstream 登録・保存済み intent を変更する。Claude symlink は CLI が管理しないため別途確認する。codex は `.agents/skills` を native discovery するため `.codex/skills` に symlink は置かない
 
+- **cloud へ配る skill は `.claude-plugin/marketplace.json` の plugin に列挙する**。cloud（claude.ai の Projects スレッド・cloud session）は `~/.agents` も repo の `.claude/skills/` も読まず、claude.ai アカウントの Customize > Plugins で追加した marketplace の plugin だけが synced plugin として届く。この repo を marketplace（`wwwyo/dotfiles`、Sync automatically）として登録し、plugin の `skills` に `.agents/skills/<name>` を並べて正本を一本化する。browser 操作など local でしか動かない skill は載せず global のままにする。local では synced 側と global が二重になるので、local は `/plugin` で synced を無効にする
+
 - 独立 skill として残すかの判断基準は「その skill だけを目的に起動する場面（単独の入口）があるか」。無ければ既存 skill の reference か節として持つ
 - 運用ルールの記載先は、情報の発生源（不具合の根拠・制約の由来）と適用時（操作を行う skill）で分ける。発生源にだけ書くと使う側が見ず、両方に全文書くと drift する
 - skill・reference の rename・移動・削除では、path だけでなく link の表示名（label）・anchor も対象に repo 全体を grep して残存参照を消す。path だけ直して旧タイトルの label が残る事故が起きている

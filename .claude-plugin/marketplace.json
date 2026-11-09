@@ -1,0 +1,22 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "wwwyo",
+  "description": "wwwyo の dotfiles から、cloud（claude.ai アカウント経由の synced plugin）にも配りたい skill だけを束ねた marketplace。正本は .agents/skills/。",
+  "owner": {
+    "name": "wwwyo"
+  },
+  "plugins": [
+    {
+      "name": "core",
+      "source": "./",
+      "description": "wiki 参照・メモ・PRD・実装・PR の基本フロー（wiki / memo / prd / implement / pr）",
+      "skills": [
+        "./.agents/skills/wiki",
+        "./.agents/skills/memo",
+        "./.agents/skills/prd",
+        "./.agents/skills/implement",
+        "./.agents/skills/pr"
+      ]
+    }
+  ]
+}
