@@ -1,13 +1,40 @@
 # 個人の MCP を MCP Server Portal に集約する
 
-ChatGPT・claude.ai（web・スマホ）とローカル agent から、この Mac の loopback で動く MCP（OpenScreen）と公開 remote MCP（context7・fudoki・Cloudflare API）を 1 つの入口で使う構成。2026-10-13 に自前 proxy（wwwyo/access-mcp-proxy、archive 済み）から置き換えた。判断の経緯は同 repo の ADR 0002 と PRD `docs/prd/mcp-portal/` に残っている。
+ChatGPT・claude.ai（web・スマホ）とローカル agent から、この Mac の loopback で動く MCP（OpenScreen）と公開 remote MCP（context7・fudoki・Cloudflare API）、Composio 経由の外部サービス（Google Search Console）を portal の入口から使う構成。2026-10-13 に自前 proxy（wwwyo/access-mcp-proxy、archive 済み）から置き換えた。判断の経緯は同 repo の ADR 0002 と PRD `docs/prd/mcp-portal/` に残っている。
+
+portal は 2 つある。
+
+- `mcphub`（`mcp.wwwyo.dev`、portal ID `wwwyo`）: 開発で常用する MCP
+- `mcp-marketing`（`mcp-marketing.wwwyo.dev`、portal ID `marketing`）: マーケティング用。外部サービスの連携（Composio）をここに載せ、マーケ作業の agent にはこの portal だけを渡す
 
 ```text
 ChatGPT / claude.ai / ローカル agent ──OAuth──▶ portal mcp.wwwyo.dev ─┬─▶ Gateway ──▶ Tunnel ──▶ 127.0.0.1:<port>
                                                                        ├─▶ https://mcp.context7.com/mcp（key は Cloudflare 保管）
                                                                        ├─▶ https://api.fudoki.dev/mcp（認証なし）
                                                                        └─▶ https://mcp.cloudflare.com/mcp（利用者ごとの OAuth。token は portal が保持）
+
+マーケ作業の agent ──OAuth──▶ portal mcp-marketing.wwwyo.dev ─┬─▶ Composio tool router session（GSC 読み取り。key は Cloudflare 保管）
+                                                              └─▶ https://mcp.cloudflare.com/mcp
 ```
+
+## 外部サービス連携は Composio に統一し、portal 経由で入れる
+
+GSC・GA4・広告・CRM などの SaaS へ agent を繋ぐときは、サービスごとに MCP を探したり自作したりせず Composio に統一する。Composio の MCP は client に直接登録せず、Cloudflare の portal（マーケ用途は `mcp-marketing`）の upstream として入れる（2026-11-09 に決定）。
+
+- **役割の分担**: Composio は連携を持ち、OAuth token を保管・更新する。portal は agent の認証・tool 単位の公開・ログ・Code Mode を受け持つ。Composio 自体も複数 toolkit を 1 endpoint に束ねられるが、Composio の外の MCP（context7・自作）は束ねられないので、入口は portal に寄せる
+- **汎用 endpoint（`connect.composio.dev/mcp`）は使わない**: `COMPOSIO_SEARCH_TOOLS`・`COMPOSIO_MULTI_EXECUTE_TOOL`・`COMPOSIO_PROXY_EXECUTE`・`COMPOSIO_REMOTE_BASH_TOOL` などのメタツール経由で、全 toolkit の全操作（削除系も）を呼べる。portal の tool 単位の公開設定が効かない
+- **toolkit ごとに tool router session を作り、その session の MCP URL を portal に入れる**: Composio Platform の API（`POST /api/v3.1/tool_router/session`）で、`toolkits.enable` と `tools.<toolkit>.enable` に許可する tool だけを並べ、`search`・`execute.enable_multi_execute`・`workbench`・`manage_connections` を無効にする。session の `mcp.url` は許可した tool だけを個別の tool として出し、メタツールは出さない。portal 側は Code Mode なので、toolkit・tool が増えても agent の context は増えない
+- **読み取り専用にするときは 3 段で絞る**: auth config の OAuth scope（GSC なら `webmasters.readonly` だけ）、auth config の `tool_access_config.tools_available_for_execution`、session の tool 許可リスト。scope の変更は新しい接続にしか効かないので、scope を変えたら接続し直す
+- **portal へは共有 key で入れる**: server は `auth_type: bearer` にし、`auth_credentials` に `{"headers":{"x-api-key":"<ak_ key>"}}` を JSON 文字列で渡す（Composio は `Authorization: Bearer` ではなく `x-api-key` を読む）。portal 側の `on_behalf` は `false`
+- **書き込み系の tool を agent に渡すときは別に判断する**: Composio の `require_approval` は experimental で、portal（Code Mode）経由で elicitation が中継されるかは未検証。いまは読み取りだけを出している
+
+### Composio の key・project の区別
+
+- **Composio Connect（consumer、`connect.composio.dev`）と Composio Platform（`platform.composio.dev`）は project が別。** Connect で繋いだ接続は Platform の key から見えない。session 方式は Platform 側で作り、接続も Platform 側の auth config で作り直す
+- key は 2 種類ある。Connect の設定画面で出るのは `ck_`（consumer key、header は `x-consumer-api-key`）で、session 作成には使えない（`Invalid API key` の 401 になる）。session 作成と portal 用には、Platform の Project Settings → API Keys で `ak_`（header は `x-api-key`）を発行する
+- `ak_` は権限を選んで発行する。setup では Auth configs・Connected accounts・Session management（Read and write）、Session tool execution（Write only）、Toolkits・Tools（Read only）を使った。権限が足りないと `This API key does not have the permissions required for ...` が route と必要な権限つきで返る。portal に置く常用 key は Session tool execution（Write only）だけでよい。Legacy の single toolkit MCP は、実行と作成が同じ「MCP (Legacy) Write」権限で分けられないので使わない
+- key は `COMPOSIO_API_KEY` として global mise に age で置いている。接続（OAuth）は `POST /api/v3/connected_accounts/link` で発行したリンクを人が開いて同意する。リンクは約 10 分で失効する
+- session の有効期限は doc に記載が無い（2026-11-09 時点）。portal の server が `error` になったら、同じ設定で session を作り直し、server の `hostname` を差し替える
 
 ## portal に載せる MCP の基準
 
@@ -41,6 +68,8 @@ portal は個人の MCP の入口を 1 つにまとめる経路。ChatGPT・clau
 | MCP server | `context7`: `https://mcp.context7.com/mcp`、`auth_type: bearer`（`CONTEXT7_API_KEY` を Cloudflare に保存。context7 は `Authorization: Bearer` で key を受ける）、`secure_web_gateway: false`（公開 upstream なので Gateway・Tunnel を通さない） |
 | MCP server | `fudoki`: `https://api.fudoki.dev/mcp`、`auth_type: unauthenticated`、`secure_web_gateway: false` |
 | MCP server | `cloudflare`: `https://mcp.cloudflare.com/mcp`、`auth_type: oauth`（DCR。client 登録は portal が自動で行い、手動の client_id は持たない）、`secure_web_gateway: false`。tool は `docs` `search` `execute` `whoami` |
+| MCP server | `composiogsc`: Composio tool router session の `mcp.url`（`https://backend.composio.dev/tool_router/<session_id>/mcp`）、`auth_type: bearer`（`x-api-key` header に Platform の `ak_` key）、`secure_web_gateway: false`。tool は GSC 読み取りの `LIST_SITES` `GET_SITE` `SEARCH_ANALYTICS_QUERY` `INSPECT_URL` `LIST_SITEMAPS` `GET_SITEMAP`。Composio 側は user_id `wwwyo`、auth config `gsc-readonly`（scope `webmasters.readonly`） |
+| MCP portal | `marketing`: `mcp-marketing.wwwyo.dev`、`code_mode: default_on`、portal 側 `secure_web_gateway: false`、server は `composiogsc`（`on_behalf: false`）と `cloudflare`（`on_behalf: true`）。Access policy は `Cloudflare account members` |
 | MCP portal | `wwwyo`: `mcp.wwwyo.dev`、`code_mode: default_on`（2026-10-21 に `off` から変更。client は `?codemode=off` で従来の tool 一覧に戻せる）、portal 側 `secure_web_gateway: false`、`on_behalf` は `cloudflare` だけ `true`、他は `false` |
 | Access app | portal 用（type `mcp_portal`、Managed OAuth + DCR、redirect は ChatGPT の callback・claude.ai の `https://claude.ai/api/mcp/auth_callback`・任意の localhost/loopback）と server 用（type `mcp`、`destinations: [{type: via_mcp_server_portal, mcp_server_id}]`、server ごとに 1 つ）。どれも本人のメールだけ Allow |
 | DNS | `mcp` CNAME → `gateway.agents.cloudflare.com`（proxied） |
