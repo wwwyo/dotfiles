@@ -34,7 +34,6 @@ cask "appcleaner"
 cask "arduino-ide"
 cask "azookey"
 cask "chatgpt"
-cask "devin-cli"
 cask "displaylink"
 cask "eagle"
 cask "figma"
@@ -46,10 +45,7 @@ cask "google-chrome" unless File.exist?("/Applications/Google Chrome.app")
 cask "google-drive"
 # App Store (sandboxed) build cannot hide items on macOS 27; cask installs the
 # non-sandboxed build. Requires Accessibility permission.
-cask "hiddenbar"
 cask "jabra-direct"
-cask "keycastr"
-cask "keyboardcleantool"
 cask "libreoffice"
 cask "macshot"
 cask "nani"
