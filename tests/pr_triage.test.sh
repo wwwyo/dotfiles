@@ -58,6 +58,39 @@ assert acquire() is False, "fresh lock must be kept"
 PY
 python3 "$PT" lock release >/dev/null
 
+# --- 監査: 失敗 tick・再判定を jsonl から復元できること ---
+# lock 保持中の tick は plan を残さないので、holder を tick_locked で残す
+python3 "$PT" lock acquire >/dev/null
+python3 "$PT" gate >/dev/null 2>&1 || true
+python3 - "$PT" <<'EOF' || fail "tick_locked: a locked tick must record the lock holder"
+import importlib.util, sys
+spec = importlib.util.spec_from_file_location("pt", sys.argv[1])
+pt = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(pt)
+locked = [e for e in pt.read_events() if e.get("event") == "tick_locked"]
+assert len(locked) == 1, locked
+assert locked[0].get("holder_run_id"), locked[0]
+assert "error" not in locked[0] and "tick_error" not in locked[0], locked[0]
+EOF
+python3 "$PT" lock release >/dev/null
+
+# 同一 head の再判定は attempt で区別する（judge event 件数 = 判定した PR 数
+# ではない。check 遷移だけの stale を同 run で取り直すと件数が増える）
+HASH=$(printf 'a%.0s' $(seq 64))
+for _ in 1 2; do
+  python3 "$PT" judge-result --repo wwwyo/x --number 1 --sha sha1 \
+    --context-hash "$HASH" --verdict ng --reason 'test' >/dev/null
+done
+python3 - "$PT" <<'EOF' || fail "judge attempt: re-registration must increment attempt"
+import importlib.util, sys
+spec = importlib.util.spec_from_file_location("pt", sys.argv[1])
+pt = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(pt)
+attempts = [e.get("attempt") for e in pt.read_events()
+            if e.get("event") == "judge" and e.get("repo") == "wwwyo/x"]
+assert attempts == [1, 2], attempts
+EOF
+
 python3 - "$PT" <<'EOF'
 import importlib.util, json, os, subprocess, sys, tempfile
 from pathlib import Path

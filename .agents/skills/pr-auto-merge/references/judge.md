@@ -60,12 +60,24 @@ lane への推薦で、merge の発行は script が hard gate の再検証後�
   何が変わったか分からないときは `judge-input` 時点の `checks` と merge 直前の
   live checks を比べる — `context_hash` は checks を含むので、check の遷移だけでも
   stale になる（承認到着後に再判定になるのはこのため。設計どおりで不具合ではない）。
+  **`context_hash` は title・body・base・base_sha・check rollup の hash で、head sha も
+  差分も含まない** — 同じ `context_hash` でも head が違えば差分が違う（実例:
+  wwwyo/me#248 は head が 2ea2ec42 → e58893a7 と動いたが `context_hash` は不変だった）。
+  stale の切り分けは `sha`（差分の同一性）と `context_hash`（材料の同一性）を別々に見る。
+  **check rollup だけが進んで stale になり、head と本文が judge 時と同じなら、
+  同じ実行内で `judge-input` を取り直して `judge-result` を再登録してよい** — 判定対象の
+  差分は同一で、変わるのは材料の hash だけ。再登録は同じ PR・同じ実行で1回までとし、
+  `merge_ready: true` なら続けて merge、それでも false なら理由を report に残して次 tick に渡す。
+  head が変わっている場合は同 run で再判定しない（新しい差分を plan から取り直す）。
 - `no judge ok ...` — 現在 head に紐付く ok verdict が無い。judge action を
   まだ処理していないか、ng/repair が記録されている。
 - `pullfrog-approval not success (...)` — review の承認が現在 head に無い。
   bot 依存更新・確認済み追従の whitelist 経路以外は merge できない。`absent` の
   ときは同名の check-run 自体があるかを先に見る — check-run が1件も無ければ
   review の前に workflow が起動していない（private repo の Actions 上限等）。
+  **他の app の check-run（CodeRabbit 等）だけが並び、`gh run list --commit <head>`
+  が 0 件の場合も同じ** — `pullfrog-approval` の check-run が無いのは承認待ちではなく
+  head に対して review workflow が未起動。どちらも
   [Pullfrog 導入 4](../../project-setup/references/pullfrog.md) の billing 確認へ進み、
   この不在を PR 側の欠陥として `repair` にしない。
 - `draft (author ready 待ち)` — draft は author が未完成と明示した PR で、
@@ -79,6 +91,10 @@ lane への推薦で、merge の発行は script が hard gate の再検証後�
 PR の自己申告をそのまま採用せず、影響の深刻さ・検証状況・復旧可能性から
 高 / 中 / 低が妥当か判断する。QA の結果が現在の head の影響範囲を覆っているか、
 記載された根拠と実際の差分・実行結果が一致しているかを確認する。
+**タイトル・本文の主張と実差分が食い違う PR は、差分を判定対象にして `ng` にする** —
+タイトルが「A の更新」で差分が B を変えている、Blast Radius が「docs のみ」で
+コードを触っている等。差分と説明のどちらか一方に寄せず、乖離そのものを hold の理由にする
+（差分は安全側でも、何をしているか誤認させる PR を lane が merge すると履歴が嘘になる）。
 
 - **高**: hold（`ng`）。検証済みでも自動 merge しない。
 - **中**: 影響に対応する検証が済んでいれば `ok`。未検証や根拠不足なら hold（`ng`）。

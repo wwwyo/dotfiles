@@ -51,6 +51,10 @@ mise の `[tools]` は開発用依存（devDependencies 相当）として扱う
    ```
 
    gate は plan 書き出し時に `plan_generated` event を当日の jsonl に追記する。
+   前 tick の lock が TTL 内で生きている場合、gate は plan を作らずに終了する —
+   plan/plan_generated が無い ticks のうち、この経路は `tick_locked` event
+   （holder_run_id / holder_ts）で判別する。tick が無いことを「tick 未実行」と
+   決めつけない。
    前 tick の lock が TTL を超過しても解放されなかった場合、次の gate が
    stale lock を回収して `tick_abandoned` event（previous_run_id / previous_ts /
    age_seconds / reason）を記録する — この event が示すのは lock が TTL 内に
@@ -73,7 +77,7 @@ mise の `[tools]` は開発用依存（devDependencies 相当）として扱う
    |--------|---------|
    | `dispatch` | `pr_triage.py dispatch --repo <r> --number <n>` を呼ぶ。revive / spawn の解決・上限・dedup・delivery 検証は script がやる。結果が `needs_escalate: true` なら、返された `reason` を `--reason` に渡して続けて `escalate` を呼ぶ。`defer`/`none` なら何もしない。`dispatched: false` の `reason` が stale plan（plan 取得後に指摘が解消された）でも失敗ではない — 再送・独自回復せず次 tick に委ねる |
    | `escalate` | `pr_triage.py escalate --repo <r> --number <n>`（上限到達の旨を PR にコメントして打ち切り）。戻り値の `handle`（実査する terminal）を report の該当行に書く |
-   | `judge` | `judge-input` で diff・PR 本文・CI を取得し、**executor 自身が references/judge.md の基準で判定して** `judge-result --sha <sha> --context-hash <context_hash> --verdict ok\|ng\|repair --reason <理由>` に登録する。材料取得だけで終えない。判断不能なら理由付きで ng。**ok の登録結果が `merge_ready: true` なら、次 tick を待たず同じ実行内で続けて `merge` を呼び、`merged: true` なら直後に `sweep` を呼ぶ**（`merge` が発行直前に hard gate を全件再検証する）。`merge_ready: false`（`blocked` の理由付き）なら merge せず、理由を report に残す。repair は次 tick の dispatch に渡す |
+   | `judge` | `judge-input` で diff・PR 本文・CI を取得し、**executor 自身が references/judge.md の基準で判定して** `judge-result --sha <sha> --context-hash <context_hash> --verdict ok\|ng\|repair --reason <理由>` に登録する。材料取得だけで終えない。判断不能なら理由付きで ng。**ok の登録結果が `merge_ready: true` なら、次 tick を待たず同じ実行内で続けて `merge` を呼び、`merged: true` なら直後に `sweep` を呼ぶ**（`merge` が発行直前に hard gate を全件再検証する）。`merge_ready: false`（`blocked` の理由付き）なら merge せず、理由を report に残す（`judge ok stale` が check rollup の遷移だけで head・本文が同じときは、同じ実行内で取り直して再登録してよい — [judge](references/judge.md#merge_ready-が-false-のときblocked-の読み方)、1 PR 1回まで）。repair は次 tick の dispatch に渡す |
    | `merge` | `pr_triage.py merge --repo <r> --number <n>`。`merged: true` を確認したら直後に `pr_triage.py sweep` を呼ぶ（開始時の `plan.sweep` が空でも必須）。`merged: false` / `blocked`・失敗・成功未確認なら、merge 後の sweep は呼ばず理由を記録する。`ok: true` だけでは merge 成功ではない |
    | `hold` | 何もしない。理由は report に載せる |
 
@@ -226,9 +230,21 @@ script が構造化エラーで弾く。
   jsonl で照合する場合は `ts >= plan.generated_at` の `worktree_rm` に絞り、
   この実行の sweep 出力と worktree を照合する（同時刻の手動 sweep を混ぜない）。
   sweep 実施済みでも `removed=[]` なら 0 とし、実施・残存理由は jsonl の note を参照する。
-  `hold` は plan の hold action 件数。`judge_ok`・`judge_ng`・`judge_repair` は
-  `event == "judge"` かつ `ts >= plan.generated_at` の event だけを数える — 当日の
-  jsonl には前 tick の judge event も入るため、時刻で絞らないと件数が膨らむ。
+  **各 field の出所は2種類だけで、混ぜない**:
+  `dispatch`・`escalate`・`judge`・`hold` は **plan の action 件数**（`hold` は hold
+  action 件数）。plan file は次 tick が上書きするので、事後に照合するときは当日 jsonl の
+  `plan_generated.action_kinds`（action 種別ごとの件数）を使う — `action_count` だけでは
+  hold と judge を区別できない。
+  `merge`・`sweep`・`error`・`judge_ok`・`judge_ng`・`judge_repair` は **実行結果の
+  event 件数**で、`ts >= plan.generated_at` で絞る（当日 jsonl には前 tick の event も入る）。
+  `merge` は merge 成功（`event == "merge"`）の件数で、plan の merge action 数は
+  `action_kinds.merge` で照合する — 差があれば `merge_failed`・`merge_blocked` の有無で説明する。
+  `error` は script が記録した失敗 event（`tick_error`・`merge_failed`・`dispatch_failed`）の
+  件数で、transcript の `[ERROR]` 行・tool 呼び出しの失敗は含まない（jsonl に残らないものを
+  数えないので 0 になりうる）。`judge_ok`・`judge_ng`・`judge_repair` は
+  `event == "judge"` の件数で、**同一 head の再判定も1件ずつ数える** — judge event の
+  `attempt` が 2 以上なら同じ head の再登録（check 遷移だけの stale を取り直した等）で、
+  `judge_ok` が plan の judge 件数を上回るのは不整合ではない。
   `blocked` は同じ絞り込んだ judge event の `blocked`（judge-result が ok でも hard
   gate が通らず `merge_ready: false` のときに残る理由の配列）を理由ごとに数える
   （`pullfrog-approval not success`・`judge ok stale`・`draft` など）。該当の無い
@@ -236,8 +252,8 @@ script が構造化エラーで弾く。
   `pr-watch.md` の件数見出しは**当日累計**（当日 jsonl 全体）、tick-summary は
   **per-tick** — 両者が一致しなくても不整合と読まない（後続 tick が同じ日次 file に追記する）。
   同じ理由で、md は後続 tick が Hold 行を書き換える（MERGED・他アクターの merge を外す）ため、
-  ある時点の md に行が無いことを「未実施」の証拠にしない — 実施の有無は jsonl の
-  action・note で確認する。
+  ある時点の md に行が無いことを「未実施」の証拠にしない — 実施の有無と件数は jsonl
+  （`plan_generated.action_kinds`・action event・note）で確認する。
 
 dispatch ガードの延期も Hold に載せ、恒久的な保留と区別して日本語で理由を書く。
 以下の表は dispatch ガード延期の `reason` だけを対象とし、返された理由以上の原因を

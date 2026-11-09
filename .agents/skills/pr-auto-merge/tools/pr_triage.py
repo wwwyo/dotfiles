@@ -2095,7 +2095,18 @@ def cmd_gate(a):
         if not a.no_lock:
             run_id = _lock_acquire(LOCK_TTL_S)
             if not run_id:
-                # 前回 run が残っている → この tick は起動しない
+                # 前回 run が残っている → この tick は起動しない。
+                # plan も plan_generated も残らない tick なので、後から
+                # 「tick が動かなかった」と「前 run が lock を保持していた」を
+                # 区別できるよう、holder を jsonl に記録する
+                holder = _lock_info()
+                try:
+                    append_event("tick_locked",
+                                 holder_run_id=holder.get("run_id"),
+                                 holder_ts=holder.get("ts_iso"))
+                except Exception as e:
+                    print(f"pr_triage: tick_locked append failed: {e}",
+                          file=sys.stderr)
                 emit({"ok": True, "run": False, "reason": "locked"})
                 sys.exit(1)
         # lock 取得後に読む — 前の run が release 直前に save_state した
@@ -2107,11 +2118,18 @@ def cmd_gate(a):
         # fail-closed: API 失敗の tick では merge・削除を実行しない。
         # run_id が無い = 自分の lock を持っていないので release もしない
         # （他人の lock を消さない）
-        if run_id:
-            _lock_release(run_id)
+        # release の失敗で tick_error 自体を落とさない（原因が失われる）
+        try:
+            released = _lock_release(run_id) if run_id else None
+        except OSError:
+            released = None
         msg = str(e) if isinstance(e, ApiError) else \
             f"{type(e).__name__}: {e}"
-        append_event("tick_error", error=msg)
+        # どの段階で落ちたか・lock を取れた/解放できたかを残さないと、
+        # 失敗 tick の原因を jsonl から復元できない（transcript が無い
+        # 経路があるため）。phase は現在 plan 段階のみ
+        append_event("tick_error", phase="plan", error=msg,
+                     lock_acquired=bool(run_id), lock_released=released)
         fail(msg, code=2)
 
 
@@ -2214,7 +2232,13 @@ def _gate(a, st, run_id):
                          encoding="utf-8")
     # plan artifact は次 tick で上書きされるため、tick 単位の復元・窓確定の
     # 監査用に jsonl へ plan 生成の記録を残す（evaluator は plan の generated_at
-    # と次 tick の generated_at で窓を確定する）。
+    # と次 tick の generated_at で窓を確定する）。集計だけでは tick-summary の
+    # hold/judge/dispatch を plan と突き合わせられないので、action 種別の
+    # 内訳（action_kinds）も残す — plan file を復元する手段が他に無い。
+    action_kinds = {}
+    for entry in plan_entries:
+        for act in entry["actions"]:
+            action_kinds[act["type"]] = action_kinds.get(act["type"], 0) + 1
     try:
         append_event("plan_generated",
                      run_id=run_id,
@@ -2222,6 +2246,7 @@ def _gate(a, st, run_id):
                      date=plan["date"],
                      pr_count=len(plan_entries),
                      action_count=sum(len(e["actions"]) for e in plan_entries),
+                     action_kinds=action_kinds,
                      sweep_count=len(sweeps),
                      has_work=has_work)
     except Exception as e:
@@ -2487,8 +2512,19 @@ def _cmd_judge_result(a):
     # executor は merge を呼ばないので merge_blocked event は出ず、ここに
     # 残さないと report・tick-summary が理由を再構成できない。gate 評価は
     # state 保存後なので、gate 自体が失敗しても verdict 登録は失われない。
+    # attempt は「同じ head を何回判定したか」— check 遷移だけの stale を
+    # 同 run で取り直すと同一 head の judge event が複数並ぶため、event 件数
+    # だけでは「PR を何件判定したか」と区別できない（attempt>=2 が再判定）。
+    attempt = 1
+    try:
+        attempt += sum(
+            1 for ev in read_events()
+            if ev.get("event") == "judge" and ev.get("repo") == a.repo
+            and ev.get("pr") == a.number and ev.get("sha") == a.sha)
+    except OSError:
+        pass
     append_event("judge", repo=a.repo, pr=a.number, sha=a.sha, context_hash=a.context_hash,
-                 verdict=a.verdict, reason=a.reason or "",
+                 verdict=a.verdict, reason=a.reason or "", attempt=attempt,
                  policy_version=JUDGE_POLICY_VERSION, dependency_repair=repairing,
                  blocked=blocked or None)
     emit(out)
