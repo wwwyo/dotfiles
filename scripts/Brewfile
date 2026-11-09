@@ -43,8 +43,6 @@ cask "ghostty"
 # 別ユーザーが入れた Chrome は Homebrew の --adopt でも権限変更に失敗する。
 cask "google-chrome" unless File.exist?("/Applications/Google Chrome.app")
 cask "google-drive"
-# App Store (sandboxed) build cannot hide items on macOS 27; cask installs the
-# non-sandboxed build. Requires Accessibility permission.
 cask "jabra-direct"
 cask "libreoffice"
 cask "macshot"
