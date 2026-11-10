@@ -43,7 +43,7 @@ skill/AGENTS だけの変更は、原因が判断基準・知識の欠落にあ�
 
 知識を残す採否の判定軸は「この学びが無いと、次の agent が同じ失敗をするか・ユーザーを苛立たせるか」。**調べれば分かるものは書かない** — 実行時に調べて辿り着ける手順・ツールの細かい挙動・edge case の回避術は知識の追記対象外（網羅するコストが価値を上回る）。これは上の原因調査・仕組みの修正を省く理由にはしない。残すのは、調べても分からないドメイン知識・その repo 固有の非自明な制約・繰り返された失敗のパターンだけ。コードや git history を読めば分かる「何を変えたか」も書かない。迷ったら書かない — 削ることを優先する。1行追記で足りるなら新規 skill を立てない。
 
-新しい学び skill を立てる判断をするときだけ `~/.agents/skills/skill-structure/SKILL.md` を読む（既存 skill への追記だけなら不要 — 構造は既にある）。新設前に既存 skill への追記で足りないかを先に確認し、新設した skill は repo の起動時 index（`AGENTS.md` 等）に参照1行を入れる — 無いと発見されず死蔵する。
+新しい学び skill を立てる判断をするときだけ `~/src/github.com/wwwyo/skills/.agents/skills/skill-structure/SKILL.md` を読む（既存 skill への追記だけなら不要 — 構造は既にある）。新設前に既存 skill への追記で足りないかを先に確認し、新設した skill は repo の起動時 index（`AGENTS.md` 等）に参照1行を入れる — 無いと発見されず死蔵する。
 
 還元先は**コードに近い方を優先**する。1件の学びが複数にまたがってもよい（例: 修正 + それを防ぐ lint ルール + 手順としての skill 記述）:
 
@@ -68,7 +68,7 @@ skill/AGENTS だけの変更は、原因が判断基準・知識の欠落にあ�
 - `{REPO_ROOT}` = `wwwyo/me` の group は、宛先を特定できなかった session と me/wiki 宛の学びを持つ session の置き場（宛先は coordinator が割当済み — ここでも `{REPO_ROOT}` 宛の学びだけを扱う）
 - あなたは `{REPO_ROOT}` の **Orca worktree 内で起動されている**（coordinator が repo の default branch から新規に切った。cwd = その worktree）。自分で追加の worktree は切らない。canonical checkout には他セッションが乗っている前提で、この worktree 内だけで作業する
 - **対象 repo に open の `consolidate/*` PR が既にあるなら、新規 PR ではなくその branch に commit を積む**。`git fetch origin <その PR の head branch>` して `git switch --detach FETCH_HEAD` で作業し、commit 後 `git push origin HEAD:<head branch>` で積む — 前回 run の worktree がその branch を checkout したまま残っているので local に同名 branch は切らない（`git switch <branch>` は "already used by worktree" で落ちる）。未 merge の学び PR が積まれても読まれる確率は上がらない — PR の open 在庫は最新1本に絞る。無いときはこの worktree で `git switch -c consolidate/<YYYY-MM-DD>` して `git push -u origin`（同日2回目以降は `-2` 等を付ける）。新規 PR の base は repo の default branch
-- PR は `pr` skill（`~/.agents/skills/pr/SKILL.md`）の workflow に従って出す。この batch 固有の差分だけここに書く: draft のままにする（step 6 の ready 化は consolidator のスコープ外）、`orca tab create` は skip してよい
+- PR は `pr` skill（`~/src/github.com/wwwyo/skills/.agents/skills/pr/SKILL.md`）の workflow に従って出す。この batch 固有の差分だけここに書く: draft のままにする（step 6 の ready 化は consolidator のスコープ外）、`orca tab create` は skip してよい
   - **pullfrog の review 完了と CI の完了を待たない** — draft PR を出した時点でこの batch の PR は人間のレビューに渡る完了で、待機は完了条件ではない。`gh pr checks --watch`・`gh run list` の polling・`sleep` を挟む待ちループを使わない（pullfrog の rerun 待ちで 3 時間 40 分滞留した実例がある）。作成時点で CI が既に fail していれば下の理由付き mark に従い、pending のままなら待たずに score を書いて終了する。監視は人間と pr-auto-merge lane が行う
   - 待機せずに確認した時点で CI が失敗していて自分で解消できない場合は、PR body に状況を明記して score を `ci failing` の理由付きで mark して終了する — 未完のまま放置せず、人間が draft PR で引き取れるよう状態を記録する（score を書かないと翌 run が同じ作業をやり直す）。pending は `ci timeout` にせず通常どおり PR URL で mark する
     - fork repo は Actions が disabled になりうる（dispatch 422・run 0 件、permissions は enabled のまま）。「CI 未実行」と「CI 失敗」を区別し、未実行を理由に恒久失敗 mark しない — PR body に記録して人間のレビューに渡す。

@@ -8,8 +8,6 @@ description: >-
   "Orca browser". Prefer it over raw git worktree, ad hoc PTYs, or Computer Use when Orca
   state is involved. Use Computer Use only when a visible window needs GUI control that a
   CLI, filesystem, or API cannot do.
-  Supervised worker coordination (task dispatch, ask/reply, completion waits, result
-  integration) uses orchestration.
 ---
 
 # Orca CLI
@@ -47,19 +45,3 @@ and retry. If it fails with `runtime_access_denied`, your sandbox blocked the co
 re-run it with escalated permissions, and do not run `ORCA open` or restart Orca. If
 `skills get` is unknown, explain that updating Orca restores the guide; use `--help` for
 read-only discovery and do not guess unsupported commands.
-
-## Preserve the user's focus during browser automation
-
-Keep the user's terminal or other app focused by default:
-
-- Omit `--focus` from `ORCA tab switch` unless the user asks to reveal or switch
-  to the browser pane.
-- After creating a tab, get its `browserPageId` from the result or
-  `ORCA tab list --json` and target later commands with `--page <browserPageId>`.
-  Avoid unnecessary tab switches.
-
-These choices reduce focus changes; they do not guarantee background input.
-Browser clicks and mouse actions can still steal focus even with `--page`.
-Do not invent a `--no-focus` flag or claim focus is preserved without observing it.
-For version-specific bugs and fix availability, read
-[the Orca focus notes](../dev-env/references/orca.md#embedded-browser-がユーザーのフォーカスを奪うとき).

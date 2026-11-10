@@ -1,4 +1,0 @@
-packet_id,status,bytes
-p1,ok,120
-p2,failed,50
-p3,ok,30
