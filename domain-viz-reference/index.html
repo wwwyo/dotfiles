@@ -1,0 +1,327 @@
+<!DOCTYPE html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>風土記のドメイン：root・集約の中・DB</title>
+<style>
+body{font-family:system-ui,-apple-system,"Hiragino Sans","Noto Sans JP",sans-serif;margin:0;color:#1f2a24;background:#fafbfa}
+main{max-width:1100px;margin:0 auto;padding:24px 20px 64px}
+h1{font-size:22px;margin:8px 0 4px} h2{font-size:18px;margin:40px 0 6px;border-bottom:2px solid #2f7d4f;padding-bottom:4px} h3{font-size:15px;margin:0 0 4px}
+p{line-height:1.7;margin:4px 0 10px;font-size:14px} .lead{color:#4a564f}
+.card{background:#fff;border:1px solid #e3e8e4;border-radius:10px;padding:16px;margin:14px 0;overflow-x:auto}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(460px,1fr));gap:0 14px}
+.chip{display:inline-block;background:#2f7d4f;color:#fff;border-radius:4px;padding:0 6px;font-size:12px;margin-right:4px}
+.resp{border-collapse:collapse;width:100%;font-size:14px;background:#fff;margin:8px 0 4px}.resp th,.resp td{border:1px solid #e3e8e4;padding:8px 10px;text-align:left;vertical-align:top;line-height:1.6}.resp th{background:#f1f5f2}
+pre.ts{font:13px/1.6 ui-monospace,SFMono-Regular,Menlo,monospace;background:#f7f9f8;border-radius:8px;padding:14px;overflow-x:auto;margin:6px 0 0;white-space:pre}pre.ts .c{color:#6b7a71}pre.ts .k{color:#2f7d4f;font-weight:bold}pre.ts .s{color:#9a5b13}
+.tboxes{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-start}
+.tbox{border:1px solid #cfd8d2;border-radius:8px;overflow:hidden;background:#fff;flex:1 1 470px;max-width:640px}
+.tbox .th{background:#eef2ef;padding:7px 12px;font-weight:bold;font-size:15px}
+.tbox.root>.th{background:#2f7d4f;color:#fff}
+.badge{background:#fff;color:#2f7d4f;border-radius:4px;font-size:11px;padding:1px 6px;margin-right:8px;vertical-align:1px}
+.bn{font-weight:normal;font-size:12px;margin-left:8px;opacity:.8}
+.tbox table{border-collapse:collapse;width:100%;font-size:13.5px}
+.tbox td{padding:6px 10px;border-top:1px solid #eef2ef;vertical-align:top;line-height:1.5}
+.tbox td.f{font-weight:600;white-space:nowrap;width:1%}
+.tbox td.t{color:#2f5d44;width:1%;min-width:17em}
+.tbox td.n{color:#5f6b64;font-size:12.5px}
+.opt{font-weight:normal;color:#8a958e;font-size:11px;margin-left:2px}
+.lit{white-space:nowrap;display:inline-block;margin:1px 0;background:#f3efe6;border-radius:3px;padding:0 4px;color:#7a4a10}
+.rule{background:#f6faf7;border-left:3px solid #2f7d4f;padding:6px 10px;margin:12px 0 0;font-size:13.5px;flex-basis:100%}
+details.inner{margin-top:10px}details.inner summary{cursor:pointer;color:#2f7d4f;font-size:14px;padding:6px 0;list-style:none}details.inner summary::before{content:"▸ ";display:inline-block;transition:transform .2s}details.inner[open] summary::before{transform:rotate(90deg)}details.inner[open] .tboxes{animation:fadein .25s ease}@keyframes fadein{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
+.ref{color:#2f7d4f;text-decoration:underline dotted;text-underline-offset:3px;cursor:pointer;border:0;background:none;padding:0;font:inherit}.ref:hover{text-decoration-style:solid}.ref.open{font-weight:bold}
+tr.nest>td{padding:6px 10px 10px 18px;background:#f6faf7;border-top:0}tr.nest .tbox{max-width:none;animation:fadein .25s ease}
+.ki{color:#7d8a83;width:15px;height:15px;vertical-align:-3px;margin-right:5px;flex:none}.tbox.root>.th .ki{color:#fff}.th .ki{color:#5f6b64}.legend{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:13px;color:#4a564f;margin:6px 0 4px}.legend span{white-space:nowrap}
+.ename{font-weight:600}
+.key{display:inline-block;font-size:10px;font-weight:700;color:#2f7d4f;border:1px solid #2f7d4f;border-radius:3px;padding:0 3px;margin-right:5px;vertical-align:1px}
+nav a{margin-right:14px;color:#2f7d4f;font-size:14px}
+ul{font-size:14px;line-height:1.7}
+</style></head><body><main>
+<h1>風土記のドメイン</h1>
+<p class="lead">1. root（集約）の関係 → 2. 集約の中の図 → 3. DB の表。★は案で、まだ表がありません。2026-11-09 時点。</p>
+<nav><a href="#root">1. root</a><a href="#obj">2. 集約の中（type）</a><a href="#db">3. DB</a></nav>
+<h2 id="root">1. root（集約）の関係</h2>
+<p><span class="chip">緑</span>が root（5つ）。枠が集約で、白い箱は root の中に持つもの（外からは root を通してしか触らない）。実線は「中に持つ」、点線は別の集約を ID で指す参照。科目・内訳は歳出の中にあるので root ではありません。事業のつながり（分割・統合）は持たない。</p>
+<table class="resp"><thead><tr><th>root</th><th>責務（何を守る集約か）</th><th>守ること</th></tr></thead><tbody><tr><td><b>自治体</b></td><td>どの自治体かを決める（コード・名前・都道府県）</td><td>自治体コードが一意</td></tr><tr><td><b>歳出</b></td><td>1つの資料（当初・補正・決算）の1つの会計の歳出を、歳出の行（科目＝款・項・目、内訳）の金額で持つ。予算書・決算書は出どころ</td><td>末端の科目の和が総額。内訳は科目と足さない</td></tr><tr><td><b>人口</b></td><td>ある基準日の自治体の人口・世帯数を持つ</td><td>自治体×基準日で1つ</td></tr><tr><td><b>事業評価</b></td><td>自治体の1年度分の事務事業評価を、評価シート（小事業ごとの A〜D・今後の方向・指標）で持つ</td><td>シートの数・A〜D の数が評価結果の資料の件数と合う</td></tr><tr><td><b>事業 ★案</b></td><td>予算書の事業の行を1つずつ事業にして年度をまたいでつなぎ（つなぎは風土記の判断）、親の事業、毎年の予算・決算の行、予算案の資料での説明を持つ。最小単位は末端の事業</td><td>1つの年度に事業の金額は1つ。額を足すのは末端だけ</td></tr></tbody></table>
+<div class="card"><pre class="mermaid">flowchart TB
+  subgraph G2[&quot;歳出の集約&quot;]
+    direction TB
+    F[&quot;歳出&lt;br/&gt;資料×会計&quot;]:::rootnode --&gt; FS[&quot;科目&lt;br/&gt;款・項・目&quot;] --&gt; FD[&quot;内訳&lt;br/&gt;事業・節など&quot;]
+  end
+  subgraph G4[&quot;事業評価の集約&quot;]
+    direction TB
+    E[&quot;事業評価&lt;br/&gt;自治体×年度&quot;]:::rootnode --&gt; ES[&quot;評価シート&lt;br/&gt;小事業の1年度&quot;] --&gt; EI[&quot;指標&quot;] --&gt; EV[&quot;指標の年度&quot;]
+  end
+  subgraph G5[&quot;★ 事業の集約（案）&quot;]
+    direction TB
+    B[&quot;事業&quot;]:::rootnode --&gt; BY[&quot;事業の金額&quot;] --&gt; BB[&quot;予算案での説明&quot;]
+  end
+  subgraph G1[&quot;自治体の集約&quot;]
+    J[&quot;自治体&quot;]:::rootnode
+  end
+  subgraph G3[&quot;人口の集約&quot;]
+    P[&quot;人口&quot;]:::rootnode
+  end
+  BY -.-&gt;|当初・決算の行| FD
+  BY -.-&gt; FS
+  ES -.-&gt;|事業＋年度| B
+  B -.-&gt;|親の事業| B
+  E -.-&gt; J
+  F -.-&gt;|自治体コード| J
+  P -.-&gt; J
+  B -.-&gt; J
+  classDef rootnode fill:#2f7d4f,color:#fff,stroke:#1d5534,stroke-width:2px,font-weight:bold
+</pre></div>
+<ul><li>エンティティにしないもの：収録状況（他から数えて出せる）、出典 PDF（各値の出どころ）</li><li>マスタ（COFOG・節・都道府県）は共通の参照先で、集約に入れない</li><li>歳入は今は配っていないので外している</li></ul>
+<h2 id="obj">2. 集約の中（type）</h2>
+<p>各集約の root だけを表示する。<span class="ref">下線の型</span>を押すと、その object がその場で開く（もう一度押すと閉じる）。型の形で並べたもの。<span class="chip">緑の見出し</span>が root、白い見出しは root の中に持つもの。「〜コード」「〜ID」は別の集約を指す参照。★は案。</p>
+<div class="legend"><span><span class="key">PK</span>1件を決める項目（複数あれば組み合わせ）</span><span><span class="key">FK</span>別の集約・マスタを指す項目</span></div><div class="legend"><span><svg class="ki" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" fill="currentColor"><path d="M208,56V88a8,8,0,0,1-16,0V64H136V192h24a8,8,0,0,1,0,16H96a8,8,0,0,1,0-16h24V64H64V88a8,8,0,0,1-16,0V56a8,8,0,0,1,8-8H200A8,8,0,0,1,208,56Z"/></svg>文字</span><span><svg class="ki" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" fill="currentColor"><path d="M224,88H175.4l8.47-46.57a8,8,0,0,0-15.74-2.86l-9,49.43H111.4l8.47-46.57a8,8,0,0,0-15.74-2.86L95.14,88H48a8,8,0,0,0,0,16H92.23L83.5,152H32a8,8,0,0,0,0,16H80.6l-8.47,46.57a8,8,0,0,0,6.44,9.3A7.79,7.79,0,0,0,80,224a8,8,0,0,0,7.86-6.57l9-49.43H144.6l-8.47,46.57a8,8,0,0,0,6.44,9.3A7.79,7.79,0,0,0,144,224a8,8,0,0,0,7.86-6.57l9-49.43H208a8,8,0,0,0,0-16H163.77l8.73-48H224a8,8,0,0,0,0-16Zm-76.5,64H99.77l8.73-48h47.73Z"/></svg>数・金額</span><span><svg class="ki" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" fill="currentColor"><path d="M208,32H184V24a8,8,0,0,0-16,0v8H88V24a8,8,0,0,0-16,0v8H48A16,16,0,0,0,32,48V208a16,16,0,0,0,16,16H208a16,16,0,0,0,16-16V48A16,16,0,0,0,208,32ZM72,48v8a8,8,0,0,0,16,0V48h80v8a8,8,0,0,0,16,0V48h24V80H48V48ZM208,208H48V96H208V208Z"/></svg>年度・日付</span><span><svg class="ki" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" fill="currentColor"><path d="M224,128a8,8,0,0,1-8,8H128a8,8,0,0,1,0-16h88A8,8,0,0,1,224,128ZM128,72h88a8,8,0,0,0,0-16H128a8,8,0,0,0,0,16Zm88,112H128a8,8,0,0,0,0,16h88a8,8,0,0,0,0-16ZM82.34,42.34,56,68.69,45.66,58.34A8,8,0,0,0,34.34,69.66l16,16a8,8,0,0,0,11.32,0l32-32A8,8,0,0,0,82.34,42.34Zm0,64L56,132.69,45.66,122.34a8,8,0,0,0-11.32,11.32l16,16a8,8,0,0,0,11.32,0l32-32a8,8,0,0,0-11.32-11.32Zm0,64L56,196.69,45.66,186.34a8,8,0,0,0-11.32,11.32l16,16a8,8,0,0,0,11.32,0l32-32a8,8,0,0,0-11.32-11.32Z"/></svg>選択肢（決まった値）</span><span><svg class="ki" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" fill="currentColor"><path d="M176,56H80a72,72,0,0,0,0,144h96a72,72,0,0,0,0-144Zm0,128H80A56,56,0,0,1,80,72h96a56,56,0,0,1,0,112ZM80,88a40,40,0,1,0,40,40A40,40,0,0,0,80,88Zm0,64a24,24,0,1,1,24-24A24,24,0,0,1,80,152Z"/></svg>はい／いいえ</span><span><svg class="ki" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" fill="currentColor"><path d="M43.18,128a29.78,29.78,0,0,1,8,10.26c4.8,9.9,4.8,22,4.8,33.74,0,24.31,1,36,24,36a8,8,0,0,1,0,16c-17.48,0-29.32-6.14-35.2-18.26-4.8-9.9-4.8-22-4.8-33.74,0-24.31-1-36-24-36a8,8,0,0,1,0-16c23,0,24-11.69,24-36,0-11.72,0-23.84,4.8-33.74C50.68,38.14,62.52,32,80,32a8,8,0,0,1,0,16C57,48,56,59.69,56,84c0,11.72,0,23.84-4.8,33.74A29.78,29.78,0,0,1,43.18,128ZM240,120c-23,0-24-11.69-24-36,0-11.72,0-23.84-4.8-33.74C205.32,38.14,193.48,32,176,32a8,8,0,0,0,0,16c23,0,24,11.69,24,36,0,11.72,0,23.84,4.8,33.74a29.78,29.78,0,0,0,8,10.26,29.78,29.78,0,0,0-8,10.26c-4.8,9.9-4.8,22-4.8,33.74,0,24.31-1,36-24,36a8,8,0,0,0,0,16c17.48,0,29.32-6.14,35.2-18.26,4.8-9.9,4.8-22,4.8-33.74,0-24.31,1-36,24-36a8,8,0,0,0,0-16Z"/></svg>object</span><span><svg class="ki" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" fill="currentColor"><path d="M48,48V208H80a8,8,0,0,1,0,16H40a8,8,0,0,1-8-8V40a8,8,0,0,1,8-8H80a8,8,0,0,1,0,16ZM216,32H176a8,8,0,0,0,0,16h32V208H176a8,8,0,0,0,0,16h40a8,8,0,0,0,8-8V40A8,8,0,0,0,216,32Z"/></svg>配列</span><span><svg class="ki" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" fill="currentColor"><path d="M216.57,39.43A80,80,0,0,0,83.91,120.78L28.69,176A15.86,15.86,0,0,0,24,187.31V216a16,16,0,0,0,16,16H72a8,8,0,0,0,8-8V208H96a8,8,0,0,0,8-8V184h16a8,8,0,0,0,5.66-2.34l9.56-9.57A79.73,79.73,0,0,0,160,176h.1A80,80,0,0,0,216.57,39.43ZM224,98.1c-1.09,34.09-29.75,61.86-63.89,61.9H160a63.7,63.7,0,0,1-23.65-4.51,8,8,0,0,0-8.84,1.68L116.69,168H96a8,8,0,0,0-8,8v16H72a8,8,0,0,0-8,8v16H40V187.31l58.83-58.82a8,8,0,0,0,1.68-8.84A63.72,63.72,0,0,1,96,95.92c0-34.14,27.81-62.8,61.9-63.89A64,64,0,0,1,224,98.1ZM192,76a12,12,0,1,1-12-12A12,12,0,0,1,192,76Z"/></svg>ID</span><span><svg class="ki" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" fill="currentColor"><path d="M213.66,82.34l-56-56A8,8,0,0,0,152,24H56A16,16,0,0,0,40,40V216a16,16,0,0,0,16,16H200a16,16,0,0,0,16-16V88A8,8,0,0,0,213.66,82.34ZM160,51.31,188.69,80H160ZM200,216H56V40h88V88a8,8,0,0,0,8,8h48V216Zm-32-80a8,8,0,0,1-8,8H96a8,8,0,0,1,0-16h64A8,8,0,0,1,168,136Zm0,32a8,8,0,0,1-8,8H96a8,8,0,0,1,0-16h64A8,8,0,0,1,168,168Z"/></svg>出典</span><span><svg class="ki" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" fill="currentColor"><path d="M240,88.23a54.43,54.43,0,0,1-16,37L189.25,160a54.27,54.27,0,0,1-38.63,16h-.05A54.63,54.63,0,0,1,96,119.84a8,8,0,0,1,16,.45A38.62,38.62,0,0,0,150.58,160h0a38.39,38.39,0,0,0,27.31-11.31l34.75-34.75a38.63,38.63,0,0,0-54.63-54.63l-11,11A8,8,0,0,1,135.7,59l11-11A54.65,54.65,0,0,1,224,48,54.86,54.86,0,0,1,240,88.23ZM109,185.66l-11,11A38.41,38.41,0,0,1,70.6,208h0a38.63,38.63,0,0,1-27.29-65.94L78,107.31A38.63,38.63,0,0,1,144,135.71a8,8,0,0,0,16,.45A54.86,54.86,0,0,0,144,96a54.65,54.65,0,0,0-77.27,0L32,130.75A54.62,54.62,0,0,0,70.56,224h0a54.28,54.28,0,0,0,38.64-16l11-11A8,8,0,0,0,109,185.66Z"/></svg>URL</span></div><div id="aggs"></div>
+<h2 id="db">3. DB の表（今、D1 にある 14 表）</h2>
+<p>主キー・参照の列と主な列だけを載せています。「判断」と書いた参照は風土記が紐付けたもの。</p>
+<p><span class="chip">緑</span>の表が root に当たる表（jurisdiction・population・project_evaluation_result。事業の表は案）。歳出の root には1行の表が無く、科目・内訳の表の jurisdiction_code・fiscal_year・document_kind・amendment_number・account_name の組で決まる。fiscal_origin は出典（予算書・決算書）。どの表も jurisdiction_code で自治体を指す（線は代表だけ）。他の領域の表は主キーだけ載せています。</p>
+<h3>財政（fiscal）</h3><div class="card"><pre class="mermaid">erDiagram
+  fiscal_origin {
+    string origin_id PK
+    string jurisdiction_code FK
+    integer fiscal_year
+    string document_kind
+    string title
+  }
+  fiscal_expenditure_subject {
+    string subject_id PK
+    string parent_subject_id FK
+    string jurisdiction_code FK
+    integer fiscal_year
+    string document_kind
+    string amount_phase
+    string level
+    string name
+    integer amount_yen
+    string cofog_code
+    string origin_id FK
+  }
+  fiscal_expenditure_detail {
+    string detail_id PK
+    string parent_detail_id FK
+    string subject_id FK
+    string jurisdiction_code FK
+    integer fiscal_year
+    string document_kind
+    string amount_phase
+    string breakdown
+    integer depth
+    string name
+    integer amount_yen
+    string expenditure_setsu_id FK
+    string origin_id FK
+  }
+  fiscal_expenditure_location {
+    string row_id PK
+    string origin_id FK
+    integer source_page
+  }
+  fiscal_coverage {
+    string coverage_id PK
+    string jurisdiction_code FK
+    integer fiscal_year
+    string document_kind
+    string origin_id FK
+  }
+  jurisdiction {
+    string jurisdiction_code PK
+  }
+  fiscal_origin }o--|| jurisdiction : &quot;jurisdiction_code&quot;
+  fiscal_expenditure_subject }o--|| fiscal_origin : &quot;origin_id&quot;
+  fiscal_expenditure_subject }o--o| fiscal_expenditure_subject : &quot;parent_subject_id&quot;
+  fiscal_expenditure_detail }o--|| fiscal_expenditure_subject : &quot;subject_id&quot;
+  fiscal_expenditure_detail }o--o| fiscal_expenditure_detail : &quot;parent_detail_id&quot;
+  fiscal_expenditure_location |o--o| fiscal_expenditure_subject : &quot;row_id&quot;
+  fiscal_expenditure_location |o--o| fiscal_expenditure_detail : &quot;row_id&quot;
+  fiscal_coverage }o--|| fiscal_origin : &quot;origin_id&quot;</pre></div>
+<h3>事業（project）</h3><div class="card"><pre class="mermaid">erDiagram
+  project_origin {
+    string origin_id PK
+    string jurisdiction_code FK
+    integer fiscal_year
+    string title
+  }
+  project_evaluation_sheet {
+    string sheet_id PK
+    string origin_id FK
+    string jurisdiction_code FK
+    integer fiscal_year
+    integer page
+    string name
+    integer budget_yen
+    integer settled_yen
+    string grade_code
+    string direction
+    string subject_id FK
+    string detail_id FK
+    string cofog_code
+  }
+  project_evaluation_indicator {
+    string indicator_id PK
+    string sheet_id FK
+    string name
+  }
+  project_evaluation_indicator_value {
+    string value_id PK
+    string indicator_id FK
+    integer fiscal_year
+    string target_text
+    string actual_text
+  }
+  project_evaluation_result {
+    string origin_id PK
+    string jurisdiction_code FK
+    integer page
+    integer reduced_yen
+    string sheets_origin_id FK
+  }
+  project_budget_initiative {
+    string initiative_id PK
+    string origin_id FK
+    string jurisdiction_code FK
+    integer fiscal_year
+    integer page
+    string title
+    boolean is_new
+    integer budget_yen
+    string detail_id FK
+    number link_confidence
+    string cofog_code
+  }
+  jurisdiction {
+    string jurisdiction_code PK
+  }
+  fiscal_expenditure_subject {
+    string subject_id PK
+  }
+  fiscal_expenditure_detail {
+    string detail_id PK
+  }
+  project_origin }o--|| jurisdiction : &quot;jurisdiction_code&quot;
+  project_evaluation_sheet }o--|| project_origin : &quot;origin_id&quot;
+  project_evaluation_indicator }o--|| project_evaluation_sheet : &quot;sheet_id&quot;
+  project_evaluation_indicator_value }o--|| project_evaluation_indicator : &quot;indicator_id&quot;
+  project_evaluation_result |o--|| project_origin : &quot;origin_id&quot;
+  project_budget_initiative }o--|| project_origin : &quot;origin_id&quot;
+  project_evaluation_sheet }o--o| fiscal_expenditure_subject : &quot;subject_id 判断&quot;
+  project_evaluation_sheet }o--o| fiscal_expenditure_detail : &quot;detail_id 判断&quot;
+  project_budget_initiative }o--o| fiscal_expenditure_detail : &quot;detail_id 判断&quot;</pre></div>
+<h3>自治体・人口</h3><div class="card"><pre class="mermaid">erDiagram
+  jurisdiction {
+    string jurisdiction_code PK
+    string name
+    string ocd_id FK
+  }
+  population_origin {
+    string origin_id PK
+    string reference_date
+  }
+  population {
+    string population_id PK
+    string origin_id FK
+    string jurisdiction_code FK
+    string reference_date
+    integer population
+  }
+  population }o--|| population_origin : &quot;origin_id&quot;
+  population }o--|| jurisdiction : &quot;jurisdiction_code&quot;</pre></div>
+<h3 style="margin-top:24px">★ 事業を足すときの表（案）</h3>
+<div class="card"><pre class="mermaid">erDiagram
+  project {
+    string project_id PK
+    string jurisdiction_code FK
+    string name
+    int first_year
+    int last_year
+  }
+  project_year {
+    string project_id FK
+    int fiscal_year
+    string budget_row_id FK &quot;目か内訳&quot;
+    string settlement_row_id FK &quot;目か内訳&quot;
+  }
+  project ||--|{ project_year : &quot;&quot;
+  project_year }o--o| fiscal_expenditure_detail : &quot;row_id&quot;
+  project_year }o--o| fiscal_expenditure_subject : &quot;row_id&quot;
+  project_evaluation_sheet }o--o| project_year : &quot;detail_id から導く&quot;
+</pre></div>
+</main>
+<script>
+const AGGS=[{"title": "自治体（root）", "root": true, "rule": "", "boxes": [{"name": "自治体", "note": "", "rows": [["自治体コード", false, "自治体コード", "この集約の ID", "PK"], ["名前", false, "文字", "武蔵野市", ""], ["都道府県", false, "都道府県", "都道府県マスタ", "FK"], ["公式サイト", false, "URL", "", ""]]}, {"name": "都道府県", "note": "", "rows": [["", false, "'北海道' | '青森県' | '岩手県' | '宮城県' | '秋田県' | '山形県' | '福島県' | '茨城県' | '栃木県' | '群馬県' | '埼玉県' | '千葉県' | '東京都' | '神奈川県' | '新潟県' | '富山県' | '石川県' | '福井県' | '山梨県' | '長野県' | '岐阜県' | '静岡県' | '愛知県' | '三重県' | '滋賀県' | '京都府' | '大阪府' | '兵庫県' | '奈良県' | '和歌山県' | '鳥取県' | '島根県' | '岡山県' | '広島県' | '山口県' | '徳島県' | '香川県' | '愛媛県' | '高知県' | '福岡県' | '佐賀県' | '長崎県' | '熊本県' | '大分県' | '宮崎県' | '鹿児島県' | '沖縄県'", "", ""]]}]}, {"title": "歳出（root）: 1つの資料の1つの会計の歳出全体", "root": true, "rule": "末端の科目の和 = 総額。分け方の違う内訳どうしは足さない", "boxes": [{"name": "歳出", "note": "", "rows": [["自治体", false, "自治体コード", "", "PK・FK"], ["年度", false, "年度", "", "PK"], ["資料区分", false, "'当初予算' | '決算'", "補正予算（第n号）は未収録", "PK"], ["会計", false, "会計", "", "PK"], ["出典", false, "出典<'PDF' | 'CSV'>", "値を取った予算書・決算書", ""], ["款", false, "款[]", "ここから下が「歳出の行」", ""]]}, {"name": "会計", "note": "", "rows": [["名前", false, "文字", "出典の表記（一般会計・国民健康保険事業会計…）", ""], ["種類", false, "会計の種類", "", ""]]}, {"name": "出典", "note": "", "rows": [["資料名", false, "文字", "例: 令和7年度 品川区予算書", ""], ["URL", false, "URL", "公式サイトの公開 URL（ファイルそのもの）", ""], ["形式", false, "形式", "", ""], ["SHA256", false, "文字", "風土記が保存したファイルの指紋。ファイル本体は非公開の保管場所に置く", ""]]}, {"name": "款", "note": "", "rows": [["科目ID", false, "科目ID", "", "PK"], ["番号", true, "文字", "資料に印字された款・項・目の番号（例: 「2 総務費」の 2）。同じ親の中でだけ重ならない", ""], ["名前", false, "文字", "", ""], ["金額", false, "円", "PDF は印字の額、CSV の親は子の和。子の科目の和と合う（取り込みで検査し、資料の印字が合わないところは宣言済みのずれとして残す）", ""], ["印字の位置", false, "印字の位置", "", ""], ["項", false, "項[]", "", ""]]}, {"name": "会計の種類", "note": "対応表 account_kind_map が正。風土記の判断。自治体をまたぐ比較に使う", "rows": [["", false, "'一般会計' | 'と場' | 'テレビ共同受信' | '下水道' | '中小企業設備導入等資金' | '介護サービス事業' | '介護保険' | '公債費' | '国民健康保険' | '土地区画整理' | '地方消費税清算' | '地方独立行政法人病院貸付' | '小笠原諸島生活再建資金' | '工業用水道清算' | '市営住宅' | '市場' | '市街地再開発' | '後期高齢者医療' | '心身障害者扶養年金' | '林業・木材産業改善資金' | '母子父子寡婦福祉資金貸付' | '沿岸漁業改善資金' | '災害復旧' | '特別区財政調整' | '用地' | '病院事業' | '病院施設' | '空港整備' | '競走事業' | '競輪事業' | '老人保健施設' | '臨海都市基盤整備' | '財産区' | '連続立体化' | '都営住宅' | '都営住宅保証金' | '都市開発資金' | '都民の森' | '食肉センター' | '駐車場' | '不明'", "", ""]]}, {"name": "印字の位置", "note": "名前と金額が出典のどこに印字されているか。出典の形式で形が違う", "rows": [["次のどれか", false, "PDFの位置 | CSVの位置", "", ""]]}, {"name": "項", "note": "", "rows": [["科目ID", false, "科目ID", "", "PK"], ["番号", true, "文字", "資料に印字された款・項・目の番号（例: 「2 総務費」の 2）。同じ親の中でだけ重ならない", ""], ["名前", false, "文字", "", ""], ["金額", false, "円", "PDF は印字の額、CSV の親は子の和。子の科目の和と合う（取り込みで検査し、資料の印字が合わないところは宣言済みのずれとして残す）", ""], ["印字の位置", false, "印字の位置", "", ""], ["目", false, "目[]", "目の無い項は空", ""], ["内訳", false, "内訳[]", "科目と足さない", ""]]}, {"name": "PDFの位置", "note": "", "rows": [["名前の頁", false, "数", "ファイルの中で1から数えた頁", ""], ["名前の枠", false, "枠", "", ""], ["金額の頁", true, "数", "", ""], ["金額の枠", true, "枠", "1つの印字が全額のときだけ", ""]]}, {"name": "CSVの位置", "note": "", "rows": [["名前の行", false, "数", "ファイルの中の行番号", ""], ["金額の行", true, "数", "", ""]]}, {"name": "目", "note": "", "rows": [["科目ID", false, "科目ID", "", "PK"], ["番号", true, "文字", "資料に印字された款・項・目の番号（例: 「2 総務費」の 2）。同じ親の中でだけ重ならない", ""], ["名前", false, "文字", "", ""], ["金額", false, "円", "PDF は印字の額、CSV の親は子の和。子の科目の和と合う（取り込みで検査し、資料の印字が合わないところは宣言済みのずれとして残す）", ""], ["印字の位置", false, "印字の位置", "", ""], ["分野", false, "分野", "風土記の判断", ""], ["繰出先", true, "会計の種類", "他の会計への繰出金のとき（風土記の判断）", ""], ["内訳", false, "内訳[]", "科目と足さない", ""]]}, {"name": "内訳", "note": "分け方は風土記の判断", "rows": [["次のどれか", false, "事業の内訳 | 事業でない内訳", "", ""]]}, {"name": "枠", "note": "頁の左上を原点にした pt", "rows": [["左", false, "数", "", ""], ["上", false, "数", "", ""], ["右", false, "数", "", ""], ["下", false, "数", "", ""]]}, {"name": "分野", "note": "", "rows": [["次のどれか", false, "分類した分野 | 分類しない分野", "", ""]]}, {"name": "事業の内訳", "note": "", "rows": [["内訳ID", false, "内訳ID", "", "PK"], ["段の名前", false, "文字", "内訳1・事項・節・細節…（印字の見出し）", ""], ["名前", false, "文字", "資料のまま", ""], ["法定の節", true, "歳出の節", "節マスタに当たった行だけ", "FK"], ["繰出先", true, "会計の種類", "他の会計への繰出金のとき（風土記の判断）", ""], ["金額", false, "円", "", ""], ["内訳の内訳", false, "内訳[]", "深さは資料しだい", ""], ["印字の位置", false, "印字の位置", "", ""], ["分け方", false, "'事業'", "", ""], ["所管課", true, "文字", "名前の末尾の【】", ""]]}, {"name": "事業でない内訳", "note": "", "rows": [["内訳ID", false, "内訳ID", "", "PK"], ["段の名前", false, "文字", "内訳1・事項・節・細節…（印字の見出し）", ""], ["名前", false, "文字", "資料のまま", ""], ["法定の節", true, "歳出の節", "節マスタに当たった行だけ", "FK"], ["繰出先", true, "会計の種類", "他の会計への繰出金のとき（風土記の判断）", ""], ["金額", false, "円", "", ""], ["内訳の内訳", false, "内訳[]", "深さは資料しだい", ""], ["印字の位置", false, "印字の位置", "", ""], ["分け方", false, "'節' | 'その他'", "", ""]]}, {"name": "分類した分野", "note": "", "rows": [["確かさ", false, "'確定' | '暫定'", "", ""], ["COFOG", false, "COFOG", "", "FK"]]}, {"name": "分類しない分野", "note": "", "rows": [["確かさ", false, "'分類できない' | '対象外'", "", ""]]}]}, {"title": "人口（root）", "root": true, "rule": "", "boxes": [{"name": "人口", "note": "", "rows": [["自治体", false, "自治体コード", "", "PK・FK"], ["基準日", false, "日付", "", "PK"], ["男", false, "人数", "", ""], ["女", false, "人数", "", ""], ["総数", false, "人数", "", ""], ["世帯数", false, "数", "", ""], ["出典", false, "出典<'Excel'>", "総務省の住民基本台帳の集計", ""]]}, {"name": "出典", "note": "", "rows": [["資料名", false, "文字", "例: 令和7年度 品川区予算書", ""], ["URL", false, "URL", "公式サイトの公開 URL（ファイルそのもの）", ""], ["形式", false, "形式", "", ""], ["SHA256", false, "文字", "風土記が保存したファイルの指紋。ファイル本体は非公開の保管場所に置く", ""]]}]}, {"title": "事業評価（root）: 自治体の1年度分の事務事業評価（評価結果の資料と評価シート全部）", "root": true, "rule": "シートを取り込んだ年度は、評価シートの数・A〜D の数が 件数 と合う", "boxes": [{"name": "事業評価", "note": "", "rows": [["自治体", false, "自治体コード", "", "PK・FK"], ["事業を行った年度", false, "年度", "評価した事業を実施した年度", "PK"], ["出典", false, "出典<'PDF'>", "評価結果の資料", ""], ["件数", false, "評価の件数", "評価結果の資料に載る数", ""], ["シート", false, "評価シート[]", "シートを取り込んでいない年度は空", ""]]}, {"name": "出典", "note": "", "rows": [["資料名", false, "文字", "例: 令和7年度 品川区予算書", ""], ["URL", false, "URL", "公式サイトの公開 URL（ファイルそのもの）", ""], ["形式", false, "形式", "", ""], ["SHA256", false, "文字", "風土記が保存したファイルの指紋。ファイル本体は非公開の保管場所に置く", ""]]}, {"name": "評価の件数", "note": "", "rows": [["評価した数", false, "数", "", ""], ["A", false, "数", "", ""], ["B", false, "数", "", ""], ["C", false, "数", "", ""], ["D", false, "数", "", ""]]}, {"name": "評価シート", "note": "1枚 = 小事業の1年度。出典と頁で1枚が決まる", "rows": [["事業", true, "事業の年度の参照", "★案。今は決算書の内訳から導く。決算書の無い年度など紐付かないシートもある", "FK"], ["事業名", false, "文字", "小事業の名前。資料のまま", ""], ["予算科目", false, "予算科目", "シートに印字された予算科目。事業に紐付けた根拠", ""], ["部", true, "文字", "担当部署。シートの表記", ""], ["課", true, "文字", "担当課。シートの表記", ""], ["予算額", false, "円", "小事業の額。歳出の行とは足さない", ""], ["決算額", false, "円", "", ""], ["評価", false, "'A' | 'B' | 'C' | 'D'", "", ""], ["評価の名前", true, "文字", "シートの表記。読めない欄は空（例: 改善・見直しする事業）", ""], ["今後の方向", true, "文字", "シートの表記。読めない欄は空（例: 手法等の改善）", ""], ["指標", false, "指標[]", "", ""], ["出典", false, "出典<'PDF'> & { 頁: 数 }", "", "PK"]]}, {"name": "事業の年度の参照", "note": "", "rows": [["事業", false, "事業ID", "", ""], ["年度", false, "年度", "", ""]]}, {"name": "予算科目", "note": "読めない欄は空", "rows": [["会計", true, "文字", "", ""], ["款", true, "文字", "", ""], ["項", true, "文字", "", ""], ["目", true, "文字", "", ""], ["事業", true, "文字", "", ""]]}, {"name": "指標", "note": "", "rows": [["名前", false, "文字", "", ""], ["単位", true, "文字", "", ""], ["定義", true, "文字", "", ""], ["最終目標", true, "文字", "シートの表記のまま", ""], ["最終目標の年度", true, "文字", "シートの表記のまま（例: 令和8年度）", ""], ["年度", false, "指標の年度[]", "", ""]]}, {"name": "指標の年度", "note": "", "rows": [["年度", false, "年度", "", "PK"], ["目標", true, "文字", "", ""], ["実績", true, "文字", "", ""]]}]}, {"title": "事業（root・★案）: 予算書の事業の行を1つずつ事業にし、年度をまたいでつないだ木（つなぎは風土記の判断）。最小単位は末端の事業", "root": true, "rule": "1つの年度に 事業の金額 は1つ。事業の額を足すときは、その年度に子の事業の金額を持たない事業だけを足す", "boxes": [{"name": "事業", "note": "", "rows": [["事業ID", false, "事業ID", "", "PK"], ["自治体", false, "自治体コード", "", "FK"], ["名前", false, "文字", "最新の年度の表記", ""], ["始めた年度", false, "年度", "", ""], ["終えた年度", true, "年度", "", ""], ["親の事業", true, "事業ID", "予算書の入れ子の1つ上の事業。目の直下の事業は持たない", "FK"], ["金額", false, "事業の金額[]", "年度ごと", ""]]}, {"name": "事業の金額", "note": "", "rows": [["年度", false, "年度", "", "PK"], ["当初予算の行", true, "歳出の行の参照", "紐付かない施策から作った事業は持たない", "FK"], ["決算の行", true, "歳出の行の参照", "", "FK"], ["予算案での説明", false, "予算案での説明[]", "予算案の資料に載った年度だけ", ""]]}, {"name": "歳出の行の参照", "note": "", "rows": [["次のどれか", false, "内訳の参照 | 目の参照", "", ""]]}, {"name": "予算案での説明", "note": "予算案のプレス発表の資料の1施策。値（エンティティにしない）", "rows": [["施策名", false, "文字", "", ""], ["事業名", false, "文字[]", "資料の事業名の欄。複数のことがある", ""], ["新規", false, "boolean", "新規の印", ""], ["説明", false, "文字", "資料の説明文（品川は「ポイント」の箇条書き）", ""], ["予算額", true, "円", "", ""], ["出典", false, "出典<'PDF'> & { 頁: 数 }", "", ""]]}, {"name": "内訳の参照", "note": "その事業の行", "rows": [["種類", false, "'内訳'", "", ""], ["内訳ID", false, "内訳ID", "", ""]]}, {"name": "目の参照", "note": "事業の内訳が無い自治体。目の無い項を含む", "rows": [["種類", false, "'目'", "", ""], ["科目ID", false, "科目ID", "", ""]]}, {"name": "出典", "note": "", "rows": [["資料名", false, "文字", "例: 令和7年度 品川区予算書", ""], ["URL", false, "URL", "公式サイトの公開 URL（ファイルそのもの）", ""], ["形式", false, "形式", "", ""], ["SHA256", false, "文字", "風土記が保存したファイルの指紋。ファイル本体は非公開の保管場所に置く", ""]]}]}];
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function typeHtml(t,names,agg){
+  const eb=agg&&ENUMBOX.has(t.trim())?agg.boxes.find(x=>x.name===t.trim()):null;
+  if(eb)return '<span class="ename">'+esc(t)+'</span><br>'+typeHtml(eb.rows[0][2],[]);
+  return t.split(/('[^']*')/).map(seg=>{
+    if(seg.startsWith("'"))return '<span class="lit">'+esc(seg.slice(1,-1))+'</span>';
+    let h=esc(seg);
+    for(const n of names){h=h.replace(new RegExp('(^|[^\\p{L}"=-])('+n+')(\\[\\])?(?![\\p{L}"])','gu'),(m,pre,name,arr)=>pre+'<button class="ref" data-t="'+name+'">'+name+(arr||'')+'</button>')}
+    return h;
+  }).join('');
+}
+const KINDS={text:['ph-text-t','文字'],num:['ph-hash','数・金額'],date:['ph-calendar-blank','年度・日付'],url:['ph-link','URL'],bool:['ph-toggle-left','はい／いいえ'],enum:['ph-list-checks','選択肢（決まった値）'],obj:['ph-brackets-curly','object'],arr:['ph-brackets-square','配列'],id:['ph-key','ID'],src:['ph-file-text','出典']};
+const ENUMBOX=new Set([]);
+function kindOf(t,names){
+  t=t.trim().replace(/<.*>/,'');
+  if(t.endsWith('[]'))return 'arr';
+  if(t==='boolean')return 'bool';
+  if(t.includes("'")||ENUMBOX.has(t)||t==='COFOG'||t==='歳出の節')return 'enum';
+  if(names.includes(t)||t.includes(' & ')||t.split(' | ').every(x=>names.includes(x)))return 'obj';
+  if(/ID|コード/.test(t))return 'id';
+  if(/円|人数|^数/.test(t))return 'num';
+  if(/年度|日付/.test(t))return 'date';
+  if(t==='URL')return 'url';
+  if(/頁|書|集計/.test(t))return 'src';
+  return 'text';
+}
+const ICONS={"ph-list-checks": "<svg class=\"ki\" aria-hidden=\"true\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 256 256\" fill=\"currentColor\"><path d=\"M224,128a8,8,0,0,1-8,8H128a8,8,0,0,1,0-16h88A8,8,0,0,1,224,128ZM128,72h88a8,8,0,0,0,0-16H128a8,8,0,0,0,0,16Zm88,112H128a8,8,0,0,0,0,16h88a8,8,0,0,0,0-16ZM82.34,42.34,56,68.69,45.66,58.34A8,8,0,0,0,34.34,69.66l16,16a8,8,0,0,0,11.32,0l32-32A8,8,0,0,0,82.34,42.34Zm0,64L56,132.69,45.66,122.34a8,8,0,0,0-11.32,11.32l16,16a8,8,0,0,0,11.32,0l32-32a8,8,0,0,0-11.32-11.32Zm0,64L56,196.69,45.66,186.34a8,8,0,0,0-11.32,11.32l16,16a8,8,0,0,0,11.32,0l32-32a8,8,0,0,0-11.32-11.32Z\"/></svg>", "ph-file-text": "<svg class=\"ki\" aria-hidden=\"true\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 256 256\" fill=\"currentColor\"><path d=\"M213.66,82.34l-56-56A8,8,0,0,0,152,24H56A16,16,0,0,0,40,40V216a16,16,0,0,0,16,16H200a16,16,0,0,0,16-16V88A8,8,0,0,0,213.66,82.34ZM160,51.31,188.69,80H160ZM200,216H56V40h88V88a8,8,0,0,0,8,8h48V216Zm-32-80a8,8,0,0,1-8,8H96a8,8,0,0,1,0-16h64A8,8,0,0,1,168,136Zm0,32a8,8,0,0,1-8,8H96a8,8,0,0,1,0-16h64A8,8,0,0,1,168,168Z\"/></svg>", "ph-brackets-square": "<svg class=\"ki\" aria-hidden=\"true\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 256 256\" fill=\"currentColor\"><path d=\"M48,48V208H80a8,8,0,0,1,0,16H40a8,8,0,0,1-8-8V40a8,8,0,0,1,8-8H80a8,8,0,0,1,0,16ZM216,32H176a8,8,0,0,0,0,16h32V208H176a8,8,0,0,0,0,16h40a8,8,0,0,0,8-8V40A8,8,0,0,0,216,32Z\"/></svg>", "ph-link": "<svg class=\"ki\" aria-hidden=\"true\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 256 256\" fill=\"currentColor\"><path d=\"M240,88.23a54.43,54.43,0,0,1-16,37L189.25,160a54.27,54.27,0,0,1-38.63,16h-.05A54.63,54.63,0,0,1,96,119.84a8,8,0,0,1,16,.45A38.62,38.62,0,0,0,150.58,160h0a38.39,38.39,0,0,0,27.31-11.31l34.75-34.75a38.63,38.63,0,0,0-54.63-54.63l-11,11A8,8,0,0,1,135.7,59l11-11A54.65,54.65,0,0,1,224,48,54.86,54.86,0,0,1,240,88.23ZM109,185.66l-11,11A38.41,38.41,0,0,1,70.6,208h0a38.63,38.63,0,0,1-27.29-65.94L78,107.31A38.63,38.63,0,0,1,144,135.71a8,8,0,0,0,16,.45A54.86,54.86,0,0,0,144,96a54.65,54.65,0,0,0-77.27,0L32,130.75A54.62,54.62,0,0,0,70.56,224h0a54.28,54.28,0,0,0,38.64-16l11-11A8,8,0,0,0,109,185.66Z\"/></svg>", "ph-calendar-blank": "<svg class=\"ki\" aria-hidden=\"true\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 256 256\" fill=\"currentColor\"><path d=\"M208,32H184V24a8,8,0,0,0-16,0v8H88V24a8,8,0,0,0-16,0v8H48A16,16,0,0,0,32,48V208a16,16,0,0,0,16,16H208a16,16,0,0,0,16-16V48A16,16,0,0,0,208,32ZM72,48v8a8,8,0,0,0,16,0V48h80v8a8,8,0,0,0,16,0V48h24V80H48V48ZM208,208H48V96H208V208Z\"/></svg>", "ph-text-t": "<svg class=\"ki\" aria-hidden=\"true\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 256 256\" fill=\"currentColor\"><path d=\"M208,56V88a8,8,0,0,1-16,0V64H136V192h24a8,8,0,0,1,0,16H96a8,8,0,0,1,0-16h24V64H64V88a8,8,0,0,1-16,0V56a8,8,0,0,1,8-8H200A8,8,0,0,1,208,56Z\"/></svg>", "ph-key": "<svg class=\"ki\" aria-hidden=\"true\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 256 256\" fill=\"currentColor\"><path d=\"M216.57,39.43A80,80,0,0,0,83.91,120.78L28.69,176A15.86,15.86,0,0,0,24,187.31V216a16,16,0,0,0,16,16H72a8,8,0,0,0,8-8V208H96a8,8,0,0,0,8-8V184h16a8,8,0,0,0,5.66-2.34l9.56-9.57A79.73,79.73,0,0,0,160,176h.1A80,80,0,0,0,216.57,39.43ZM224,98.1c-1.09,34.09-29.75,61.86-63.89,61.9H160a63.7,63.7,0,0,1-23.65-4.51,8,8,0,0,0-8.84,1.68L116.69,168H96a8,8,0,0,0-8,8v16H72a8,8,0,0,0-8,8v16H40V187.31l58.83-58.82a8,8,0,0,0,1.68-8.84A63.72,63.72,0,0,1,96,95.92c0-34.14,27.81-62.8,61.9-63.89A64,64,0,0,1,224,98.1ZM192,76a12,12,0,1,1-12-12A12,12,0,0,1,192,76Z\"/></svg>", "ph-toggle-left": "<svg class=\"ki\" aria-hidden=\"true\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 256 256\" fill=\"currentColor\"><path d=\"M176,56H80a72,72,0,0,0,0,144h96a72,72,0,0,0,0-144Zm0,128H80A56,56,0,0,1,80,72h96a56,56,0,0,1,0,112ZM80,88a40,40,0,1,0,40,40A40,40,0,0,0,80,88Zm0,64a24,24,0,1,1,24-24A24,24,0,0,1,80,152Z\"/></svg>", "ph-brackets-curly": "<svg class=\"ki\" aria-hidden=\"true\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 256 256\" fill=\"currentColor\"><path d=\"M43.18,128a29.78,29.78,0,0,1,8,10.26c4.8,9.9,4.8,22,4.8,33.74,0,24.31,1,36,24,36a8,8,0,0,1,0,16c-17.48,0-29.32-6.14-35.2-18.26-4.8-9.9-4.8-22-4.8-33.74,0-24.31-1-36-24-36a8,8,0,0,1,0-16c23,0,24-11.69,24-36,0-11.72,0-23.84,4.8-33.74C50.68,38.14,62.52,32,80,32a8,8,0,0,1,0,16C57,48,56,59.69,56,84c0,11.72,0,23.84-4.8,33.74A29.78,29.78,0,0,1,43.18,128ZM240,120c-23,0-24-11.69-24-36,0-11.72,0-23.84-4.8-33.74C205.32,38.14,193.48,32,176,32a8,8,0,0,0,0,16c23,0,24,11.69,24,36,0,11.72,0,23.84,4.8,33.74a29.78,29.78,0,0,0,8,10.26,29.78,29.78,0,0,0-8,10.26c-4.8,9.9-4.8,22-4.8,33.74,0,24.31-1,36-24,36a8,8,0,0,0,0,16c17.48,0,29.32-6.14,35.2-18.26,4.8-9.9,4.8-22,4.8-33.74,0-24.31,1-36,24-36a8,8,0,0,0,0-16Z\"/></svg>", "ph-hash": "<svg class=\"ki\" aria-hidden=\"true\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 256 256\" fill=\"currentColor\"><path d=\"M224,88H175.4l8.47-46.57a8,8,0,0,0-15.74-2.86l-9,49.43H111.4l8.47-46.57a8,8,0,0,0-15.74-2.86L95.14,88H48a8,8,0,0,0,0,16H92.23L83.5,152H32a8,8,0,0,0,0,16H80.6l-8.47,46.57a8,8,0,0,0,6.44,9.3A7.79,7.79,0,0,0,80,224a8,8,0,0,0,7.86-6.57l9-49.43H144.6l-8.47,46.57a8,8,0,0,0,6.44,9.3A7.79,7.79,0,0,0,144,224a8,8,0,0,0,7.86-6.57l9-49.43H208a8,8,0,0,0,0-16H163.77l8.73-48H224a8,8,0,0,0,0-16Zm-76.5,64H99.77l8.73-48h47.73Z\"/></svg>"};
+const ki=k=>'<span title="'+KINDS[k][1]+'">'+ICONS[KINDS[k][0]]+'</span>';
+function box(agg,b,isRoot){
+  const names=agg.boxes.map(x=>x.name).filter(n=>n!==b.name||true);
+  const d=document.createElement('div');d.className='tbox'+(isRoot?' root':'');
+  d.innerHTML='<div class="th">'+(isRoot?'<span class="badge">root</span>':'')+ki(ENUMBOX.has(b.name)?'enum':'obj')+esc(b.name)+(b.note?'<span class="bn">'+esc(b.note)+'</span>':'')+'</div><table><tbody>'+
+   b.rows.map(([n,o,t,c,k])=>'<tr><td class="f">'+(k?'<span class="key">'+esc(k)+'</span>':'')+esc(n)+(o?'<span class="opt">（任意）</span>':'')+'</td><td class="t">'+ki(kindOf(t,agg.boxes.map(x=>x.name)))+typeHtml(t,agg.boxes.slice(isRoot?1:0).map(x=>x.name).filter(n=>!ENUMBOX.has(n)),agg)+'</td><td class="n">'+esc(c)+'</td></tr>').join('')+'</tbody></table>';
+  d.querySelectorAll('button.ref').forEach(btn=>btn.addEventListener('click',()=>{
+    const tr=btn.closest('tr');const next=tr.nextElementSibling;
+    const key=btn.dataset.t;
+    if(next&&next.classList.contains('nest')&&next.dataset.t===key){next.remove();btn.classList.remove('open');return}
+    if(next&&next.classList.contains('nest')){next.remove();tr.querySelectorAll('.ref.open').forEach(x=>x.classList.remove('open'))}
+    const child=agg.boxes.find(x=>x.name===key);if(!child)return;
+    const row=document.createElement('tr');row.className='nest';row.dataset.t=key;
+    const td=document.createElement('td');td.colSpan=3;td.appendChild(box(agg,child,false));row.appendChild(td);
+    tr.after(row);btn.classList.add('open');
+  }));
+  return d;
+}
+const root=document.getElementById('aggs');
+for(const agg of AGGS){
+  const card=document.createElement('div');card.className='card agg';
+  card.innerHTML='<h3>'+esc(agg.title)+'</h3>';
+  const wrap=document.createElement('div');wrap.className='tboxes';
+  if(agg.root){wrap.appendChild(box(agg,agg.boxes[0],true))}else{agg.boxes.forEach(b=>wrap.appendChild(box(agg,b,false)))}
+  card.appendChild(wrap);
+  if(agg.rule){const r=document.createElement('p');r.className='rule';r.textContent='守ること：'+agg.rule;card.appendChild(r)}
+  root.appendChild(card);
+}
+</script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.1/dist/mermaid.min.js"></script>
+<script>
+const ROOT_TABLES=new Set(["jurisdiction","population","projectevaluationresult","project"]);
+mermaid.initialize({startOnLoad:false,theme:"neutral",er:{useMaxWidth:true},flowchart:{useMaxWidth:true}});
+mermaid.run().then(()=>{
+  document.querySelectorAll('pre.mermaid svg g.node.rootnode').forEach(g=>{g.querySelectorAll('rect,polygon,path').forEach(r=>{r.style.fill='#2f7d4f';r.style.stroke='#1d5534'});g.querySelectorAll('span,div,p,text,tspan').forEach(t=>{t.style.color='#fff';t.style.fill='#fff'})});
+  document.querySelectorAll('pre.mermaid svg g.node').forEach(g=>{
+    if(!g.textContent.includes('«root»'))return;
+    const shapes=g.querySelectorAll('rect,path');
+    shapes.forEach((r,i)=>{if(i<2){r.style.fill='#2f7d4f';r.style.stroke='#1d5534'}});
+    g.querySelectorAll('text,tspan,span').forEach(t=>{t.style.fill='#fff';t.style.color='#fff'});
+  });
+  document.querySelectorAll('pre.mermaid svg g[id^="entity-"]').forEach(g=>{
+    const name=g.id.replace(/^entity-/,'').replace(/-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/,'');
+    if(!ROOT_TABLES.has(name))return;
+    const r=g.querySelector('rect.entityBox');if(r){r.style.fill='#2f7d4f';r.style.stroke='#1d5534'}
+    const t=g.querySelector(':scope > text.entityLabel');if(t){t.style.fill='#fff';t.style.fontWeight='bold'}
+  });
+});
+</script>
+
+</body></html>
