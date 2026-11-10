@@ -9,7 +9,7 @@ description: 3日ごと、閾値を超えたキャッシュ・使っていない
 
 ## 1. キャッシュ
 
-`mise clean-cache` を実行する。各キャッシュが閾値（go modcache / buildcache / uv 5GB、bun / npm / Homebrew download / mise download / Playwright 2GB、container image 3GB、Codex app cache / Puppeteer 1GB、app updater 300MB）を超えたときだけ削除し、未満なら skip する。Codex app cache は Codex 起動中なら skip する。Homebrew の展開先（`$(brew --prefix)/var/homebrew/tmp`）は cask 更新が途中で止まると残骸が溜まるので、brew が動いておらず1日以上触られていないものを毎回消す。**使っていない mise install**（どの tracked config からも選ばれず、tracked stub も使っていない tool version。実行中 process の起動元 version は残る）は `mise prune` で毎回消す。閾値は無く、消しても再取得で戻せるので常時実行する。残っていないかは `mise ls --prunable` で確認できる。残す version（stub が参照している分・実行中 process の起動元）は prunable に数えられないので、prune が成功すれば空になる。空でなければ未使用が残っている。uv cache は他の uv process が lock を持っていれば skip する（`--force` で奪わない）。`simctl unavailable`（未参照 simulator の削除）は full Xcode＋simulator runtime が無い環境では `skip (simctl なし…)` 表示になり、`failed:` や exit 1 にはならない — Xcode 不在は閾値判定と無関係な恒常的な環境要因なので異常に数えない。
+`mise clean-cache` を実行する。各キャッシュが閾値（go modcache / buildcache / uv 5GB、bun / npm / Homebrew download / mise download / Playwright 2GB、container image 3GB、Codex app cache / Puppeteer 1GB、app updater 300MB）を超えたときだけ削除し、未満なら skip する。Codex app cache は Codex 起動中なら skip する。Homebrew の展開先（`$(brew --prefix)/var/homebrew/tmp`）は cask 更新が途中で止まると残骸が溜まるので、brew が動いておらず1日以上触られていないものを毎回消す。**使っていない mise install**（どの tracked config からも選ばれず、tracked stub も使っていない tool version。実行中 process の起動元 version は残る）は `mise prune` で毎回消す。閾値は無く、消しても再取得で戻せるので常時実行する。残っていないかは `mise ls --prunable` で確認できる。残す version（stub が参照している分・実行中 process の起動元）は prunable に数えられないので、prune が成功すれば空になる。空でなければ未使用が残っている。uv cache は他の uv process が lock を持っていれば skip する（`--force` で奪わない）。`simctl unavailable`（未参照 simulator の削除）は full Xcode＋simulator runtime が無い環境では `skip (simctl なし…)` 表示になり、`failed:` や exit 1 にはならない — Xcode 不在は閾値判定と無関係な恒常的な環境要因なので異常に数えない。freed は `mise clean-cache` の出力 `freed: NMB` をそのまま報告に使う。常時実行分（go testcache・mise prune・pnpm store prune・Homebrew tmp・simctl）の回収量を足して合計を作り直すと、閾値ゲートの内訳と混ざって「何を消したか」が追えなくなるので、内訳を書くときもゲート対象と常時実行分を分けて並べる。
 
 cleanup の対象外だが、手動で「storage を空けて」と頼まれて消すときは次を消さない。`~/.rustup` は mise 管理 rust の本体を兼ねる — 丸ごと削除すると cargo/rustc が動かなくなる。古い版は、削除前に各プロジェクトで `rustup show` を確認し、`rust-toolchain` / `rust-toolchain.toml` や directory override が対象版を選んでいないことを確かめてから `rustup toolchain uninstall <版>` で版単位に消す（`cargo --version` だけではプロジェクト固有の指定を検出できない）。`~/.codex` は `auth.json`・`config.toml` を含み、消すとログイン・設定が飛ぶ — 容量の大半は `sessions/` なのでそこだけを消す。
 
@@ -48,6 +48,7 @@ worktree を消すと未 commit の変更は失われる。30日ルールはそ�
 **Orca 管理の worktree**: `~/orca/workspaces/` 配下など `orca worktree list` に出るものは、上の git 判定の前に `orca worktree ps --json` で `liveTerminalCount` を見る。live terminal（spawn 済みで生きている PTY。idle な shell も含む）が1つでもあるものは消さない — Orca workspace は質問・相談のように git に変更が残らないセッションの容器でもあり、git status が clean でも消すとセッションの入れ物ごと失う。live terminal が無いものだけ上の判定に進み、消すときは `git worktree remove` ではなく `orca worktree rm --worktree 'path:<path>'` を使う（git 側だけ消すと Orca の登録が dead path を指したまま残る）。なお `pr-auto-merge` は毎 tick local session を確認し、routine 外も含む merge 済み PR の完了済み session を close して、clean・branch/head 一致の worktree を片付ける。main・active workspace・作業中 session は残す。この cleanup 自体は live terminal の保護を維持する。
 
 - `orca worktree rm` は checkout 中の local branch の削除も試みる。merge 未証明でも remote に同 commit があれば消える（OPEN PR の branch が消えた実例あり）。rm 後に `git branch --list` で確認し、下の branch 判定で残すべきものが消えていたら `git branch <b> origin/<b>` で復元する
+- 削除したと報告する前に、`orca worktree list` で対象 path が消えたことを確認する。`--worktree <selector>` を落とすと usage エラーで終わるだけで何も消えないため、rm が成功したかどうかを報告の前提にする。残っていれば path とエラーを報告に載せ、削除済みと書かない
 - 誤って消した workspace の復元: local branch が消えていれば `git branch <b> <sha>`（sha は `git worktree list` の記録か reflog から）で戻し、`orca worktree create --repo name:<repo> --name <name> --base-branch <ref> --no-parent` で同 path に workspace を再作成できる。ただし live terminal の中身（scrollback・対話の表示状態）は戻らない
 - `orca worktree ps --json` の `isPinned` フラグは削除判定に入っていない — pin しても PTY が落ちれば削除判定に進む。その後もこの cleanup の git 判定が適用されるので、dirty や30日以内の更新があれば残る
 
@@ -70,7 +71,9 @@ worktree を消すと未 commit の変更は失われる。30日ルールはそ�
 3. remote branch が生きていて `git merge-base --is-ancestor <branch> origin/<branch>` が真 → 削除（remote から辿れる。ここに来るのは PR が CLOSED か無いものだけ）
 4. `git diff --stat origin/main...<branch>` が空 → 削除（固有の中身が無い）
 5. それ以外 → まず**差分の中身が main に実質包含されていないか**を確認する。squash merge で sha が変わったもの・同じ変更が別経路で入ったもの・main 側に上位互換があるものは ancestor 判定に落ちないまま抜け殻として溜まる。`git diff origin/main...<branch>` の残差分を読み、`git show origin/main:<file>` で該当ファイルの現状と突き合わせ、同等・上位互換が既に main にあると確認できたら削除してよい（抜け殻。根拠を報告に添える）
-6. 包含も確認できないもの → **削除しない**。local にしか無い実体差分を持つので、branch 名と差分の規模（`N files changed, +X/-Y`）に**中身の要約（何を変える branch か）と main との包含確認の結果**を添えて報告し、ユーザーの判断を待つ。差分規模だけだと中身を1本ずつ聞き返される往復が起きる
+6. 包含も確認できないもの → **削除しない**。local にしか無い実体差分を持つので、branch 名と差分の規模（`N files changed, +X/-Y`）に**中身の要約（何を変える branch か）と main との包含確認の結果**を添えて報告し、ユーザーの判断を待つ。差分規模だけだと中身を1本ずつ聞き返される往復が起きる。ただし同じ内容を保持する live worktree がある場合（`git -C <worktree の path> diff --stat <branch>` が 0 件）は、main に落ちていない差分がそこに実体として残っている型なので、次のどちらかで扱う:
+   - 保持先の branch が remote に push 済み（`git rev-parse <branch>@{u}` が取れる）→ 変更はそこから復元できるので削除してよい。報告に保持先の path・branch と差分要約を書く
+   - push 済みでない → 残し、「保持先候補」として path と branch を報告に添える。`origin/main` との比較だけを見ていると、毎回同じ branch を一から調べ直すことになる
 
 `gh` は sandbox 解除で実行する。
 
@@ -84,4 +87,4 @@ fetch が成功した、または fetch 失敗後に判定で使う remote ref �
 
 ## 報告
 
-1行サマリ（freed 合計 / 削除した worktree・branch・workspace 残骸の本数）と、判断を残した項目（30日以内に触られている dirty な worktree、branch 判定の 6 に落ちた branch のみ）を列挙する。6 の branch は差分規模に加えて中身の要約と main との包含確認の結果を添える。5 で消した抜け殻 branch は何が main のどこに入っているかの根拠を添える。30日ルールで消した worktree は未 commit の変更ごと消えるので、path と件数を報告に残す。workspace 残骸を消したときは、退避した patch / 成果物の path を載せる。skip だけで終わったならそう書く。なお `OPEN` PR がある branch を残すのは定常動作なので判断待ちには数えない — open PR の棚卸しは pr-auto-merge task（`.agents/scheduled-tasks/pr-auto-merge/`）が日次で担う。
+1行サマリ（freed 合計 / 削除した worktree・branch・workspace 残骸の本数）と、判断を残した項目（30日以内に触られている dirty な worktree、branch 判定の 6 に落ちた branch のみ）を列挙する。6 の branch は差分規模に加えて中身の要約と main との包含確認の結果を添える。5 で消した抜け殻 branch は何が main のどこに入っているかの根拠を添える。30日ルールで消した worktree は未 commit の変更ごと消えるので、path と件数を報告に残す。workspace 残骸を消したときは、退避した patch / 成果物の path を載せる。skip だけで終わったならそう書く。`mise clean-cache` の出力に出ない失敗（探索中の `gh`・`git` 呼び出しなど）は `failed:` 行に現れないので、「異常なし」は `failed:` 行と exit code だけで判断せず、失敗して再試行で復帰した command があればその command と復帰結果も書く。なお `OPEN` PR がある branch を残すのは定常動作なので判断待ちには数えない — open PR の棚卸しは pr-auto-merge task（`.agents/scheduled-tasks/pr-auto-merge/`）が日次で担う。
