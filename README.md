@@ -74,8 +74,8 @@ scripts/ docs/ tests/            # repo 内部ファイル（deploy されない
 
 以下は `run_after_20-link-repodirs.sh.tmpl` が repo 内 dir へ symlink を張る（理由は `.chezmoiignore` 冒頭）:
 
-- `.agents` — 共有 hook・scheduled task・MCP 設定（skill 本体は [wwwyo/skills](https://github.com/wwwyo/skills) が持ち、各 agent へ plugin で配る）
-- `.claude/agents` / `home/dot_claude/hooks` — 同上 + executable script
+- `.agents` — 共有 hook・scheduled task・MCP 設定と、Orca が配って自動更新する skill（`.agents/skills`）。共有 skill の本体は [wwwyo/skills](https://github.com/wwwyo/skills) が持ち、各 agent へ plugin で配る
+- `.claude/{skills,agents}` / `home/dot_claude/hooks` — 同上 + repo 内相対 symlink（`skills/*` → `../../.agents/`）+ executable script
 - `.agents/scheduled-tasks` → `~/.claude/scheduled-tasks` — Orca automation の手順書置き場。repo 内の `.claude/scheduled-tasks` は旧パスの互換 symlink
 - `.codex/{rules,scripts,hooks,automations,skills}` / `.pi/agent/extensions` — 同上
 - `home/dot_config/{git/hooks,mise/tasks}` — executable を含むため per-file symlink 不可

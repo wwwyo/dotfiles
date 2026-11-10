@@ -1,6 +1,0 @@
-# ~/.agents はこの dir への link なので、tool が ~/.agents に書くものがここに落ちる。
-# skill の正本は wwwyo/skills。ここに来るのは Orca などが配って自動更新する skill
-# （orca-cli・orchestration・orca-computer-use）と、その更新時の backup だけで、追跡しない。
-# repo root の .gitignore は ~/.gitignore（global）を兼ねるため、dotfiles 固有の除外はここに置く。
-/skills/
-/.orca-skill-backups/

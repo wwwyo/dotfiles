@@ -55,8 +55,8 @@ dotfiles 自身の session から skill 本体・hook・`AGENTS.md` のような
 - Codex: `home/.chezmoitemplates/codex-base.toml.tmpl` の `[marketplaces.wwwyo]` と `[plugins."core@wwwyo"]` 等。宣言だけでは cache に入らないため `home/run_after_30-codex-skill-plugins.sh` が apply 毎に `codex plugin add` する
 - pi: `home/.chezmoitemplates/pi-settings-base.json` の `packages` にローカルパス
 - Devin: plugin を読まないため、dir link script が `~/.config/devin/skills` を wwwyo/skills の `.agents/skills` へ link する（repo 外を指す唯一の dir link。`~/.agents/skills` に置くと Codex・pi の native discovery と plugin が重複する）
-- Orca が配る skill（`orca-cli`・`orchestration`・`orca-computer-use`）は wwwyo/skills にも dotfiles にも置かない。Orca が `~/.agents/skills` に copy して `~/.claude/skills` へ link し、Orca 本体の更新時に手つかずの copy を置き換える。`home/run_after_31-orca-skills.sh` が apply 毎に `orca skills install` で欠けたものを入れ直す。`~/.agents` は repo の `.agents` への link なので、`.agents/.gitignore` で `skills/` と Orca の backup を追跡から外す（repo root の `.gitignore` は global を兼ねるので使わない）。Orca の skill には手を入れず、手元の方針は global instructions か dev-env の reference に置く
-- scheduled task・hook から skill の tools を呼ぶときは canonical checkout（`~/src/github.com/wwwyo/skills/.agents/skills/...`）を指す。`~/.agents/skills` には Orca の skill しか無い
+- Orca が配る skill（`orca-cli`・`orchestration`・`orca-computer-use`）だけは wwwyo/skills に置かず、この repo の `.agents/skills/` で git 追跡する。`~/.agents` はこの `.agents` への link なので、Orca 本体の更新で Orca が書き換えた内容は repo の差分として現れ、それを commit する。Claude 向けには `.claude/skills/<name>` → `../../.agents/skills/<name>` の相対 symlink を git に載せ、`~/.claude/skills` を dir link で配る（`tests/agents-skills-symlinks.test.sh` が対応を検査する）。Orca は手を入れていない copy だけを更新するので、中身は Orca 純正のまま保ち、手元の方針は global instructions か dev-env の reference に置く
+- scheduled task・hook から skill の tools を呼ぶときは canonical checkout（`~/src/github.com/wwwyo/skills/.agents/skills/...`）を指す。`~/.agents/skills` には Orca の skill しか無い（Codex・pi はそこを直接読む）
 - tool ごとの読み込み方・編集の反映は [dev-env の skill-plugins](https://github.com/wwwyo/skills/blob/main/.agents/skills/dev-env/references/skill-plugins.md) を参照する
 
 ## ユーザー名に依存しない

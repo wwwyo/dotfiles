@@ -29,6 +29,7 @@ link_dir() {
 
 link_dir "$WT/.agents"                  "$HOME/.agents"
 link_dir "$WT/home/dot_claude/hooks"    "$HOME/.claude/hooks"
+link_dir "$WT/.claude/skills"           "$HOME/.claude/skills"
 link_dir "$WT/.claude/agents"           "$HOME/.claude/agents"
 link_dir "$WT/.agents/scheduled-tasks"  "$HOME/.claude/scheduled-tasks"
 link_dir "$WT/.codex/rules"             "$HOME/.codex/rules"
@@ -47,18 +48,6 @@ link_dir "$WT/home/dot_config/mise/tasks"  "$HOME/.config/mise/tasks"
 # ~/.ssh は SSH が権限を検査する。chezmoi が作る 0755 を 0700 に揃える
 [ -d "$HOME/.ssh" ] || mkdir -p "$HOME/.ssh"
 chmod 700 "$HOME/.ssh"
-
-# ~/.claude/skills の repo link は廃止。共有 skill は wwwyo/skills の plugin（core@wwwyo・
-# local@wwwyo）で配る。Claude が書く synced/ 等の runtime state はローカルの実 dir に置く
-if [ -L "$HOME/.claude/skills" ]; then
-  rm -f "$HOME/.claude/skills"
-  mkdir -p "$HOME/.claude/skills"
-  # link 経由で repo 側に溜まっていた claude.ai 同期 skill（gitignore 済み）は移して再同期を待たない
-  if [ -d "$WT/.claude/skills/synced" ] && [ ! -e "$HOME/.claude/skills/synced" ]; then
-    mv "$WT/.claude/skills/synced" "$HOME/.claude/skills/synced"
-  fi
-  echo "unlink: $HOME/.claude/skills (plugin 配布へ移行)"
-fi
 
 # .claude/rules は廃止。旧 link.sh が張った symlink が残っていれば外す
 if [ -L "$HOME/.claude/rules" ]; then
