@@ -6,7 +6,8 @@
 # are only: model, effort, instructions, xrepo.brief, billing.*.
 # A repo-level `config unset` restores inheritance of these org values.
 #
-# Apply:  .github/pullfrog.org.config.sh        (uses gh auth)
+# Apply:  .github/pullfrog.org.config.sh        (uses gh auth; reads the
+#         effective values back with `config list` and exits 1 on drift)
 # Audit:  mise exec -- pullfrog config list --org <org>
 #
 # billing.* is managed in the Pullfrog console, not here — payment settings
@@ -82,4 +83,25 @@ pf_unset xrepo.brief  # org-only key, no repo override exists; unused
 P3 は承認を妨げない。未解決の P0・P1・P2 の指摘や判断に必要な証跡の不足があれば承認しない。P0・P1・P2 の指摘がすべて解消され、承認可能と確認できた場合は、設定に従って承認判定を出し、`pullfrog-approval` check に反映すること。GitHub の Approve 投稿を無効にしている場合も、approval verdict の判定は省略しないこと。
 PULLFROG_ORG_INSTRUCTIONS
 
+done
+
+# Read the values back: this file is the intent, `config list` is the truth.
+# Reading only this file hides silent failures (unknown owner, rejected model
+# id, value written to the wrong scope), and answering "the current model is X"
+# from what the file says has produced contradictory answers within one session.
+listed_value() {  # $1=org  $2=key
+  "${PF[@]}" config list --org "$1" |
+    awk -v k="$2" '$1 == k && /\[org\]$/ { gsub(/"/, "", $2); print $2; exit }'
+}
+
+for ORG in "${ORGS[@]}"; do
+  MODEL=$(model_for "$ORG")
+  EFFORT=$(effort_for "$ORG")
+  actual_model=$(listed_value "$ORG" model)
+  actual_effort=$(listed_value "$ORG" effort)
+  printf '==> %-18s model=%s effort=%s\n' "$ORG" "$actual_model" "$actual_effort"
+  if [ "$actual_model" != "$MODEL" ] || [ "$actual_effort" != "$EFFORT" ]; then
+    echo "drift: $ORG should be model=$MODEL effort=$EFFORT" >&2
+    exit 1
+  fi
 done

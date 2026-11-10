@@ -118,7 +118,7 @@ Edge が `.svg` を奪っていくので、宣言して奪い返す運用にし�
 
 この repo の Pullfrog 設定は [`.github/pullfrog.config.sh`](.github/pullfrog.config.sh) が正本。public repo では初回レビューと追加コミットの再レビューを自動で行い、手動でも `@pullfrog` で依頼できる。CLI のバージョンはグローバルの mise 設定（[`home/dot_config/mise/config.toml`](home/dot_config/mise/config.toml)）で管理し、設定変更は script を編集して実行する。
 
-org 共通の defaults（model・effort、日本語出力・重要度ラベルの instructions 等）は [`.github/pullfrog.org.config.sh`](.github/pullfrog.org.config.sh)（script の `ORGS` に並べた owner ごとの `--org` scope。今は wwwyo・fudoki-hensansitu）が正本で、repo 側で unset した key は org の値を継承する。各 repo の script は model・effort を `pf_unset` して継承し、repo 個別に変えたいときだけ `pf_set` で上書きする。`pullfrog config list --repo` は継承値を見せないので、実効値の監査は `--repo` と、その repo の owner の `--org` の両方を引く。`review.approve=false` でも `review.approval-check=true` が `pullfrog-approval` status check を出す — merge lane はこちらを見る。
+org 共通の defaults（model・effort、日本語出力・重要度ラベルの instructions 等）は [`.github/pullfrog.org.config.sh`](.github/pullfrog.org.config.sh)（script の `ORGS` に並べた owner ごとの `--org` scope。今は wwwyo・fudoki-hensansitu）が正本で、repo 側で unset した key は org の値を継承する。各 repo の script は model・effort を `pf_unset` して継承し、repo 個別に変えたいときだけ `pf_set` で上書きする。`pullfrog config list --repo` は継承値を見せないので、実効値の監査は `--repo` と、その repo の owner の `--org` の両方を引く。`review.approve=false` でも `review.approval-check=true` が `pullfrog-approval` status check を出す — merge lane はこちらを見る。script は意図で `pullfrog config list` が実効値 — model/effort を答えるときは script や変更時の記憶から書かず、その場で取り直す（`.github/pullfrog.org.config.sh` は適用後に読み戻して照合し、ずれていれば exit 1 で止まる）。設定を変える前に作られた workflow run の rerun は run 作成時のモデルで走るので、PR に付いたボットコメントの時刻だけで「変更後も失敗している」と判断しない — footer の `Using <model>` と run の作成時刻を突き合わせ、復帰は新規 push か `@pullfrog` メンションで新しい run を起こす。
 
 ## Story
 
