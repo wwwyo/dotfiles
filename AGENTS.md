@@ -51,7 +51,7 @@ dotfiles 自身の session から skill 本体・hook・`AGENTS.md` のような
 
 共有 skill の正本は [wwwyo/skills](https://github.com/wwwyo/skills)（canonical checkout は `~/src/github.com/wwwyo/skills`）。skill の追加・編集・skillctrl 運用・plugin の layout はその repo の `AGENTS.md` に従い、この repo には skill 本体を置かない。dotfiles が持つのは各 tool への登録だけ。
 
-- Claude Code: `home/dot_claude/settings.json` の `extraKnownMarketplaces.wwwyo`（directory source）と `enabledPlugins` の `core@wwwyo`・`local@wwwyo`。claude.ai から同期されるアカウント側の core（`core@synced`）は local では無効にして重複させない
+- Claude Code: core は claude.ai のアカウントに入れた core（`core@synced`）を使い、local は `extraKnownMarketplaces.wwwyo`（directory source）の `local@wwwyo` で入れる。`enabledPlugins` で `core@synced` を有効、directory 側の `core@wwwyo` を無効にして重複させない。local をアカウントに入れると cloud にも届くので、local だけは手元で入れる。core の編集は wwwyo/skills の main への merge と claude.ai の同期を経てから届く。merge 前の版を試すときは `claude --settings '{"enabledPlugins":{"core@wwwyo":true,"core@synced":false}}'` で起動し、その session だけ checkout の core に切り替える（`--plugin-dir` は marketplace の root を plugin として読まない）
 - Codex: `home/.chezmoitemplates/codex-base.toml.tmpl` の `[marketplaces.wwwyo]` と `[plugins."core@wwwyo"]` 等。宣言だけでは cache に入らないため `home/run_after_30-codex-skill-plugins.sh` が apply 毎に `codex plugin add` する
 - pi: `home/.chezmoitemplates/pi-settings-base.json` の `packages` にローカルパス
 - Devin: plugin を読まないため、dir link script が `~/.config/devin/skills` を wwwyo/skills の `.agents/skills` へ link する（repo 外を指す唯一の dir link。`~/.agents/skills` に置くと Codex・pi の native discovery と plugin が重複する）
