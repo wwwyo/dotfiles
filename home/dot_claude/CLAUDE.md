@@ -2,7 +2,7 @@
 - 判断する際はカウンターファクトとトレードオフを考える（「もしこの選択をしなかったら？」「別のアプローチだったら何が変わる？」）
 - ツールはmiseで管理
 - Cloudflare の操作は `cf` CLI を優先する。
-- API key / token などの秘密は設定ファイルやリポジトリに平文で置かず、mise + age で管理する。詳細は secret-env skillを参照
+- API key / token などの秘密は設定ファイルやリポジトリに平文で置かず、mise + age で管理する。team 共有の repo には age の暗号文を commit せず、自分だけが使う secret は `mise.local.toml`、共有する secret は team の secret manager や deploy 先に置く。詳細は secret-env skillを参照
 - PoC の dev 環境のプロダクトから AI を呼ぶときは opencode を使う（key は mise の `OPENCODE_API_KEY`）。基本は安さ重視の open model を選び、扱うデータの責任範囲でモデルを分ける
 - package install は supply chain リスクを避けるため、最新版を exact ピン留め（範囲指定 `^`/`~` は使わない）し、cooldown 7day を指定する。これは依存を「どう入れるか」の規則であって「入れない」ではない。定番ライブラリが解く問題を自前実装しない。セキュリティ修正（Dependabot alert 等の脆弱性対応）で依存を上げるときは、severity に関わらず cooldown を無視して修正版を入れてよい。待つかどうかをユーザーに確認しない。exact ピン留めは維持する。例外は修正版の公開から cooldown 期間が過ぎたら外し、例外を入れたときは解除できる日時を PR 本文に書く
 - 汎用skillは `~/src/github.com/wwwyo/skills`（wwwyo/skills）で管理し、Claude Code・Codex・pi へは plugin / package として配る（Devin は `~/.config/devin/skills` の link）。追加・編集はその repo の worktree で行う
