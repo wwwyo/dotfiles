@@ -38,5 +38,6 @@ if command -v security >/dev/null 2>&1; then
 elif [[ -r "$HOME/.config/mise/age.txt" ]]; then
   _mise_age_key="$(<"$HOME/.config/mise/age.txt")"
 fi
-[[ -n "${_mise_age_key:-}" ]] && export MISE_AGE_KEY="$_mise_age_key"
+# fnox（repo の fnox.toml の age 暗号文）も同じ鍵で開く。`fnox exec --` の子 process にだけ復号値が入る
+[[ -n "${_mise_age_key:-}" ]] && export MISE_AGE_KEY="$_mise_age_key" FNOX_AGE_KEY="$_mise_age_key"
 unset _mise_age_key
