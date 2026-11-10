@@ -93,7 +93,6 @@ age 復号鍵は password manager（Bitwarden の secure note）に退避済み�
 - `~/.ssh/config.local` はマシン固有の Host（AWS SSM の ProxyCommand 等）を置く git 管理外のファイル。無くても `Include` は警告のみで動く
 - `~/.npmrc` は dotfiles 管理しない。`npm login` が token をこのファイルに書き込むため、symlink 化すると平文 token が repo の diff に混ざる。npmjs の認証は必要なときに `npm login` する運用。
 - 定期実行の automation は Orca で管理している。移行時は Orca 側で作り直す。`.config/devin/automations/` は使っていない
-- Anarlog.app の同梱 CLI はアプリの起動時に `~/.local/bin/anarlog` へ自動 install される（`~/.local/bin` は PATH 通し済み）。失敗時はログのみで静かにスキップされるので、`anarlog` が見つからないときは Settings → Developers → Install で再 install する。どちらも無い場合は `/Applications/Anarlog.app/Contents/MacOS/anarlog-cli` を直接呼べる
 - `home/Library/LaunchAgents/` の worker plist は `$HOME` 化済みで dotfiles 管理対象。chezmoi が `~/Library/LaunchAgents/` に deploy する。outpost は `<outpost>` の placeholder にしてあるため、使うときに outpost の ID または名前を設定する。未設定、Devin.app 未導入、worker ディレクトリ未作成の場合は exit 0 で待機し、再起動ループにはならない。
   Devin CLI を導入して outpost を設定した後は、LaunchAgent を読み直す。正常終了したジョブは設定変更だけでは再起動しない。
 
@@ -123,9 +122,6 @@ ssh-keygen -lf ~/.ssh/id_ed25519.pub
 
 # 主要コマンド
 command -v git mise node python gh rg
-
-# Anarlog 同梱 CLI(アプリ初回起動で auto install される。未起動なら一度開いてから)
-command -v anarlog
 ```
 
 署名付き commit を作って GitHub へ push し、GitHub 上で署名が Verified になることも確認する。
