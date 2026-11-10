@@ -32,7 +32,6 @@
       "Edit(~/.agents/**)",
       "Edit(~/.config/**)",
       "Edit(~/.claude/skills/**)",
-      "Edit(~/src/github.com/wwwyo/dotfiles/.claude/skills/**)",
       "Bash(awk *)",
       "Bash(biome *)",
       "Bash(BASE_BRANCH=*)",
@@ -436,12 +435,21 @@
     "command": "~/.local/share/mise/shims/node ~/.claude/hooks/status-line.js"
   },
   "enabledPlugins": {
+    "core@synced": true,
+    "core@wwwyo": false,
+    "local@wwwyo": true,
     "langfuse-observability@langfuse-observability": false,
     "gopls-lsp@claude-plugins-official": false,
     "figma@claude-plugins-official": false,
     "rust-analyzer-lsp@claude-plugins-official": false
   },
   "extraKnownMarketplaces": {
+    "wwwyo": {
+      "source": {
+        "source": "directory",
+        "path": "~/src/github.com/wwwyo/skills"
+      }
+    },
     "langfuse-observability": {
       "source": {
         "source": "github",

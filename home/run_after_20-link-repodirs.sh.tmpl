@@ -37,6 +37,10 @@ link_dir "$WT/.codex/scripts"           "$HOME/.codex/scripts"
 link_dir "$WT/.codex/hooks"             "$HOME/.codex/hooks"
 link_dir "$WT/.codex/skills"            "$HOME/.codex/skills"
 link_dir "$WT/.pi/agent/extensions"     "$HOME/.pi/agent/extensions"
+# Devin は plugin を読まないため、共有 skill の正本（wwwyo/skills）を Devin 専用の
+# global skill dir に link する。~/.agents/skills に置くと Codex・pi が native discovery し、
+# plugin / package で入れた同じ skill と重複する
+link_dir "$HOME/src/github.com/wwwyo/skills/.agents/skills" "$HOME/.config/devin/skills"
 link_dir "$WT/home/dot_config/git/hooks"   "$HOME/.config/git/hooks"
 link_dir "$WT/home/dot_config/git/bin"     "$HOME/.config/git/bin"
 link_dir "$WT/home/dot_config/mise/tasks"  "$HOME/.config/mise/tasks"

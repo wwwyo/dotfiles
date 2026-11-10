@@ -16,78 +16,10 @@ jobs:
         with:
           fetch-depth: 1
           persist-credentials: false
-      - name: Select the trusted test tool source
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          source="${{ github.event.pull_request.base.sha || github.sha }}"
-          if ! git cat-file -e "$source^{commit}" 2>/dev/null; then
-            credential="$(printf 'x-access-token:%s' "$GH_TOKEN" | base64 | tr -d '\n')"
-            echo "::add-mask::$credential"
-            git -c "http.https://github.com/.extraheader=AUTHORIZATION: basic $credential" fetch --no-tags --depth=1 origin "$source"
-          fi
-          echo "CHECKER_SOURCE=$source" >> "$GITHUB_ENV"
-      - name: Read the trusted skillctrl pin
-        run: |
-          mkdir -p /tmp/gh-aw/skillctrl-cli
-          python3 - <<'PYTHON'
-          import json, os, re, subprocess, tomllib
-          from pathlib import Path
-          source = os.environ['CHECKER_SOURCE']
-          if not re.fullmatch(r'[0-9a-f]{40}', source):
-              raise ValueError('trusted source must be a commit')
-          config = tomllib.loads(subprocess.check_output(['git', 'show', source + ':home/dot_config/mise/config.toml'], text=True))
-          pin = config['tools']['go:github.com/wwwyo/skillctrl']
-          if not isinstance(pin, str) or not re.fullmatch(r'[0-9a-f]{40}', pin):
-              raise ValueError('trusted skillctrl version must be an exact commit pin')
-          toolchain = config['tools']['go']
-          if not isinstance(toolchain, str) or not re.fullmatch(r'[0-9]+\.[0-9]+\.[0-9]+', toolchain):
-              raise ValueError('trusted go toolchain must be an exact pin')
-          lines = ['[tools]', '"go:github.com/wwwyo/skillctrl" = ' + json.dumps(pin), 'go = ' + json.dumps(toolchain), '', '[settings]']
-          for name in ['pin', 'minimum_release_age']:
-              lines.append(name + ' = ' + json.dumps(config['settings'][name]))
-          Path('/tmp/gh-aw/skillctrl-cli/mise.toml').write_text('\n'.join(lines) + '\n')
-          Path('/tmp/gh-aw/skillctrl-cli/global.toml').write_text('')
-          node = config['tools'].get('node', '')
-          Path('/tmp/gh-aw/skillctrl-cli/node.txt').write_text(str(node))
-          pi = config['tools'].get('npm:@earendil-works/pi-coding-agent', '')
-          Path('/tmp/gh-aw/skillctrl-cli/pi.txt').write_text(str(pi))
-          lock_text = subprocess.check_output(['git', 'show', source + ':home/dot_config/mise/mise.lock'], text=True)
-          selected_blocks = []
-          for tool, version in [('go:github.com/wwwyo/skillctrl', pin), ('go', toolchain)]:
-              name = json.dumps(tool) if ':' in tool else tool
-              blocks = re.findall(r'(?ms)^\[\[tools\.' + re.escape(name) + r'\]\]\n.*?(?=^\[\[tools\.|\Z)', lock_text)
-              matching = [block for block in blocks if tomllib.loads(block)['tools'][tool][0]['version'] == version]
-              if len(matching) != 1:
-                  raise ValueError(f'trusted {tool} lock must match the exact pin')
-              selected_blocks.append(matching[0])
-          Path('/tmp/gh-aw/skillctrl-cli/mise.lock').write_text(''.join(selected_blocks))
-          PYTHON
-      - uses: jdx/mise-action@9b200bcecbfd6303e69a4a261b2e09e3757440a7
-        env:
-          MISE_GLOBAL_CONFIG_FILE: /tmp/gh-aw/skillctrl-cli/global.toml
-          MISE_DATA_DIR: /tmp/gh-aw/skillctrl-cli/data
-        with:
-          version: 2026.10.25
-          working_directory: /tmp/gh-aw/skillctrl-cli
-          env: false
-          cache: false
-          add_shims_to_path: false
-          export_path: false
-      - name: Bind the trusted skillctrl executable
-        id: skillctrl-cli
-        working-directory: /tmp/gh-aw/skillctrl-cli
-        env:
-          MISE_GLOBAL_CONFIG_FILE: /tmp/gh-aw/skillctrl-cli/global.toml
-          MISE_DATA_DIR: /tmp/gh-aw/skillctrl-cli/data
-        run: |
-          binary="$(mise which skillctrl)"
-          echo "SKILLCTRL_BIN=$binary" >> "$GITHUB_ENV"
-          echo "binary=$binary" >> "$GITHUB_OUTPUT"
       - name: Run tests
         run: |
           set -euo pipefail
-          for t in tests/*.test.sh .agents/skillctrl/*.test.sh; do
+          for t in tests/*.test.sh; do
             echo "=== $t ==="
             bash "$t"
           done

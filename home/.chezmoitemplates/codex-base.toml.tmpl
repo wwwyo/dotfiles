@@ -95,6 +95,18 @@ enabled = true
 source_type = "git"
 source = "https://github.com/wwwyo/codex-observability-plugin.git"
 
+# 共有 skill（wwwyo/skills の canonical checkout）。Codex は source の ~ を展開しないので homeDir で絶対 path にする。
+# 宣言だけでは cache に入らず、run_after_30-codex-skill-plugins.sh が apply 毎に `codex plugin add` する
+[marketplaces.wwwyo]
+source_type = "local"
+source = "{{ joinPath .chezmoi.homeDir "src/github.com/wwwyo/skills" }}"
+
+[plugins."core@wwwyo"]
+enabled = true
+
+[plugins."local@wwwyo"]
+enabled = true
+
 [desktop]
 usePointerCursors = true
 followUpQueueMode = "steer"

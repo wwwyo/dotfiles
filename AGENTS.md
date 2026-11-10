@@ -2,7 +2,7 @@
 
 開発環境の設定ファイルを管理するリポジトリ。
 
-各 tool の非自明な仕様・制約・設定値の理由（Orca・Claude Code・pi・agent hooks・Langfuse telemetry・macOS アプリの code 管理など）は `.agents/skills/dev-env/` を参照 — AGENTS.md には repo の機構と管理ファイルの記述を置き、agent tool 自体の仕様は skill 側へ持たせる。
+各 tool の非自明な仕様・制約・設定値の理由（Orca・Claude Code・pi・agent hooks・Langfuse telemetry・macOS アプリの code 管理など）は wwwyo/skills の [dev-env skill](https://github.com/wwwyo/skills/blob/main/.agents/skills/dev-env/SKILL.md) を参照 — AGENTS.md には repo の機構と管理ファイルの記述を置き、agent tool 自体の仕様は skill 側へ持たせる。
 
 ## セットアップ
 
@@ -25,7 +25,7 @@ chezmoi diff                                           # apply 前に差分確�
 - `home/dot_foo` → `~/.foo`。`mode = "symlink"` で普通のファイルは source への symlink になる（repo 編集が即反映＝旧 link.sh と同じ）
 - **symlink 化できないもの**（template・executable・encrypted）は実ファイルとして置かれる
 - **dir 単位リンク**: runtime が新規ファイルを書き込む・repo 内相対 symlink を含む・executable を含む dir は `home/run_after_20-link-repodirs.sh.tmpl` が repo dir へ symlink を張る。一覧は同 script、理由は `home/.chezmoiignore` 冒頭。dir link 対象の source は `.chezmoiignore` で chezmoi 管理から除外する
-  - **dir link script は repo dir ↔ `~` の link だけを張る**。repo 内の共有は `.codex/hooks/…` →
+  - **dir link script は repo dir ↔ `~` の link だけを張る**（例外は Devin 用の `~/.config/devin/skills` → wwwyo/skills の `.agents/skills` だけ。理由は Skills 管理の節）。repo 内の共有は `.codex/hooks/…` →
   `../../.agents/hooks/…` のような相対 symlink を git に乗せる。link 対象の source が他 entry の
   target 配下を指しているのはこのパターン違反のサイン
   - **dir link で配る file の変更は merge/pull した時点で即座に本番へ届く**（`~` 側は repo dir を
@@ -45,26 +45,19 @@ dotfiles 自身の session から skill 本体・hook・`AGENTS.md` のような
 
 動画（demo・product launch・motion graphic）は `~/src/github.com/wwwyo/hyperframes`（HyperFrames の fork）を cwd にして `/hyperframes` skill から入る。
 
-要件をまとめる [prd](.agents/skills/prd/SKILL.md) → 実装・self review・検証を行う [implement](.agents/skills/implement/SKILL.md) → 公開・レビュー・CIを扱う [pr](.agents/skills/pr/SKILL.md) → 定期merge laneの [pr-auto-merge](.agents/skills/pr-auto-merge/SKILL.md) の順で進める。期待動作が明確な実装タスクはimplementから始められる。テストの選択とunit testを最小限にする方針はimplementを参照する。
+要件をまとめる [prd](https://github.com/wwwyo/skills/blob/main/.agents/skills/prd/SKILL.md) → 実装・self review・検証を行う [implement](https://github.com/wwwyo/skills/blob/main/.agents/skills/implement/SKILL.md) → 公開・レビュー・CIを扱う [pr](https://github.com/wwwyo/skills/blob/main/.agents/skills/pr/SKILL.md) → 定期merge laneの [pr-auto-merge](https://github.com/wwwyo/skills/blob/main/.agents/skills/pr-auto-merge/SKILL.md) の順で進める。期待動作が明確な実装タスクはimplementから始められる。テストの選択とunit testを最小限にする方針はimplementを参照する。
 
 ## Skills 管理
 
-実装に固有のテストは実装の隣に置く（collocation を優先する）。skillctrl の処理は CLI・CI とも mise で管理する公開 Go 版を使い、この repo に重複実装を置かない。dotfiles 固有の workflow 接続テストは `tests/`、skill 品質評価は `.agents/skillctrl/evals/` に置く。
+共有 skill の正本は [wwwyo/skills](https://github.com/wwwyo/skills)（canonical checkout は `~/src/github.com/wwwyo/skills`）。skill の追加・編集・skillctrl 運用・plugin の layout はその repo の `AGENTS.md` に従い、この repo には skill 本体を置かない。dotfiles が持つのは各 tool への登録だけ。
 
-skill の検索・追加・作成・改善・更新・削除は `skillctrl` に統一し、手順は [skillctrl skill](.agents/skills/skillctrl/SKILL.md) に従う。CLI は常に cwd の Git repo を対象にし、`--repo` は無い — 共有 skill を操作するときは dotfiles の worktree に `cd` して実行する。worktree の新規作成は orca CLI 側の責務で、skillctrl は worktree を作らない。
-
-skill の更新・独自適応は [skillctrl](.agents/skillctrl/README.md) に従う。`skillctrl update <name>` が原本をその場で取り込み、保存した `.agents/skillctrl/intents/<name>.md` の意図に沿うよう agent が直接編集・検証して `skillctrl record <name>` で受理 hash を記録する。upstream 管理 skill を意図的に変更するときは、環境・運用の文脈と保ちたい振る舞いの理由を `intents/<name>.md` に書く。意図ファイルは差分や patch の正本にせず、手順・チェックリストや共通設定の規約も重複して書かない。一般的な欠陥は upstream に修正を返す。意図がない skill は、原本が変わる update で適応が失われる。commit hook は設けず、lock 不一致を 2 つの gh-aw CI が offline の `skillctrl check` で検出する。通常 PR は [skillctrl](.github/workflows/skillctrl.md) が hash drift のときだけ AI に intent 適合を審査させ、検証済みの対象だけ `record` で受理する — PR の skill 本体は自動修正せず、intent 違反の疑い・判断不能はコメントして失敗する。lock 一致なら AI を呼ばず、意図ファイルの変更・削除自体は確認対象にしない。別 workflow の [skillctrl-update](.github/workflows/skillctrl-update.md) が土曜09:00 JST・手動 dispatch で `skillctrl update` の upstream 更新を取得し、現在の意図へ再適応・テストして draft PR を作る。各 workflow 最後の `Skill lock status` は、公開処理後も `.local.lock_changed` が残る場合に fail する。AI engine はユーザー指定の例外として pi / OpenCode Go を固定し、必要な認証がなければ確定しない。`~/.agents` 経由の本番を直接更新しない。
-
-- **このリポジトリの skill は基本すべて global**。`~/.agents` → `.agents/` の symlink なので、取得先は worktree の `.agents/skills/` に固定する。upstream 登録は root の `skills-lock.json`（native `npx skills` 互換）、skillctrl 固有の provenance・受理 hash は `.agents/skillctrl/lock.json` で `skillctrl` が管理する
-- source は GitHub の `owner/repo:skill`（例: `skillctrl add googleworkspace/cli:gws-calendar`）。取得 adapter は既定 `skills`（PATH 上の mise pin `skills` CLI を再利用し、無ければ npx で取得）、`--adapter gh|git` か `SKILLCTRL_ADAPTER` で明示できる。原本が変わっていない skill は取り込み直さず、独自適応を保持する
-- 手書き skill（`memo` `wiki` `project-setup` 等）は `.agents/skills/` に直接置くため、upstream lock に載らない。accepted lock の記録・不一致検出・再適応も upstream lock の登録済み skill だけを対象にする。手書き skill は意図ファイルがあっても対象外。旧 accepted lock に残った未登録 skill の hash は次の `record` で削除し、skill 本文は変更しない
-- 削除は `skillctrl remove <name>` を使い、worktree の実体・upstream 登録・保存済み intent を変更する。Claude symlink は CLI が管理しないため別途確認する。codex は `.agents/skills` を native discovery するため `.codex/skills` に symlink は置かない
-
-- **cloud へ配る skill は `.claude-plugin/marketplace.json` の plugin に列挙する**。cloud（claude.ai の Projects スレッド・cloud session）は `~/.agents` も repo の `.claude/skills/` も読まず、claude.ai アカウントの Customize > Plugins で追加した marketplace の plugin だけが synced plugin として届く。この repo を marketplace（`wwwyo/dotfiles`、Sync automatically）として登録し、plugin の `skills` に `.agents/skills/<name>` を並べて正本を一本化する。Orca・browser 操作・mise/age・dotfiles 運用など local でしか動かない skill は載せず global のままにする
-
-- 独立 skill として残すかの判断基準は「その skill だけを目的に起動する場面（単独の入口）があるか」。無ければ既存 skill の reference か節として持つ
-- 運用ルールの記載先は、情報の発生源（不具合の根拠・制約の由来）と適用時（操作を行う skill）で分ける。発生源にだけ書くと使う側が見ず、両方に全文書くと drift する
-- skill・reference の rename・移動・削除では、path だけでなく link の表示名（label）・anchor も対象に repo 全体を grep して残存参照を消す。path だけ直して旧タイトルの label が残る事故が起きている
+- Claude Code: core は claude.ai のアカウントに入れた core（`core@synced`）を使い、local は `extraKnownMarketplaces.wwwyo`（directory source）の `local@wwwyo` で入れる。`enabledPlugins` で `core@synced` を有効、directory 側の `core@wwwyo` を無効にして重複させない。local をアカウントに入れると cloud にも届くので、local だけは手元で入れる。core の編集は wwwyo/skills の main への merge と claude.ai の同期を経てから届く。merge 前の版を試すときは `claude --settings '{"enabledPlugins":{"core@wwwyo":true,"core@synced":false}}'` で起動し、その session だけ checkout の core に切り替える（`--plugin-dir` は marketplace の root を plugin として読まない）
+- Codex: `home/.chezmoitemplates/codex-base.toml.tmpl` の `[marketplaces.wwwyo]` と `[plugins."core@wwwyo"]` 等。宣言だけでは cache に入らないため `home/run_after_30-codex-skill-plugins.sh` が apply 毎に `codex plugin add` する
+- pi: `home/.chezmoitemplates/pi-settings-base.json` の `packages` にローカルパス
+- Devin: plugin を読まないため、dir link script が `~/.config/devin/skills` を wwwyo/skills の `.agents/skills` へ link する（repo 外を指す唯一の dir link。`~/.agents/skills` に置くと Codex・pi の native discovery と plugin が重複する）
+- Orca が配る skill（`orca-cli`・`orchestration`・`orca-computer-use`）だけは wwwyo/skills に置かず、この repo の `.agents/skills/` で git 追跡する。`~/.agents` はこの `.agents` への link なので、Orca 本体の更新で Orca が書き換えた内容は repo の差分として現れ、それを commit する。Claude 向けには `.claude/skills/<name>` → `../../.agents/skills/<name>` の相対 symlink を git に載せ、`~/.claude/skills` を dir link で配る（`tests/agents-skills-symlinks.test.sh` が対応を検査する）。Orca は手を入れていない copy だけを更新するので、中身は Orca 純正のまま保ち、手元の方針は global instructions か dev-env の reference に置く
+- scheduled task・hook から skill の tools を呼ぶときは canonical checkout（`~/src/github.com/wwwyo/skills/.agents/skills/...`）を指す。`~/.agents/skills` には Orca の skill しか無い（Codex・pi はそこを直接読む）
+- tool ごとの読み込み方・編集の反映は [dev-env の skill-plugins](https://github.com/wwwyo/skills/blob/main/.agents/skills/dev-env/references/skill-plugins.md) を参照する
 
 ## ユーザー名に依存しない
 
@@ -74,7 +67,7 @@ skill の更新・独自適応は [skillctrl](.agents/skillctrl/README.md) に�
 - **home dir 参照が必要な .tmpl は `{{ .chezmoi.homeDir }}` を使う**（例: agent hook の配置先）。`{{ .chezmoi.username }}`・`{{ .chezmoi.hostname }}` も使える。hook command など shell snippet 内の path は `"$HOME"` で書けば展開されるので template 化不要
 - **Codex の共通設定**は [`home/.chezmoitemplates/codex-base.toml.tmpl`](home/.chezmoitemplates/codex-base.toml.tmpl) が正本。[`home/dot_codex/private_config.toml.tmpl`](home/dot_codex/private_config.toml.tmpl) が既存の `~/.codex/config.toml` に共通設定だけを上書きし、実ファイルとして配置する。repo にない key は保持し、書き込み先の追加許可も消さない。base から key を削除しても既存の local 値は消えないため、不要になった local 値は `~` 側で削除する。`projects`（trust）・`hooks.state`・ローカル marketplace・モデル案内履歴・PC ごとの editor 設定・browser client の承認 hash は `~` 側だけで管理し、repo に snapshot を取り込まない。共通設定に含めた key を変える場合は base を編集する。逆に、base に載せた key は `mergeOverwrite` で apply 毎に local 値を base 値へ巻き戻すため、local で増殖・変化する値（dictation 辞書・`open-in-target-preferences.perPath` など）は base に入れない。
   - `projectlessWorkspaceRoot` はローカル設定。未設定時は Codex 標準の `~/Documents/Codex` を使う。
-- **Pi sandbox は使っていない**。2026-10-27 に `pi-sandbox` package と chezmoi 側の template（`pi-sandbox-base.json`・`private_sandbox.json.tmpl`）・`~/.pi/agent/sandbox.json` を削除した。依存の `@carderne/sandbox-runtime` が Anthropic `srt` の個人フォークで zod advisory を抱え、恒久無効運用だったため。再導入の前提（config 無しだと `enabled: true`、`--no-sandbox` は extension 提供）は [dev-env](.agents/skills/dev-env/references/pi.md) を見る。知識としては残すが、明示指示がない限り復活させない。
+- **Pi sandbox は使っていない**。2026-10-27 に `pi-sandbox` package と chezmoi 側の template（`pi-sandbox-base.json`・`private_sandbox.json.tmpl`）・`~/.pi/agent/sandbox.json` を削除した。依存の `@carderne/sandbox-runtime` が Anthropic `srt` の個人フォークで zod advisory を抱え、恒久無効運用だったため。再導入の前提（config 無しだと `enabled: true`、`--no-sandbox` は extension 提供）は [dev-env](https://github.com/wwwyo/skills/blob/main/.agents/skills/dev-env/references/pi.md) を見る。知識としては残すが、明示指示がない限り復活させない。
 - **Pi の settings.json** も同じ方式 — [`home/dot_pi/agent/private_settings.json.tmpl`](home/dot_pi/agent/private_settings.json.tmpl) が既存の `~/.pi/agent/settings.json` と [`home/.chezmoitemplates/pi-settings-base.json`](home/.chezmoitemplates/pi-settings-base.json) を合成する。pi が TUI から書き戻す key（既定 provider/model・theme・changelog 既読）は local を残し、symlink 配備だった頃の repo 汚染を防ぐ。
 
 ## gitignore されたファイルを grep 対象に戻す（`home/dot_ignore` → `~/.ignore`）
