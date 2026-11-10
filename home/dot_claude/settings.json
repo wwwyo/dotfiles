@@ -435,9 +435,9 @@
     "command": "~/.local/share/mise/shims/node ~/.claude/hooks/status-line.js"
   },
   "enabledPlugins": {
-    "core@wwwyo": true,
+    "core@synced": true,
+    "core@wwwyo": false,
     "local@wwwyo": true,
-    "core@synced": false,
     "langfuse-observability@langfuse-observability": false,
     "gopls-lsp@claude-plugins-official": false,
     "figma@claude-plugins-official": false,
