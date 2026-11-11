@@ -12,6 +12,12 @@ BUN_MB="${BUN_MB:-2000}"
 NPM_MB="${NPM_MB:-2000}"
 UV_MB="${UV_MB:-5000}"
 CONTAINER_IMAGE_MB="${CONTAINER_IMAGE_MB:-3000}"
+BREW_MB="${BREW_MB:-2000}"
+MISE_CACHE_MB="${MISE_CACHE_MB:-2000}"
+CODEX_CACHE_MB="${CODEX_CACHE_MB:-1000}"
+PLAYWRIGHT_MB="${PLAYWRIGHT_MB:-2000}"
+PUPPETEER_MB="${PUPPETEER_MB:-1000}"
+UPDATER_MB="${UPDATER_MB:-300}"
 
 GO_MOD_DIR="$(go env GOMODCACHE 2>/dev/null || echo "$HOME/go/pkg/mod")"
 GO_BUILD_DIR="$(go env GOCACHE 2>/dev/null || echo "$HOME/Library/Caches/go-build")"
@@ -20,6 +26,12 @@ NPM_DIR="$HOME/.npm/_cacache"
 UV_DIR="$(uv cache dir 2>/dev/null || echo "$HOME/.cache/uv")"
 # image の実体（layer blob）。snapshots/containers は build・実行中 container の分なので測らない
 CONTAINER_CONTENT_DIR="$HOME/Library/Application Support/com.apple.container/content"
+BREW_CACHE_DIR="$(brew --cache 2>/dev/null || echo "$HOME/Library/Caches/Homebrew")"
+# cask / formula 更新時の展開先。更新が途中で止まると中身が残り続ける（7GB 溜まった実例あり）
+BREW_TMP_DIR="$(brew --prefix 2>/dev/null || echo /opt/homebrew)/var/homebrew/tmp"
+MISE_CACHE_DIR="$HOME/Library/Caches/mise"
+PLAYWRIGHT_DIR="$HOME/Library/Caches/ms-playwright"
+PUPPETEER_DIR="$HOME/.cache/puppeteer"
 
 failed=""
 freed_mb=0
@@ -64,6 +76,25 @@ uv_cache_clean() {
   return 1
 }
 
+# dir の中身だけを消す（dir 自体は残す）
+clear_dir() {
+  find "$1" -mindepth 1 -maxdepth 1 -exec rm -rf {} + 2>/dev/null
+  [ -z "$(find "$1" -mindepth 1 -maxdepth 1 -print -quit 2>/dev/null)" ]
+}
+
+# brew 実行中の展開途中を消さないよう、brew process が無く 1 日以上触られていないものだけ消す
+brew_tmp_clean() {
+  [ -d "$BREW_TMP_DIR" ] || return 0
+  # Apple Silicon（/opt/homebrew/Library/...）と Intel（/usr/local/Homebrew/Library/...）の両方に一致させる
+  if pgrep -f 'Library/Homebrew/brew.rb' >/dev/null 2>&1; then
+    echo "    brew is running; skipped"
+    return 0
+  fi
+  # 直下の .caskroom / .cellar dir は brew の作業場所なので残し、その中身と直下の file だけを消す
+  find "$BREW_TMP_DIR" -mindepth 1 -maxdepth 2 \( -path "$BREW_TMP_DIR/*/*" -o -type f \) \
+    -mmin +1440 -exec rm -rf {} +
+}
+
 # 未参照分のみを回収するため再取得コストが無い。閾値を置かず毎回実行する
 always_step() {
   local label="$1"
@@ -84,7 +115,30 @@ if command -v container >/dev/null 2>&1 && container system status >/dev/null 2>
 else
   printf '==> %-24s skip  (container system not running)\n' "container images"
 fi
+if command -v brew >/dev/null 2>&1; then
+  # --prune=all は最新版の download も消す。再 install 時に再 download するコストを閾値で受ける
+  gated_step "homebrew cache" "$BREW_CACHE_DIR" "$BREW_MB" brew cleanup --prune=all -q
+fi
+# mise の tool download cache。install 済み tool には影響しない
+gated_step "mise cache" "$MISE_CACHE_DIR" "$MISE_CACHE_MB" mise cache clear
+# Playwright / Puppeteer の browser。古い版が版ごとに溜まる。消すと次回使用時に再 download
+gated_step "playwright browsers" "$PLAYWRIGHT_DIR" "$PLAYWRIGHT_MB" clear_dir "$PLAYWRIGHT_DIR"
+gated_step "puppeteer browsers" "$PUPPETEER_DIR" "$PUPPETEER_MB" clear_dir "$PUPPETEER_DIR"
+# Codex app の HTTP / runtime cache。app 起動中は使用中の file を消さないよう skip
+for d in "$HOME/Library/Caches/com.openai.codex" "$HOME/Library/Caches/Codex"; do
+  label="codex cache ($(basename "$d"))"
+  if pgrep -xq Codex; then
+    printf '==> %-24s skip  (Codex app running)\n' "$label"
+  else
+    gated_step "$label" "$d" "$CODEX_CACHE_MB" clear_dir "$d"
+  fi
+done
+# app の自動更新が落とした installer。適用後は不要
+for d in "$HOME/Library/Caches/orca-updater" "$HOME/Library/Caches/nani-desktop-updater"; do
+  gated_step "updater ($(basename "$d"))" "$d" "$UPDATER_MB" clear_dir "$d"
+done
 
+always_step "homebrew tmp (stale)" brew_tmp_clean
 always_step "go testcache" go clean -testcache
 # tracked config も tracked stub も要求せず、実行中 process の起動元でもない
 # tool version だけを消す（stub や実行中の分は残る）
@@ -103,7 +157,7 @@ else
 fi
 
 echo
-echo "freed: ${freed_mb}MB (閾値超過分のみ。pnpm/simctl/mise prune の回収量は含まない)"
+echo "freed: ${freed_mb}MB (閾値超過分のみ。pnpm/simctl/mise prune/homebrew tmp の回収量は含まない)"
 if [ -n "$failed" ]; then
   echo "failed:$failed"
   exit 1
