@@ -85,12 +85,14 @@ clear_dir() {
 # brew 実行中の展開途中を消さないよう、brew process が無く 1 日以上触られていないものだけ消す
 brew_tmp_clean() {
   [ -d "$BREW_TMP_DIR" ] || return 0
-  if pgrep -f '/Homebrew/Library/Homebrew/brew.rb' >/dev/null 2>&1; then
+  # Apple Silicon（/opt/homebrew/Library/...）と Intel（/usr/local/Homebrew/Library/...）の両方に一致させる
+  if pgrep -f 'Library/Homebrew/brew.rb' >/dev/null 2>&1; then
     echo "    brew is running; skipped"
     return 0
   fi
-  find "$BREW_TMP_DIR" -mindepth 2 -maxdepth 2 -mmin +1440 -exec rm -rf {} + 2>/dev/null
-  return 0
+  # 直下の .caskroom / .cellar dir は brew の作業場所なので残し、その中身と直下の file だけを消す
+  find "$BREW_TMP_DIR" -mindepth 1 -maxdepth 2 \( -path "$BREW_TMP_DIR/*/*" -o -type f \) \
+    -mmin +1440 -exec rm -rf {} +
 }
 
 # 未参照分のみを回収するため再取得コストが無い。閾値を置かず毎回実行する
