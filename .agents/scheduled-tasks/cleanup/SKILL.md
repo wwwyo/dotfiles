@@ -71,9 +71,9 @@ worktree を消すと未 commit の変更は失われる。30日ルールはそ�
 3. remote branch が生きていて `git merge-base --is-ancestor <branch> origin/<branch>` が真 → 削除（remote から辿れる。ここに来るのは PR が CLOSED か無いものだけ）
 4. `git diff --stat origin/main...<branch>` が空 → 削除（固有の中身が無い）
 5. それ以外 → まず**差分の中身が main に実質包含されていないか**を確認する。squash merge で sha が変わったもの・同じ変更が別経路で入ったもの・main 側に上位互換があるものは ancestor 判定に落ちないまま抜け殻として溜まる。`git diff origin/main...<branch>` の残差分を読み、`git show origin/main:<file>` で該当ファイルの現状と突き合わせ、同等・上位互換が既に main にあると確認できたら削除してよい（抜け殻。根拠を報告に添える）
-6. 包含も確認できないもの → **削除しない**。local にしか無い実体差分を持つので、branch 名と差分の規模（`N files changed, +X/-Y`）に**中身の要約（何を変える branch か）と main との包含確認の結果**を添えて報告し、ユーザーの判断を待つ。差分規模だけだと中身を1本ずつ聞き返される往復が起きる。ただし同じ内容を保持する live worktree がある場合（`git -C <worktree の path> diff --stat <branch>` が 0 件）は、main に落ちていない差分がそこに実体として残っている型なので、次のどちらかで扱う:
-   - 保持先の branch が remote に push 済み（`git rev-parse <branch>@{u}` が取れる）→ 変更はそこから復元できるので削除してよい。報告に保持先の path・branch と差分要約を書く
-   - push 済みでない → 残し、「保持先候補」として path と branch を報告に添える。`origin/main` との比較だけを見ていると、毎回同じ branch を一から調べ直すことになる
+6. 包含も確認できないもの → **削除しない**。local にしか無い実体差分を持つので、branch 名と差分の規模（`N files changed, +X/-Y`）に**中身の要約（何を変える branch か）と main との包含確認の結果**を添えて報告し、ユーザーの判断を待つ。差分規模だけだと中身を1本ずつ聞き返される往復が起きる。ただし同じ内容を保持する live worktree がある場合（`git -C <保持先の worktree path> diff --stat <削除対象 branch>` が 0 件）は、main に落ちていない差分がそこに実体として残っている型なので、次のどちらかで扱う。この diff は保持先の working tree との比較なので、一致の実体が未 commit の変更のこともある:
+   - 保持先の内容が remote から復元できると確認できたときだけ削除する。条件は保持先が clean（`git -C <保持先 path> status --porcelain` が空）で、その HEAD が upstream に含まれる（`git -C <保持先 path> merge-base --is-ancestor HEAD @{u}` が真）ことの両方。片方だけでは足りない — `git rev-parse <branch>@{u}` が取れるのは upstream 設定があるというだけで、未 push の commit や未 commit の変更を持っていても成り立つ。削除してよいのは `<削除対象 branch>` だけで、保持先の branch は消さない。報告に保持先の path・branch と差分要約を書く
+   - 上の条件を満たさない → 残し、「保持先候補」として path と branch を報告に添える。`origin/main` との比較だけを見ていると、毎回同じ branch を一から調べ直すことになる
 
 `gh` は sandbox 解除で実行する。
 
