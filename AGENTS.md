@@ -43,8 +43,6 @@ dotfiles 自身の session から skill 本体・hook・`AGENTS.md` のような
 
 ## 開発フロー
 
-動画（demo・product launch・motion graphic）は `~/src/github.com/wwwyo/hyperframes`（HyperFrames の fork）を cwd にして `/hyperframes` skill から入る。
-
 要件をまとめる [prd](https://github.com/wwwyo/skills/blob/main/.agents/skills/prd/SKILL.md) → 実装・self review・検証を行う [implement](https://github.com/wwwyo/skills/blob/main/.agents/skills/implement/SKILL.md) → 公開・レビュー・CIを扱う [pr](https://github.com/wwwyo/skills/blob/main/.agents/skills/pr/SKILL.md) → 定期merge laneの [pr-auto-merge](https://github.com/wwwyo/skills/blob/main/.agents/skills/pr-auto-merge/SKILL.md) の順で進める。期待動作が明確な実装タスクはimplementから始められる。テストの選択とunit testを最小限にする方針はimplementを参照する。
 
 ## Skills 管理
