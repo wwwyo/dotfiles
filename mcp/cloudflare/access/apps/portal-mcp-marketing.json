@@ -18,6 +18,23 @@
     "allow_all_methods": true,
     "allow_all_origins": true
   },
+  "oauth_configuration": {
+    "enabled": true,
+    "grant": {
+      "session_duration": "720h",
+      "access_token_lifetime": "15m"
+    },
+    "dynamic_client_registration": {
+      "enabled": true,
+      "allowed_uris": [
+        "https://chatgpt.com/connector/oauth/*",
+        "https://chatgpt.com/connector_platform_oauth_redirect",
+        "https://claude.ai/api/mcp/auth_callback"
+      ],
+      "allow_any_on_localhost": true,
+      "allow_any_on_loopback": true
+    }
+  },
   "policies": [
     {
       "id": "775a4efd-54e4-4914-b3f4-1dc02c5ac027",

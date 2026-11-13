@@ -5,6 +5,8 @@
   python3 mcp/cloudflare/apply.py --apply              # 差分のある resource を更新し、再取得して一致を確認
   python3 mcp/cloudflare/apply.py --apply --rotate-credentials context7
                                                        # credential_env の値で server の credential を差し替える
+  mise exec -- python3 mcp/cloudflare/apply.py --apply --recreate buffercom
+                                                       # 宣言どおりに server を作り直す（hostname 等の修正用）
   python3 mcp/cloudflare/apply.py --import             # 現状を宣言ファイルへ書き出す（初回・取り込み用）
 
 `cf` CLI（OAuth ログイン済み）を sandbox 外で呼ぶ。stdlib だけで動く。
@@ -338,6 +340,63 @@ def apply(state, declared, actionable, rotate):
             update_server(want, extra, True)
             print(f"servers/{rid}: credential を差し替えた")
 
+def server_app(apps, rid):
+    return next((a for a in apps.values() if any(d.get("mcp_server_id") == rid for d in a.get("destinations", []))), None)
+
+
+def recreate_server(state, declared, rid):
+    """update で変えられない項目（hostname 等）を直すため、宣言どおりに server を作り直す。
+
+    portal から一度外して消し、credential_env の値で作り直す。portal への再登録は続く apply が行う。
+    server の Access app が削除に巻き込まれた場合は宣言から作り直し、新しい app ID を宣言へ書き戻す。
+    """
+    if rid not in declared["servers"]:
+        sys.exit(f"servers/{rid}: 宣言に無い")
+    path, want, extra = declared["servers"][rid]
+    if want["auth_type"] != "bearer":
+        sys.exit(f"servers/{rid}: --recreate は bearer の server だけ扱う（OAuth は作成後に同意が要る）")
+    env = extra.get("credential_env")
+    value = os.environ.get(env) if env else None
+    if not value:
+        sys.exit(f"servers/{rid}: credential_env の環境変数が無い（mise exec -- で実行する）")
+
+    for _, portal, _ in declared["portals"].values():
+        if any(s["server_id"] == rid for s in portal["servers"]):
+            update_portal(portal | {"servers": [s for s in portal["servers"] if s["server_id"] != rid]})
+            print(f"portals/{portal['id']}: {rid} を一時的に外した")
+    if rid in state["servers"]:
+        cf("mcp", "servers", "delete", rid, "--force")
+        print(f"servers/{rid}: 削除した")
+    cf("mcp", "servers", "create", body={
+        "id": rid,
+        "name": want["name"],
+        "description": want.get("description") or "",
+        "hostname": want["hostname"],
+        "auth_type": want["auth_type"],
+        "auth_credentials": value,
+        "secure_web_gateway": want["secure_web_gateway"],
+        "is_shared_oauth_callback_enabled": want["is_shared_oauth_callback_enabled"],
+        "updated_tools": tool_list(want["tool_overrides"]),
+        "updated_prompts": tool_list(want["prompt_overrides"]),
+    })
+    print(f"servers/{rid}: 作り直した")
+
+    apps = {a["id"]: a for a in cf("zero-trust", "access", "applications", "list") if is_mcp_app(a)}
+    if server_app(apps, rid):
+        return
+    found = next(((p, w) for p, w, _ in declared["apps"].values() if server_app({w["id"]: w}, rid)), None)
+    if not found:
+        print(f"servers/{rid}: Access app が無く、宣言にも無い")
+        return
+    app_path, app_want = found
+    body = {k: app_want[k] for k in APP_FIELDS if k in app_want}
+    body["policies"] = [{"id": p["id"], "precedence": i + 1} for i, p in enumerate(app_want["policies"])]
+    created = cf("zero-trust", "access", "applications", "create", body=body)
+    raw = json.loads(app_path.read_text())
+    raw["id"] = created["id"]
+    app_path.write_text(json.dumps(raw, ensure_ascii=False, indent=2) + "\n")
+    print(f"apps/{app_path.stem}: 削除されていたので作り直した（新しい ID を宣言へ書き戻した）")
+
 # ---------------------------------------------------------------- import
 
 def do_import(state, table):
@@ -371,10 +430,12 @@ def main():
     p.add_argument("--apply", action="store_true", help="差分のある resource を更新する")
     p.add_argument("--rotate-credentials", nargs="+", default=[], metavar="SERVER_ID",
                    help="credential_env の値でその server の credential を送り直す（--apply と併用）")
+    p.add_argument("--recreate", nargs="+", default=[], metavar="SERVER_ID",
+                   help="宣言どおりに server を作り直す（hostname 等 update で変えられない項目用。--apply と併用）")
     p.add_argument("--import", dest="do_import", action="store_true", help="現状を宣言ファイルへ書き出す")
     args = p.parse_args()
-    if args.rotate_credentials and not args.apply:
-        sys.exit("--rotate-credentials は --apply と一緒に使う")
+    if (args.rotate_credentials or args.recreate) and not args.apply:
+        sys.exit("--rotate-credentials / --recreate は --apply と一緒に使う")
 
     table = whoami()
     state = fetch()
@@ -383,6 +444,11 @@ def main():
         return
 
     declared = load_declared()
+    if args.recreate:
+        for rid in args.recreate:
+            recreate_server(state, declared, rid)
+        declared = load_declared()  # app ID の書き戻しを反映
+        state = fetch()
     notes = status_notes(state)
     if notes:
         print("server の同期状態（宣言の比較対象外）:\n" + "\n".join(notes))

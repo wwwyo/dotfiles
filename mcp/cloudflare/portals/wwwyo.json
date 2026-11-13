@@ -31,7 +31,20 @@
       "server_id": "queria",
       "on_behalf": true,
       "default_disabled": false,
-      "tool_overrides": {},
+      "tool_overrides": {
+        "create_report": {
+          "enabled": false
+        },
+        "delete_report": {
+          "enabled": false
+        },
+        "fork_report": {
+          "enabled": false
+        },
+        "update_report": {
+          "enabled": false
+        }
+      },
       "prompt_overrides": {}
     }
   ]
