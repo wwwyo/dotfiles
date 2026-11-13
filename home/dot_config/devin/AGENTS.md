@@ -8,7 +8,6 @@
 - 汎用skillは `~/src/github.com/wwwyo/skills`（wwwyo/skills）で管理し、Claude Code・Codex・pi へは plugin / package として配る（Devin は `~/.config/devin/skills` の link）。追加・編集はその repo の worktree で行う
 - 対話的入力が要る作業でも、できる限り自分で回してから、人間の入力・承認が本当に必要な箇所だけを最小単位で handoff する。手順を丸ごとユーザーに渡さない。ユーザーにブラウザで開いてほしい URL は自分で `open` までやる
 
-- 動画（demo・product launch・motion graphic）は `~/src/github.com/wwwyo/hyperframes`（HyperFrames の fork）を cwd にして `/hyperframes` skill から入る
 
 - session 記録は Langfuse。repo の意思決定はその repo の ADR、プロセスは既存 skill/reference を正本とする。wiki は個人の理解・横断的な知識・PJ の位置づけを持つ。過去の文脈が必要で repo 内の根拠では不足するときだけ wiki の必要な節を参照する。引き方と書き戻し先の判定は wwwyo/me の AGENTS.md「メモリ（wiki）」に従う
 - 常に Orca を前提として動かす。worktree・terminal・file open・ブラウザ操作（Orca 内蔵ブラウザを `orca tab`/`goto`/`eval` 等で操作）など、Orca state が絡む・Orca で代替できる操作は `orca` CLI 経由にし、`git worktree` 直叩き・独自 PTY/tmux・agent-browser 等の別ブラウザを先に選ばない（詳細は orca-cli skill）
