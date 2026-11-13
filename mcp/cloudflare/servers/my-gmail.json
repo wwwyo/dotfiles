@@ -1,0 +1,27 @@
+{
+  "_comment": "Google の公式 Gmail MCP。OAuth は manual（Google Cloud の OAuth client）。client_secret は Cloudflare にだけ保管。oauth_manual は比較だけ（apply で変えない）。どの portal にも載っていない",
+  "id": "my-gmail",
+  "name": "my gmail",
+  "description": null,
+  "hostname": "https://gmailmcp.googleapis.com/mcp/v1",
+  "auth_type": "oauth",
+  "secure_web_gateway": false,
+  "is_shared_oauth_callback_enabled": true,
+  "tool_overrides": {},
+  "prompt_overrides": {},
+  "oauth_manual": {
+    "config": {
+      "issuer": "https://accounts.google.com",
+      "authorization_endpoint": "https://accounts.google.com/o/oauth2/v2/auth",
+      "token_endpoint": "https://oauth2.googleapis.com/token",
+      "revocation_endpoint": "https://oauth2.googleapis.com/revoke",
+      "resource": "https://gmailmcp.googleapis.com/mcp/v1"
+    },
+    "registration_info": {
+      "client_id": "663969535710-07fhr83vp06lphjf2s9510oslpgighf0.apps.googleusercontent.com",
+      "redirect_uris": [
+        "https://oauth-callbacks.cloudflareaccess.com/cdn-cgi/access/outbound-oauth-callback"
+      ]
+    }
+  }
+}

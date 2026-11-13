@@ -1,0 +1,14 @@
+{
+  "id": "775a4efd-54e4-4914-b3f4-1dc02c5ac027",
+  "name": "Cloudflare account members",
+  "decision": "allow",
+  "include": [
+    {
+      "cloudflare_account_member": {
+        "account_id": "<account_id>"
+      }
+    }
+  ],
+  "exclude": [],
+  "require": []
+}

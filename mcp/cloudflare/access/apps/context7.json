@@ -1,0 +1,34 @@
+{
+  "id": "2a250f39-d27b-475c-bf61-96ef67c1f0a8",
+  "name": "Context7 MCP server",
+  "type": "mcp",
+  "destinations": [
+    {
+      "type": "via_mcp_server_portal",
+      "mcp_server_id": "context7"
+    }
+  ],
+  "allowed_idps": [
+    "6c457ad3-14f1-4b4e-afe7-06e510b164ce"
+  ],
+  "auto_redirect_to_identity": false,
+  "session_duration": "1h",
+  "http_only_cookie_attribute": true,
+  "policies": [
+    {
+      "id": "d758bbb6-4dfe-4ce0-b282-3c676ebd0f2e",
+      "name": "Only project owner",
+      "reusable": false,
+      "decision": "allow",
+      "include": [
+        {
+          "email": {
+            "email": "<owner_email>"
+          }
+        }
+      ],
+      "exclude": [],
+      "require": []
+    }
+  ]
+}

@@ -1,0 +1,12 @@
+{
+  "_comment": "Queria の公開 remote MCP（利用者ごとの OAuth、on_behalf: true）",
+  "id": "queria",
+  "name": "queria",
+  "description": null,
+  "hostname": "https://mcp.queria.io",
+  "auth_type": "oauth",
+  "secure_web_gateway": false,
+  "is_shared_oauth_callback_enabled": false,
+  "tool_overrides": {},
+  "prompt_overrides": {}
+}

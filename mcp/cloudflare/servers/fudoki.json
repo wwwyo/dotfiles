@@ -1,0 +1,11 @@
+{
+  "id": "fudoki",
+  "name": "fudoki",
+  "description": "風土記(fudoki) public MCP (no auth)",
+  "hostname": "https://api.fudoki.dev/mcp",
+  "auth_type": "unauthenticated",
+  "secure_web_gateway": false,
+  "is_shared_oauth_callback_enabled": false,
+  "tool_overrides": {},
+  "prompt_overrides": {}
+}

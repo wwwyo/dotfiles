@@ -1,0 +1,31 @@
+{
+  "id": "marketing",
+  "name": "マーケティング",
+  "description": "fudokiやwwwyo productのマーケティングツールの集約",
+  "hostname": "mcp-marketing.wwwyo.dev",
+  "secure_web_gateway": false,
+  "code_mode": "default_on",
+  "servers": [
+    {
+      "server_id": "buffercom",
+      "on_behalf": false,
+      "default_disabled": false,
+      "tool_overrides": {},
+      "prompt_overrides": {}
+    },
+    {
+      "server_id": "cloudflare-small",
+      "on_behalf": true,
+      "default_disabled": false,
+      "tool_overrides": {},
+      "prompt_overrides": {}
+    },
+    {
+      "server_id": "composio",
+      "on_behalf": false,
+      "default_disabled": false,
+      "tool_overrides": {},
+      "prompt_overrides": {}
+    }
+  ]
+}

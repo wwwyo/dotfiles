@@ -1,0 +1,12 @@
+{
+  "_comment": "Cloudflare API MCP（利用者ごとの OAuth、on_behalf: true）。scope は利用者の同意画面で選ぶ",
+  "id": "cloudflare-small",
+  "name": "cloudflare small",
+  "description": null,
+  "hostname": "https://mcp.cloudflare.com/mcp",
+  "auth_type": "oauth",
+  "secure_web_gateway": false,
+  "is_shared_oauth_callback_enabled": false,
+  "tool_overrides": {},
+  "prompt_overrides": {}
+}

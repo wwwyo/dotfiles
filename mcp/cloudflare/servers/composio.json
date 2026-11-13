@@ -1,0 +1,12 @@
+{
+  "_comment": "credential は Composio Platform の ak_ key（Session tool execution のみ）を x-api-key header で Cloudflare にだけ保管し mise に無い。apply は送らない（既存を保持）。session の中身は mcp/composio/sessions/marketing.json",
+  "id": "composio",
+  "name": "Composio",
+  "description": "Composio tool router session for the marketing portal (toolkits added via PATCH)",
+  "hostname": "https://backend.composio.dev/tool_router/trs_PTWLaWIukG00/mcp",
+  "auth_type": "bearer",
+  "secure_web_gateway": false,
+  "is_shared_oauth_callback_enabled": false,
+  "tool_overrides": {},
+  "prompt_overrides": {}
+}
