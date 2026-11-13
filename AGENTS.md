@@ -111,7 +111,7 @@ Edge が `.svg` を奪っていくので、宣言して奪い返す運用にし�
 
 ## MCP の設定はコードで管理する（`mcp/`）
 
-MCP portal・server・Access app・Composio の tool router session の設定は、この repo の `mcp/` 配下の宣言が正本。MCP の追加・変更を頼まれたら、まず `mcp/` を読み、宣言を編集して各 `apply.py` で反映する。ダッシュボードや API で直接変えた場合は、宣言へ取り込んでから終える。宣言に入っていないもの（Composio の auth config と接続、Tunnel・Gateway・DNS）だけは API・ダッシュボードで作り、できた ID を宣言に書く。
+MCP portal・server・Access app・Composio の tool router session の設定は、この repo の `mcp/` 配下の宣言が正本。MCP の追加・変更を頼まれたら、まず `mcp/` を読み、宣言を編集して各 `apply.py` で反映する。ダッシュボードや API で直接変えた場合は、宣言へ取り込んでから終える。`apply.py` が作らないもの（Composio の auth config と接続、Cloudflare の server・portal・Access app の新規作成、Tunnel・Gateway・DNS）は別に作り、できた ID を宣言に書く。Composio は手元の API で作る（下の節）。Cloudflare は `cf` か API で作り、`--import` で宣言へ取り込む。`--recreate` は宣言済みの server を作り直すだけで、新規作成には使わない。
 
 ## Composio の session 設定（`mcp/composio/`）
 
