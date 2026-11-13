@@ -1,5 +1,5 @@
 {
-  "_comment": "mcp-marketing portal の server `composio` が指す Composio tool router session。toolkit・tool を足すときはこのファイルを編集して apply する。user_id は session 作成時だけに使う値で、apply.py は読まない（作り直すときの記録）。auth config は google_search_console = gsc-sitemap（scope webmasters。書き込みは SUBMIT_SITEMAP だけ許可）、google_analytics = ga-readonly（scope analytics.readonly。Composio managed auth が userinfo.profile を自動で足す）。GA の LIST_ACCESS_BINDINGS は scope analytics.manage.users.readonly が要るので入れていない。tools は Composio の toolkit 最新版（GET /api/v3/tools?toolkit_versions=latest）の slug",
+  "_comment": "mcp-marketing portal の server `composio` が指す Composio tool router session。toolkit・tool を足すときはこのファイルを編集して apply する。user_id は session 作成時だけに使う値で、apply.py は読まない（作り直すときの記録）。auth config は google_search_console = gsc-sitemap（scope webmasters。書き込みは SUBMIT_SITEMAP だけ許可）、google_analytics = ga-readonly（scope analytics.readonly。Composio managed auth が userinfo.profile を自動で足す）。bing_webmaster_tools = bing-webmaster（managed auth が無いので use_custom_auth の API_KEY 型。key は接続時に入力し auth config には持たない。tools_available_for_execution は作成時に反映されず PATCH で入れた）で、書き込みは SUBMIT_FEED（サイトマップ送信）だけ許可し、取り消せない SUBMIT_URLS は入れていない。GA の LIST_ACCESS_BINDINGS は scope analytics.manage.users.readonly が要るので入れていない。tools は Composio の toolkit 最新版（GET /api/v3/tools?toolkit_versions=latest）の slug",
   "session_id": "trs_PTWLaWIukG00",
   "user_id": "wwwyo",
   "toolkits": {
@@ -77,6 +77,23 @@
         "GOOGLE_ANALYTICS_RUN_REALTIME_REPORT",
         "GOOGLE_ANALYTICS_RUN_REPORT",
         "GOOGLE_ANALYTICS_VALIDATE_EVENTS"
+      ]
+    },
+    "bing_webmaster_tools": {
+      "auth_config": "ac_oIN9DfkCNy1h",
+      "tools": [
+        "BING_WEBMASTER_TOOLS_GET_CRAWL_DIAGNOSTICS",
+        "BING_WEBMASTER_TOOLS_GET_FEEDS",
+        "BING_WEBMASTER_TOOLS_GET_INBOUND_LINKS",
+        "BING_WEBMASTER_TOOLS_GET_PAGE_PERFORMANCE",
+        "BING_WEBMASTER_TOOLS_GET_QUERY_PERFORMANCE",
+        "BING_WEBMASTER_TOOLS_GET_SEARCH_PERFORMANCE",
+        "BING_WEBMASTER_TOOLS_GET_SUBMISSION_QUOTAS",
+        "BING_WEBMASTER_TOOLS_INSPECT_URL",
+        "BING_WEBMASTER_TOOLS_LIST_CHILD_URLS",
+        "BING_WEBMASTER_TOOLS_LIST_SITES",
+        "BING_WEBMASTER_TOOLS_RESEARCH_KEYWORDS",
+        "BING_WEBMASTER_TOOLS_SUBMIT_FEED"
       ]
     }
   }

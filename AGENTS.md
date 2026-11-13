@@ -109,9 +109,13 @@ Edge が `.svg` を奪っていくので、宣言して奪い返す運用にし�
 
 初回セットアップ時、`defaults write` は成功したがアプリのホットキーは既定値のままだった。sandbox container 作成後は macOS のアクセス制限で書き込みも拒否された。コマンドの終了コードや `defaults read` だけではアプリ側の反映を保証できないため、`install.sh` から自動設定を削除した。plist の symlink も、`cfprefsd` の書き込み時に置き換わるため使わない。公式に確認できる import 経路は UI 操作なので、自動化したと扱わない。設定を変更したらアプリから再 export して JSON を更新する。
 
+## MCP の設定はコードで管理する（`mcp/`）
+
+MCP portal・server・Access app・Composio の tool router session の設定は、この repo の `mcp/` 配下の宣言が正本。MCP の追加・変更を頼まれたら、まず `mcp/` を読み、宣言を編集して各 `apply.py` で反映する。ダッシュボードや API で直接変えた場合は、宣言へ取り込んでから終える。`apply.py` が作らないもの（Composio の auth config と接続、Cloudflare の server・portal・Access app の新規作成、Tunnel・Gateway・DNS）は別に作り、できた ID を宣言に書く。Composio は手元の API で作る（下の節）。Cloudflare は `cf` か API で作り、`--import` で宣言へ取り込む。`--recreate` は宣言済みの server を作り直すだけで、新規作成には使わない。
+
 ## Composio の session 設定（`mcp/composio/`）
 
-MCP portal に載せる Composio tool router session の toolkit・許可 tool は `mcp/composio/sessions/<name>.json` が正本（`marketing` = mcp-marketing の server `composio`）。Composio 側の設定は API でしか見えないので、JSON を編集して `mise exec -- python3 mcp/composio/apply.py <name> --apply` で反映する。`--apply` 無しは差分の表示だけ（drift 確認）。新しい toolkit は、先に Composio Platform で auth config と接続を作ってから JSON に足す。portal 側の構成・方針は [dev-env の mcp-portal](https://github.com/wwwyo/skills/blob/main/.agents/skills/dev-env/references/mcp-portal.md)。
+MCP portal に載せる Composio tool router session の toolkit・許可 tool は `mcp/composio/sessions/<name>.json` が正本（`marketing` = mcp-marketing の server `composio`）。Composio 側の設定は API でしか見えないので、JSON を編集して `mise exec -- python3 mcp/composio/apply.py <name> --apply` で反映する。`--apply` 無しは差分の表示だけ（drift 確認）。新しい toolkit は、先に auth config と接続を作ってから JSON に足す。auth config の作成と接続リンクの発行も、ダッシュボードではなく手元で mise の `COMPOSIO_API_KEY` を使って API で行う（cloud session からは Remote Control で Mac に入って実行する）。人の手作業は、相手サービスでの key 発行・OAuth 同意と、発行したリンクを開くことだけ。portal 側の構成・方針は [dev-env の mcp-portal](https://github.com/wwwyo/skills/blob/main/.agents/skills/dev-env/references/mcp-portal.md)。
 
 ## Cloudflare MCP portal の設定（`mcp/cloudflare/`）
 
