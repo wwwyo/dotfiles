@@ -31,7 +31,7 @@ python3 ~/.agents/scheduled-tasks/session-eval/tools/session_eval.py transcript 
 
 ## 2. 還元の判断
 
-**判断の前に対象 repo の該当箇所を実際に読む。** `{REPO_ROOT}` の code・`.agents/skills/`・`AGENTS.md`・`docs/` を検索で絞り、学習候補に関係する箇所を確認してから採否・書き先を決める。`wwwyo/me` の wiki も wiki skill に従って必要な節だけ参照する。ディレクトリ全体や候補ページ全文を一括でコンテキストに入れない。記録 comment だけでは既存の記述との重複・矛盾・コードが既に直っているかが判断できない。
+**判断の前に対象 repo の該当箇所を実際に読む。** `{REPO_ROOT}` の code・`.agents/skills/`・`AGENTS.md`・`docs/` を検索で絞り、学習候補に関係する箇所を確認してから採否・書き先を決める。`wwwyo/me` の wiki も me の AGENTS.md「メモリ（wiki）」に従って必要な節だけ参照する。ディレクトリ全体や候補ページ全文を一括でコンテキストに入れない。記録 comment だけでは既存の記述との重複・矛盾・コードが既に直っているかが判断できない。
 
 **還元するのは `{REPO_ROOT}` 宛の学びだけ。** spec の sessions は coordinator が宛先解決済みで渡す。session の学びが複数 repo にまたがる場合（`multi_dest: true`）は `{REPO_ROOT}` 宛の部分だけ還元し、他 repo 宛はその repo の consolidator が担当する。`{REPO_ROOT}` と無関係な session・部分は還元せず、他 repo にも書かず、score も書かない — step 5 の `outcomes` 行で `misrouted` として報告する（未 mark なので次 run で再対象になる）。自分で他 repo の checkout を作って書きに行ってはいけない。
 
@@ -51,7 +51,7 @@ skill/AGENTS だけの変更は、原因が判断基準・知識の欠落にあ�
 2. **lint ルール・テストコードへの還元** — 同じ失敗を機械的に防げるなら、人間の記憶に頼る skill 記述よりこちら
 3. **ADR への還元** — 対象 repo/PJ の意思決定・採用理由・却下案・トレードオフ。既存の ADR 配置・規約に従う
 4. **skill・`AGENTS.md` への還元** — プロセス・再利用する手順は既存 skill/reference、repo の制約・構造は `AGENTS.md`。対象 repo に tool/テーマ別の reference を持つ学び skill（dotfiles の `dev-env` 等）や AGENTS.md の棲み分け規約があるなら、そちらを優先して従う — `AGENTS.md` は全 session のコンテキストに載るので、index 1行で済む知見を節として膨らませない
-5. **wiki への還元** — ユーザー自身の転用可能な概念・横断的な理解、個人の目標や PJ の位置づけ。保存先の境界・参照量は wiki skill に従う。repo の意思決定・プロセスを「判断の背景」として転記しない。`{REPO_ROOT}` = `wwwyo/me` の fallback group でも、宛先不明を理由に wiki へ代替保存せず、repo 固有の内容は `misrouted` / 未配置として報告する
+5. **wiki への還元** — ユーザー自身の転用可能な概念・横断的な理解、個人の目標や PJ の位置づけ。保存先の境界・参照量は wwwyo/me の AGENTS.md「メモリ（wiki）」に従う。repo の意思決定・プロセスを「判断の背景」として転記しない。`{REPO_ROOT}` = `wwwyo/me` の fallback group でも、宛先不明を理由に wiki へ代替保存せず、repo 固有の内容は `misrouted` / 未配置として報告する
 
 - **書き先は内容の所有者と役割で決め、session の話題では決めない。** repo の意思決定・プロセスはその repo の ADR / skill へ。wiki に該当する学びだけ domain（`tags` 先頭）を選び、PJ の session だったことだけを理由に PJ hub に置かない。session の文脈は根拠の記録に使うだけで、格納先の根拠にしない
 - 複数 session にまたがる同じ摩擦・失敗は1つの学びに束ねる。session ごとの個別の記述より、パターン（再発した手順ミス・共通の誤解）を優先する
