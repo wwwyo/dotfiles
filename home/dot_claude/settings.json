@@ -122,6 +122,8 @@
       "Bash(mise use *)",
       "Bash(~/.agents/**)",
       "Bash(~/.agents/** *)",
+      "Bash(python3 mcp/cloudflare/apply.py *)",
+      "Bash(mise exec -- python3 mcp/cloudflare/apply.py *)",
       "Skill",
       "WebSearch",
       "WebFetch(domain:api.github.com)",

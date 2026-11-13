@@ -134,26 +134,32 @@ version = "1.4.4"
 backend = "aqua:FiloSottile/mkcert"
 
 [tools."aqua:FiloSottile/mkcert"."platforms.linux-arm64"]
+checksum = "sha256:b98f2cc69fd9147fe4d405d859c57504571adec0d3611c3eefd04107c7ac00d0"
 url = "https://github.com/FiloSottile/mkcert/releases/download/v1.4.4/mkcert-v1.4.4-linux-arm64"
 url_api = "https://api.github.com/repos/FiloSottile/mkcert/releases/assets/63709957"
 
 [tools."aqua:FiloSottile/mkcert"."platforms.linux-arm64-musl"]
+checksum = "sha256:b98f2cc69fd9147fe4d405d859c57504571adec0d3611c3eefd04107c7ac00d0"
 url = "https://github.com/FiloSottile/mkcert/releases/download/v1.4.4/mkcert-v1.4.4-linux-arm64"
 url_api = "https://api.github.com/repos/FiloSottile/mkcert/releases/assets/63709957"
 
 [tools."aqua:FiloSottile/mkcert"."platforms.linux-x64"]
+checksum = "sha256:6d31c65b03972c6dc4a14ab429f2928300518b26503f58723e532d1b0a3bbb52"
 url = "https://github.com/FiloSottile/mkcert/releases/download/v1.4.4/mkcert-v1.4.4-linux-amd64"
 url_api = "https://api.github.com/repos/FiloSottile/mkcert/releases/assets/63709955"
 
 [tools."aqua:FiloSottile/mkcert"."platforms.linux-x64-baseline"]
+checksum = "sha256:6d31c65b03972c6dc4a14ab429f2928300518b26503f58723e532d1b0a3bbb52"
 url = "https://github.com/FiloSottile/mkcert/releases/download/v1.4.4/mkcert-v1.4.4-linux-amd64"
 url_api = "https://api.github.com/repos/FiloSottile/mkcert/releases/assets/63709955"
 
 [tools."aqua:FiloSottile/mkcert"."platforms.linux-x64-musl"]
+checksum = "sha256:6d31c65b03972c6dc4a14ab429f2928300518b26503f58723e532d1b0a3bbb52"
 url = "https://github.com/FiloSottile/mkcert/releases/download/v1.4.4/mkcert-v1.4.4-linux-amd64"
 url_api = "https://api.github.com/repos/FiloSottile/mkcert/releases/assets/63709955"
 
 [tools."aqua:FiloSottile/mkcert"."platforms.linux-x64-musl-baseline"]
+checksum = "sha256:6d31c65b03972c6dc4a14ab429f2928300518b26503f58723e532d1b0a3bbb52"
 url = "https://github.com/FiloSottile/mkcert/releases/download/v1.4.4/mkcert-v1.4.4-linux-amd64"
 url_api = "https://api.github.com/repos/FiloSottile/mkcert/releases/assets/63709955"
 
@@ -163,18 +169,22 @@ url = "https://github.com/FiloSottile/mkcert/releases/download/v1.4.4/mkcert-v1.
 url_api = "https://api.github.com/repos/FiloSottile/mkcert/releases/assets/63709954"
 
 [tools."aqua:FiloSottile/mkcert"."platforms.macos-x64"]
+checksum = "sha256:a32dfab51f1845d51e810db8e47dcf0e6b51ae3422426514bf5a2b8302e97d4e"
 url = "https://github.com/FiloSottile/mkcert/releases/download/v1.4.4/mkcert-v1.4.4-darwin-amd64"
 url_api = "https://api.github.com/repos/FiloSottile/mkcert/releases/assets/63709952"
 
 [tools."aqua:FiloSottile/mkcert"."platforms.macos-x64-baseline"]
+checksum = "sha256:a32dfab51f1845d51e810db8e47dcf0e6b51ae3422426514bf5a2b8302e97d4e"
 url = "https://github.com/FiloSottile/mkcert/releases/download/v1.4.4/mkcert-v1.4.4-darwin-amd64"
 url_api = "https://api.github.com/repos/FiloSottile/mkcert/releases/assets/63709952"
 
 [tools."aqua:FiloSottile/mkcert"."platforms.windows-x64"]
+checksum = "sha256:d2660b50a9ed59eada480750561c96abc2ed4c9a38c6a24d93e30e0977631398"
 url = "https://github.com/FiloSottile/mkcert/releases/download/v1.4.4/mkcert-v1.4.4-windows-amd64.exe"
 url_api = "https://api.github.com/repos/FiloSottile/mkcert/releases/assets/63709958"
 
 [tools."aqua:FiloSottile/mkcert"."platforms.windows-x64-baseline"]
+checksum = "sha256:d2660b50a9ed59eada480750561c96abc2ed4c9a38c6a24d93e30e0977631398"
 url = "https://github.com/FiloSottile/mkcert/releases/download/v1.4.4/mkcert-v1.4.4-windows-amd64.exe"
 url_api = "https://api.github.com/repos/FiloSottile/mkcert/releases/assets/63709958"
 
@@ -1832,65 +1842,6 @@ url = "https://github.com/oven-sh/bun/releases/download/bun-v1.4.4/bun-windows-x
 [[tools."cargo:eza"]]
 version = "0.23.5"
 backend = "cargo:eza"
-
-[[tools.codex]]
-version = "0.144.4"
-backend = "aqua:openai/codex"
-
-[tools.codex."platforms.linux-arm64"]
-checksum = "sha256:46f6c7c9ddc9d5fcdf790543c3526555704e21f760807a5a98e429b2973b72ff"
-url = "https://github.com/openai/codex/releases/download/rust-v0.144.4/codex-aarch64-unknown-linux-musl.zst"
-url_api = "https://api.github.com/repos/openai/codex/releases/assets/476297047"
-
-[tools.codex."platforms.linux-arm64-musl"]
-checksum = "sha256:46f6c7c9ddc9d5fcdf790543c3526555704e21f760807a5a98e429b2973b72ff"
-url = "https://github.com/openai/codex/releases/download/rust-v0.144.4/codex-aarch64-unknown-linux-musl.zst"
-url_api = "https://api.github.com/repos/openai/codex/releases/assets/476297047"
-
-[tools.codex."platforms.linux-x64"]
-checksum = "sha256:39805020f745b858865a0483f77c7ec43be39035469eebc8295b5c8997901d11"
-url = "https://github.com/openai/codex/releases/download/rust-v0.144.4/codex-x86_64-unknown-linux-musl.zst"
-url_api = "https://api.github.com/repos/openai/codex/releases/assets/476296957"
-
-[tools.codex."platforms.linux-x64-baseline"]
-checksum = "sha256:39805020f745b858865a0483f77c7ec43be39035469eebc8295b5c8997901d11"
-url = "https://github.com/openai/codex/releases/download/rust-v0.144.4/codex-x86_64-unknown-linux-musl.zst"
-url_api = "https://api.github.com/repos/openai/codex/releases/assets/476296957"
-
-[tools.codex."platforms.linux-x64-musl"]
-checksum = "sha256:39805020f745b858865a0483f77c7ec43be39035469eebc8295b5c8997901d11"
-url = "https://github.com/openai/codex/releases/download/rust-v0.144.4/codex-x86_64-unknown-linux-musl.zst"
-url_api = "https://api.github.com/repos/openai/codex/releases/assets/476296957"
-
-[tools.codex."platforms.linux-x64-musl-baseline"]
-checksum = "sha256:39805020f745b858865a0483f77c7ec43be39035469eebc8295b5c8997901d11"
-url = "https://github.com/openai/codex/releases/download/rust-v0.144.4/codex-x86_64-unknown-linux-musl.zst"
-url_api = "https://api.github.com/repos/openai/codex/releases/assets/476296957"
-
-[tools.codex."platforms.macos-arm64"]
-checksum = "sha256:312e6fa2826596fb23cc1193c30d51902b6522c36ccc43b36417590e0ebd533d"
-url = "https://github.com/openai/codex/releases/download/rust-v0.144.4/codex-package-aarch64-apple-darwin.tar.gz"
-url_api = "https://api.github.com/repos/openai/codex/releases/assets/476297059"
-
-[tools.codex."platforms.macos-x64"]
-checksum = "sha256:93583fcc4de253826eea190cca1d71c984f9ef4951c6afe1bfa1e0162349d75d"
-url = "https://github.com/openai/codex/releases/download/rust-v0.144.4/codex-x86_64-apple-darwin.zst"
-url_api = "https://api.github.com/repos/openai/codex/releases/assets/476296990"
-
-[tools.codex."platforms.macos-x64-baseline"]
-checksum = "sha256:93583fcc4de253826eea190cca1d71c984f9ef4951c6afe1bfa1e0162349d75d"
-url = "https://github.com/openai/codex/releases/download/rust-v0.144.4/codex-x86_64-apple-darwin.zst"
-url_api = "https://api.github.com/repos/openai/codex/releases/assets/476296990"
-
-[tools.codex."platforms.windows-x64"]
-checksum = "sha256:aaf7dd6e235a231485cddc62bdca4eef5c20994154e74cf1898c7122327efcd0"
-url = "https://github.com/openai/codex/releases/download/rust-v0.144.4/codex-x86_64-pc-windows-msvc.exe.zst"
-url_api = "https://api.github.com/repos/openai/codex/releases/assets/476296981"
-
-[tools.codex."platforms.windows-x64-baseline"]
-checksum = "sha256:aaf7dd6e235a231485cddc62bdca4eef5c20994154e74cf1898c7122327efcd0"
-url = "https://github.com/openai/codex/releases/download/rust-v0.144.4/codex-x86_64-pc-windows-msvc.exe.zst"
-url_api = "https://api.github.com/repos/openai/codex/releases/assets/476296981"
 
 [[tools.deno]]
 version = "2.9.8"
