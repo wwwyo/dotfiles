@@ -1,0 +1,38 @@
+{
+  "id": "wwwyo",
+  "name": "wwwyo MCP",
+  "description": "Default portal for low-risk local MCPs. High-privilege MCPs go to separate portals (ADR 0002).",
+  "hostname": "mcp.wwwyo.dev",
+  "secure_web_gateway": false,
+  "code_mode": "default_on",
+  "servers": [
+    {
+      "server_id": "context7",
+      "on_behalf": false,
+      "default_disabled": false,
+      "tool_overrides": {},
+      "prompt_overrides": {}
+    },
+    {
+      "server_id": "fudoki",
+      "on_behalf": false,
+      "default_disabled": false,
+      "tool_overrides": {},
+      "prompt_overrides": {}
+    },
+    {
+      "server_id": "openscreen",
+      "on_behalf": false,
+      "default_disabled": false,
+      "tool_overrides": {},
+      "prompt_overrides": {}
+    },
+    {
+      "server_id": "queria",
+      "on_behalf": true,
+      "default_disabled": false,
+      "tool_overrides": {},
+      "prompt_overrides": {}
+    }
+  ]
+}

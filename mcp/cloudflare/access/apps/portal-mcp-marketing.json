@@ -1,0 +1,28 @@
+{
+  "id": "d992f14f-1b88-4567-a97d-561d5412c3e7",
+  "name": "マーケティング",
+  "type": "mcp_portal",
+  "domain": "mcp-marketing.wwwyo.dev",
+  "destinations": [
+    {
+      "type": "public",
+      "uri": "mcp-marketing.wwwyo.dev"
+    }
+  ],
+  "allowed_idps": [],
+  "auto_redirect_to_identity": false,
+  "session_duration": "24h",
+  "http_only_cookie_attribute": false,
+  "cors_headers": {
+    "allow_all_headers": true,
+    "allow_all_methods": true,
+    "allow_all_origins": true
+  },
+  "policies": [
+    {
+      "id": "775a4efd-54e4-4914-b3f4-1dc02c5ac027",
+      "name": "Cloudflare account members",
+      "reusable": true
+    }
+  ]
+}

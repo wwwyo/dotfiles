@@ -1,0 +1,13 @@
+{
+  "_comment": "credential は Cloudflare に保管。context7 は Authorization: Bearer で key を受ける。差し替えは apply.py --apply --rotate-credentials context7（global mise の CONTEXT7_API_KEY を送る）",
+  "id": "context7",
+  "name": "Context7",
+  "description": "Context7 docs lookup (public remote MCP, API key held by Cloudflare)",
+  "hostname": "https://mcp.context7.com/mcp",
+  "auth_type": "bearer",
+  "secure_web_gateway": false,
+  "is_shared_oauth_callback_enabled": false,
+  "tool_overrides": {},
+  "prompt_overrides": {},
+  "credential_env": "CONTEXT7_API_KEY"
+}

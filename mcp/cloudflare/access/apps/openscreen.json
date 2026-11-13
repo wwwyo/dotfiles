@@ -1,0 +1,34 @@
+{
+  "id": "7dc86a8d-86a4-45b7-b439-b9a4de2e501f",
+  "name": "OpenScreen MCP server",
+  "type": "mcp",
+  "destinations": [
+    {
+      "type": "via_mcp_server_portal",
+      "mcp_server_id": "openscreen"
+    }
+  ],
+  "allowed_idps": [
+    "6c457ad3-14f1-4b4e-afe7-06e510b164ce"
+  ],
+  "auto_redirect_to_identity": false,
+  "session_duration": "1h",
+  "http_only_cookie_attribute": true,
+  "policies": [
+    {
+      "id": "0cb1111a-4790-4593-9a2f-d9167fdef7fc",
+      "name": "Only project owner",
+      "reusable": false,
+      "decision": "allow",
+      "include": [
+        {
+          "email": {
+            "email": "<owner_email>"
+          }
+        }
+      ],
+      "exclude": [],
+      "require": []
+    }
+  ]
+}

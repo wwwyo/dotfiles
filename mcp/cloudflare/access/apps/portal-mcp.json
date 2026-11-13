@@ -1,0 +1,52 @@
+{
+  "id": "75ca7ef8-fbe4-41fd-8f46-2bf415d40e80",
+  "name": "wwwyo MCP Portal",
+  "type": "mcp_portal",
+  "domain": "mcp.wwwyo.dev",
+  "destinations": [
+    {
+      "type": "public",
+      "uri": "mcp.wwwyo.dev"
+    }
+  ],
+  "allowed_idps": [
+    "6c457ad3-14f1-4b4e-afe7-06e510b164ce"
+  ],
+  "auto_redirect_to_identity": true,
+  "session_duration": "1h",
+  "http_only_cookie_attribute": true,
+  "oauth_configuration": {
+    "enabled": true,
+    "grant": {
+      "session_duration": "720h",
+      "access_token_lifetime": "15m"
+    },
+    "dynamic_client_registration": {
+      "enabled": true,
+      "allowed_uris": [
+        "https://chatgpt.com/connector/oauth/*",
+        "https://chatgpt.com/connector_platform_oauth_redirect",
+        "https://claude.ai/api/mcp/auth_callback"
+      ],
+      "allow_any_on_localhost": true,
+      "allow_any_on_loopback": true
+    }
+  },
+  "policies": [
+    {
+      "id": "9f4d1d01-9cd0-4d21-b11e-dfda17e60215",
+      "name": "Only project owner",
+      "reusable": false,
+      "decision": "allow",
+      "include": [
+        {
+          "email": {
+            "email": "<owner_email>"
+          }
+        }
+      ],
+      "exclude": [],
+      "require": []
+    }
+  ]
+}

@@ -1,0 +1,22 @@
+{
+  "id": "a3a24a7a-cae7-42d9-ba35-e5d57c4c56c8",
+  "name": "my gmail",
+  "type": "mcp",
+  "destinations": [
+    {
+      "type": "via_mcp_server_portal",
+      "mcp_server_id": "my-gmail"
+    }
+  ],
+  "allowed_idps": [],
+  "auto_redirect_to_identity": false,
+  "session_duration": "24h",
+  "http_only_cookie_attribute": true,
+  "policies": [
+    {
+      "id": "775a4efd-54e4-4914-b3f4-1dc02c5ac027",
+      "name": "Cloudflare account members",
+      "reusable": true
+    }
+  ]
+}
