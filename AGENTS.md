@@ -109,6 +109,10 @@ Edge が `.svg` を奪っていくので、宣言して奪い返す運用にし�
 
 初回セットアップ時、`defaults write` は成功したがアプリのホットキーは既定値のままだった。sandbox container 作成後は macOS のアクセス制限で書き込みも拒否された。コマンドの終了コードや `defaults read` だけではアプリ側の反映を保証できないため、`install.sh` から自動設定を削除した。plist の symlink も、`cfprefsd` の書き込み時に置き換わるため使わない。公式に確認できる import 経路は UI 操作なので、自動化したと扱わない。設定を変更したらアプリから再 export して JSON を更新する。
 
+## Composio の session 設定（`mcp/composio/`）
+
+MCP portal に載せる Composio tool router session の toolkit・許可 tool は `mcp/composio/sessions/<name>.json` が正本（`marketing` = mcp-marketing の server `composio`）。Composio 側の設定は API でしか見えないので、JSON を編集して `mise exec -- python3 mcp/composio/apply.py <name> --apply` で反映する。`--apply` 無しは差分の表示だけ（drift 確認）。新しい toolkit は、先に Composio Platform で auth config と接続を作ってから JSON に足す。portal 側の構成・方針は [dev-env の mcp-portal](https://github.com/wwwyo/skills/blob/main/.agents/skills/dev-env/references/mcp-portal.md)。
+
 ## Pullfrog の個別設定
 
 この repo の Pullfrog 設定は [`.github/pullfrog.config.sh`](.github/pullfrog.config.sh) が正本。public repo では初回レビューと追加コミットの再レビューを自動で行い、手動でも `@pullfrog` で依頼できる。CLI のバージョンはグローバルの mise 設定（[`home/dot_config/mise/config.toml`](home/dot_config/mise/config.toml)）で管理し、設定変更は script を編集して実行する。
