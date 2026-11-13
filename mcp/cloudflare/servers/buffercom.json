@@ -1,12 +1,13 @@
 {
-  "_comment": "credential（Buffer の API key、bearer）は Cloudflare にだけ保管し mise に無い。apply は credential を送らない（既存を保持）。hostname 先頭の空白は登録時のまま（update で直せないので、直すなら作り直す）",
+  "_comment": "credential は Buffer の API key（bearer）。mise の BUFFER_API_KEY（age）にあり、apply は --rotate-credentials / --recreate のときだけ送る",
   "id": "buffercom",
   "name": "buffer.com",
   "description": null,
-  "hostname": " https://mcp.buffer.com/mcp",
+  "hostname": "https://mcp.buffer.com/mcp",
   "auth_type": "bearer",
   "secure_web_gateway": false,
   "is_shared_oauth_callback_enabled": false,
   "tool_overrides": {},
-  "prompt_overrides": {}
+  "prompt_overrides": {},
+  "credential_env": "BUFFER_API_KEY"
 }
