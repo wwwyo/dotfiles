@@ -69,20 +69,22 @@ def current_state(session):
         "workbench": pick(pick(cfg, "workbench") or {}, "enabled", "enable"),
         "manage_connections": pick(pick(cfg, "manage_connections") or {}, "enabled", "enable"),
     }
-    return {"toolkits": sorted(toolkits), "tools": tools, "flags": flags}
+    auth_configs = pick(cfg, "auth_configs") or {}
+    return {"toolkits": sorted(toolkits), "tools": tools, "auth_configs": dict(sorted(auth_configs.items())), "flags": flags}
 
 
 def desired_state(spec):
     return {
         "toolkits": sorted(spec["toolkits"]),
         "tools": {k: sorted(v["tools"]) for k, v in spec["toolkits"].items()},
+        "auth_configs": dict(sorted((k, v["auth_config"]) for k, v in spec["toolkits"].items() if v.get("auth_config"))),
         "flags": {"search": False, "multi_execute": False, "workbench": False, "manage_connections": False},
     }
 
 
 def diff(cur, want):
     lines = []
-    for key in ("toolkits", "tools", "flags"):
+    for key in ("toolkits", "tools", "auth_configs", "flags"):
         if cur[key] != want[key]:
             lines.append(f"{key}:\n  current: {json.dumps(cur[key], ensure_ascii=False)}\n  desired: {json.dumps(want[key], ensure_ascii=False)}")
     return lines
