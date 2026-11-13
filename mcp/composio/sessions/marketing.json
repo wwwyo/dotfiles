@@ -1,5 +1,5 @@
 {
-  "_comment": "mcp-marketing portal の server `composio` が指す Composio tool router session。toolkit・tool を足すときはこのファイルを編集して apply する",
+  "_comment": "mcp-marketing portal の server `composio` が指す Composio tool router session。toolkit・tool を足すときはこのファイルを編集して apply する。user_id は session 作成時だけに使う値で、apply.py は読まない（作り直すときの記録）",
   "session_id": "trs_PTWLaWIukG00",
   "user_id": "wwwyo",
   "toolkits": {
