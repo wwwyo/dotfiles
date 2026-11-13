@@ -41,9 +41,6 @@
         "fork_report": {
           "enabled": false
         },
-        "submit_feedback": {
-          "enabled": false
-        },
         "update_report": {
           "enabled": false
         }
