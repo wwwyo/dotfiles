@@ -113,6 +113,17 @@ Edge が `.svg` を奪っていくので、宣言して奪い返す運用にし�
 
 MCP portal に載せる Composio tool router session の toolkit・許可 tool は `mcp/composio/sessions/<name>.json` が正本（`marketing` = mcp-marketing の server `composio`）。Composio 側の設定は API でしか見えないので、JSON を編集して `mise exec -- python3 mcp/composio/apply.py <name> --apply` で反映する。`--apply` 無しは差分の表示だけ（drift 確認）。新しい toolkit は、先に Composio Platform で auth config と接続を作ってから JSON に足す。portal 側の構成・方針は [dev-env の mcp-portal](https://github.com/wwwyo/skills/blob/main/.agents/skills/dev-env/references/mcp-portal.md)。
 
+## Cloudflare MCP portal の設定（`mcp/cloudflare/`）
+
+MCP Server Portal（`wwwyo` = `mcp.wwwyo.dev`、`marketing` = `mcp-marketing.wwwyo.dev`）と、そこに載せる MCP server、それらの Access app・Access app が使う reusable policy の正本は `mcp/cloudflare/` の JSON（`portals/<id>.json`・`servers/<id>.json`・`access/apps/<server ID か portal-<hostname 先頭>>.json`・`access/policies/<name>.json`）。`python3 mcp/cloudflare/apply.py` が `cf`（sandbox 外）で現状を取り、宣言との差分を表示する（差分ありで exit 1）。`--apply` で差分のある resource を更新し、再取得して一致を確認する。Cloudflare 側をダッシュボードで変えたら `--import` で宣言へ取り込み、diff を読んでから commit する。
+
+- **portal の update は省いた項目を既定値に戻す**ので、apply は宣言の全項目（name・description・hostname・secure_web_gateway・code_mode・servers）を毎回送る
+- **credential は宣言に書かない。** server の update は `auth_credentials` を省くと既存を保持するので、apply は通常送らない。mise に key がある server だけ `credential_env` に環境変数名を書き、`mise exec -- python3 mcp/cloudflare/apply.py --apply --rotate-credentials <id>` のときだけ送る。mise に無い key（OpenScreen・Buffer・portal 用の Composio key）は Cloudflare にだけある
+- **apply で変えないもの（比較だけ）**: server の `hostname`・`auth_type`・manual OAuth の client 設定（update API に無い。変えるときは server を作り直す）、Access policy の条件（include/exclude/require。ダッシュボードか `cf zero-trust access …` で直す）、server・portal・Access app の新規作成と削除。宣言中の `<owner_email>`・`<account_id>` は `cf auth whoami` の値に置き換えて比較する（public repo にメールを書かない）
+- **OAuth upstream の「サーバーの認証」は自動化できない。** `auth_type: oauth` の server を作る・作り直すと、ダッシュボードの server 画面で「サーバーの認証」を押すまで同期しない（`cf`・API に相当操作が無い）
+- server の同期状態（`status`・`error`）は宣言の比較対象外で、apply.py は冒頭に表示するだけ
+- Tunnel・Gateway network policy・DNS はまだ宣言に入れていない。構成と追加手順は [dev-env の mcp-portal](https://github.com/wwwyo/skills/blob/main/.agents/skills/dev-env/references/mcp-portal.md)
+
 ## Pullfrog の個別設定
 
 この repo の Pullfrog 設定は [`.github/pullfrog.config.sh`](.github/pullfrog.config.sh) が正本。public repo では初回レビューと追加コミットの再レビューを自動で行い、手動でも `@pullfrog` で依頼できる。CLI のバージョンはグローバルの mise 設定（[`home/dot_config/mise/config.toml`](home/dot_config/mise/config.toml)）で管理し、設定変更は script を編集して実行する。

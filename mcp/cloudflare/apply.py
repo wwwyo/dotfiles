@@ -211,8 +211,8 @@ def diff_fields(cur, want):
     return [k for k in keys if cur.get(k) != want.get(k)]
 
 
-def show(kind, rid, cur, want, fields):
-    lines = [f"{kind}/{rid}:"]
+def show(label, cur, want, fields):
+    lines = [f"{label}:"]
     for k in fields:
         lines.append(f"  {k}:\n    current: {json.dumps(cur.get(k), ensure_ascii=False)}\n    desired: {json.dumps(want.get(k), ensure_ascii=False)}")
     return "\n".join(lines)
@@ -226,10 +226,11 @@ def compute(state, declared, table):
     out, actionable, manual = [], [], []
     for kind, (_, norm, _) in KINDS.items():
         cur_all = {rid: norm(obj) for rid, obj in state[kind].items()}
-        for rid, (_, want, _) in declared[kind].items():
+        for rid, (path, want, _) in declared[kind].items():
             want_s = substitute(want, table)
+            label = f"{kind}/{path.stem}"
             if rid not in cur_all:
-                out.append(f"{kind}/{rid}: Cloudflare に無い（作成は手動。手順は dev-env の mcp-portal を参照）")
+                out.append(f"{label}: Cloudflare に無い（作成は手動。手順は dev-env の mcp-portal を参照）")
                 if kind == "servers" and want.get("auth_type") == "oauth":
                     out.append(f"  {OAUTH_NOTE}")
                 manual.append((kind, rid, None))
@@ -238,7 +239,7 @@ def compute(state, declared, table):
             fields = diff_fields(cur, want_s)
             if not fields:
                 continue
-            out.append(show(kind, rid, mask(cur, table), want, fields))
+            out.append(show(label, mask(cur, table), want, fields))
             fixed = set()
             if kind == "servers":
                 fixed = SERVER_FIXED & set(fields)
@@ -252,7 +253,7 @@ def compute(state, declared, table):
             if set(fields) - fixed:
                 actionable.append((kind, rid))
         for rid in sorted(set(cur_all) - set(declared[kind])):
-            out.append(f"{kind}/{rid}: 宣言に無い（`--import` で取り込むか、不要なら手動で消す）")
+            out.append(f"{kind}/{slug(KINDS[kind][2](cur_all[rid]))}（{rid}）: 宣言に無い（`--import` で取り込むか、不要なら手動で消す）")
             manual.append((kind, rid, None))
     return out, actionable, manual
 
@@ -329,7 +330,7 @@ def apply(state, declared, actionable, rotate):
             update_portal(want)
         elif kind == "apps":
             update_app(state["apps"][rid], want)
-        print(f"{kind}/{rid}: 更新した")
+        print(f"{kind}/{declared[kind][rid][0].stem}: 更新した")
     for rid in rotate:
         if ("servers", rid) not in actionable:
             _, want, extra = declared["servers"][rid]
