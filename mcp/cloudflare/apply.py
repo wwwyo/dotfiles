@@ -365,7 +365,7 @@ def recreate_server(state, declared, rid):
             update_portal(portal | {"servers": [s for s in portal["servers"] if s["server_id"] != rid]})
             print(f"portals/{portal['id']}: {rid} を一時的に外した")
     if rid in state["servers"]:
-        cf("mcp", "servers", "delete", rid)
+        cf("mcp", "servers", "delete", rid, "--force")
         print(f"servers/{rid}: 削除した")
     cf("mcp", "servers", "create", body={
         "id": rid,
