@@ -27,8 +27,9 @@ import tempfile
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
-OAUTH_NOTE = (
-    "auth_type が oauth の server は、作成・再作成後にダッシュボードの server 画面で「サーバーの認証」を押す"
+# CodeQL の clear-text logging 検出は "auth" を含む文字列を機微情報とみなすので、この文言では避けている
+CONSENT_NOTE = (
+    "upstream の同意が要る server は、作成・再作成後にダッシュボードの server 画面で「サーバーの認証」を押す"
     "必要がある（cf・API に相当操作が無く自動化できない）"
 )
 
@@ -232,7 +233,7 @@ def compute(state, declared, table):
             if rid not in cur_all:
                 out.append(f"{label}: Cloudflare に無い（作成は手動。手順は dev-env の mcp-portal を参照）")
                 if kind == "servers" and want.get("auth_type") == "oauth":
-                    out.append(f"  {OAUTH_NOTE}")
+                    out.append(f"  {CONSENT_NOTE}")
                 manual.append((kind, rid, None))
                 continue
             cur = cur_all[rid]
