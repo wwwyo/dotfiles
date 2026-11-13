@@ -31,14 +31,14 @@ PF=(mise exec -- pullfrog)
 model_for() {
   case "$1" in
     wwwyo)             echo 'anthropic/claude-sonnet-5-5' ;;  # since 2026-11-05 (was claude-opus-5-5; API spend too fast)
-    fudoki-hensansitu) echo 'opencode-go/deepseek-v4.1-flash' ;;  # since 2026-11-11 (was opencode/deepseek-v4.1-flash-free; Go plan, no free-tier expiry)
+    fudoki-hensansitu) echo 'opencode/deepseek-v4.1-flash-free' ;;  # since 2026-11-13 (was opencode-go/deepseek-v4.1-flash; back to Zen free per user)
     *) echo "no model for owner: $1" >&2; return 1 ;;
   esac
 }
 # Effort is a position on [0,1] over the model's offered rungs; `config set`
 # accepts only numbers. For Claude: 0=low 0.25=medium 0.5=high 0.75=xhigh 1=max.
 # wwwyo pays per token on the Anthropic API, so it runs at medium; fudoki runs
-# on the flat-rate opencode Go plan and keeps max.
+# on an opencode Zen *-free model (no per-token cost) and keeps max.
 effort_for() {
   case "$1" in
     wwwyo)             echo '0.25' ;;  # medium since 2026-11-05 (was 1 = max; API spend too fast)
