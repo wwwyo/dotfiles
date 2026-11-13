@@ -111,7 +111,7 @@ Edge が `.svg` を奪っていくので、宣言して奪い返す運用にし�
 
 ## Composio の session 設定（`mcp/composio/`）
 
-MCP portal に載せる Composio tool router session の toolkit・許可 tool は `mcp/composio/sessions/<name>.json` が正本（`marketing` = mcp-marketing の server `composio`）。Composio 側の設定は API でしか見えないので、JSON を編集して `mise exec -- python3 mcp/composio/apply.py <name> --apply` で反映する。`--apply` 無しは差分の表示だけ（drift 確認）。新しい toolkit は、先に Composio Platform で auth config と接続を作ってから JSON に足す。portal 側の構成・方針は [dev-env の mcp-portal](https://github.com/wwwyo/skills/blob/main/.agents/skills/dev-env/references/mcp-portal.md)。
+MCP portal に載せる Composio tool router session の toolkit・許可 tool は `mcp/composio/sessions/<name>.json` が正本（`marketing` = mcp-marketing の server `composio`）。Composio 側の設定は API でしか見えないので、JSON を編集して `mise exec -- python3 mcp/composio/apply.py <name> --apply` で反映する。`--apply` 無しは差分の表示だけ（drift 確認）。新しい toolkit は、先に auth config と接続を作ってから JSON に足す。auth config の作成と接続リンクの発行も、ダッシュボードではなく手元で mise の `COMPOSIO_API_KEY` を使って API で行う（cloud session からは Remote Control で Mac に入って実行する）。人の手作業は、相手サービスでの key 発行・OAuth 同意と、発行したリンクを開くことだけ。portal 側の構成・方針は [dev-env の mcp-portal](https://github.com/wwwyo/skills/blob/main/.agents/skills/dev-env/references/mcp-portal.md)。
 
 ## Cloudflare MCP portal の設定（`mcp/cloudflare/`）
 
