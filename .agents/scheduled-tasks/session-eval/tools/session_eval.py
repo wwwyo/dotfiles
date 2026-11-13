@@ -138,14 +138,14 @@ def ensure_env():
         fail("langfuse credentials missing and mise not found")
     try:
         # cwd=home で repo-local な mise.toml の LANGFUSE_* shadow を避ける
-        # (wiki_route._get_typesafe_key と同じ経路)
+        # (wwwyo/me の tools/wiki_route.py の _get_typesafe_key と同じ経路)
         r = subprocess.run([mise, "env", "--json"], cwd=str(Path.home()),
                            capture_output=True, text=True, timeout=30)
     except Exception as e:
         fail(f"mise env failed: {e}")
     if r.returncode != 0:
         fail(f"mise env failed: {r.stderr.strip()[:300]}")
-    # wiki_route.py と同じく --json 経路。export 行の regex パースは
+    # wwwyo/me の tools/wiki_route.py と同じく --json 経路。export 行の regex パースは
     # shell escape・複数行値で壊れる
     for k, v in (json.loads(r.stdout or "{}")).items():
         # setdefault ではなく truthiness — 空文字で export 済みの
