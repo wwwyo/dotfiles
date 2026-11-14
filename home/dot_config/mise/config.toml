@@ -7,7 +7,7 @@
 "aqua:go-task/task" = "3.54.0"
 "aqua:junegunn/fzf" = "0.74.5"
 "aqua:sharkdp/bat" = "0.26.1"
-"aqua:supabase/cli" = "2.122.0"
+"aqua:supabase/cli" = "3.0.0"
 "aqua:x-motemen/ghq" = "1.11.2"
 "aqua:tmux/tmux-builds" = "3.6a"
 "cargo:eza" = "0.23.5"
