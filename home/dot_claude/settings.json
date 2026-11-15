@@ -437,6 +437,8 @@
   "enabledPlugins": {
     "core@synced": true,
     "core@wwwyo": false,
+    "design@synced": true,
+    "design@wwwyo": false,
     "local@wwwyo": true,
     "langfuse-observability@langfuse-observability": false,
     "gopls-lsp@claude-plugins-official": false,
