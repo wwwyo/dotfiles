@@ -54,6 +54,8 @@ worktree を消すと未 commit の変更は失われる。30日ルールはそ�
 
 **workspace 置き場の残骸**（`~/orca/workspaces/`・`~/.codex/worktrees/`）: ここは repo を消しても dir だけが残る。`orca worktree list` に出ないものは Orca の管理から切り離されているので live terminal の判定は無く、次の順で見る。どの削除も**退避 → 削除**の順で行い、退避に失敗したら消さない。
 
+ただし `~/orca/workspaces/.orca-preparing/` は除く — Orca が worktree 作成の途中経過を `<pid>-<uuid>/` で置く作業 dir で、空でも「空 dir の残骸」として消さず、中身も読まない。削除すると作成中の worktree が壊れる。残っていても Orca の後始末に任せる（cleanup の対象外）。
+
 - 退避先は `~/.local/state/cleanup/wip/`。先に `mkdir -p ~/.local/state/cleanup/wip` を実行する。file 名は `<name>-<worktree id か path の hash>-<date>` で一意にし、既に同名 file があれば上書きせず `-2`, `-3` … を付ける（前回の退避を潰さない）
 - 空 dir: `.DS_Store` だけのものは `rm -f <dir>/.DS_Store` を先に実行してから `rmdir <dir>`（`rmdir` は中身があると失敗するので、予期しない中身が残っている場合の歯止めとして使う）。repo の置き場として空 dir を残す意味は無い（Orca は必要になれば作り直す）
 - 親 repo が生きている → 通常の worktree と同じ判定（dirty かつ30日以内に触られていれば残す）。Orca 未登録なので `orca worktree rm` は使えず、`git -C <親 repo> worktree remove --force <path>` で消す。消す前に: (a) `git -C <path> log --oneline @{u}..` 等で未 push の commit を確認し、あれば**消さずに** branch 名と commit を報告、(b) 未 commit は `git -C <path> diff HEAD`（staged + unstaged）と `git -C <path> ls-files --others --exclude-standard` の file を tar で退避 → 空でなければ両方を wip に保存

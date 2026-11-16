@@ -19,7 +19,9 @@ Langfuse に流れている agent session の trace を読み、未評価 sessio
 SE=~/.agents/scheduled-tasks/session-eval/tools/session_eval.py
 ```
 
-1. `python3 "$SE" lock acquire` — `acquired: false` なら別 run が稼働中。そのまま報告して終了する（強制解除しない。stale lock は TTL=4h で自然回復する）
+1. `python3 "$SE" lock acquire` — `acquired: false` なら別 run が稼働中。そのまま報告して終了する（強制解除しない。stale lock は TTL=4h で自然回復する）。lock を取ったら、評価対象より先に automation の失敗と設定 drift を拾う — 対象 0 件で早期終了する run でも毎日 surface させるため、`targets` より前に必ず実行する
+   - `python3 ~/.agents/scheduled-tasks/tools/check_failed_runs.py --days 7` — 直近 7 日の pi session を読み、turn の最後が `error`/`aborted` で終わった run を原因文（provider の 402・429 等）付きで集計する。無人 run の失敗は repo に痕跡を残さない（`daily/<date>/` や commit が無いだけ）ので、残高切れ・上限で「何もせず終わった」run を Langfuse の評価を待たずに拾う唯一の経路。対象は pi のみ（claude/codex は Langfuse 側で拾う）
+   - `python3 ~/.agents/scheduled-tasks/tools/sync_automations.py check` — `automation.toml`（desired state）と live の drift。live 側の precheck・prompt だけが古いままだと run が無言で skip され続ける（2026-11 に pr-auto-merge が live precheck の旧 `~/.agents/skills` path で gate を落とし続けた実例がある）。`apply` はこの batch では実行しない（desired state の変更は merge 後の sync で反映する運用）
 2. 窓の起点を決めて `targets` を呼び、`targets[]`（session_id / reason / repo_root / sources 入り）を得る。0 件なら step 4 の `next_since` 更新と lock release をして「対象なし」で終了
    - `~/.local/state/session-eval/next_since` があれば `python3 "$SE" targets --since "$(cat ~/.local/state/session-eval/next_since)"`（`--since` は `--lookback-hours` より優先）。前回 run の完走時に step 4 が書く
    - 無ければ `python3 "$SE" targets --lookback-hours 48`。固定窓は初回・marker 消失時のフォールバック専用。`MAX_PAGES=80`（≈8 万 obs）は tool 既定の 168h 窓を 1 回で取り切れる値 — 2026-10 実測で 3d ≈ 2.3 万 obs / 23 ページ、7d ≈ 5 万 obs（旧 20 では 2 万 obs で `targets` 自体が fail していた）。バーストは日単位で偏る（同実測で 1 日 1.4 万 obs の山）ので、48h 窓でも将来は超えうる
@@ -34,7 +36,7 @@ SE=~/.agents/scheduled-tasks/session-eval/tools/session_eval.py
    `python3 -c 'from datetime import datetime, timedelta, timezone; print((datetime.now(timezone.utc) - timedelta(hours=24)).strftime("%Y-%m-%dT%H:%M:%SZ"))' > ~/.local/state/session-eval/next_since`
    - `next_since` = 次回 run が `--since` に渡す値。24h 引くのは、turn の startTime が user message 時刻へ backdate されるので、前回 run の fetch 後に完了した長い turn が窓から漏れないようマージンを取るため
    - 途中で止まった run は書かない — 次回が同じ起点から再スキャンして未評価分を拾う。session 単位の error があっても完走したら更新する（error は step 5 で報告済み＝検知可能。retry したい場合は手動で `--since` を戻す）。書き忘れは窓が広がる側にしか効かないので安全方向
-5. 報告 — 窓の起点（targets 出力の `window.from`）と evaluated / self-skip / session-not-found / unsafe-sid / error の件数（`unsafe-sid` は targets 出力の `skipped.unsafe_sid`＝session 単位の件数、`skipped.unsafe_sids` が落ちた sid 一覧。shell 非対応の文字種の session_id を弾いたもので、0 以外なら恒久的に評価対象外になるので sid を明記する）。失敗があれば session_id と理由 1 行
+5. 報告 — 冒頭に `check_failed_runs` の集計（0 件でも `failed runs: none`）と `sync_automations.py check` の drift 行（無ければ `automation drift: none`）を置き、続けて窓の起点（targets 出力の `window.from`）と evaluated / self-skip / session-not-found / unsafe-sid / error の件数（`unsafe-sid` は targets 出力の `skipped.unsafe_sid`＝session 単位の件数、`skipped.unsafe_sids` が落ちた sid 一覧。shell 非対応の文字種の session_id を弾いたもので、0 以外なら恒久的に評価対象外になるので sid を明記する）。失敗があれば session_id と理由 1 行
    - `session-not-found` は comment POST が `404 … not found` を返した件数（evaluator の最終出力 `skipped; session_not_found`）。error には数えない — Langfuse に SESSION 行が無い session（turn obs を持たず generation だけのもの）で、記録は `~/.local/state/session-eval/skipped/<sid>-<ts>.md` に退避され `evaluated_until` は書かれている
    - 書き戻しの検証は `GET /api/public/v3/scores?sessionId=<sid>` と `GET /api/public/comments?objectType=SESSION&objectId=<sid>`（`/api/public/scores` と `/api/public/v2/scores` は 410 Gone）。child の最終出力が `evaluated; comment=<id>` 形式から崩れたときに、comment と `evaluated_until` の両方が入っているかをこれで確かめる
 
