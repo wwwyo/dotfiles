@@ -439,6 +439,8 @@
     "core@wwwyo": false,
     "design@synced": true,
     "design@wwwyo": false,
+    "3d@synced": true,
+    "3d@wwwyo": false,
     "local@wwwyo": true,
     "langfuse-observability@langfuse-observability": false,
     "gopls-lsp@claude-plugins-official": false,
