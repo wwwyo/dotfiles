@@ -89,7 +89,7 @@ age 復号鍵は password manager（Bitwarden の secure note）に退避済み�
 
 ### dotfiles 管理外で手動対応するもの
 
-- `~/.claude.json` の MCP server（context7 等）は Claude が自分で書き換えるファイルなので dotfiles では管理しない。`claude mcp add` で再登録する
+- Claude Code の MCP は wwwyo/skills の plugin が宣言する（MCP portal の `mcphub` は core、Blender は local）。plugin を有効にしたら `/mcp` で `mcphub` に OAuth ログインする。`~/.claude.json` は Claude が自分で書き換えるファイルなので dotfiles では管理せず、`claude mcp add` で MCP を足さない
 - `~/.ssh/config.local` はマシン固有の Host（AWS SSM の ProxyCommand 等）を置く git 管理外のファイル。無くても `Include` は警告のみで動く
 - `~/.npmrc` は dotfiles 管理しない。`npm login` が token をこのファイルに書き込むため、symlink 化すると平文 token が repo の diff に混ざる。npmjs の認証は必要なときに `npm login` する運用。
 - 定期実行の automation は Orca で管理している。移行時は Orca 側で作り直す。`.config/devin/automations/` は使っていない
