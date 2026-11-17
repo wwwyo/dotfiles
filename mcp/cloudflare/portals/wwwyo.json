@@ -39,6 +39,13 @@
         }
       },
       "prompt_overrides": {}
+    },
+    {
+      "server_id": "trustmrr",
+      "on_behalf": false,
+      "default_disabled": false,
+      "tool_overrides": {},
+      "prompt_overrides": {}
     }
   ]
 }
