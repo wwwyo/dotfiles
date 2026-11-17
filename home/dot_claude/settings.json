@@ -196,7 +196,8 @@
       "WebFetch(domain:www.figma.com)",
       "WebFetch(domain:diffs.com)",
       "mcp__Claude_Preview__preview_start",
-      "mcp__plugin_core_mcphub__*"
+      "mcp__plugin_core_mcphub__*",
+      "mcp__plugin_local_openscreen__*"
     ],
     "deny": [
       "Read(.env.local)",
