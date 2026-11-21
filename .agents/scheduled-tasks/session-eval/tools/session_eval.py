@@ -9,6 +9,7 @@
 
   targets      未評価 session を列挙する (親 agent が対象を決める唯一の経路)
   transcript   1 session の judge 用 transcript を組み立てる
+               (前回の evaluated_until 以前に完了した turn に [evaluated] を付ける)
   score        session に score を書き戻す (POST /api/public/scores)
   comment      session に comment を書き戻す (POST /api/public/comments)
   lock         mkdir lock で batch を single-writer にする
@@ -642,6 +643,50 @@ def telemetry_summary(metadata):
     return value
 
 
+def latest_watermark(sid):
+    """session に付いている最新の evaluated_until の値 (epoch) を返す。
+
+    `reuse_session = true` の automation は 1 session に毎回の run を積む
+    ので、再評価の transcript には評価済みの過去 run の turn も並ぶ。
+    evaluator が「どこからが新しい turn か」を判断できる材料として返す。
+    取得に失敗しても transcript は落とさない (fail-open で None) — 無ければ
+    従来どおり session 全体を評価すればよく、評価 batch を止める理由が無い。
+    """
+    best = None
+    try:
+        for sc in paged("/api/public/v3/scores",
+                        {"fields": "subject", "sessionId": sid,
+                         "name": SCORE_WATERMARK,
+                         "limit": SCORES_PAGE_LIMIT}):
+            subj = sc.get("subject") or {}
+            if subj.get("kind") != "session" or subj.get("id") != sid:
+                continue
+            try:
+                v = float(sc.get("value"))
+            except (TypeError, ValueError):
+                continue
+            best = v if best is None else max(best, v)
+    except ApiError:
+        return None
+    return best
+
+
+def is_evaluated_turn(obs, prev_wm):
+    """obs が前回の evaluated_until に覆われているか。
+
+    watermark と同じ `(endTime or startTime)` 基準で比べる — turn の終端で
+    覆われるので start 基準にすると評価済みの turn を新規と誤判定する。
+    prev_wm 無し (初回評価)・timestamp 欠落は新規側に倒す。
+    """
+    if prev_wm is None:
+        return False
+    ts = obs.get("endTime") or obs.get("startTime") or ""
+    try:
+        return _ts(ts).timestamp() <= prev_wm
+    except (AttributeError, TypeError, ValueError):
+        return False
+
+
 def _cmd_transcript(a):
     sid = a.session_id
     # watermark は「この評価が覆った観測の上限」= 観測済み obs の max
@@ -653,19 +698,22 @@ def _cmd_transcript(a):
     fetched_at = int(time.time())
     # server 側の sessionId フィルタを信用しつつ、混在応答への防御として
     # 返却行の sessionId も照合する (upstream にフィルタ無視の不具合報告あり)。
-    # all_obs (io なし) と turns (io あり・root のみ) は独立なので並列に取る —
-    # 1 fetch にまとめると tool io まで取れるが、io は injection 面を広げるため
-    # root span に限定する設計を維持する
+    # all_obs (io なし)・turns (io あり・root のみ)・前回 watermark は独立なので
+    # 並列に取る — 1 fetch にまとめると tool io まで取れるが、io は injection 面を
+    # 広げるため root span に限定する設計を維持する
     def _fetch(q):
         return [o for o in paged("/api/public/v2/observations", q)
                 if o.get("sessionId") == sid]
-    with ThreadPoolExecutor(max_workers=2) as ex:
-        all_obs, turns = ex.map(_fetch, [
-            {"sessionId": sid, "fields": "basic,metadata",
-             "expandMetadata": EXPAND_METADATA},
-            {"sessionId": sid, "fields": "basic,metadata,io",
-             "expandMetadata": EXPAND_METADATA,
-             "filter": ROOT_FILTER}])
+    with ThreadPoolExecutor(max_workers=3) as ex:
+        all_obs, turns, prev_wm = ex.map(
+            lambda f: f(), [
+                lambda: _fetch({"sessionId": sid, "fields": "basic,metadata",
+                                "expandMetadata": EXPAND_METADATA}),
+                lambda: _fetch({"sessionId": sid,
+                                "fields": "basic,metadata,io",
+                                "expandMetadata": EXPAND_METADATA,
+                                "filter": ROOT_FILTER}),
+                lambda: latest_watermark(sid)])
     if not all_obs:
         fail(f"no observations for session {sid}")
     # root span に sessionId が無い実装や server 側 filter 無効化で turns が
@@ -739,9 +787,13 @@ def _cmd_transcript(a):
     items.sort(key=lambda x: x[0])
     lines = []
     for _, kind, o in items:
+        # 前回の評価が覆った obs に印を付ける。reuse_session の session は
+        # 過去 run の turn も返るので、これが無いと evaluator は古い turn を
+        # 新しい run の事実として読み、既出の学びを最新 comment に再掲する
+        mark = "[evaluated] " if is_evaluated_turn(o, prev_wm) else ""
         if kind == "err":
-            lines.append("* %s [ERROR] %s — %s" % (
-                o.get("startTime"), o.get("name"),
+            lines.append("* %s %s[ERROR] %s — %s" % (
+                o.get("startTime"), mark, o.get("name"),
                 (o.get("statusMessage") or "")[:300]))
             continue
         md = o.get("metadata") or {}
@@ -749,7 +801,7 @@ def _cmd_transcript(a):
         name = o.get("name") or "?"
         # turn_number が名前に既に含まれる (Devin - Turn 3) なら重複表示しない
         label = name if (tn is None or str(tn) in name) else "turn %s (%s)" % (tn, name)
-        lines.append("--- %s | %s ---" % (label, o.get("startTime")))
+        lines.append("--- %s%s | %s ---" % (mark, label, o.get("startTime")))
         lines.append("[user]\n" + _io_text(o.get("input")))
         lines.append("[assistant]\n" + _io_text(o.get("output")))
 
@@ -765,6 +817,7 @@ def _cmd_transcript(a):
                    for o in all_obs), default="")
     wm_epoch = _ts(last_ts).timestamp() if last_ts else fetched_at
     wd, rr = resolve_repo(hints["hints"])
+    n_new = len([o for o in turns if not is_evaluated_turn(o, prev_wm)])
     header = [
         "session: %s" % sid,
         "sources: %s | turns: %d | generations: %d | tool_calls: %d | errors: %d"
@@ -777,8 +830,14 @@ def _cmd_transcript(a):
                        sorted(tool_names.items())) or "none"),
         "workdir: %s | repo_root: %s" % (wd or "?", rr or "?"),
         "window: %s .. %s" % (first_ts, last_ts),
+        # reuse_session の session は「session = 1 run」ではない。評価の
+        # 単位は turn (1 run) で、watermark は session に 1 本しか置けない
+        "prior_eval: %s | new_turns: %d/%d"
+        % (_iso(datetime.fromtimestamp(prev_wm, timezone.utc))
+           if prev_wm is not None else "none", n_new, len(turns)),
         "note: 同一 turn_number が複数あるのは exporter が途中経過を再 emit したもの。"
-        "ユーザーの繰り返し発言ではない",
+        "ユーザーの繰り返し発言ではない。`[evaluated]` は前回の evaluated_until 以前に"
+        "完了した turn",
         "",
     ]
     body = "\n".join(lines)

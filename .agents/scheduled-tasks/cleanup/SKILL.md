@@ -29,6 +29,8 @@ git worktree list                       # 残ったものを点検
 
 fetch が失敗した repo では、API 照合は `origin/main` / `origin/<branch>` の local remote-tracking ref を更新しない — 下の削除判定は古い ref を見る。判定に使う remote ref の SHA が `gh api` で取れる現在の head と一致することを確認できるまで branch は消さず、一致を確認できなければ branch を残して `git gc --prune=now` も skip し、fetch 失敗と照合不可を報告に載せる。
 
+**shallow clone では祖先判定と差分判定が効かない**。`git rev-parse --is-shallow-repository` が `true` の repo は、判定に入る前に `git fetch --unshallow origin`（重い・失敗する場合は対象 branch だけ `git fetch --deepen=50 origin <branch>`）で履歴を補う。補わないままでは境界より前が存在しないので、`merge-base --is-ancestor` は「main に入っていない」と同じ exit 1 を返し（照合不能と区別できない）、`git diff origin/main...<branch>` は `fatal: no merge base` で exit 128 になる。後者の **stdout は空**なので、出力の空だけを見て rule 4（固有の差分が無い）と読むと固有差分ごと branch を消す — 判定に使う diff は exit code まで確認する。unshallow できない場合は `gh api repos/{owner}/{repo}/compare/<branch>...<base>` で代替する: `behind_by=0` が「branch の commit はすべて base に含まれる」で rule 1（rule 3 は base を `origin/<branch>` にする）、`behind_by>0` かつ `files` が空なら rule 4。どちらも取れない branch は消さず、shallow で照合できなかったことを報告に書く。
+
 macOS 標準には `timeout` コマンドが無い（GNU coreutils 由来）。`git fetch` 等を timeout 付きにしたくても素の `timeout 60 git fetch` は command not found で空振りする。timeout なしでそのまま実行するか、`gtimeout`（coreutils）が入っている前提を確認してから使う。また `git worktree list` 等の出力を `| head` で切ると、行数がパイプのバッファ待ちで固まることがある。件数を絞りたいときはパイプせず、そのままの出力を読むかファイルへ書き出す。
 
 **worktree の削除**: `git worktree list` の各 worktree について、中身と最終更新の2つを見る。
@@ -53,6 +55,8 @@ worktree を消すと未 commit の変更は失われる。30日ルールはそ�
 - `orca worktree ps --json` の `isPinned` フラグは削除判定に入っていない — pin しても PTY が落ちれば削除判定に進む。その後もこの cleanup の git 判定が適用されるので、dirty や30日以内の更新があれば残る
 
 **workspace 置き場の残骸**（`~/orca/workspaces/`・`~/.codex/worktrees/`）: ここは repo を消しても dir だけが残る。`orca worktree list` に出ないものは Orca の管理から切り離されているので live terminal の判定は無く、次の順で見る。どの削除も**退避 → 削除**の順で行い、退避に失敗したら消さない。
+
+ただし `~/orca/workspaces/.orca-preparing/` は除く — Orca が worktree 作成の途中経過を `<pid>-<uuid>/` で置く作業 dir で、空でも「空 dir の残骸」として消さず、中身も読まない。削除すると作成中の worktree が壊れる。残っていても Orca の後始末に任せる（cleanup の対象外）。
 
 - 退避先は `~/.local/state/cleanup/wip/`。先に `mkdir -p ~/.local/state/cleanup/wip` を実行する。file 名は `<name>-<worktree id か path の hash>-<date>` で一意にし、既に同名 file があれば上書きせず `-2`, `-3` … を付ける（前回の退避を潰さない）
 - 空 dir: `.DS_Store` だけのものは `rm -f <dir>/.DS_Store` を先に実行してから `rmdir <dir>`（`rmdir` は中身があると失敗するので、予期しない中身が残っている場合の歯止めとして使う）。repo の置き場として空 dir を残す意味は無い（Orca は必要になれば作り直す）
@@ -87,4 +91,15 @@ fetch が成功した、または fetch 失敗後に判定で使う remote ref �
 
 ## 報告
 
-1行サマリ（freed 合計 / 削除した worktree・branch・workspace 残骸の本数）と、判断を残した項目（30日以内に触られている dirty な worktree、branch 判定の 6 に落ちた branch のみ）を列挙する。6 の branch は差分規模に加えて中身の要約と main との包含確認の結果を添える。5 で消した抜け殻 branch は何が main のどこに入っているかの根拠を添える。30日ルールで消した worktree は未 commit の変更ごと消えるので、path と件数を報告に残す。workspace 残骸を消したときは、退避した patch / 成果物の path を載せる。skip だけで終わったならそう書く。`mise clean-cache` の出力に出ない失敗（探索中の `gh`・`git` 呼び出しなど）は `failed:` 行に現れないので、「異常なし」は `failed:` 行と exit code だけで判断せず、失敗して再試行で復帰した command があればその command と復帰結果も書く。なお `OPEN` PR がある branch を残すのは定常動作なので判断待ちには数えない — open PR の棚卸しは pr-auto-merge task（`.agents/scheduled-tasks/pr-auto-merge/`）が日次で担う。
+1行サマリから始め、以下を項目として列挙する。該当なしの項目も「なし」と書く（無言で落とすと次の run が同じ確認をやり直す）。
+
+- 1行サマリ: freed 合計 / 削除した worktree・branch・workspace 残骸の本数
+- **失敗して再試行で復帰した command と、その復帰結果**（必須）。`mise clean-cache` の出力に出ない失敗（探索中の `gh`・`git` 呼び出しなど）は `failed:` 行に現れないので、「異常なし」は `failed:` 行と exit code だけでは言えない — error になった command を拾って書く
+- 判断を残した項目: 30日以内に触られている dirty な worktree、branch 判定の 6 に落ちた branch のみ。6 の branch は差分規模に加えて中身の要約と main との包含確認の結果を添える
+- 5 で消した抜け殻 branch: 何が main のどこに入っているかの根拠
+- 30日ルールで消した worktree: path と件数（未 commit の変更ごと消えるため）
+- workspace 残骸を消したとき: 退避した patch / 成果物の path
+- shallow clone で祖先・差分を照合できず残した branch: その旨
+- skip だけで終わったなら、そう書く
+
+`OPEN` PR がある branch を残すのは定常動作なので判断待ちには数えない — open PR の棚卸しは pr-auto-merge task（`.agents/scheduled-tasks/pr-auto-merge/`）が日次で担う。
