@@ -20,6 +20,9 @@ python3 ~/.agents/scheduled-tasks/session-eval/tools/session_eval.py transcript 
 
 - `self: true` が返ったら eval batch 自身の session。何も書き込まず `self` とだけ出力して終了する
 - 以降、出力の `transcript` を観察入力、`evaluated_until`（epoch 秒）を step 3 の score 値に使う
+- **1 session = 1 run とは限らない**: `reuse_session = true` の automation（daily-start / daily-end / cleanup / session-eval）は同じ session に毎回の run を 1 turn として積む（1 session の 5 turn = 5 日分、など）。header の `prior_eval: <前回の評価の上限> | new_turns: N/M` が新規 turn 数を示し、`[evaluated]` の付いた turn と ERROR 行は**前回の評価が覆った分**。エラー・tool 集計・学びは turn（= 1 run）単位に分けて読み、「指示が毎日同じ」「同じ作業を繰り返した」を 1 run 内の反復と読まない
+  - 評価の対象は新しい turn。`[evaluated]` の turn から学びを書き写さない — comment は append-only で consolidate は最新 comment だけを読むため、再掲すると還元済みの学びが毎回再浮上する。新しい turn が無ければ `学習候補: 特になし` でよい（`prior_eval: none` は初回評価なので全 turn が対象）
+  - `evaluated_until` は turn ごとではなく session に 1 本 — header の値をそのまま step 3 で書く
 
 ## 2. 記録の作成
 

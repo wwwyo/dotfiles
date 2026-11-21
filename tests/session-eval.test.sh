@@ -250,6 +250,40 @@ assert se.skip_marker_kind("real-sid") is None
 assert se.skip_marker_kind("mid-quote") is None
 # lookup 失敗は None に倒す（除外しない）
 assert se.skip_marker_kind("boom") is None
+
+# latest_watermark: v3 scores から session の evaluated_until だけを拾って
+# 最新値を返す。取れないときは None（transcript は fail-open で全 turn を
+# 新規扱いにする — 評価 batch を止めない）
+def scores_paged(path, params):
+    assert params["name"] == "evaluated_until"
+    for sc in [
+        {"value": 100.0, "subject": {"kind": "session", "id": "s1"}},
+        {"value": 300.0, "subject": {"kind": "session", "id": "s1"}},
+        {"value": 999.0, "subject": {"kind": "session", "id": "other"}},
+        {"value": 500.0, "subject": {"kind": "trace", "id": "s1"}},
+        {"value": "bad", "subject": {"kind": "session", "id": "s1"}},
+    ]:
+        yield sc
+se.paged = scores_paged
+assert se.latest_watermark("s1") == 300.0
+def boom_paged(path, params):
+    raise se.ApiError("429 storm")
+    yield  # pragma: no cover
+se.paged = boom_paged
+assert se.latest_watermark("s1") is None
+se.paged = real_paged
+
+# is_evaluated_turn: watermark と同じ (endTime or startTime) 基準。長い turn は
+# endTime で覆われるので start 基准にすると評価済み turn を新規と誤判定する
+wm = se._ts("2026-09-02T00:00:00Z").timestamp()
+assert se.is_evaluated_turn({"startTime": "2026-09-01T00:00:00Z",
+                             "endTime": "2026-09-01T03:00:00Z"}, wm)
+assert not se.is_evaluated_turn({"startTime": "2026-09-01T00:00:00Z",
+                                 "endTime": "2026-09-02T03:00:00Z"}, wm)
+assert not se.is_evaluated_turn({"startTime": "2026-09-02T00:00:00Z",
+                                 "endTime": "2026-09-02T03:00:00Z"}, wm)
+assert not se.is_evaluated_turn({"startTime": "2026-09-01T00:00:00Z"}, None)
+assert not se.is_evaluated_turn({}, wm)
 se.paged = real_paged
 
 # _request: 429 の retry。urlopen/sleep を stub して試行回数と wait を pin。
