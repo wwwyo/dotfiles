@@ -196,7 +196,8 @@
       "WebFetch(domain:www.figma.com)",
       "WebFetch(domain:diffs.com)",
       "mcp__Claude_Preview__preview_start",
-      "mcp__mcphub__*"
+      "mcp__plugin_core_mcphub__*",
+      "mcp__plugin_local_openscreen__*"
     ],
     "deny": [
       "Read(.env.local)",
@@ -439,6 +440,8 @@
     "core@wwwyo": false,
     "design@synced": true,
     "design@wwwyo": false,
+    "motion-graphics@synced": true,
+    "motion-graphics@wwwyo": false,
     "local@wwwyo": true,
     "langfuse-observability@langfuse-observability": false,
     "gopls-lsp@claude-plugins-official": false,

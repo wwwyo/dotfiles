@@ -21,8 +21,8 @@
       "prompt_overrides": {}
     },
     {
-      "server_id": "openscreen",
-      "on_behalf": false,
+      "server_id": "paper",
+      "on_behalf": true,
       "default_disabled": false,
       "tool_overrides": {},
       "prompt_overrides": {}
@@ -45,6 +45,13 @@
           "enabled": false
         }
       },
+      "prompt_overrides": {}
+    },
+    {
+      "server_id": "trustmrr",
+      "on_behalf": false,
+      "default_disabled": false,
+      "tool_overrides": {},
       "prompt_overrides": {}
     }
   ]
