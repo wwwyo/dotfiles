@@ -1,22 +1,27 @@
-# cleanup の orca automation desired state（既存登録を manifest に転記したもの）。
+# cleanup の orca automation desired state。bot "me"（旧名 assist）の automation として走る。
 # `.agents/scheduled-tasks/tools/sync_automations.py check` で drift を検出できる。
 
 name = "cleanup"
-# personal データを扱う task。モデル・thinking は delegate の worker/personal に従い
-# Orca Settings → Agents の pi 起動引数に指定する（automation CLI に model flag は無い）。
-provider = "pi"
+bot = "me"
+# personal データを扱う task なので、bot の既定 agent ではなく従来どおり pi で走らせる。
+# --agent は runs_in = "new" が必須 (orca 側制約)。モデル・thinking は delegate の
+# worker/personal に従い Orca Settings → Agents の pi 起動引数に指定する。
+agent = "pi"
+runs_in = "new"
+results_to = "chat"
 enabled = true
 timezone = "Asia/Tokyo"
 
 # 3 日おき 03:00 — RRULE INTERVAL は scheduler が無視するので cron で書く
 trigger = "0 3 */3 * *"
 
-workspace_path = "~/src/github.com/wwwyo/me"
+# bot は自分のフォルダ (~/.orca/bots/assist、bot 名を変えてもフォルダ名は変わらない) で走り cwd を選べない。prompt で移動させる。
+# username 非依存にするため ~ 形式。sync 側で展開して {{workdir}} に入れる
+workdir = "~/src/github.com/wwwyo/me"
 
-# terminal を残す目的で reuse する。automation の terminal は reuse しないと
-# run 終了時に Orca が回収する。reuse する run は同じ session に prompt が入る
-reuse_session = true
+# project automation の頃は terminal を残す目的で reuse_session = true にしていた。
+# bot automation は reuse_session を持てず、runs_in = "new" で毎回新しい会話になる
 
 prompt = """
-dotfiles の ~/.agents/scheduled-tasks/cleanup/SKILL.md に記載された手順でローカル環境を掃除する。対象は個人 repo と agent workspace 置き場（~/orca/workspaces・~/.codex/worktrees）のみ。閾値ゲートを守り、強制クリーンや閾値変更はしない。何も消さず freed 0MB で終わるのも正常。作業ディレクトリは {{workspace_path}}。
+作業ディレクトリ {{workdir}} に移動し、以降のコマンドはすべてそこで実行する。dotfiles の ~/.agents/scheduled-tasks/cleanup/SKILL.md に記載された手順でローカル環境を掃除する。対象は個人 repo と agent workspace 置き場（~/orca/workspaces・~/.codex/worktrees）のみ。閾値ゲートを守り、強制クリーンや閾値変更はしない。何も消さず freed 0MB で終わるのも正常。
 """

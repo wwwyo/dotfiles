@@ -1,9 +1,9 @@
-# daily-start の orca automation desired state。bot "assist" の automation として走る。
+# daily-start の orca automation desired state。bot "me"（旧名 assist）の automation として走る。
 # `.agents/scheduled-tasks/tools/sync_automations.py check` で drift を検出できる。
 # skill 本体は wwwyo/me repo の .agents/skills/daily-start/ にある
 
 name = "daily-start"
-bot = "assist"
+bot = "me"
 # personal データを扱う task なので、bot の既定 agent ではなく従来どおり pi で走らせる。
 # --agent は runs_in = "new" が必須 (orca 側制約)。モデル・thinking は delegate の
 # worker/personal に従い Orca Settings → Agents の pi 起動引数に指定する。
@@ -16,7 +16,7 @@ timezone = "Asia/Tokyo"
 trigger = "daily"
 time = "08:00"
 
-# bot は自分のフォルダ (~/.orca/bots/assist) で走り cwd を選べない。prompt で移動させる。
+# bot は自分のフォルダ (~/.orca/bots/assist、bot 名を変えてもフォルダ名は変わらない) で走り cwd を選べない。prompt で移動させる。
 # username 非依存にするため ~ 形式。sync 側で展開して {{workdir}} に入れる
 workdir = "~/src/github.com/wwwyo/me"
 
