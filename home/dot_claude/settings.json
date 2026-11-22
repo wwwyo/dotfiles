@@ -572,7 +572,8 @@
         "/var/folders",
         "/var/run",
         "/run/user",
-        "/tmp"
+        "/tmp",
+        "~/Library/Application Support/orca"
       ],
       "allowLocalBinding": true,
       "allowMachLookup": [
