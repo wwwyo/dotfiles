@@ -4,11 +4,12 @@
 
 name = "daily-start"
 bot = "me"
-# personal データを扱う task なので、bot の既定 agent ではなく従来どおり pi で走らせる。
-# --agent は runs_in = "new" が必須 (orca 側制約)。モデル・thinking は delegate の
-# worker/personal に従い Orca Settings → Agents の pi 起動引数に指定する。
-agent = "pi"
-runs_in = "new"
+# runs_in = "chat" で bot の Home Chat の続きとして走らせる (2026-11-23 本人決定)。
+# chat 実行は「そのチャットの agent の続き」になるため agent/model/effort は指定できない
+# (orca 側制約: "A run in a chat continues on that chat's agent")。Home Chat は claude
+# なので、daily-start は claude で走る。以前は pi + runs_in = "new" だったが、run 終了で
+# チャットタブが閉じられ bot のサイドバーから消えるため chat に寄せた。
+runs_in = "chat"
 results_to = "chat"
 enabled = true
 timezone = "Asia/Tokyo"
@@ -22,7 +23,8 @@ workdir = "~/src/github.com/wwwyo/me"
 
 # project automation の頃は terminal を残す目的で reuse_session = true にしていた
 # (reuse しないと run 終了時に Orca が terminal を回収する)。bot automation は
-# reuse_session を持てず、runs_in = "new" で毎回新しい会話になる。結果は bot の chat に残る
+# reuse_session を持てない。runs_in = "chat" の run は Home Chat に積まれるので、
+# 毎朝の出力が Home Chat に残る (その分 Home Chat は長くなる)
 
 # bot フォルダで起動した agent は wwwyo/me の project skill・AGENTS.md を自動では読まない
 # (pi は起動 cwd から探す) ので、prompt でパスを明示する
