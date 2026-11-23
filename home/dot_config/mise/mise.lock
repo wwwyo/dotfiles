@@ -2263,7 +2263,7 @@ version = "2.11.10"
 backend = "npm:turbo"
 
 [[tools."npm:vercel"]]
-version = "65.12.1"
+version = "58.4.4"
 backend = "npm:vercel"
 
 [[tools."npm:wrangler"]]
