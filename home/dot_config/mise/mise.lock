@@ -1784,7 +1784,7 @@ version = "2026.07.04"
 backend = "asdf:duhow/asdf-yt-dlp"
 
 [[tools."asdf:mise-plugins/mise-ffmpeg"]]
-version = "8.1.1"
+version = "9.0.2"
 backend = "asdf:mise-plugins/mise-ffmpeg"
 
 [[tools."asdf:mise-plugins/mise-mysql"]]
@@ -1890,6 +1890,76 @@ url = "https://dl.deno.land/release/v2.9.8/deno-x86_64-pc-windows-msvc.zip"
 [tools.deno."platforms.windows-x64-baseline"]
 checksum = "sha256:b0f654158ad3edaee34cf6aa8d39695f242d3b122753f6fb965261b9c7986f24"
 url = "https://dl.deno.land/release/v2.9.8/deno-x86_64-pc-windows-msvc.zip"
+
+[[tools."github:dbt-labs/dbt-cli"]]
+version = "0.40.25"
+backend = "github:dbt-labs/dbt-cli"
+
+[tools."github:dbt-labs/dbt-cli"."platforms.linux-arm64"]
+checksum = "sha256:802d765b3501804bf22fa36db41b599a3c888c771ac6ee20515dc56ea2717a43"
+checksum_source = "mise-versions"
+url = "https://github.com/dbt-labs/dbt-cli/releases/download/v0.40.25/dbt_0.40.25_linux_arm64.tar.gz"
+url_api = "https://api.github.com/repos/dbt-labs/dbt-cli/releases/assets/692945106"
+
+[tools."github:dbt-labs/dbt-cli"."platforms.linux-arm64-musl"]
+checksum = "sha256:802d765b3501804bf22fa36db41b599a3c888c771ac6ee20515dc56ea2717a43"
+checksum_source = "mise-versions"
+url = "https://github.com/dbt-labs/dbt-cli/releases/download/v0.40.25/dbt_0.40.25_linux_arm64.tar.gz"
+url_api = "https://api.github.com/repos/dbt-labs/dbt-cli/releases/assets/692945106"
+
+[tools."github:dbt-labs/dbt-cli"."platforms.linux-x64"]
+checksum = "sha256:4576aa84c3ae33e172dd52ac2608dd872fcbd5c6a814eac1839d4eb2b0072c8d"
+checksum_source = "mise-versions"
+url = "https://github.com/dbt-labs/dbt-cli/releases/download/v0.40.25/dbt_0.40.25_linux_amd64.tar.gz"
+url_api = "https://api.github.com/repos/dbt-labs/dbt-cli/releases/assets/692945044"
+
+[tools."github:dbt-labs/dbt-cli"."platforms.linux-x64-baseline"]
+checksum = "sha256:4576aa84c3ae33e172dd52ac2608dd872fcbd5c6a814eac1839d4eb2b0072c8d"
+checksum_source = "mise-versions"
+url = "https://github.com/dbt-labs/dbt-cli/releases/download/v0.40.25/dbt_0.40.25_linux_amd64.tar.gz"
+url_api = "https://api.github.com/repos/dbt-labs/dbt-cli/releases/assets/692945044"
+
+[tools."github:dbt-labs/dbt-cli"."platforms.linux-x64-musl"]
+checksum = "sha256:4576aa84c3ae33e172dd52ac2608dd872fcbd5c6a814eac1839d4eb2b0072c8d"
+checksum_source = "mise-versions"
+url = "https://github.com/dbt-labs/dbt-cli/releases/download/v0.40.25/dbt_0.40.25_linux_amd64.tar.gz"
+url_api = "https://api.github.com/repos/dbt-labs/dbt-cli/releases/assets/692945044"
+
+[tools."github:dbt-labs/dbt-cli"."platforms.linux-x64-musl-baseline"]
+checksum = "sha256:4576aa84c3ae33e172dd52ac2608dd872fcbd5c6a814eac1839d4eb2b0072c8d"
+checksum_source = "mise-versions"
+url = "https://github.com/dbt-labs/dbt-cli/releases/download/v0.40.25/dbt_0.40.25_linux_amd64.tar.gz"
+url_api = "https://api.github.com/repos/dbt-labs/dbt-cli/releases/assets/692945044"
+
+[tools."github:dbt-labs/dbt-cli"."platforms.macos-arm64"]
+checksum = "sha256:72368c8b78469c268a8550135fd6ebedd4e483733f05cdf1a3b7f67976fd7365"
+checksum_source = "mise-versions"
+url = "https://github.com/dbt-labs/dbt-cli/releases/download/v0.40.25/dbt_0.40.25_darwin_all.tar.gz"
+url_api = "https://api.github.com/repos/dbt-labs/dbt-cli/releases/assets/692945083"
+
+[tools."github:dbt-labs/dbt-cli"."platforms.macos-x64"]
+checksum = "sha256:72368c8b78469c268a8550135fd6ebedd4e483733f05cdf1a3b7f67976fd7365"
+checksum_source = "mise-versions"
+url = "https://github.com/dbt-labs/dbt-cli/releases/download/v0.40.25/dbt_0.40.25_darwin_all.tar.gz"
+url_api = "https://api.github.com/repos/dbt-labs/dbt-cli/releases/assets/692945083"
+
+[tools."github:dbt-labs/dbt-cli"."platforms.macos-x64-baseline"]
+checksum = "sha256:72368c8b78469c268a8550135fd6ebedd4e483733f05cdf1a3b7f67976fd7365"
+checksum_source = "mise-versions"
+url = "https://github.com/dbt-labs/dbt-cli/releases/download/v0.40.25/dbt_0.40.25_darwin_all.tar.gz"
+url_api = "https://api.github.com/repos/dbt-labs/dbt-cli/releases/assets/692945083"
+
+[tools."github:dbt-labs/dbt-cli"."platforms.windows-x64"]
+checksum = "sha256:d181c2e2c2f7cd1671f025caf4a2cddf054eeda3ae23093fd754ed66aa741546"
+checksum_source = "mise-versions"
+url = "https://github.com/dbt-labs/dbt-cli/releases/download/v0.40.25/dbt_0.40.25_windows_amd64.tar.gz"
+url_api = "https://api.github.com/repos/dbt-labs/dbt-cli/releases/assets/692944985"
+
+[tools."github:dbt-labs/dbt-cli"."platforms.windows-x64-baseline"]
+checksum = "sha256:d181c2e2c2f7cd1671f025caf4a2cddf054eeda3ae23093fd754ed66aa741546"
+checksum_source = "mise-versions"
+url = "https://github.com/dbt-labs/dbt-cli/releases/download/v0.40.25/dbt_0.40.25_windows_amd64.tar.gz"
+url_api = "https://api.github.com/repos/dbt-labs/dbt-cli/releases/assets/692944985"
 
 [[tools."github:ggml-org/llama.cpp"]]
 version = "b9616"
@@ -2336,10 +2406,3 @@ provenance = "github-attestations"
 [[tools.rust]]
 version = "1.99.1"
 backend = "core:rust"
-
-[[tools."ubi:dbt-labs/dbt-cli"]]
-version = "0.40.25"
-backend = "ubi:dbt-labs/dbt-cli"
-
-[tools."ubi:dbt-labs/dbt-cli".options]
-exe = "dbt"
