@@ -1961,65 +1961,6 @@ checksum_source = "mise-versions"
 url = "https://github.com/dbt-labs/dbt-cli/releases/download/v0.40.25/dbt_0.40.25_windows_amd64.tar.gz"
 url_api = "https://api.github.com/repos/dbt-labs/dbt-cli/releases/assets/692944985"
 
-[[tools."github:ggml-org/llama.cpp"]]
-version = "b9616"
-backend = "github:ggml-org/llama.cpp"
-
-[tools."github:ggml-org/llama.cpp"."platforms.linux-arm64"]
-checksum = "sha256:60c5a0766f9a7b408681b318455f982519f9d36e3467f6fd72a4975ea349ba1d"
-url = "https://github.com/ggml-org/llama.cpp/releases/download/b9616/llama-b9616-bin-ubuntu-arm64.tar.gz"
-url_api = "https://api.github.com/repos/ggml-org/llama.cpp/releases/assets/446093615"
-
-[tools."github:ggml-org/llama.cpp"."platforms.linux-arm64-musl"]
-checksum = "sha256:60c5a0766f9a7b408681b318455f982519f9d36e3467f6fd72a4975ea349ba1d"
-url = "https://github.com/ggml-org/llama.cpp/releases/download/b9616/llama-b9616-bin-ubuntu-arm64.tar.gz"
-url_api = "https://api.github.com/repos/ggml-org/llama.cpp/releases/assets/446093615"
-
-[tools."github:ggml-org/llama.cpp"."platforms.linux-x64"]
-checksum = "sha256:06a9651dafa495a3d3a83afc88b421d6e37fc433873745f8a991c4f5839c5a6c"
-url = "https://github.com/ggml-org/llama.cpp/releases/download/b9616/llama-b9616-bin-ubuntu-x64.tar.gz"
-url_api = "https://api.github.com/repos/ggml-org/llama.cpp/releases/assets/446093836"
-
-[tools."github:ggml-org/llama.cpp"."platforms.linux-x64-baseline"]
-checksum = "sha256:06a9651dafa495a3d3a83afc88b421d6e37fc433873745f8a991c4f5839c5a6c"
-url = "https://github.com/ggml-org/llama.cpp/releases/download/b9616/llama-b9616-bin-ubuntu-x64.tar.gz"
-url_api = "https://api.github.com/repos/ggml-org/llama.cpp/releases/assets/446093836"
-
-[tools."github:ggml-org/llama.cpp"."platforms.linux-x64-musl"]
-checksum = "sha256:06a9651dafa495a3d3a83afc88b421d6e37fc433873745f8a991c4f5839c5a6c"
-url = "https://github.com/ggml-org/llama.cpp/releases/download/b9616/llama-b9616-bin-ubuntu-x64.tar.gz"
-url_api = "https://api.github.com/repos/ggml-org/llama.cpp/releases/assets/446093836"
-
-[tools."github:ggml-org/llama.cpp"."platforms.linux-x64-musl-baseline"]
-checksum = "sha256:06a9651dafa495a3d3a83afc88b421d6e37fc433873745f8a991c4f5839c5a6c"
-url = "https://github.com/ggml-org/llama.cpp/releases/download/b9616/llama-b9616-bin-ubuntu-x64.tar.gz"
-url_api = "https://api.github.com/repos/ggml-org/llama.cpp/releases/assets/446093836"
-
-[tools."github:ggml-org/llama.cpp"."platforms.macos-arm64"]
-checksum = "sha256:901a4d0f7579c56559e0148702ea4f678373c214e933911898b15cb8683995d6"
-url = "https://github.com/ggml-org/llama.cpp/releases/download/b9616/llama-b9616-bin-macos-arm64.tar.gz"
-url_api = "https://api.github.com/repos/ggml-org/llama.cpp/releases/assets/446093579"
-
-[tools."github:ggml-org/llama.cpp"."platforms.macos-x64"]
-checksum = "sha256:4c42ef34c2e67ca67b3bada0d08a9c13fb93f67786f025e5e3fb2af8735b27a2"
-url = "https://github.com/ggml-org/llama.cpp/releases/download/b9616/llama-b9616-bin-macos-x64.tar.gz"
-url_api = "https://api.github.com/repos/ggml-org/llama.cpp/releases/assets/446093597"
-
-[tools."github:ggml-org/llama.cpp"."platforms.macos-x64-baseline"]
-checksum = "sha256:4c42ef34c2e67ca67b3bada0d08a9c13fb93f67786f025e5e3fb2af8735b27a2"
-url = "https://github.com/ggml-org/llama.cpp/releases/download/b9616/llama-b9616-bin-macos-x64.tar.gz"
-url_api = "https://api.github.com/repos/ggml-org/llama.cpp/releases/assets/446093597"
-
-[tools."github:ggml-org/llama.cpp"."platforms.windows-x64"]
-checksum = "sha256:ebc52099ea2fb9dbf5a4a5f58b3a486c92d290a1e83ac2556a6bd5d7b6bd63e3"
-url = "https://github.com/ggml-org/llama.cpp/releases/download/b9616/llama-b9616-bin-win-cpu-x64.zip"
-url_api = "https://api.github.com/repos/ggml-org/llama.cpp/releases/assets/446093876"
-
-[tools."github:ggml-org/llama.cpp"."platforms.windows-x64-baseline"]
-checksum = "sha256:ebc52099ea2fb9dbf5a4a5f58b3a486c92d290a1e83ac2556a6bd5d7b6bd63e3"
-url = "https://github.com/ggml-org/llama.cpp/releases/download/b9616/llama-b9616-bin-win-cpu-x64.zip"
-url_api = "https://api.github.com/repos/ggml-org/llama.cpp/releases/assets/446093876"
-
 [[tools."github:github/gh-actions-lock"]]
 version = "0.4.1"
 backend = "github:github/gh-actions-lock"
