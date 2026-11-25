@@ -155,6 +155,32 @@ text_long=$(run --sessions-dir "$LONG" --days 7)
 line=$(printf '%s' "$text_long" | grep -m1 '^    provider returned')
 [ "${#line}" -le 150 ] || fail "表示が切り詰められていない: $line"
 
+# --- stopReason を持たない errorMessage でも落ちない ---
+# pi の行欠けで stopReason が無いまま errorMessage だけ残ることがある。None を
+# stop_reasons に混ぜると sorted()/join() が型エラーで落ち、報告ごと失われる
+NORSN="$TEST_ROOT/norsn"
+mkdir -p "$NORSN/--x--"
+python3 - "$NORSN/--x--/norsn.jsonl" <<'PY'
+import json, sys
+from datetime import datetime, timedelta, timezone
+NOW = datetime.now(timezone.utc)
+def ts(**kw):
+    d = NOW - timedelta(**kw)
+    return d.strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z"
+lines = [
+    {"type": "session", "id": "s-norsn", "cwd": "/tmp/norsn"},
+    {"type": "message", "timestamp": ts(hours=3),
+     "message": {"role": "user", "content": "x"}},
+    {"type": "message", "timestamp": ts(hours=2, minutes=59),
+     "message": {"role": "assistant", "errorMessage": "socket hang up"}},
+]
+open(sys.argv[1], "w").write("\n".join(json.dumps(l) for l in lines) + "\n")
+PY
+out=$(run --sessions-dir "$NORSN" --days 7)
+printf '%s' "$out" | grep -q '1x \[unknown\]' \
+  || fail "stopReason 欠落の表示が想定と違う: $out"
+printf '%s' "$out" | grep -q 'socket hang up' || fail "errorMessage が消えている: $out"
+
 # JSON 出力
 json_out=$(run --sessions-dir "$SESS" --days 7 --json)
 printf '%s' "$json_out" | python3 -c '

@@ -170,7 +170,9 @@ def group(rows):
         g = groups.setdefault(key, {"error": key, "turns": 0, "cwds": {}, "first": None,
                                     "last": None, "stop_reasons": set(), "sessions": []})
         g["turns"] += 1
-        g["stop_reasons"].add(r["stop_reason"])
+        # errorMessage だけあって stopReason が無い行がある。None を混ぜると
+        # sorted()/join() が型エラーで落ちるので、報告は残したまま文字列に倒す
+        g["stop_reasons"].add(r["stop_reason"] or "unknown")
         cwd = r["cwd"] or "(unknown cwd)"
         g["cwds"][cwd] = g["cwds"].get(cwd, 0) + 1
         if r["start"] and (g["first"] is None or r["start"] < g["first"]):

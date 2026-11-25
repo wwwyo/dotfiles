@@ -146,6 +146,28 @@ class TranscriptTest(unittest.TestCase):
                          datetime(2026, 10, 2, 1, 0,
                                   tzinfo=timezone.utc).timestamp())
 
+    def test_error_in_open_turn_is_not_marked_evaluated(self):
+        # compact summary の error は start_time しか持たない。error 自身の時刻で
+        # [evaluated] を付けると、watermark より前に start して watermark 後に
+        # 終わる turn の中の失敗が評価済み扱いになり、watermark が進むと以後の
+        # run から消える。coverage は所属 turn で決める
+        wm = datetime(2026, 10, 1, 2, 0, tzinfo=timezone.utc).timestamp()
+        pack = {'version': 1, 'generation_count': 1, 'tool_call_count': 1,
+                'tool_names': {'exec': 1}, 'usage_by_model': {},
+                'errors': [{'name': 'exec', 'status_message': 'command failed',
+                            'start_time': '2026-10-01T01:00:00Z'}]}
+        compact = observation('open-turn', summary=json.dumps(pack), root=True)
+        compact.update(startTime='2026-10-01T00:30:00Z', endTime='2026-10-02T00:00:00Z')
+        scores = [{'id': 's1', 'name': 'evaluated_until', 'value': wm,
+                   'subject': {'kind': 'session', 'id': SID}}]
+        result = self.run_transcript([compact], scores=scores)
+        body = result['transcript']
+        # turn は watermark 後に終わっているので未評価
+        self.assertIn('--- open-turn | 2026-10-01T00:30:00Z ---', body)
+        # 所属 turn が未評価なので、中の ERROR も評価済みにしない
+        self.assertIn('* 2026-10-01T01:00:00Z [ERROR] exec — command failed', body)
+        self.assertNotIn('open-turn [ERROR]', body)
+
 
 if __name__ == '__main__':
     unittest.main()
