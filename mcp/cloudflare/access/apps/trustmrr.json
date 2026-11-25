@@ -1,11 +1,11 @@
 {
-  "id": "a3a24a7a-cae7-42d9-ba35-e5d57c4c56c8",
-  "name": "my gmail",
+  "id": "b862149c-cdc2-4152-8452-cff7839f0316",
+  "name": "trustmrr",
   "type": "mcp",
   "destinations": [
     {
       "type": "via_mcp_server_portal",
-      "mcp_server_id": "my-gmail"
+      "mcp_server_id": "trustmrr"
     }
   ],
   "allowed_idps": [],

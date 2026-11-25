@@ -1,24 +1,31 @@
-# daily-end の orca automation desired state（既存登録を manifest に転記したもの）。
+# daily-end の orca automation desired state。bot "me"（旧名 assist）の automation として走る。
 # `.agents/scheduled-tasks/tools/sync_automations.py check` で drift を検出できる。
 # skill 本体は wwwyo/me repo の .agents/skills/daily-end/ にある
 
 name = "daily-end"
-# personal データを扱う task。モデル・thinking は delegate の worker/personal に従い
-# Orca Settings → Agents の pi 起動引数に指定する（automation CLI に model flag は無い）。
-provider = "pi"
+bot = "me"
+# personal データを扱う task なので、bot の既定 agent ではなく従来どおり pi で走らせる。
+# --agent は runs_in = "new" が必須 (orca 側制約)。モデル・thinking は delegate の
+# worker/personal に従い Orca Settings → Agents の pi 起動引数に指定する。
+agent = "pi"
+runs_in = "new"
+results_to = "chat"
 enabled = true
 timezone = "Asia/Tokyo"
 
 trigger = "daily"
 time = "23:00"
 
-# username 非依存にするため ~ 形式。sync 側で展開して path:<abs> を渡す
-workspace_path = "~/src/github.com/wwwyo/me"
+# bot は自分のフォルダ (~/.orca/bots/assist、bot 名を変えてもフォルダ名は変わらない) で走り cwd を選べない。prompt で移動させる。
+# username 非依存にするため ~ 形式。sync 側で展開して {{workdir}} に入れる
+workdir = "~/src/github.com/wwwyo/me"
 
-# terminal を残す目的で reuse する。automation の terminal は reuse しないと
-# run 終了時に Orca が回収する。reuse する run は同じ session に prompt が入る
-reuse_session = true
+# project automation の頃は terminal を残す目的で reuse_session = true にしていた
+# (reuse しないと run 終了時に Orca が terminal を回収する)。bot automation は
+# reuse_session を持てず、runs_in = "new" で毎回新しい会話になる。結果は bot の chat に残る
 
+# bot フォルダで起動した agent は wwwyo/me の project skill・AGENTS.md を自動では読まない
+# (pi は起動 cwd から探す) ので、prompt でパスを明示する
 prompt = """
-daily-end skill を実行する。「今日の分がすでに実行済み」の判定は end.md の存在ではなく skill の完了条件（`状態:` 行が無く当日の活動を網羅した end.md）で行う — 骨格だけ・`状態: 作成中` の end.md は未実行として続きを書く。これは無人の scheduled 実行なので、reuse session が対話端末でも振り返り質問・回答待ちは行わず、end.md に「対話なし」と記す。作業ディレクトリは {{workspace_path}}。
+作業ディレクトリ {{workdir}} に移動し、以降のコマンドはすべてそこで実行する。{{workdir}}/AGENTS.md と {{workdir}}/.agents/skills/daily-end/SKILL.md を読み、その daily-end skill の手順で実行する。「今日の分がすでに実行済み」の判定は end.md の存在ではなく skill の完了条件（`状態:` 行が無く当日の活動を網羅した end.md）で行う — 骨格だけ・`状態: 作成中` の end.md は未実行として続きを書く。これは無人の scheduled 実行なので、振り返り質問・回答待ちは行わず、end.md に「対話なし」と記す。
 """

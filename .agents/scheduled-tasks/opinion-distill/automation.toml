@@ -11,7 +11,7 @@ repo_path = "~/src/github.com/wwwyo/me"
 # personal データを扱う task。モデル・thinking は delegate の worker/personal に従い
 # Orca Settings → Agents の pi 起動引数に指定する（automation CLI に model flag は無い）。
 provider = "pi"
-enabled = true
+enabled = false  # 2026-11-22 オーナー指示で一時停止
 timezone = "Asia/Tokyo"
 
 # 週次 土曜 12:00 — weekly preset だと day/time → rrule 変換を sync が
