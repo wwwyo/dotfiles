@@ -15,6 +15,9 @@
 
 - 対象は pi の session file のみ（`~/.pi/agent/sessions/*/*.jsonl`）。claude / codex
   の session はここには無い — Langfuse 側の評価で拾う
+- 窓は失敗 turn の時刻で判定する。file mtime は「その session が最近書かれたか」の
+  前段フィルタにだけ使い、そのままでは使わない — 古い session に成功 turn が 1 つ
+  積まれると mtime が更新され、窓外の失敗が「直近の失敗」として出てしまう
 - 「失敗 turn」= user message で始まる turn の最後の assistant message が
   `stopReason: error|aborted` か `errorMessage` 付き。turn の途中で失敗して retry で
   復帰したものは数えない（retry 後の assistant message が turn の最後になる）
@@ -36,19 +39,34 @@ FAILED_STOP_REASONS = {"error", "aborted"}
 MSG_LIMIT = 140
 
 
-def _iso(ts):
-    """jsonl の timestamp（ISO8601 文字列 or epoch ms）を UTC の ISO に揃える。"""
-    if ts is None:
+def _parse_ts(ts):
+    """jsonl の timestamp（ISO8601 文字列 or epoch 秒/ms）を aware datetime に。"""
+    if ts is None or isinstance(ts, bool):
         return None
     if isinstance(ts, (int, float)):
         sec = ts / 1000 if ts > 1e11 else ts
-        return datetime.fromtimestamp(sec, timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
-    return str(ts)
+        return datetime.fromtimestamp(sec, timezone.utc)
+    try:
+        dt = datetime.fromisoformat(str(ts).replace("Z", "+00:00"))
+    except ValueError:
+        return None
+    return dt.replace(tzinfo=timezone.utc) if dt.tzinfo is None else dt
+
+
+def _iso(ts):
+    """jsonl の timestamp を UTC の ISO に揃える。読めない値は素通しする。"""
+    if ts is None:
+        return None
+    dt = _parse_ts(ts)
+    if dt is None:
+        return str(ts)
+    return dt.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
 def _normalize_message(msg):
-    text = " ".join(str(msg).split())
-    return text[:MSG_LIMIT]
+    """errorMessage を 1 行に潰す。切り詰めは表示時だけ行う — group key に使う
+    値を切ると、先頭 MSG_LIMIT 字が同じで原因が違う error を 1 行に混ぜてしまう。"""
+    return " ".join(str(msg).split())
 
 
 def _session_failed_turns(path):
@@ -110,8 +128,22 @@ def _row(sid, cwd, turn):
     }
 
 
+def _in_window(row, cutoff):
+    """失敗 turn の時刻が窓内か。時刻が読めない turn は落とさず残す。"""
+    for ts in (row["end"], row["start"]):
+        dt = _parse_ts(ts)
+        if dt is not None:
+            return dt.timestamp() >= cutoff
+    return True
+
+
 def collect(sessions_dir=DEFAULT_SESSIONS_DIR, days=7, now=None):
-    """直近 `days` 日の session file を走査して失敗 turn を返す。"""
+    """直近 `days` 日の失敗 turn を返す。
+
+    file mtime は session を読むかの前段フィルタ。窓の判定は失敗 turn の時刻で
+    行う — mtime だけだと、古い session に成功 turn が積まれて更新されたときに
+    窓外の失敗まで拾ってしまう。
+    """
     now = now or datetime.now(timezone.utc)
     cutoff = now.timestamp() - days * 86400
     root = os.path.expanduser(sessions_dir)
@@ -124,7 +156,8 @@ def collect(sessions_dir=DEFAULT_SESSIONS_DIR, days=7, now=None):
         except OSError:
             continue
         seen_sessions += 1
-        rows.extend(_session_failed_turns(path))
+        rows.extend(r for r in _session_failed_turns(path)
+                    if _in_window(r, cutoff))
     rows.sort(key=lambda r: r["start"] or "")
     return rows, seen_sessions
 
@@ -165,7 +198,7 @@ def render(rows, seen_sessions, days, now=None):
         span = f"{g['first']}..{g['last']}"
         cwds = ", ".join(f"{c} ({n})" for c, n in g["cwds"][:2])
         lines.append(f"- {g['turns']}x [{','.join(g['stop_reasons'])}] {span} {cwds}")
-        lines.append(f"    {g['error']}")
+        lines.append(f"    {g['error'][:MSG_LIMIT]}")
         lines.append(f"    sessions: {', '.join(g['sessions'][:4])}"
                      + (" …" if len(g["sessions"]) > 4 else ""))
     return "\n".join(lines)

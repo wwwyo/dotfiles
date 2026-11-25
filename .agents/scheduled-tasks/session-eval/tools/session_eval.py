@@ -773,7 +773,9 @@ def _cmd_transcript(a):
                                    and not isinstance(n, bool) and n >= 0})
             for error in summary.get("errors", []) if isinstance(summary.get("errors"), list) else []:
                 if isinstance(error, dict):
-                    errors.append({"startTime": error.get("start_time") or o.get("startTime"),
+                    # _owner は所属 turn を引くための入口 (summary を持つ obs 自身)
+                    errors.append({"_owner": o,
+                                   "startTime": error.get("start_time") or o.get("startTime"),
                                    "name": str(error.get("name") or "tool"),
                                    "statusMessage": str(error.get("status_message") or "")[:300]})
         if t == "TOOL":
@@ -781,6 +783,21 @@ def _cmd_transcript(a):
         _merge_hints(hints, o.get("metadata") or {})
         if o.get("level") == "ERROR":
             errors.append(o)
+
+    turn_by_id = {o["id"]: o for o in turns if o.get("id")}
+
+    def enclosing_turn(obs):
+        """obs 自身か祖先に当たる root turn。辿れなければ None。"""
+        cur, seen = obs, set()
+        while isinstance(cur, dict):
+            cid = cur.get("id")
+            if not cid or cid in seen:
+                return None
+            if cid in turn_by_id:
+                return turn_by_id[cid]
+            seen.add(cid)
+            cur = by_id.get(cur.get("parentObservationId") or "")
+        return None
 
     items = ([(o.get("startTime") or "", "turn", o) for o in turns] +
              [(o.get("startTime") or "", "err", o) for o in errors])
@@ -790,12 +807,19 @@ def _cmd_transcript(a):
         # 前回の評価が覆った obs に印を付ける。reuse_session の session は
         # 過去 run の turn も返るので、これが無いと evaluator は古い turn を
         # 新しい run の事実として読み、既出の学びを最新 comment に再掲する
-        mark = "[evaluated] " if is_evaluated_turn(o, prev_wm) else ""
         if kind == "err":
+            # ERROR の coverage は所属 turn で決まる。error 自身の startTime で
+            # 判定すると、watermark より前に start して後に失敗した tool が
+            # 新しい turn の中にあっても [evaluated] になり、watermark が進んで
+            # 以後の run からも消える。所属 turn を辿れないときだけ自分の時刻に倒す
+            owner = o.get("_owner") or o
+            mark = "[evaluated] " if is_evaluated_turn(
+                enclosing_turn(owner) or owner, prev_wm) else ""
             lines.append("* %s %s[ERROR] %s — %s" % (
                 o.get("startTime"), mark, o.get("name"),
                 (o.get("statusMessage") or "")[:300]))
             continue
+        mark = "[evaluated] " if is_evaluated_turn(o, prev_wm) else ""
         md = o.get("metadata") or {}
         tn = md.get("turn_number")
         name = o.get("name") or "?"
