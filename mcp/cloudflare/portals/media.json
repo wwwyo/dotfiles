@@ -1,0 +1,17 @@
+{
+  "id": "media",
+  "name": "wwwyo MCP (direct tools)",
+  "description": "Code Mode off. Servers whose tools return images or other non-text content that must reach the client as-is.",
+  "hostname": "mcp-media.wwwyo.dev",
+  "secure_web_gateway": false,
+  "code_mode": "off",
+  "servers": [
+    {
+      "server_id": "camera",
+      "on_behalf": false,
+      "default_disabled": false,
+      "tool_overrides": {},
+      "prompt_overrides": {}
+    }
+  ]
+}
