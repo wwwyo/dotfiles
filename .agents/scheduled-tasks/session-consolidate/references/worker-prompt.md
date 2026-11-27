@@ -32,7 +32,7 @@ python3 ~/.agents/scheduled-tasks/session-eval/tools/session_eval.py transcript 
 
 ## consolidated score（PR の後に書く）
 
-扱った session すべてに、入力の `evaluated_until` を値として書く。comment には PR URL か `no changes` を書く。共有 repo なら `shared repo`、push 権限が無いなどの恒久的な失敗ならその理由を書いて mark する。network・rate limit などの一時的な失敗では書かず、次の run に任せる。
+入力の session すべてに、入力の `evaluated_until` を値として書く。`学習候補: 特になし` の session や、還元しなかった session も含める（書かないと targets が毎回返し続け、永久に残る）。comment には PR URL か `no changes` を書く。共有 repo なら `shared repo`、push 権限が無いなどの恒久的な失敗ならその理由を書いて mark する。network・rate limit などの一時的な失敗では書かず、次の run に任せる。
 
 ```bash
 python3 ~/.agents/scheduled-tasks/session-consolidate/tools/session_consolidate.py score \
