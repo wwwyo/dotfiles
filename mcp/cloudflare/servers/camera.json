@@ -1,5 +1,5 @@
 {
-  "_comment": "この Mac の loopback で動く personal-mcp の camera/（Tunnel の warp-routing + Gateway L4 policy で 47822 だけ通す）。credential は camera/ と共有する bearer token で、~/.config/mise/config.camera-mcp.toml の CAMERA_MCP_TOKEN（age、MISE_ENV=camera-mcp のときだけ読まれる）。差し替えは MISE_ENV=camera-mcp mise exec -- python3 mcp/cloudflare/apply.py --apply --rotate-credentials camera",
+  "_comment": "この Mac の loopback で動く personal-mcp の camera/（Tunnel の warp-routing + Gateway L4 policy で 47822 だけ通す）。credential は camera/ と共有する bearer token で、~/.config/mise/config.camera-mcp.toml の CAMERA_MCP_TOKEN（age、MISE_ENV=camera-mcp のときだけ読まれる）。差し替えは MISE_ENV=camera-mcp mise exec -- python3 mcp/cloudflare/apply.py --apply --rotate-credentials camera。外から届く経路は宣言外の Gateway L4 policy「Loopback via tunnel: only camera MCP port」（127.0.0.1 宛ては 47822 だけ許可。許可 port は 1 つだけ）と Tunnel の 127.0.0.1/32 route に依存する。port を変える・別の loopback MCP を足すときはこの policy も直す（apply.py は比較しない）",
   "id": "camera",
   "name": "Camera",
   "description": "Local camera MCP on this Mac via tunnel (personal-mcp camera/)",

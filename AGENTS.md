@@ -125,7 +125,7 @@ MCP Server Portal（`wwwyo` = `mcp.wwwyo.dev`、`marketing` = `mcp-marketing.www
 - **hostname 等を直すときは作り直す**: `mise exec -- python3 mcp/cloudflare/apply.py --apply --recreate <id>` が、portal から一度外す → 削除 → `credential_env` の値で宣言どおりに作成 → portal に戻す、を行う。bearer の server だけが対象（OAuth は作成後に同意が要る）。巻き込みで Access app が消えていたら宣言から作り直し、新しい ID を宣言へ書き戻すので、その差分を commit する（2026-11-13 の buffercom では app は残った）。作り直した server は利用者ごとの portal 接続で認可し直しが要る
 - **OAuth upstream の「サーバーの認証」は自動化できない。** `auth_type: oauth` の server を作る・作り直すと、ダッシュボードの server 画面で「サーバーの認証」を押すまで同期しない（`cf`・API に相当操作が無い）
 - server の同期状態（`status`・`error`）は宣言の比較対象外で、apply.py は冒頭に表示するだけ
-- Tunnel・Gateway network policy・DNS はまだ宣言に入れていない。構成と追加手順は [dev-env の mcp-portal](https://github.com/wwwyo/skills/blob/main/.agents/skills/dev-env/references/mcp-portal.md)
+- Tunnel・Gateway network policy・DNS はまだ宣言に入れていない。いま loopback で載せているのは `camera`（127.0.0.1:47822）だけで、Gateway の L4 policy `Loopback via tunnel: only camera MCP port` が 127.0.0.1 宛てを 47822 以外 block している。port を変える・loopback の server を足すときはこの policy の許可 port も直す。構成と追加手順は [dev-env の mcp-portal](https://github.com/wwwyo/skills/blob/main/.agents/skills/dev-env/references/mcp-portal.md)
 
 ## Pullfrog の個別設定
 
