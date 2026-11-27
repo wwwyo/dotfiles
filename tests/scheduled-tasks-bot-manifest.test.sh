@@ -14,10 +14,10 @@ import sync_automations as s
 me = os.path.expanduser('~/src/github.com/wwwyo/me')
 for name in ('daily-start', 'daily-end'):
     m = s.load_manifest(Path(f'.agents/scheduled-tasks/{name}/automation.toml'))
-    assert (m['bot'], m['agent'], m['runs_in']) == ('assist', 'pi', 'new'), m
+    assert (m['bot'], m['agent'], m['runs_in']) == ('me', 'pi', 'new'), m
     assert f'{me}/.agents/skills/{name}/SKILL.md' in m['prompt']
     f = s.expected_flags(m)
-    assert f[f.index('--bot') + 1] == 'assist' and f[f.index('--agent') + 1] == 'pi'
+    assert f[f.index('--bot') + 1] == 'me' and f[f.index('--agent') + 1] == 'pi'
     assert not {'--provider', '--workspace', '--repo', '--reuse-session'} & set(f)
     # edit は --bot を受け付けない
     assert '--bot' not in s.expected_flags(m, {'bot': {'agentSetup': {'agent': 'pi'}}})
