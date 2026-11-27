@@ -60,7 +60,7 @@ assert sc.se._sentinel_hit({"input": "x session-consolidate-batch:5d1e8b4a y"})
 assert not sc.se._sentinel_hit({"input": "session-eval-batch:9f3a2c7e"})
 assert not sc.se._sentinel_hit({"input": "plain"})
 
-# sentinel は automation.toml / consolidator-prompt.md にも同一 literal が
+# sentinel は automation.toml / references/worker-prompt.md にも同一 literal が
 # 要る (消えると自己 consolidation ループが復活)。加えて両方に eval
 # sentinel の併記が要る — 無いとこの batch の session が日次 eval に
 # 評価されて翌翌週の対象に戻る
@@ -68,7 +68,7 @@ import pathlib
 # stdin script の __file__ は "<stdin>" なので module の方を使う
 task_dir = pathlib.Path(sc.__file__).resolve().parent.parent
 for f in (task_dir / "automation.toml",
-          task_dir / "references" / "consolidator-prompt.md"):
+          task_dir / "references" / "worker-prompt.md"):
     text = f.read_text()
     assert sc.SENTINEL in text, f"{f.name} missing consolidate sentinel"
     assert "session-eval-batch:9f3a2c7e" in text, \

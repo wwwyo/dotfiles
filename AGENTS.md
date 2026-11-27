@@ -43,7 +43,7 @@ dotfiles 自身の session から skill 本体・hook・`AGENTS.md` のような
 
 ## 開発フロー
 
-要件をまとめる [prd](https://github.com/wwwyo/skills/blob/main/.agents/skills/prd/SKILL.md) → 実装・self review・検証を行う [implement](https://github.com/wwwyo/skills/blob/main/.agents/skills/implement/SKILL.md) → 公開・レビュー・CIを扱う [pr](https://github.com/wwwyo/skills/blob/main/.agents/skills/pr/SKILL.md) → 定期merge laneの [pr-auto-merge](https://github.com/wwwyo/skills/blob/main/.agents/skills/pr-auto-merge/SKILL.md) の順で進める。期待動作が明確な実装タスクはimplementから始められる。テストの選択とunit testを最小限にする方針はimplementを参照する。
+要件をまとめる [prd](https://github.com/wwwyo/skills/blob/main/.agents/skills/prd/SKILL.md) → 設計・実装・検証・PR の公開と監視を playbook で進める [mode](https://github.com/wwwyo/skills/blob/main/.agents/skills/mode/SKILL.md) → 定期merge laneの [pr-auto-merge](https://github.com/wwwyo/skills/blob/main/.agents/skills/pr-auto-merge/SKILL.md) の順で進める。期待動作が明確な実装タスクはmodeから始められる。テストの選び方はmodeのFeature playbookを参照する。
 
 ## Skills 管理
 
@@ -150,5 +150,5 @@ Core actions:
 - **score**: trace/session に付ける評価値（数値・真偽・カテゴリ + comment）。機械可読の基準値の置き場 — 分類の解釈は score value に埋め込まず、記録は session comment に書く
 - **evaluator**: trace/session を読んで記録・score を付ける判定器。judge LLM を使うかルールベースかは問わない
 - **evaluated_until**: session-eval が Langfuse Session に付ける NUMERIC score。観測済み最新 obs の `endTime or startTime` の epoch 秒で「ここまでの観測を評価済み」の watermark と評価完了 marker を兼ねる（evaluator が最後に書く）。壁時計の取得時刻ではなく coverage で書く — fetch 後に ingest された turn も endTime が新しければ再評価対象になる
-- **session-consolidate**: 評価済み session の comment 記録にある `学習候補` を repo/wiki 単位でまとめて還元し、repo ごとに draft PR を出す batch（ADR 0003、`.agents/scheduled-tasks/session-consolidate/`）。session-eval とは別 task — evaluator は repo を書かない。採否は consolidator が記録を読んで判断する
+- **session-consolidate**: 評価済み session の comment 記録にある `学習候補` を repo ごとに束ね、各 repo で correct skill を走らせて PR を出す automation（ADR 0003、`.agents/scheduled-tasks/session-consolidate/`。手順の正本は `automation.toml` の prompt）。session-eval とは別 task — evaluator は repo を書かない。採否は repo ごとの worker が記録と repo を読んで判断する
 - **consolidated**: session-consolidate が Langfuse Session に付ける NUMERIC score（処理済み marker）。値は束ねた時点の `evaluated_until` — 再評価で `evaluated_until` が進んだ session は `consolidated < evaluated_until` で再対象になる

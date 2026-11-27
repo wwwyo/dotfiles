@@ -1,6 +1,6 @@
 # session 評価から学び還元を分離し、repo/wiki 単位の consolidation batch にする
 
-Status: accepted
+Status: accepted（PR の出し方と手順の置き場は ADR 0004 で変更）
 
 ADR 0001 では evaluator subagent が「判定 → score 書き戻し → signal あればそのまま session-retro（worktree → 追記 → draft PR）」を 1 run で行う設計だった。これを2つの batch に分ける:
 
