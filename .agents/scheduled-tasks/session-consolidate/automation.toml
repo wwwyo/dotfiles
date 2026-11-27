@@ -6,9 +6,9 @@
 # 有効化は PR merge 後の sync で行う前提。
 
 name = "session-consolidate"
-# personal データを扱う task。coordinator も worker も `pi` を起動引数なしで起動し、
-# Orca Settings → Agents の pi の既定（モデル・thinking）に従う（automation CLI に model flag は無い）。
-# 記録 comment は非公開 session を含むので、既定を変えるときは personal 用に許したモデルか確かめる。
+# personal データを扱う task。coordinator のモデル・thinking は delegate の worker/personal に従い
+# Orca Settings → Agents の pi 起動引数に指定する（automation CLI に model flag は無い）。
+# worker も同じ worker/personal の値を `pi --model --thinking` で明示して起動する（prompt の手順 4）。
 provider = "pi"
 enabled = false  # 2026-11-22 オーナー指示で一時停止
 timezone = "Asia/Tokyo"
@@ -42,7 +42,7 @@ SC=~/.agents/scheduled-tasks/session-consolidate/tools/session_consolidate.py（
 4. repo ごとに Orca orchestration で worker を起動する。`orca orchestration run-create --objective "session-consolidate <YYYY-MM-DD>" --json` で run を 1 つ作り、各 repo で:
    - `git -C <repo_root> fetch origin` し、`git -C <repo_root> symbolic-ref --short refs/remotes/origin/HEAD` の remote-tracking ref（`origin/main` など）を base にする。local の main は古いことがあるので使わない
    - `orca worktree create --repo id:<repo_id> --name consolidate-<basename>-<YYYY-MM-DD> --base-branch <origin/HEAD> --setup skip --no-parent --json`
-   - `orca terminal create --worktree id:<worktree_id> --command 'mise x -- pi' --json` で pi を起動し、`orca terminal wait --terminal <handle> --for tui-idle --timeout-ms 180000 --json` で ready を待つ。止まったら `terminal read --screen` を見る。表示 path がその worktree の Trust プロンプトなら Enter で trust してよい。それ以外の画面なら Enter を送らず、残った worktree と terminal を報告する
+   - 記録 comment は非公開 session を含むので、worker のモデル・thinking は `~/src/github.com/wwwyo/skills/.agents/skills/delegate/SKILL.md` の worker/personal から選ぶ（launcher の既定に任せない）。`orca terminal create --worktree id:<worktree_id> --command 'mise x -- pi --model <MODEL> --thinking <EFFORT>' --json` で pi を起動し、`orca terminal wait --terminal <handle> --for tui-idle --timeout-ms 180000 --json` で ready を待つ。止まったら `terminal read --screen` を見る。表示 path がその worktree の Trust プロンプトなら Enter で trust してよい。それ以外の画面なら Enter を送らず、残った worktree と terminal を報告する
    - `~/.agents/scheduled-tasks/session-consolidate/references/worker-prompt.md` の `{REPO_ROOT}` を置換し、末尾にその repo の sessions JSON を貼った spec をファイルに書き、`orca orchestration worker-start --spec "$(cat <file>)" --worktree id:<worktree_id> --terminal <handle> --run <run_id> --json` で渡す。spec に追加の指示は書かない。sentinel 行が消えると自己ループになる
    - worker-start が失敗したら再起動せず、receipt の `failedStage` と残った資源を報告に残して次の repo へ進む
 5. `orca orchestration check --wait --types "worker_done,escalation,question" --timeout-ms 900000 --json` を、全 dispatch が settle するまで繰り返す。question には人間に聞けない前提で自律判断を促して返す。settle した dispatch は `worker-release` する。wait・ack・release の細部は `orca skills get orchestration` の supervised loop に従う。score は worker が書くので、ここでは書かない
