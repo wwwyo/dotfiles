@@ -1,0 +1,5 @@
+# personal-mcp のカメラ MCP（camera/）と MCP Server Portal が共有する bearer token。
+# MISE_ENV=camera-mcp のときだけ読まれ、通常の shell には注入されない。
+# 使い方は personal-mcp の docs/camera.md、portal 側は dotfiles の mcp/cloudflare/servers/camera.json。
+[env]
+CAMERA_MCP_TOKEN = { age = "YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSBSL1NOUTNkR01CeXJyQmdoSis3dnU1TkRPUVdYYWJrd2hzZ05EZEROU0RnCkx6QUhpbHArUW44QjQ4bktnTUsrSzRtSW1saWpvSEJSS21jM1hjY2U0NEUKLT4gQi06KEpIeWItZ3JlYXNlCkNBTCtyai9SUWNWQ3krTVR1MW1lY2xCc0lIOCtFNFE2cDF3TkRkWQotLS0gMGhYRzRuazZhQTBLbEIvMEFHVjQ2L2pFbURIdWhRak1Wa1VVU1BwSlk3NApmYV6ad5k5fSnB5vRWCvf5Tc68gmYb4q351lr7UwK7HSMxcD3xOAQPC0O69DYZ2CEC60Vi4pLwUng67ELXDHfayOywRAtEYUzqx0ycDGvWhaqJPppDtURwRwEqyeJ7twI" }
