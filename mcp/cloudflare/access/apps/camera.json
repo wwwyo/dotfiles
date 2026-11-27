@@ -1,0 +1,34 @@
+{
+  "id": "bc36cea9-8fef-49d4-9019-d2ab85a97d86",
+  "name": "Camera MCP server",
+  "type": "mcp",
+  "destinations": [
+    {
+      "type": "via_mcp_server_portal",
+      "mcp_server_id": "camera"
+    }
+  ],
+  "allowed_idps": [
+    "6c457ad3-14f1-4b4e-afe7-06e510b164ce"
+  ],
+  "auto_redirect_to_identity": false,
+  "session_duration": "1h",
+  "http_only_cookie_attribute": true,
+  "policies": [
+    {
+      "id": "c13ae2bc-d0c2-4f6b-b536-7ae2bab904ec",
+      "name": "Only project owner",
+      "reusable": false,
+      "decision": "allow",
+      "include": [
+        {
+          "email": {
+            "email": "<owner_email>"
+          }
+        }
+      ],
+      "exclude": [],
+      "require": []
+    }
+  ]
+}

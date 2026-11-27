@@ -7,6 +7,13 @@
   "code_mode": "default_on",
   "servers": [
     {
+      "server_id": "camera",
+      "on_behalf": false,
+      "default_disabled": false,
+      "tool_overrides": {},
+      "prompt_overrides": {}
+    },
+    {
       "server_id": "context7",
       "on_behalf": false,
       "default_disabled": false,
