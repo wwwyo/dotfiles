@@ -1,0 +1,34 @@
+{
+  "id": "6f8f678d-3211-4d8c-9db6-4e6ab9d6461b",
+  "name": "Personal MCP server",
+  "type": "mcp",
+  "destinations": [
+    {
+      "type": "via_mcp_server_portal",
+      "mcp_server_id": "personal"
+    }
+  ],
+  "allowed_idps": [
+    "6c457ad3-14f1-4b4e-afe7-06e510b164ce"
+  ],
+  "auto_redirect_to_identity": false,
+  "session_duration": "1h",
+  "http_only_cookie_attribute": true,
+  "policies": [
+    {
+      "id": "49c99065-e657-4f57-921e-faddd460c8fe",
+      "name": "Only project owner",
+      "reusable": false,
+      "decision": "allow",
+      "include": [
+        {
+          "email": {
+            "email": "<owner_email>"
+          }
+        }
+      ],
+      "exclude": [],
+      "require": []
+    }
+  ]
+}

@@ -1,0 +1,13 @@
+{
+  "_comment": "wwwyo/personal-mcp の worker/（Void で Cloudflare Workers にデプロイ）。credential は Worker の MCP_BEARER_TOKEN と同じ値で、personal-mcp/worker の fnox.local.toml（age、gitignore）にある。差し替えは personal-mcp の docs/setup.md「portal につなぐ」の手順で MCP_BEARER_TOKEN を env に入れて python3 mcp/cloudflare/apply.py --apply --rotate-credentials personal。Worker 側の secret も同じ値に揃える（bun run secrets:sync）",
+  "id": "personal",
+  "name": "Personal",
+  "description": "personal-mcp Worker (Langfuse sessions, X posts/bookmarks, Product Hunt)",
+  "hostname": "https://personal-mcp.mix-mix.workers.dev/mcp",
+  "auth_type": "bearer",
+  "secure_web_gateway": false,
+  "is_shared_oauth_callback_enabled": false,
+  "tool_overrides": {},
+  "prompt_overrides": {},
+  "credential_env": "MCP_BEARER_TOKEN"
+}

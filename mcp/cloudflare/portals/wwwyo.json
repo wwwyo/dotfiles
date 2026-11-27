@@ -4,7 +4,7 @@
   "description": "Default portal for low-risk local MCPs. High-privilege MCPs go to separate portals (ADR 0002).",
   "hostname": "mcp.wwwyo.dev",
   "secure_web_gateway": false,
-  "code_mode": "default_on",
+  "code_mode": "opt_in",
   "servers": [
     {
       "server_id": "camera",
@@ -22,6 +22,13 @@
     },
     {
       "server_id": "fudoki",
+      "on_behalf": false,
+      "default_disabled": false,
+      "tool_overrides": {},
+      "prompt_overrides": {}
+    },
+    {
+      "server_id": "personal",
       "on_behalf": false,
       "default_disabled": false,
       "tool_overrides": {},
