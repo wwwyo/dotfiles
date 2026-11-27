@@ -23,7 +23,7 @@
     {
       "server_id": "fudoki",
       "on_behalf": false,
-      "default_disabled": false,
+      "default_disabled": true,
       "tool_overrides": {},
       "prompt_overrides": {}
     },
