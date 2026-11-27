@@ -25,9 +25,13 @@ python3 ~/.agents/scheduled-tasks/session-eval/tools/session_eval.py transcript 
 - cwd は automation が `{REPO_ROOT}` の origin の default branch から切った Orca worktree。この中だけで作業する
 - 変更が無ければ PR を作らない。それも正常な結果
 - 対象 repo に open の `consolidate/*` PR があれば、その branch に積む（`git fetch origin <branch>` → `git switch --detach FETCH_HEAD` → commit → `git push origin HEAD:<branch>`）。無ければ `consolidate/<YYYY-MM-DD>` を切る。1 repo に PR は 1 本
+- 既存の PR に積んだときは、push の後に `gh pr view <PR URL> --json state,headRefOid` で state が OPEN かつ headRefOid が push した commit であることを確かめる。pr-auto-merge が先に merge・close していたら、その commit から `consolidate/<YYYY-MM-DD>`（同日 2 本目以降は `-2` など）を切って新しい PR を開き、score にはその PR の URL を書く
 - PR は ready で開き、pr-auto-merge の対象にしてよい。手順は `~/src/github.com/wwwyo/skills/.agents/skills/mode/playbooks/opening-a-pr.md`。CI とレビューの完了は待たない（監視は pr-auto-merge が引き取る）
 - body に束ねた session_id と、各変更の根拠（どの session のどの記録か）、correct の Reply（ミスの類型・証拠・選んだ層と理由）を書く
-- 共有・業務 repo には push も PR もしない。owner が `gh api user -q .login` と一致し、`gh api --paginate repos/<owner>/<repo>/collaborators` に本人以外の人間（`type` が `Bot` 以外）がいない repo だけを個人 repo とする。org repo は加えて `gh api --paginate orgs/<owner>/members` に本人以外の人間がいないこと。API の失敗・空の結果は「未確認」で、共有と決めつけない（下の一時的な失敗として扱う）
+- 共有・業務 repo には push も PR もしない。個人 repo かは次のどちらかで判定する。どちらでも `gh api --paginate repos/<owner>/<repo>/collaborators` の全ページに本人以外の人間（`type` が `Bot` 以外）がいないことを共通の条件にする
+  - owner が `gh api user -q .login` と一致する repo
+  - owner が org の repo は、`gh repo view --json viewerPermission` が `ADMIN`、`gh api user/memberships/orgs/<owner>` が `state=active`・`role=admin`、`gh api --paginate orgs/<owner>/members` の全ページが本人を含み、本人以外の人間を含まないこと（本人だけで管理する org を共有と誤判定しない）
+- どの API も、失敗・JSON として読めない・空の結果・本人が含まれない場合は「未確認」で、共有と決めつけない（下の一時的な失敗として扱う）。条件を満たさないと確認できた repo だけを共有とする
 - push 権限が無くても fork しない
 
 ## consolidated score（PR の後に書く）
