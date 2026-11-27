@@ -5,6 +5,7 @@ import subprocess
 import sys
 import threading
 import unittest
+from datetime import datetime, timezone
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs, urlsplit
@@ -32,7 +33,7 @@ def summary(name='exec', errors=True):
 
 
 class TranscriptTest(unittest.TestCase):
-    def run_transcript(self, rows):
+    def run_transcript(self, rows, scores=None):
         requests = []
 
         class Handler(BaseHTTPRequestHandler):
@@ -42,12 +43,15 @@ class TranscriptTest(unittest.TestCase):
             def do_GET(self):
                 query = parse_qs(urlsplit(self.path).query)
                 requests.append(query)
-                selected = list(rows)
-                if 'filter' in query:
-                    selected = [row for row in selected if row['isRootObservation']]
-                if 'io' not in query['fields'][0].split(','):
-                    selected = [{k: v for k, v in row.items() if k not in ('input', 'output')}
-                                for row in selected]
+                if urlsplit(self.path).path.endswith('/scores'):
+                    selected = list(scores or [])
+                else:
+                    selected = list(rows)
+                    if 'filter' in query:
+                        selected = [row for row in selected if row['isRootObservation']]
+                    if 'io' not in query['fields'][0].split(','):
+                        selected = [{k: v for k, v in row.items() if k not in ('input', 'output')}
+                                    for row in selected]
                 index = int(query.get('cursor', ['0'])[0])
                 body = json.dumps({'data': selected[index:index + 2], 'meta': {
                     'cursor': str(index + 2) if index + 2 < len(selected) else None}}).encode()
@@ -66,7 +70,12 @@ class TranscriptTest(unittest.TestCase):
             result = subprocess.run([sys.executable, str(SCRIPT), 'transcript', SID],
                                     env=env, capture_output=True, text=True, timeout=15)
             self.assertEqual(result.returncode, 0, result.stderr)
-            self.assertTrue(all('telemetry_summary' in q['expandMetadata'][0] for q in requests))
+            # observation を引く request だけが metadata を expand する
+            # (scores の lookup は別 path、fields=subject)
+            obs_requests = [q for q in requests if 'expandMetadata' in q]
+            self.assertTrue(obs_requests)
+            self.assertTrue(all('telemetry_summary' in q['expandMetadata'][0]
+                                for q in obs_requests))
             return json.loads(result.stdout)
         finally:
             server.shutdown()
@@ -116,6 +125,48 @@ class TranscriptTest(unittest.TestCase):
         self.assertEqual(result['tool_calls'], 2)
         self.assertEqual(result['error_count'], 2)
         self.assertIn('subagent failed', result['transcript'])
+
+    def test_prior_watermark_marks_evaluated_turns(self):
+        # reuse_session の session は 1 session に複数 run が入るので、前回の
+        # evaluated_until 以前に完了した turn を評価済みとして示す
+        old = observation('old-turn', root=True)
+        old.update(startTime='2026-10-01T00:00:00Z', endTime='2026-10-01T01:00:00Z')
+        new = observation('new-turn', root=True, trace='trace-2')
+        new.update(startTime='2026-10-02T00:00:00Z', endTime='2026-10-02T01:00:00Z')
+        wm = datetime(2026, 10, 1, 2, 0, tzinfo=timezone.utc).timestamp()
+        scores = [{'id': 's1', 'name': 'evaluated_until', 'value': wm,
+                   'subject': {'kind': 'session', 'id': SID}}]
+        result = self.run_transcript([old, new], scores=scores)
+        body = result['transcript']
+        self.assertIn('prior_eval: 2026-10-01T02:00:00Z | new_turns: 1/2', body)
+        self.assertIn('--- [evaluated] old-turn | 2026-10-01T00:00:00Z ---', body)
+        self.assertNotIn('[evaluated] new-turn', body)
+        # watermark は session 全体の上限のまま (評価済み turn を覆う)
+        self.assertEqual(result['evaluated_until'],
+                         datetime(2026, 10, 2, 1, 0,
+                                  tzinfo=timezone.utc).timestamp())
+
+    def test_error_in_open_turn_is_not_marked_evaluated(self):
+        # compact summary の error は start_time しか持たない。error 自身の時刻で
+        # [evaluated] を付けると、watermark より前に start して watermark 後に
+        # 終わる turn の中の失敗が評価済み扱いになり、watermark が進むと以後の
+        # run から消える。coverage は所属 turn で決める
+        wm = datetime(2026, 10, 1, 2, 0, tzinfo=timezone.utc).timestamp()
+        pack = {'version': 1, 'generation_count': 1, 'tool_call_count': 1,
+                'tool_names': {'exec': 1}, 'usage_by_model': {},
+                'errors': [{'name': 'exec', 'status_message': 'command failed',
+                            'start_time': '2026-10-01T01:00:00Z'}]}
+        compact = observation('open-turn', summary=json.dumps(pack), root=True)
+        compact.update(startTime='2026-10-01T00:30:00Z', endTime='2026-10-02T00:00:00Z')
+        scores = [{'id': 's1', 'name': 'evaluated_until', 'value': wm,
+                   'subject': {'kind': 'session', 'id': SID}}]
+        result = self.run_transcript([compact], scores=scores)
+        body = result['transcript']
+        # turn は watermark 後に終わっているので未評価
+        self.assertIn('--- open-turn | 2026-10-01T00:30:00Z ---', body)
+        # 所属 turn が未評価なので、中の ERROR も評価済みにしない
+        self.assertIn('* 2026-10-01T01:00:00Z [ERROR] exec — command failed', body)
+        self.assertNotIn('open-turn [ERROR]', body)
 
 
 if __name__ == '__main__':

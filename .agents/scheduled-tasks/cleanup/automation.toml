@@ -23,5 +23,5 @@ workdir = "~/src/github.com/wwwyo/me"
 # bot automation は reuse_session を持てず、runs_in = "new" で毎回新しい会話になる
 
 prompt = """
-作業ディレクトリ {{workdir}} に移動し、以降のコマンドはすべてそこで実行する。dotfiles の ~/.agents/scheduled-tasks/cleanup/SKILL.md に記載された手順でローカル環境を掃除する。対象は個人 repo と agent workspace 置き場（~/orca/workspaces・~/.codex/worktrees）のみ。閾値ゲートを守り、強制クリーンや閾値変更はしない。何も消さず freed 0MB で終わるのも正常。
+作業ディレクトリ {{workdir}} に移動し、以降のコマンドはすべてそこで実行する。dotfiles の ~/.agents/scheduled-tasks/cleanup/SKILL.md に記載された手順でローカル環境を掃除する。git 側（worktree・branch・gc）の走査対象は個人 repo と agent workspace 置き場（~/orca/workspaces・~/.codex/worktrees）のみ。キャッシュ（step 1）は SKILL の閾値ゲートどおり実行し、step 1 を対象範囲の制限で skip しない。閾値ゲートを守り、強制クリーンや閾値変更はしない。何も消さず freed 0MB で終わるのも正常。
 """

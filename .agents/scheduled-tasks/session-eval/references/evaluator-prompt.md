@@ -20,6 +20,9 @@ python3 ~/.agents/scheduled-tasks/session-eval/tools/session_eval.py transcript 
 
 - `self: true` が返ったら eval batch 自身の session。何も書き込まず `self` とだけ出力して終了する
 - 以降、出力の `transcript` を観察入力、`evaluated_until`（epoch 秒）を step 3 の score 値に使う
+- **1 session = 1 run とは限らない**: `reuse_session = true` の automation（daily-start / daily-end / cleanup / session-eval）は同じ session に毎回の run を 1 turn として積む（1 session の 5 turn = 5 日分、など）。header の `prior_eval: <前回の評価の上限> | new_turns: N/M` が新規 turn 数を示し、`[evaluated]` の付いた turn と ERROR 行は**前回の評価が覆った分**。エラー・学びは turn（= 1 run）単位に分けて読み、「指示が毎日同じ」「同じ作業を繰り返した」を 1 run 内の反復と読まない。**tool の集計（header の `tools:`）は session 全体の合計**で turn ごとの内訳は出ない — reuse_session の session では `tools: exec×5` が 5 run 分の合計かもしれず、1 run 内の反復の証拠にならない
+  - 評価の対象は新しい turn。`[evaluated]` の turn から学びを書き写さない — comment は append-only で consolidate は最新 comment だけを読むため、再掲すると還元済みの学びが毎回再浮上する。新しい turn が無ければ `学習候補: 特になし` でよい（`prior_eval: none` は初回評価なので全 turn が対象）
+  - `evaluated_until` は turn ごとではなく session に 1 本 — 出力 JSON の `evaluated_until`（epoch 秒）をそのまま step 3 で書く。header の `prior_eval` は前回の上限（ISO8601 か `none`）で、NUMERIC の score には使えない
 
 ## 2. 記録の作成
 
@@ -29,7 +32,7 @@ transcript を読み、以下のフォーマットで記録を temp file に書�
 <!-- session-eval evaluated_at=<現在時刻の ISO8601 UTC> -->
 ## 事実
 - **概要**: <依頼内容・実行されたこと・到達した成果を淡々と>
-- **エラー・摩擦の観測**: <ユーザーの修正・舵取り直し・不満の発言、発生したエラー、同じ tool 呼び出しの反復（header の `tools:` 集計を証拠に）、使えたはずの tool を使わなかった形跡。`subagent` の fanout が workflow/extension 側で起きると個別 spawn が `tools:` 集計に現れない — 報告上の起動数と集計が一致しないこと自体は摩擦の証拠にしない>
+- **エラー・摩擦の観測**: <ユーザーの修正・舵取り直し・不満の発言、発生したエラー、同じ tool 呼び出しの反復（header の `tools:` は session 全体の合計なので、reuse_session の session では反復の証拠にしない。turn 本文と `[ERROR]` 行で確かめられる範囲だけを書く）、使えたはずの tool を使わなかった形跡。`subagent` の fanout が workflow/extension 側で起きると個別 spawn が `tools:` 集計に現れない — 報告上の起動数と集計が一致しないこと自体は摩擦の証拠にしない>
 - **agent の判断と根拠**: <transcript 内で agent が述べた判断とその理由>
 - **残課題**: <未完・未検証のもの>
 
@@ -47,8 +50,14 @@ transcript を読み、以下のフォーマットで記録を temp file に書�
 - transcript の `[ERROR]` 行は tool の level/statusMessage だけを拾ったもの。tool の個別の入出力は transcript に含まれない — 観察できないもの（tool の引数・出力の良し悪し）を事実として書かない。同一 turn_number の重複は exporter が途中経過を再 emit したもので、ユーザーの繰り返し発言ではない — 重複それ自体を摩擦の証拠にしない
 - pi / `unknown_service` source の session は turn obs の `output` が空で、`[assistant]` が全 turn 空になりうる。header の `generations`（GENERATION type の obs 数）が 0 でなければ会話自体は存在する — 空本文を「signal なし」と読まず、事実側に「assistant 本文は exporter の emit 形で観測できない」と書く
 - compaction の要約 prompt（`summarize the conversation … in <summary> tags` 形式）も user turn として現れ、対応する assistant turn は action なしの要約だけを返す（旧 Devin source で観測）。ユーザーの指示・agent の無応答として扱わない
-- auth・sandbox・network 等のインフラ失敗が繰り返されただけの session なら、それを `エラー・摩擦の観測` に事実として書き、`学び・発見` は `特になし` でよい
-- automation 型 session や外部 path の handoff で依頼された session は、依頼本文が root turn に残らないことがある（automation の prompt がテンプレートのまま、handoff file が `/tmp` 等の一時領域で消えている等）。復元できない依頼本文を推測で補わず、観測できる範囲（概要・工具集計・assistant 出力）だけで評価し、不明点は残課題に書く。判断や成果物が transcript の外（例: pr-auto-merge の `daily/<date>/pr-watch.md`）にある型は、transcript が薄いこと自体を失敗と読まず、生成物の path を特定して読む。外部 artifact から読んだ観測も `事実` に書き、読んだ artifact の path を添える — artifact の内容に対する評価は `解釈` 側に分ける。pr-auto-merge の tick 跡は `daily/<date>/pr-watch.jsonl` を `ts` で当該 tick の窓に絞って読む（`ts` は UTC、dir は JST — tick が JST 0 時を越えると event は翌日の dir に入るので、両方の dir を見る）。窓の起点は plan の `generated_at` 以降、終点は次の tick の `generated_at`（半開区間 `[generated_at, next_generated_at)`）。次の tick がまだ無い最新 tick は、そこから観測できる最後の event までを窓とし、`evaluated_until`（session-eval の watermark）を終端に使わない。`tick-summary:` と突き合わせられるのは jsonl に event が残る field だけ（`judge_*`・`merge`・`dispatch`・`escalate`・`error` に対応する event は `judge`・`merge`・`dispatch`・`escalate`・`tick_error`/`merge_failed`/`dispatch_failed`）、`blocked=` は judge event の field。`hold=` は plan の action 件数で event が無く、`sweep=` は手動 sweep を除く条件が要るので、全 field の一致を前提にしない（正本は `pr-auto-merge` の tick-summary 節）。event の語彙は `merge`・`judge`・`note` など `pr_triage.py` の `append_event` 呼び出しが正本（`merge` だけの tick もある）。`pr-watch.md` は executor session が `plan.report.md` に書く当日累計で、後続 tick が同じ file を更新する — md に載っていないことを未実施と断定しない
+- auth・sandbox・network 等のインフラ失敗が繰り返されただけの session なら、それを `エラー・摩擦の観測` に事実として書き、`学び・発見` は `特になし` でよい。turn 自体に `[ERROR]` が付いて `tool_calls: 0`（初回生成の前に落ちた）session も同じ型 — skill の設計・agent の判断の失敗として扱わず、原因文言が残っていなければ原因を推測で補わず残課題に置く。pi の session は `stopReason: error` のとき provider の `errorMessage`（402 残高切れ・429 等）を jsonl に残すので、原因を断定するのはそこを読んでからにする（`~/.agents/scheduled-tasks/tools/check_failed_runs.py` が直近の失敗 run を原因文付きで集計する）
+- automation 型 session や外部 path の handoff で依頼された session は、依頼本文が root turn に残らないことがある（automation の prompt がテンプレートのまま、handoff file が `/tmp` 等の一時領域で消えている等）。復元できない依頼本文を推測で補わず、観測できる範囲（概要・工具集計・assistant 出力）だけで評価し、不明点は残課題に書く
+- 判断や成果物が transcript の外（例: pr-auto-merge の `daily/<date>/pr-watch.md`）にある型は、transcript が薄いこと自体を失敗と読まず、生成物の path を特定して読む。外部 artifact から読んだ観測も `事実` に書き、読んだ artifact の path を添える — artifact の内容に対する評価は `解釈` 側に分ける
+  - pr-auto-merge の tick 跡は `daily/<date>/pr-watch.jsonl` を `ts` で当該 tick の窓に絞って読む（`ts` は UTC、dir は JST — tick が JST 0 時を越えると event は翌日の dir に入るので、両方の dir を見る）。窓の起点は plan の `generated_at` 以降、終点は次の tick の `generated_at`（半開区間 `[generated_at, next_generated_at)`）。次の tick がまだ無い最新 tick は、そこから観測できる最後の event までを窓とし、`evaluated_until`（session-eval の watermark）を終端に使わない
+  - `pr-watch.md` は当日累計（件数見出し `当日累計: merge N 件 / hold K 件 / error E 件` と Error・Merge 表）で、後続 tick が同じ file を上書きする。**md 単体を当該 tick の証拠にしない** — md の件数を本 tick の値と読むと過大に、md に行が無いのを未実施と読むと過小にずれる。md の provenance は mtime では決められない — report は tick の最後（最後の event の後）に書かれ、後続 tick が同じ file を上書きするので、新しい mtime は「その tick が書いた」ことを意味しない（前 tick の `generated_at` より後、という条件では後続 tick の上書きを弾けない）。md を当該 tick の産物として扱えるのは、その tick の assistant 最終出力か plan が md を書いたと示している場合だけ。書き手を特定できなければ provenance 未確定として扱い、件数は累計のままなので jsonl 窓と `tick-summary:` で復元する
+  - `tick-summary:` と突き合わせられるのは jsonl に event が残る field だけ（`judge_*`・`merge`・`dispatch`・`escalate`・`error` に対応する event は `judge`・`merge`・`dispatch`・`escalate`・`tick_error`/`merge_failed`/`dispatch_failed`）、`blocked=` は judge event の field。`hold=` は plan の action 件数で event が無く、`sweep=` は手動 sweep を除く条件が要るので、全 field の一致を前提にしない（正本は `pr-auto-merge` の tick-summary 節）。`error=` は script が残す `tick_error`/`merge_failed`/`dispatch_failed` の件数で、executor の shell 失敗のように script の event を伴わない tool 失敗は入らない — transcript の `[ERROR]` 件数や md の Error 表と `error=` が一致しなくても不整合と読まず、対象が特定できなければ残課題に書く
+  - `sweep=0` は「実施して `removed` 0 件」と「未実施」の両方 — `worktree_rm` は削除があったときだけなので件数では区別できず、実施したかは executor が `pr_triage.py log` で残す note event でしか判定できない。`judge=0` で `merge>0` の tick は merge event の `dep_auto_ok`/`via` が依存自動 ok 経路で、judge 未実施と読まない。lock release は jsonl に event を残さないので report の主張として書き、検証済みとして書かない
+  - event の語彙は `merge`・`judge`・`note` など `pr_triage.py` の `append_event` 呼び出しが正本（`merge` だけの tick もある）
 - Orca dispatch worker 型 session は work の実体が transcript に残らない（worker の最終出力は orchestration の `worker_done` message にあり、観測できる assistant turn は着手・進捗の宣言だけになりうる）。transcript が薄いだけで失敗と読まない — 成果は Orca の `~/Library/Application Support/orca/orchestration.db` の messages を taskId/dispatchId で引く。
 
 ## 3. 書き戻し（順序固定: comment → evaluated_until）

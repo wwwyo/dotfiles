@@ -25,7 +25,7 @@ for name in ('daily-start', 'daily-end'):
 for bad in ('provider = "pi"', 'reuse_session = true', 'runs_in = "chat"'):
     with tempfile.TemporaryDirectory() as d:
         p = Path(d) / 'automation.toml'
-        p.write_text(f'name = "x"\nbot = "assist"\nagent = "pi"\nprompt = "p"\n{bad}\n')
+        p.write_text(f'name = "x"\nbot = "me"\nagent = "pi"\nprompt = "p"\n{bad}\n')
         try:
             s.load_manifest(p)
         except RuntimeError:

@@ -27,5 +27,5 @@ workdir = "~/src/github.com/wwwyo/me"
 # bot フォルダで起動した agent は wwwyo/me の project skill・AGENTS.md を自動では読まない
 # (pi は起動 cwd から探す) ので、prompt でパスを明示する
 prompt = """
-作業ディレクトリ {{workdir}} に移動し、以降のコマンドはすべてそこで実行する。{{workdir}}/AGENTS.md と {{workdir}}/.agents/skills/daily-end/SKILL.md を読み、その daily-end skill の手順で実行する。今日の分がすでに実行済みなら skip する。これは無人の scheduled 実行なので、振り返り質問・回答待ちは行わず、end.md に「対話なし」と記す。
+作業ディレクトリ {{workdir}} に移動し、以降のコマンドはすべてそこで実行する。{{workdir}}/AGENTS.md と {{workdir}}/.agents/skills/daily-end/SKILL.md を読み、その daily-end skill の手順で実行する。「今日の分がすでに実行済み」の判定は end.md の存在ではなく skill の完了条件（`状態:` 行が無く当日の活動を網羅した end.md）で行う — 骨格だけ・`状態: 作成中` の end.md は未実行として続きを書く。これは無人の scheduled 実行なので、振り返り質問・回答待ちは行わず、end.md に「対話なし」と記す。
 """
