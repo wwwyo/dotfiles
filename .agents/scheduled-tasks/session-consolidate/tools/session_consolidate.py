@@ -5,7 +5,8 @@
 """session_consolidate — 評価済み session の記録 comment から 学習候補 を
 repo/wiki 単位で束ねる consolidation batch の tooling。
 
-定時 batch (orca automation) と consolidator subagent が使う。
+定時 batch (orca automation、手順は automation.toml の prompt) と repo ごとの worker
+(references/worker-prompt.md、correct skill を実行する) が使う。
 全 subcommand は JSON を stdout に出す。
 
   targets      未 consolidate の評価済み session を repo_root で束ねて列挙
