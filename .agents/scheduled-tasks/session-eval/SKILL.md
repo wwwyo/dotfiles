@@ -1,11 +1,11 @@
 ---
 name: session-eval
-description: "未評価の Langfuse session を評価し、事実と解釈を記録する batch。定期 automation または手動評価で使う。repo/wiki への学びの還元は session-consolidate の automation（repo ごとに correct skill を走らせる）が担当する。"
+description: "未評価の Langfuse session を評価し、事実と解釈を記録する batch。定期 automation または手動評価で使う。repo/wiki への学びの還元は扱わない。"
 ---
 
 # Session Eval Batch
 
-Langfuse に流れている agent session の trace を読み、未評価 session に記録を書き戻す定期 batch。書き戻すのは **session comment**（事実と evaluator 所見を分けた記録 — 要約は score value ではなく comment オブジェクト。分類の解釈を score に埋め込まない）と **`evaluated_until` score**（watermark + 完了 marker）だけ。trace 送信は既存 exporter/plugin の担当、学びの repo/wiki への還元は session-consolidate の automation（ADR 0003、後続。repo ごとに correct skill を走らせる）の担当 — この skill は観測の記録だけを持つ。設計 SSOT は dotfiles repo の `docs/prd/session-eval-langfuse/prd.md`。
+Langfuse に流れている agent session の trace を読み、未評価 session に記録を書き戻す定期 batch。書き戻すのは **session comment**（事実と evaluator 所見を分けた記録 — 要約は score value ではなく comment オブジェクト。分類の解釈を score に埋め込まない）と **`evaluated_until` score**（watermark + 完了 marker）だけ。trace 送信は既存 exporter/plugin の担当、学びの repo/wiki への還元はこの skill の外（session-consolidate の automation は 2026-11-28 に削除） — この skill は観測の記録だけを持つ。設計 SSOT は dotfiles repo の `docs/prd/session-eval-langfuse/prd.md`。
 
 ## 前提
 

@@ -4,6 +4,8 @@ status: in-progress
 
 # pr-merge-lane — レビュー応答の routing と低リスク lane の自動 merge
 
+> 2026-11-28: 定期 automation `pr-auto-merge` はユーザー判断で削除した（wwwyo/skills を plugin ごとの dir に移したとき）。skill は wwwyo/skills に残り、`/pr-auto-merge` で手で回せる。以下は automation があった頃の設計の記録。
+
 ## Problem
 
 `pr-auto-merge` routine は1日1回（10:00）に `wwwyo/*` の open PR をレビューし、基準を満たすものだけ merge する。この運用に3つの問題がある。

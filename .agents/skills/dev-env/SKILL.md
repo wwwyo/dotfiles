@@ -7,7 +7,7 @@ description: "dotfiles で管理する開発環境の tool 設定・hooks・tele
 
 この環境の tool 別の知見を `references/` に持つ。SKILL.md はルーター — 正本は各 reference。
 
-サービスの公開・保護・課金設定と security/cost の共通概念は [solo-product](https://github.com/wwwyo/skills/blob/main/.agents/skills/solo-product/SKILL.md) に置く。ここでは手元の tool と AI Gateway の開発環境設定を扱う。
+サービスの公開・保護・課金設定と security/cost の共通概念は [solo-product](https://github.com/wwwyo/skills/blob/main/plugins/core/skills/solo-product/SKILL.md) に置く。ここでは手元の tool と AI Gateway の開発環境設定を扱う。
 
 置いてよいのは「調べてわかるが、発見に失敗コスト（設定を壊す・存在しない機能を掘る）が伴う」事実。`--help` や doc を読めばその場で出る情報は置かない。
 
