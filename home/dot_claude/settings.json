@@ -443,6 +443,7 @@
     "core@wwwyo": false,
     "design@synced": true,
     "design@wwwyo": false,
+    "motion-graphics@synced": false,
     "local@wwwyo": true,
     "langfuse-observability@langfuse-observability": false,
     "gopls-lsp@claude-plugins-official": false,
