@@ -444,6 +444,7 @@
     "design@synced": true,
     "design@wwwyo": false,
     "local@wwwyo": true,
+    "motion-graphics@synced": false,
     "langfuse-observability@langfuse-observability": false,
     "gopls-lsp@claude-plugins-official": false,
     "figma@claude-plugins-official": false,
