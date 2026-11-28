@@ -24,6 +24,14 @@ with tempfile.TemporaryDirectory() as d:
     # edit は --bot を受け付けない
     assert '--bot' not in s.expected_flags(m, {'bot': {'agentSetup': {'agent': 'pi'}}})
 
+# 実 manifest がすべて load_manifest を通り、bot manifest は bot 用の flag だけになること
+for toml in sorted(Path('.agents/scheduled-tasks').glob('*/automation.toml')):
+    m = s.load_manifest(toml)
+    if m.get('bot'):
+        f = s.expected_flags(m)
+        assert f[f.index('--bot') + 1] == m['bot'], toml
+        assert not {'--provider', '--workspace', '--repo', '--reuse-session'} & set(f), toml
+
 for bad in ('provider = "pi"', 'reuse_session = true', 'runs_in = "chat"'):
     with tempfile.TemporaryDirectory() as d:
         p = Path(d) / 'automation.toml'
