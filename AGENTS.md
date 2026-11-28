@@ -47,14 +47,15 @@ dotfiles 自身の session から skill 本体・hook・`AGENTS.md` のような
 
 ## Skills 管理
 
-共有 skill の正本は [wwwyo/skills](https://github.com/wwwyo/skills)（canonical checkout は `~/src/github.com/wwwyo/skills`）。skill の追加・編集・skillctrl 運用・plugin の layout はその repo の `AGENTS.md` に従い、この repo には skill 本体を置かない。dotfiles が持つのは各 tool への登録だけ。
+共有 skill の正本は [wwwyo/skills](https://github.com/wwwyo/skills)（canonical checkout は `~/src/github.com/wwwyo/skills`）。skill の追加・編集・skillctrl 運用・plugin の layout はその repo の `AGENTS.md` に従い、この repo に置く skill は下の Orca の skill と langfuse だけで、ほかは各 tool への登録だけを持つ。
 
 - Claude Code: core・design は claude.ai のアカウントに入れたもの（`core@synced`・`design@synced`）を使い、local は `extraKnownMarketplaces.wwwyo`（directory source）の `local@wwwyo` で入れる。`enabledPlugins` で `core@synced`・`design@synced` を有効、directory 側の `core@wwwyo`・`design@wwwyo` を無効にして重複させない。local をアカウントに入れると cloud にも届くので、local だけは手元で入れる。core の編集は wwwyo/skills の main への merge と claude.ai の同期を経てから届く。merge 前の版を試すときは `claude --settings '{"enabledPlugins":{"core@wwwyo":true,"core@synced":false}}'` で起動し、その session だけ checkout の core に切り替える（`--plugin-dir` は marketplace の root を plugin として読まない）。plugin を廃止したら、claude.ai の Customize > Plugins から外すまで `enabledPlugins` に `<name>@synced: false` を残す（行を消すと既定の有効に戻り、アカウントに残った copy が読まれる）。外したら行を消す
 - Codex: `home/.chezmoitemplates/codex-base.toml.tmpl` の `[marketplaces.wwwyo]` と `[plugins."core@wwwyo"]` 等。宣言だけでは cache に入らないため `home/run_after_30-codex-skill-plugins.sh` が apply 毎に `codex plugin add` する。three.js の skill は design plugin に入っている
 - pi: `home/.chezmoitemplates/pi-settings-base.json` の `packages` にローカルパス
 - Devin: plugin を読まないため、dir link script が `~/.config/devin/skills` を wwwyo/skills の `.agents/skills` へ link する（repo 外を指す唯一の dir link。`~/.agents/skills` に置くと Codex・pi の native discovery と plugin が重複する）
 - Orca が配る skill（`orca-cli`・`orchestration`・`orca-computer-use`）だけは wwwyo/skills に置かず、この repo の `.agents/skills/` で git 追跡する。`~/.agents` はこの `.agents` への link なので、Orca 本体の更新で Orca が書き換えた内容は repo の差分として現れ、それを commit する。Claude 向けには `.claude/skills/<name>` → `../../.agents/skills/<name>` の相対 symlink を git に載せ、`~/.claude/skills` を dir link で配る（`tests/agents-skills-symlinks.test.sh` が対応を検査する）。Orca は手を入れていない copy だけを更新するので、中身は Orca 純正のまま保ち、手元の方針は global instructions か dev-env の reference に置く
-- scheduled task・hook から skill の tools を呼ぶときは canonical checkout（`~/src/github.com/wwwyo/skills/.agents/skills/...`）を指す。`~/.agents/skills` には Orca の skill しか無い（Codex・pi はそこを直接読む）
+- `langfuse`（Langfuse の API・計測の upstream skill）も、Langfuse telemetry と同じくこの repo の `.agents/skills/` で追跡する（ユーザー判断）。upstream の取り込みは skillctrl で、登録は root の `skills-lock.json`、受理 hash と intent は `.agents/skillctrl/`。wwwyo/skills の週次 skillctrl-update は対象外なので、更新はこの repo で `skillctrl update langfuse` を手で回す
+- scheduled task・hook から skill の tools を呼ぶときは canonical checkout（`~/src/github.com/wwwyo/skills/.agents/skills/...`）を指す。`~/.agents/skills` には Orca の skill と langfuse しか無い（Codex・pi はそこを直接読む）
 - tool ごとの読み込み方・編集の反映は [dev-env の skill-plugins](https://github.com/wwwyo/skills/blob/main/.agents/skills/dev-env/references/skill-plugins.md) を参照する
 
 ## ユーザー名に依存しない

@@ -1,0 +1,24 @@
+{
+  "acceptedHashes": {
+    "langfuse": "1f4efa271b10a127fa56e876ce2861eb28aba00a"
+  },
+  "upstreams": {
+    "langfuse": {
+      "computedHash": "fb97ca7d507488a5ca2e3c33e94e90adf76a2a1540e4048406399ee98883a54b",
+      "installedAt": "2026-11-28T02:45:28.266Z",
+      "native": {
+        "computedHash": "fb97ca7d507488a5ca2e3c33e94e90adf76a2a1540e4048406399ee98883a54b",
+        "skillPath": "skills/langfuse/SKILL.md",
+        "source": "langfuse/skills",
+        "sourceType": "github"
+      },
+      "skillFolderHash": "5fb5a3cd36f32cdf6a1fdbce035ec08bed469307",
+      "skillPath": "skills/langfuse/SKILL.md",
+      "source": "langfuse/skills",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/langfuse/skills.git",
+      "updatedAt": "2026-11-28T02:45:28.266Z"
+    }
+  },
+  "version": 1
+}
