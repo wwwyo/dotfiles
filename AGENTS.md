@@ -43,7 +43,7 @@ dotfiles 自身の session から skill 本体・hook・`AGENTS.md` のような
 
 ## 開発フロー
 
-要件をまとめる [prd](https://github.com/wwwyo/skills/blob/main/plugins/core/skills/prd/SKILL.md) → 設計・実装・検証・PR の公開と監視を playbook で進める [mode](https://github.com/wwwyo/skills/blob/main/plugins/core/skills/mode/SKILL.md) の順で進める。期待動作が明確な実装タスクはmodeから始められる。テストの選び方はmodeのFeature playbookを参照する。
+要件をまとめる [prd](https://github.com/wwwyo/skills/blob/main/plugins/core/skills/prd/SKILL.md) → 設計・実装・検証・PR の公開と監視を playbook で進める [mode](https://github.com/wwwyo/skills/blob/main/plugins/core/skills/mode/SKILL.md) → 定期merge laneの [pr-auto-merge](https://github.com/wwwyo/skills/blob/main/plugins/local/skills/pr-auto-merge/SKILL.md) の順で進める。期待動作が明確な実装タスクはmodeから始められる。テストの選び方はmodeのFeature playbookを参照する。
 
 ## Skills 管理
 
@@ -152,4 +152,4 @@ Core actions:
 - **score**: trace/session に付ける評価値（数値・真偽・カテゴリ + comment）。機械可読の基準値の置き場 — 分類の解釈は score value に埋め込まず、記録は session comment に書く
 - **evaluator**: trace/session を読んで記録・score を付ける判定器。judge LLM を使うかルールベースかは問わない
 - **evaluated_until**: session-eval が Langfuse Session に付ける NUMERIC score。観測済み最新 obs の `endTime or startTime` の epoch 秒で「ここまでの観測を評価済み」の watermark と評価完了 marker を兼ねる（evaluator が最後に書く）。壁時計の取得時刻ではなく coverage で書く — fetch 後に ingest された turn も endTime が新しければ再評価対象になる
-- **session-consolidate**: 評価済み session の `学習候補` を repo ごとに束ねて correct skill を走らせていた automation（ADR 0003・0004）。2026-11-28 に wwwyo/skills の skill を plugin ごとの dir へ移したとき、ユーザー判断で pr-auto-merge の automation とともに削除した。Langfuse に残る `consolidated` score はその処理済み marker
+- **session-consolidate**: 評価済み session の `学習候補` を repo ごとに束ねて correct skill を走らせていた automation（ADR 0003・0004）。2026-11-28 に wwwyo/skills の skill を plugin ごとの dir へ移したとき、ユーザー判断で削除した。Langfuse に残る `consolidated` score はその処理済み marker
