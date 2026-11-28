@@ -1,6 +1,6 @@
 # 学び還元を repo ごとの correct に任せ、PR を ready で出す
 
-Status: accepted
+Status: superseded（2026-11-28 に session-consolidate と pr-auto-merge の automation をユーザー判断で削除した）
 
 ADR 0003 の session-consolidate は、専用の SKILL.md と consolidator prompt で学習候補を束ね、repo ごとに draft PR を出して人間のレビューを待つ batch だった。2026-11-27 に wwwyo/skills を pstack の粒度に揃えたのに合わせて、次のように変える（ユーザー判断）。
 

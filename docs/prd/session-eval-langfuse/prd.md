@@ -1,5 +1,7 @@
 # Session 評価の Langfuse 移行
 
+> 2026-11-28: session-consolidate の automation はユーザー判断で削除した。還元フローの AC と Success Metrics の consolidate 部分は、automation があった頃の記録として残す。
+
 関連 ADR: [0001 Session 評価を Langfuse trace 駆動の定時 batch に移す](../../adr/0001-session-eval-on-langfuse-traces.md) / [0002 sessions.md を廃止し Langfuse を SSOT にする](../../adr/0002-sessions-md-replaced-by-langfuse-scores.md)
 
 ## Problem

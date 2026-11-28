@@ -53,7 +53,14 @@ link_devin_skills() {
   done
   for skill in "$src"/*/skills/*/; do
     skill="${skill%/}"
-    if [ -f "$skill/SKILL.md" ]; then ln -sfn "$skill" "$dst/$(basename "$skill")"; fi
+    [ -f "$skill/SKILL.md" ] || continue
+    target="$dst/$(basename "$skill")"
+    # link_dir と同じく、実 dir に ln -sfn すると中に link を作って成功するので止める
+    if [ -e "$target" ] && [ ! -L "$target" ]; then
+      echo "error: $target is a real dir/file; move it away and re-run" >&2
+      return 1
+    fi
+    ln -sfn "$skill" "$target"
   done
   echo "link: $dst/* -> $src/*/skills/*"
 }
