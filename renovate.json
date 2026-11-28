@@ -32,6 +32,12 @@
       "matchManagers": ["mise"],
       "matchDepNames": ["aqua:openai/codex"],
       "extractVersion": "^rust-v(?<version>.+)$"
+    },
+    {
+      "description": "vercel は 58.5.1 以降 Sigstore provenance を付けずに公開しており、mise の npm backend（aube の trustPolicy=no-downgrade）が install を止める。provenance 付きの最後の版 58.4.4 に留め、provenance 付きの版が出たら外す",
+      "matchManagers": ["mise"],
+      "matchDepNames": ["npm:vercel"],
+      "allowedVersions": "<=58.4.4"
     }
   ]
 }

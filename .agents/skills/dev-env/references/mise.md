@@ -58,6 +58,12 @@ repo 編集が即反映）。supply chain 対策として `pin = true` + `minimu
   exact pin では `mise outdated` が「up to date」と沈黙するので、最新確認は npm 側で行う。
   更新候補の確認は `mise outdated --bump`（read-only）、実際の更新は `mise upgrade --bump`
   （config の要求を書き換えるので exact pin 運用では更新後に pin を確認）か config の直接編集で行う
+- npm backend の既定 installer（embedded aube）は `trustPolicy=no-downgrade` で、過去の版より
+  弱い公開元の証明（provenance 等）しか持たない版の install を止める。global config の tool は
+  別 repo の `mise exec` でも未 install なら install されるため、無関係な作業が止まって見える。
+  provenance が途切れた package は付いていた最後の版に固定し、`renovate.json` の
+  `allowedVersions` で更新も止める（vercel は 58.4.4。理由は同ファイルの description）。
+  `trust_policy_excludes` での除外は検証を外すので、上流の公開経路を確かめてからにする
 - agent session 内の `mise doctor` の警告は harness が PATH 先頭に注入する実在しない dir
   （pi なら `~/.pi/agent/bin`）や、config 無参照で残った孤児 install を拾って偽陽性になる。
   dotfiles を触る前に実 shell（`zsh -l -i -c 'mise doctor'`）で再現するかを確認して切り分ける
