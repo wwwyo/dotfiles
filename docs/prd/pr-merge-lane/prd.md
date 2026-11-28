@@ -38,7 +38,7 @@ flowchart TD
     C --> K[daily/<date>/pr-watch.md<br/>+ pr-watch.jsonl（実績・根拠・引き継ぎ）]
 ```
 
-既存の `pr-auto-merge` automation を流用し、30分間隔・`workspace_path` 固定に変更する（`repo_path` では run ごとに新 worktree が立つため）。trigger は cron `*/30 * * * *` とする — Orca の RRULE parser は `FREQ=HOURLY/DAILY/WEEKLY` と `INTERVAL` にしか対応せず `MINUTELY` は表現できないため。各 tick の役割分担は次のとおり。
+既存の `pr-auto-merge` automation を流用し、30分間隔・`workspace_path` 固定に変更する（`repo_path` では run ごとに新 worktree が立つため）。trigger は cron `*/30 9-23 * * *` とする（夜間は precheck も止める） — Orca の RRULE parser は `FREQ=HOURLY/DAILY/WEEKLY` と `INTERVAL` にしか対応せず `MINUTELY` は表現できないため。各 tick の役割分担は次のとおり。
 
 1. **triage script** が全 open PR の事実を集め、action を決める。変化なしなら agent を起こさず終了する
 2. action があるときだけ devin session が起き、script の決定を実行する（dispatch・merge・削除・報告記述）
