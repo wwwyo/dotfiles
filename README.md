@@ -79,7 +79,7 @@ scripts/ docs/ tests/            # repo 内部ファイル（deploy されない
 - `.agents/scheduled-tasks` → `~/.claude/scheduled-tasks` — Orca automation の手順書置き場。repo 内の `.claude/scheduled-tasks` は旧パスの互換 symlink
 - `.codex/{rules,scripts,hooks,automations,skills}` / `.pi/agent/extensions` — 同上
 - `home/dot_config/{git/hooks,mise/tasks}` — executable を含むため per-file symlink 不可
-- `~/src/github.com/wwwyo/skills/.agents/skills` → `~/.config/devin/skills` — plugin を読まない Devin 向け（repo 外を指す唯一の link。checkout が無ければ skip）
+- `~/src/github.com/wwwyo/skills/plugins/*/skills/<name>` → `~/.config/devin/skills/<name>` — plugin を読まない Devin 向けに skill ごとに張る（repo 外を指す唯一の link。checkout が無ければ skip）
 
 ## 新しいファイルを追加する方法
 

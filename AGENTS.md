@@ -25,7 +25,7 @@ chezmoi diff                                           # apply 前に差分確�
 - `home/dot_foo` → `~/.foo`。`mode = "symlink"` で普通のファイルは source への symlink になる（repo 編集が即反映＝旧 link.sh と同じ）
 - **symlink 化できないもの**（template・executable・encrypted）は実ファイルとして置かれる
 - **dir 単位リンク**: runtime が新規ファイルを書き込む・repo 内相対 symlink を含む・executable を含む dir は `home/run_after_20-link-repodirs.sh.tmpl` が repo dir へ symlink を張る。一覧は同 script、理由は `home/.chezmoiignore` 冒頭。dir link 対象の source は `.chezmoiignore` で chezmoi 管理から除外する
-  - **dir link script は repo dir ↔ `~` の link だけを張る**（例外は Devin 用の `~/.config/devin/skills` → wwwyo/skills の `.agents/skills` だけ。理由は Skills 管理の節）。repo 内の共有は `.codex/hooks/…` →
+  - **dir link script は repo dir ↔ `~` の link だけを張る**（例外は Devin 用の `~/.config/devin/skills` に張る wwwyo/skills の skill ごとの link だけ。理由は Skills 管理の節）。repo 内の共有は `.codex/hooks/…` →
   `../../.agents/hooks/…` のような相対 symlink を git に乗せる。link 対象の source が他 entry の
   target 配下を指しているのはこのパターン違反のサイン
   - **dir link で配る file の変更は merge/pull した時点で即座に本番へ届く**（`~` 側は repo dir を
@@ -43,7 +43,7 @@ dotfiles 自身の session から skill 本体・hook・`AGENTS.md` のような
 
 ## 開発フロー
 
-要件をまとめる [prd](https://github.com/wwwyo/skills/blob/main/.agents/skills/prd/SKILL.md) → 設計・実装・検証・PR の公開と監視を playbook で進める [mode](https://github.com/wwwyo/skills/blob/main/.agents/skills/mode/SKILL.md) → 定期merge laneの [pr-auto-merge](https://github.com/wwwyo/skills/blob/main/.agents/skills/pr-auto-merge/SKILL.md) の順で進める。期待動作が明確な実装タスクはmodeから始められる。テストの選び方はmodeのFeature playbookを参照する。
+要件をまとめる [prd](https://github.com/wwwyo/skills/blob/main/plugins/core/skills/prd/SKILL.md) → 設計・実装・検証・PR の公開と監視を playbook で進める [mode](https://github.com/wwwyo/skills/blob/main/plugins/core/skills/mode/SKILL.md) の順で進める。期待動作が明確な実装タスクはmodeから始められる。テストの選び方はmodeのFeature playbookを参照する。
 
 ## Skills 管理
 
@@ -52,11 +52,11 @@ dotfiles 自身の session から skill 本体・hook・`AGENTS.md` のような
 - Claude Code: core・design は claude.ai のアカウントに入れたもの（`core@synced`・`design@synced`）を使い、local は `extraKnownMarketplaces.wwwyo`（directory source）の `local@wwwyo` で入れる。`enabledPlugins` で `core@synced`・`design@synced` を有効、directory 側の `core@wwwyo`・`design@wwwyo` を無効にして重複させない。local をアカウントに入れると cloud にも届くので、local だけは手元で入れる。core の編集は wwwyo/skills の main への merge と claude.ai の同期を経てから届く。merge 前の版を試すときは `claude --settings '{"enabledPlugins":{"core@wwwyo":true,"core@synced":false}}'` で起動し、その session だけ checkout の core に切り替える（`--plugin-dir` は marketplace の root を plugin として読まない）。plugin を廃止したら、claude.ai の Customize > Plugins から外すまで `enabledPlugins` に `<name>@synced: false` を残す（行を消すと既定の有効に戻り、アカウントに残った copy が読まれる）。外したら行を消す
 - Codex: `home/.chezmoitemplates/codex-base.toml.tmpl` の `[marketplaces.wwwyo]` と `[plugins."core@wwwyo"]` 等。宣言だけでは cache に入らないため `home/run_after_30-codex-skill-plugins.sh` が apply 毎に `codex plugin add` する。three.js の skill は design plugin に入っている
 - pi: `home/.chezmoitemplates/pi-settings-base.json` の `packages` にローカルパス
-- Devin: plugin を読まないため、dir link script が `~/.config/devin/skills` を wwwyo/skills の `.agents/skills` へ link する（repo 外を指す唯一の dir link。`~/.agents/skills` に置くと Codex・pi の native discovery と plugin が重複する）
+- Devin: plugin を読まず skill の dir も 1 つしか読まないため、dir link script が `~/.config/devin/skills` を実 dir にし、wwwyo/skills の `plugins/*/skills/<name>` を skill ごとに link する（repo 外を指す唯一の link。消えた skill の link は apply のたびに外す。新しい skill は次の apply で載る。`~/.agents/skills` に置くと Codex・pi の native discovery と plugin が重複する）
 - Orca が配る skill（`orca-cli`・`orchestration`・`orca-computer-use`）は wwwyo/skills に置かず、この repo の `.agents/skills/` で git 追跡する。`~/.agents` はこの `.agents` への link なので、Orca 本体の更新で Orca が書き換えた内容は repo の差分として現れ、それを commit する。Claude 向けには `.claude/skills/<name>` → `../../.agents/skills/<name>` の相対 symlink を git に載せ、`~/.claude/skills` を dir link で配る（`tests/agents-skills-symlinks.test.sh` が対応を検査する）。Orca は手を入れていない copy だけを更新するので、中身は Orca 純正のまま保ち、手元の方針は global instructions か dev-env の reference に置く
 - `dev-env`（この repo が管理する tool の非自明な制約。手書き）もこの repo の `.agents/skills/` に置く（ユーザー判断）。AGENTS.md には repo の機構を、tool の仕様は dev-env に置く
 - `langfuse`（Langfuse の API・計測の upstream skill）も、Langfuse telemetry と同じくこの repo の `.agents/skills/` で追跡する（ユーザー判断）。upstream の取り込みは skillctrl で、登録は root の `skills-lock.json`、受理 hash と intent は `.agents/skillctrl/`。wwwyo/skills の週次 skillctrl-update は対象外なので、更新はこの repo で `skillctrl update langfuse` を手で回す
-- scheduled task・hook から skill の tools を呼ぶときは canonical checkout（`~/src/github.com/wwwyo/skills/.agents/skills/...`）を指す。`~/.agents/skills` には Orca の skill と langfuse・dev-env しか無い（Codex・pi はそこを直接読む）
+- scheduled task・hook から skill の tools を呼ぶときは canonical checkout（`~/src/github.com/wwwyo/skills/plugins/<plugin>/skills/...`）を指す。`~/.agents/skills` には Orca の skill と langfuse・dev-env しか無い（Codex・pi はそこを直接読む）
 - tool ごとの読み込み方・編集の反映は [dev-env の skill-plugins](.agents/skills/dev-env/references/skill-plugins.md) を参照する
 
 ## ユーザー名に依存しない
@@ -152,5 +152,4 @@ Core actions:
 - **score**: trace/session に付ける評価値（数値・真偽・カテゴリ + comment）。機械可読の基準値の置き場 — 分類の解釈は score value に埋め込まず、記録は session comment に書く
 - **evaluator**: trace/session を読んで記録・score を付ける判定器。judge LLM を使うかルールベースかは問わない
 - **evaluated_until**: session-eval が Langfuse Session に付ける NUMERIC score。観測済み最新 obs の `endTime or startTime` の epoch 秒で「ここまでの観測を評価済み」の watermark と評価完了 marker を兼ねる（evaluator が最後に書く）。壁時計の取得時刻ではなく coverage で書く — fetch 後に ingest された turn も endTime が新しければ再評価対象になる
-- **session-consolidate**: 評価済み session の comment 記録にある `学習候補` を repo ごとに束ね、各 repo で correct skill を走らせて PR を出す automation（ADR 0003、`.agents/scheduled-tasks/session-consolidate/`。手順の正本は `automation.toml` の prompt）。session-eval とは別 task — evaluator は repo を書かない。採否は repo ごとの worker が記録と repo を読んで判断する
-- **consolidated**: session-consolidate が Langfuse Session に付ける NUMERIC score（処理済み marker）。値は束ねた時点の `evaluated_until` — 再評価で `evaluated_until` が進んだ session は `consolidated < evaluated_until` で再対象になる
+- **session-consolidate**: 評価済み session の `学習候補` を repo ごとに束ねて correct skill を走らせていた automation（ADR 0003・0004）。2026-11-28 に wwwyo/skills の skill を plugin ごとの dir へ移したとき、ユーザー判断で pr-auto-merge の automation とともに削除した。Langfuse に残る `consolidated` score はその処理済み marker
