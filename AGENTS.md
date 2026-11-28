@@ -2,7 +2,7 @@
 
 開発環境の設定ファイルを管理するリポジトリ。
 
-各 tool の非自明な仕様・制約・設定値の理由（Orca・Claude Code・pi・agent hooks・Langfuse telemetry・macOS アプリの code 管理など）は wwwyo/skills の [dev-env skill](https://github.com/wwwyo/skills/blob/main/.agents/skills/dev-env/SKILL.md) を参照 — AGENTS.md には repo の機構と管理ファイルの記述を置き、agent tool 自体の仕様は skill 側へ持たせる。
+各 tool の非自明な仕様・制約・設定値の理由（Orca・Claude Code・pi・agent hooks・Langfuse telemetry・macOS アプリの code 管理など）は [dev-env skill](.agents/skills/dev-env/SKILL.md) を参照 — AGENTS.md には repo の機構と管理ファイルの記述を置き、agent tool 自体の仕様は skill 側へ持たせる。
 
 ## セットアップ
 
@@ -47,16 +47,17 @@ dotfiles 自身の session から skill 本体・hook・`AGENTS.md` のような
 
 ## Skills 管理
 
-共有 skill の正本は [wwwyo/skills](https://github.com/wwwyo/skills)（canonical checkout は `~/src/github.com/wwwyo/skills`）。skill の追加・編集・skillctrl 運用・plugin の layout はその repo の `AGENTS.md` に従い、この repo に置く skill は下の Orca の skill と langfuse だけで、ほかは各 tool への登録だけを持つ。
+共有 skill の正本は [wwwyo/skills](https://github.com/wwwyo/skills)（canonical checkout は `~/src/github.com/wwwyo/skills`）。skill の追加・編集・skillctrl 運用・plugin の layout はその repo の `AGENTS.md` に従い、この repo に置く skill は下の Orca の skill と langfuse・dev-env だけで、ほかは各 tool への登録だけを持つ。
 
 - Claude Code: core・design は claude.ai のアカウントに入れたもの（`core@synced`・`design@synced`）を使い、local は `extraKnownMarketplaces.wwwyo`（directory source）の `local@wwwyo` で入れる。`enabledPlugins` で `core@synced`・`design@synced` を有効、directory 側の `core@wwwyo`・`design@wwwyo` を無効にして重複させない。local をアカウントに入れると cloud にも届くので、local だけは手元で入れる。core の編集は wwwyo/skills の main への merge と claude.ai の同期を経てから届く。merge 前の版を試すときは `claude --settings '{"enabledPlugins":{"core@wwwyo":true,"core@synced":false}}'` で起動し、その session だけ checkout の core に切り替える（`--plugin-dir` は marketplace の root を plugin として読まない）。plugin を廃止したら、claude.ai の Customize > Plugins から外すまで `enabledPlugins` に `<name>@synced: false` を残す（行を消すと既定の有効に戻り、アカウントに残った copy が読まれる）。外したら行を消す
 - Codex: `home/.chezmoitemplates/codex-base.toml.tmpl` の `[marketplaces.wwwyo]` と `[plugins."core@wwwyo"]` 等。宣言だけでは cache に入らないため `home/run_after_30-codex-skill-plugins.sh` が apply 毎に `codex plugin add` する。three.js の skill は design plugin に入っている
 - pi: `home/.chezmoitemplates/pi-settings-base.json` の `packages` にローカルパス
 - Devin: plugin を読まないため、dir link script が `~/.config/devin/skills` を wwwyo/skills の `.agents/skills` へ link する（repo 外を指す唯一の dir link。`~/.agents/skills` に置くと Codex・pi の native discovery と plugin が重複する）
 - Orca が配る skill（`orca-cli`・`orchestration`・`orca-computer-use`）だけは wwwyo/skills に置かず、この repo の `.agents/skills/` で git 追跡する。`~/.agents` はこの `.agents` への link なので、Orca 本体の更新で Orca が書き換えた内容は repo の差分として現れ、それを commit する。Claude 向けには `.claude/skills/<name>` → `../../.agents/skills/<name>` の相対 symlink を git に載せ、`~/.claude/skills` を dir link で配る（`tests/agents-skills-symlinks.test.sh` が対応を検査する）。Orca は手を入れていない copy だけを更新するので、中身は Orca 純正のまま保ち、手元の方針は global instructions か dev-env の reference に置く
+- `dev-env`（この repo が管理する tool の非自明な制約。手書き）もこの repo の `.agents/skills/` に置く（ユーザー判断）。AGENTS.md には repo の機構を、tool の仕様は dev-env に置く
 - `langfuse`（Langfuse の API・計測の upstream skill）も、Langfuse telemetry と同じくこの repo の `.agents/skills/` で追跡する（ユーザー判断）。upstream の取り込みは skillctrl で、登録は root の `skills-lock.json`、受理 hash と intent は `.agents/skillctrl/`。wwwyo/skills の週次 skillctrl-update は対象外なので、更新はこの repo で `skillctrl update langfuse` を手で回す
-- scheduled task・hook から skill の tools を呼ぶときは canonical checkout（`~/src/github.com/wwwyo/skills/.agents/skills/...`）を指す。`~/.agents/skills` には Orca の skill と langfuse しか無い（Codex・pi はそこを直接読む）
-- tool ごとの読み込み方・編集の反映は [dev-env の skill-plugins](https://github.com/wwwyo/skills/blob/main/.agents/skills/dev-env/references/skill-plugins.md) を参照する
+- scheduled task・hook から skill の tools を呼ぶときは canonical checkout（`~/src/github.com/wwwyo/skills/.agents/skills/...`）を指す。`~/.agents/skills` には Orca の skill と langfuse・dev-env しか無い（Codex・pi はそこを直接読む）
+- tool ごとの読み込み方・編集の反映は [dev-env の skill-plugins](.agents/skills/dev-env/references/skill-plugins.md) を参照する
 
 ## ユーザー名に依存しない
 
@@ -66,7 +67,7 @@ dotfiles 自身の session から skill 本体・hook・`AGENTS.md` のような
 - **home dir 参照が必要な .tmpl は `{{ .chezmoi.homeDir }}` を使う**（例: agent hook の配置先）。`{{ .chezmoi.username }}`・`{{ .chezmoi.hostname }}` も使える。hook command など shell snippet 内の path は `"$HOME"` で書けば展開されるので template 化不要
 - **Codex の共通設定**は [`home/.chezmoitemplates/codex-base.toml.tmpl`](home/.chezmoitemplates/codex-base.toml.tmpl) が正本。[`home/dot_codex/private_config.toml.tmpl`](home/dot_codex/private_config.toml.tmpl) が既存の `~/.codex/config.toml` に共通設定だけを上書きし、実ファイルとして配置する。repo にない key は保持し、書き込み先の追加許可も消さない。base から key を削除しても既存の local 値は消えないため、不要になった local 値は `~` 側で削除する。`projects`（trust）・`hooks.state`・ローカル marketplace・モデル案内履歴・PC ごとの editor 設定・browser client の承認 hash は `~` 側だけで管理し、repo に snapshot を取り込まない。共通設定に含めた key を変える場合は base を編集する。逆に、base に載せた key は `mergeOverwrite` で apply 毎に local 値を base 値へ巻き戻すため、local で増殖・変化する値（dictation 辞書・`open-in-target-preferences.perPath` など）は base に入れない。
   - `projectlessWorkspaceRoot` はローカル設定。未設定時は Codex 標準の `~/Documents/Codex` を使う。
-- **Pi sandbox は使っていない**。2026-10-27 に `pi-sandbox` package と chezmoi 側の template（`pi-sandbox-base.json`・`private_sandbox.json.tmpl`）・`~/.pi/agent/sandbox.json` を削除した。依存の `@carderne/sandbox-runtime` が Anthropic `srt` の個人フォークで zod advisory を抱え、恒久無効運用だったため。再導入の前提（config 無しだと `enabled: true`、`--no-sandbox` は extension 提供）は [dev-env](https://github.com/wwwyo/skills/blob/main/.agents/skills/dev-env/references/pi.md) を見る。知識としては残すが、明示指示がない限り復活させない。
+- **Pi sandbox は使っていない**。2026-10-27 に `pi-sandbox` package と chezmoi 側の template（`pi-sandbox-base.json`・`private_sandbox.json.tmpl`）・`~/.pi/agent/sandbox.json` を削除した。依存の `@carderne/sandbox-runtime` が Anthropic `srt` の個人フォークで zod advisory を抱え、恒久無効運用だったため。再導入の前提（config 無しだと `enabled: true`、`--no-sandbox` は extension 提供）は [dev-env](.agents/skills/dev-env/references/pi.md) を見る。知識としては残すが、明示指示がない限り復活させない。
 - **Pi の settings.json** も同じ方式 — [`home/dot_pi/agent/private_settings.json.tmpl`](home/dot_pi/agent/private_settings.json.tmpl) が既存の `~/.pi/agent/settings.json` と [`home/.chezmoitemplates/pi-settings-base.json`](home/.chezmoitemplates/pi-settings-base.json) を合成する。pi が TUI から書き戻す key（既定 provider/model・theme・changelog 既読）は local を残し、symlink 配備だった頃の repo 汚染を防ぐ。
 
 ## gitignore されたファイルを grep 対象に戻す（`home/dot_ignore` → `~/.ignore`）
@@ -114,7 +115,7 @@ MCP portal・server・Access app・Composio の tool router session の設定は
 
 ## Composio の session 設定（`mcp/composio/`）
 
-MCP portal に載せる Composio tool router session の toolkit・許可 tool は `mcp/composio/sessions/<name>.json` が正本（`marketing` = mcp-marketing の server `composio`）。Composio 側の設定は API でしか見えないので、JSON を編集して `mise exec -- python3 mcp/composio/apply.py <name> --apply` で反映する。`--apply` 無しは差分の表示だけ（drift 確認）。新しい toolkit は、先に auth config と接続を作ってから JSON に足す。auth config の作成と接続リンクの発行も、ダッシュボードではなく手元で mise の `COMPOSIO_API_KEY` を使って API で行う（cloud session からは Remote Control で Mac に入って実行する）。人の手作業は、相手サービスでの key 発行・OAuth 同意と、発行したリンクを開くことだけ。portal 側の構成・方針は [dev-env の mcp-portal](https://github.com/wwwyo/skills/blob/main/.agents/skills/dev-env/references/mcp-portal.md)。
+MCP portal に載せる Composio tool router session の toolkit・許可 tool は `mcp/composio/sessions/<name>.json` が正本（`marketing` = mcp-marketing の server `composio`）。Composio 側の設定は API でしか見えないので、JSON を編集して `mise exec -- python3 mcp/composio/apply.py <name> --apply` で反映する。`--apply` 無しは差分の表示だけ（drift 確認）。新しい toolkit は、先に auth config と接続を作ってから JSON に足す。auth config の作成と接続リンクの発行も、ダッシュボードではなく手元で mise の `COMPOSIO_API_KEY` を使って API で行う（cloud session からは Remote Control で Mac に入って実行する）。人の手作業は、相手サービスでの key 発行・OAuth 同意と、発行したリンクを開くことだけ。portal 側の構成・方針は [dev-env の mcp-portal](.agents/skills/dev-env/references/mcp-portal.md)。
 
 ## Cloudflare MCP portal の設定（`mcp/cloudflare/`）
 
@@ -126,7 +127,7 @@ MCP Server Portal（`wwwyo` = `mcp.wwwyo.dev`、`marketing` = `mcp-marketing.www
 - **hostname 等を直すときは作り直す**: `mise exec -- python3 mcp/cloudflare/apply.py --apply --recreate <id>` が、portal から一度外す → 削除 → `credential_env` の値で宣言どおりに作成 → portal に戻す、を行う。bearer の server だけが対象（OAuth は作成後に同意が要る）。巻き込みで Access app が消えていたら宣言から作り直し、新しい ID を宣言へ書き戻すので、その差分を commit する（2026-11-13 の buffercom では app は残った）。作り直した server は利用者ごとの portal 接続で認可し直しが要る
 - **OAuth upstream の「サーバーの認証」は自動化できない。** `auth_type: oauth` の server を作る・作り直すと、ダッシュボードの server 画面で「サーバーの認証」を押すまで同期しない（`cf`・API に相当操作が無い）
 - server の同期状態（`status`・`error`）は宣言の比較対象外で、apply.py は冒頭に表示するだけ
-- Tunnel・Gateway network policy・DNS はまだ宣言に入れていない。いま loopback で載せているのは `camera`（127.0.0.1:47822）だけで、Gateway の L4 policy `Loopback via tunnel: only camera MCP port` が 127.0.0.1 宛てを 47822 以外 block している。port を変える・loopback の server を足すときはこの policy の許可 port も直す。構成と追加手順は [dev-env の mcp-portal](https://github.com/wwwyo/skills/blob/main/.agents/skills/dev-env/references/mcp-portal.md)
+- Tunnel・Gateway network policy・DNS はまだ宣言に入れていない。いま loopback で載せているのは `camera`（127.0.0.1:47822）だけで、Gateway の L4 policy `Loopback via tunnel: only camera MCP port` が 127.0.0.1 宛てを 47822 以外 block している。port を変える・loopback の server を足すときはこの policy の許可 port も直す。構成と追加手順は [dev-env の mcp-portal](.agents/skills/dev-env/references/mcp-portal.md)
 
 ## Pullfrog の個別設定
 
