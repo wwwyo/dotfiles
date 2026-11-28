@@ -61,8 +61,10 @@ repo 編集が即反映）。supply chain 対策として `pin = true` + `minimu
 - npm backend の既定 installer（embedded aube）は `trustPolicy=no-downgrade` で、過去の版より
   弱い公開元の証明（provenance 等）しか持たない版の install を止める。global config の tool は
   別 repo の `mise exec` でも未 install なら install されるため、無関係な作業が止まって見える。
-  provenance が途切れた package は付いていた最後の版に固定し、`renovate.json` の
-  `allowedVersions` で更新も止める（vercel は 58.4.4。理由は同ファイルの description）。
+  provenance が途切れた package は、まず aube の既定の除外（`trust.rs` の一覧。vercel 58.5.1
+  以降と @vercel/* などの依存は aube 2.10.1 = mise 2026.11.10 から入っている）に載っているかを見る。
+  載っていれば mise を上げて解決し、global config の `min_version`（soft）で古い mise に警告を出す。
+  載っていなければ付いていた最後の版に固定し、`renovate.json` の `allowedVersions` で更新も止める。
   `trust_policy_excludes` での除外は検証を外すので、上流の公開経路を確かめてからにする
 - agent session 内の `mise doctor` の警告は harness が PATH 先頭に注入する実在しない dir
   （pi なら `~/.pi/agent/bin`）や、config 無参照で残った孤児 install を拾って偽陽性になる。
