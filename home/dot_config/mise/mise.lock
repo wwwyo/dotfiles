@@ -1654,6 +1654,10 @@ provenance = "github-attestations"
 [[tools."aqua:tmux/tmux-builds"]]
 version = "3.8"
 backend = "aqua:tmux/tmux-builds"
+unsupported_platforms = [
+    "windows-x64",
+    "windows-x64-baseline",
+]
 
 [tools."aqua:tmux/tmux-builds"."platforms.linux-arm64"]
 checksum = "sha256:f399311b1159705e69839eaf4f6f68c8b8540dc3a8538b87c30dedb9c3c7fc23"
