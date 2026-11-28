@@ -117,7 +117,7 @@ function updateModelMetadata(source: unknown): void {
 }
 
 type SubagentDetail = { agentType?: string; description?: string; startedAt: number; workflow?: boolean; parent?: string; registration?: object }
-type SubagentRoster = { active: Set<string>; exited?: Set<string>; details?: Map<string, SubagentDetail>; waiting: boolean; ownsPane?: boolean; runGeneration?: number; endedRunGeneration?: number; completionPostedGeneration?: number; parked?: Map<string, Map<string, SubagentDetail>>; onEvent?: (event: unknown, forcedStatus?: string) => void; listener?: (event: unknown) => void; onRunnerExit?: (event: unknown) => void; runnerExitListener?: (event: unknown) => void; runnerExitCheck?: ReturnType<typeof setTimeout> | null; onRunnerExitSettled?: () => void }
+type SubagentRoster = { active: Set<string>; exited?: Set<string>; details?: Map<string, SubagentDetail>; waiting: boolean; ownsPane?: boolean; runGeneration?: number; endedRunGeneration?: number; completionPostedGeneration?: number; parked?: Map<string, Map<string, SubagentDetail>>; onEvent?: (event: unknown, forcedStatus?: string) => void; listener?: (event: unknown) => void; onRunnerExit?: (event: unknown) => void; runnerExitListener?: (event: unknown) => void; runnerExitCheck?: ReturnType<typeof setTimeout> | null; onRunnerExitSettled?: () => void; heldTurnRepostCheck?: ReturnType<typeof setTimeout> | null; lastChildEventAt?: number }
 const HOOK_BODY_BUDGET_BYTES = 500000
 const SUBAGENTS_FIELD_BYTES = Buffer.byteLength(',"subagents":[]')
 let subagentRoster: SubagentRoster | null = null
@@ -561,6 +561,7 @@ export default function (pi): void {
   const registration = {}
   function resetSubagentRoster(): void {
     clearRunnerExitCheck()
+    clearHeldTurnRepostCheck()
     lifecycleState.active.clear()
     lifecycleState.exited?.clear()
     subagentDetails.clear()
@@ -639,6 +640,7 @@ export default function (pi): void {
   pi.on('session_branch', onOmpSessionChange)
   onStatus('session_shutdown', (event) => {
     clearPendingAgentEndCheck()
+    clearHeldTurnRepostCheck()
     if (isOmpRuntime()) {
       clearRunnerExitCheck()
       resetPostQueue()
@@ -682,6 +684,7 @@ export default function (pi): void {
     updateSessionMetadata(ctx)
     piUiPromptDepth = 0
     captureNativeChatUi(ctx)
+    syncHeldTurnRepostCheck()
     // Reload replaces registration without ending the turn; preserve status and unread state.
     if (event.reason === 'reload') return
     post('session_start')
@@ -871,15 +874,36 @@ export default function (pi): void {
     pendingAgentEndContext = null
   }
   const RUNNER_EXIT_GRACE_MS = 2000
+  const HELD_TURN_REPOST_INTERVAL_MS = 600000
+  const HELD_TURN_MAX_QUIET_MS = 24 * 60 * 60 * 1000
   function clearRunnerExitCheck(): void {
     if (lifecycleState.runnerExitCheck != null) clearTimeout(lifecycleState.runnerExitCheck)
     lifecycleState.runnerExitCheck = null
+  }
+  function clearHeldTurnRepostCheck(): void {
+    if (lifecycleState.heldTurnRepostCheck != null) clearTimeout(lifecycleState.heldTurnRepostCheck)
+    lifecycleState.heldTurnRepostCheck = null
+  }
+  function syncHeldTurnRepostCheck(): void {
+    if (!isHeldByChildren()) {
+      clearHeldTurnRepostCheck()
+      return
+    }
+    if (lifecycleState.heldTurnRepostCheck != null) return
+    lifecycleState.heldTurnRepostCheck = setTimeout(() => {
+      lifecycleState.heldTurnRepostCheck = null
+      if (Date.now() - (lifecycleState.lastChildEventAt ??= Date.now()) >= HELD_TURN_MAX_QUIET_MS) return
+      if (lifecycleState.waiting) postSubagentsUpdate()
+      syncHeldTurnRepostCheck()
+    }, HELD_TURN_REPOST_INTERVAL_MS)
+    if (typeof lifecycleState.heldTurnRepostCheck.unref === 'function') lifecycleState.heldTurnRepostCheck.unref()
   }
   function forgetSubagent(id: string): void {
     lifecycleState.active.delete(id)
     lifecycleState.exited?.delete(id)
     subagentDetails.delete(id)
     nativeChatRosterChanged()
+    syncHeldTurnRepostCheck()
   }
   function postSubagentsUpdate(): void {
     if (!hasQueuedPost()) post('subagents_update')
@@ -919,15 +943,17 @@ export default function (pi): void {
     const status = forcedStatus ?? (event as { status?: unknown }).status
     if (!id) return
     if (isOmpRuntime() && !lifecycleState.ownsPane) return
+    lifecycleState.lastChildEventAt = Date.now()
     if (status === 'started') {
       lifecycleState.active.add(id)
       if (!subagentDetails.has(id)) subagentDetails.set(id, { agentType: readLabel(record.agent), description: readLabel(record.description) ?? readLabel(record.workflowKey) ?? (isOmpRuntime() ? id : undefined), startedAt: Date.now(), workflow: record.mode === 'workflow', parent: readLabel(record.parentWorkflowRunId), registration })
       nativeChatRosterChanged()
+      syncHeldTurnRepostCheck()
       if (!isTurnInFlight() && (isOmpRuntime() || lifecycleState.runGeneration === 0 || lifecycleState.completionPostedGeneration === lifecycleState.runGeneration)) {
         lifecycleState.waiting = true
         lifecycleState.completionPostedGeneration = -1
       }
-      post('agent_start')
+      post('agent_start', forcedStatus === 'started' ? { subagent_started: true } : {})
       return
     }
     if (status !== 'completed' && status !== 'failed' && status !== 'aborted') return
@@ -948,6 +974,7 @@ export default function (pi): void {
   lifecycleState.onRunnerExit = (event: unknown): void => {
     const runId = event && typeof event === 'object' ? (event as { runId?: unknown }).runId : undefined
     if (typeof runId !== 'string' || !lifecycleState.active.has(runId)) return
+    lifecycleState.lastChildEventAt = Date.now()
     if (!lifecycleState.exited) lifecycleState.exited = new Set<string>()
     const wasVisible = isVisibleSubagent(lifecycleState, runId)
     lifecycleState.exited.add(runId)
@@ -996,6 +1023,8 @@ export default function (pi): void {
     }
     nativeChatRosterChanged()
     if (!isHeldByChildren()) return
+    lifecycleState.lastChildEventAt = Date.now()
+    syncHeldTurnRepostCheck()
     lifecycleState.waiting = true
     lifecycleState.completionPostedGeneration = -1
   }
