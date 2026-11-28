@@ -1,3 +1,7 @@
+# 2026.11.10 から npm backend（embedded aube）が provenance の無い vercel 58.5.1 以降を止めなくなった。
+# それより古い mise では vercel の install が止まるので、警告を出して brew upgrade mise を促す（hard にすると mise 全体が止まる）
+min_version = { soft = "2026.11.10" }
+
 [tools]
 "github:github/gh-aw" = { version = "v1.0.1", rename_exe = "gh-aw" }
 "github:github/gh-actions-lock" = { version = "0.4.1", bin = "gh-actions-lock" }
@@ -24,7 +28,7 @@ node = "26.13.0"
 "npm:prettier" = "3.9.10"
 "npm:pullfrog" = "0.1.123"
 "npm:turbo" = "2.11.10"
-"npm:vercel" = "58.4.4"
+"npm:vercel" = "66.6.0"
 "npm:wrangler" = "4.158.0"
 python = "3.15.2"
 rust = "1.99.1"
